@@ -3,7 +3,11 @@ import { dienTich } from '../tinh/hinhHoc';
 import type { ChucNang, Diem, Lo } from '../tinh/kieu';
 import { taoLo } from '../tinh/macDinh';
 
-type Thuc = { type: string; layer: string; vertices?: { x: number; y: number }[]; shape?: boolean; text?: string; startPoint?: { x: number; y: number }; position?: { x: number; y: number } };
+type Thuc = {
+  type: string; layer: string; vertices?: { x: number; y: number }[]; shape?: boolean; text?: string;
+  startPoint?: { x: number; y: number }; position?: { x: number; y: number };
+  center?: { x: number; y: number }; radius?: number; startAngle?: number; endAngle?: number; // ARC, góc theo radian
+};
 export type Chu = { noiDung: string; diem: Diem };
 export type LoiLop = 'ranh_khong_kin' | 'lop_trong';
 
@@ -136,7 +140,20 @@ export function napDxf(text: string): BanDxf {
           return vong.filter((v, i) => !vong.some((w, j) => j !== i && dienTich(w) > dienTich(v) && trongDaGiac(trongTam(v), w)));
         }),
     polyKin: (lop) => theoLop(lop).filter((e) => laDuong(e) && kin(e)).map((e) => boTrungCuoi(e.vertices!.map(diem))),
-    duong: (lop) => theoLop(lop).filter(laDuong).map((e) => e.vertices!.map(diem)),
+    duong: (lop) =>
+      theoLop(lop).flatMap((e): Diem[][] => {
+        if (laDuong(e) || (e.type === 'LINE' && e.vertices?.length === 2)) return [e.vertices!.map(diem)];
+        if (e.type === 'ARC' && e.center && e.radius) {
+          const a0 = e.startAngle ?? 0;
+          const a1 = (e.endAngle ?? 0) > a0 ? e.endAngle! : e.endAngle! + 2 * Math.PI;
+          const n = Math.max(2, Math.ceil((a1 - a0) / (Math.PI / 18)));
+          return [Array.from({ length: n + 1 }, (_, i) => {
+            const a = a0 + ((a1 - a0) * i) / n;
+            return diem({ x: e.center!.x + e.radius! * Math.cos(a), y: e.center!.y + e.radius! * Math.sin(a) });
+          })];
+        }
+        return [];
+      }),
     chu: (lop) =>
       theoLop(lop)
         .filter((e) => (e.type === 'TEXT' || e.type === 'MTEXT') && e.text)
@@ -185,6 +202,9 @@ const LOAI_THEO_LOP: [RegExp, string, ChucNang][] = [
   [/congcong/, 'CC', 'khac'],
 ];
 
+/** Lớp đường giao thông: lòng đường, hè đường, tim đường. */
+export const laLopDuongGT = (lop: string): boolean => /longduong|heduong|timduong/.test(boDau(lop)) || /(^|[^a-z])tim([^a-z]|$)/i.test(lop);
+
 function ranhVaTen(ban: BanDxf, chon: ChonLop): { ranh: Diem[]; kyHieu?: string; chucNang?: ChucNang }[] {
   if (chon.ranh !== RANH_HATCH) return ban.polyKin(chon.ranh).map((ranh) => ({ ranh }));
   const ds = ban.lopHatch.flatMap((lop) => {
@@ -202,7 +222,9 @@ function ranhVaTen(ban: BanDxf, chon: ChonLop): { ranh: Diem[]; kyHieu?: string;
 export function taoLoTuDxf(ban: BanDxf, chon: ChonLop): Lo[] {
   const chiGioi = chon.chiGioi ? ban.polyKin(chon.chiGioi) : [];
   const tem = chon.tem ? ban.chu(chon.tem) : [];
-  const xq = chon.xungQuanh ? ban.duong(chon.xungQuanh) : [];
+  // Nền vẽ: lớp xung quanh đã chọn + mọi lớp đường giao thông (lòng, hè, tim đường) như TMB QH của app cũ.
+  const lopNen = new Set([...(chon.xungQuanh ? [chon.xungQuanh] : []), ...ban.lop.filter(laLopDuongGT)]);
+  const xq = [...lopNen].flatMap((l) => ban.duong(l));
   return ranhVaTen(ban, chon).map(({ ranh, kyHieu: tenTuDat, chucNang }, i) => {
     const kyHieu = tem.find((c) => trongDaGiac(c.diem, ranh))?.noiDung ?? tenTuDat ?? `Lô ${i + 1}`;
     const lo = taoLo(`lo-${i + 1}`, kyHieu, chucNang ?? (/XH/i.test(kyHieu) ? 'xh' : 'tm'), ranh);

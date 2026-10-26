@@ -53,6 +53,16 @@ describe('đọc DXF', () => {
     expect(lo[2].chiGioi).toBeNull();
   });
 
+  it('nền vẽ tự lấy đường giao thông (lòng, hè, tim), đọc cả LINE và ARC', () => {
+    const d = napDxf(hatchMau);
+    expect(d.duong('HTKT_GT_Longduong')).toHaveLength(2);
+    const cung = d.duong('HTKT_GT_Longduong')[1];
+    expect(cung[0][0]).toBeCloseTo(-40, 6);
+    expect(cung.at(-1)![1]).toBeCloseTo(300, 6);
+    const lo = taoLoTuDxf(d, { ranh: RANH_HATCH });
+    expect(lo[0].xungQuanh).toHaveLength(3);
+  });
+
   it('tệp không phải DXF -> ném lỗi dễ hiểu', () => {
     expect(() => napDxf('xin chao')).toThrow(/DXF/);
   });
