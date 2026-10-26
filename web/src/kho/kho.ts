@@ -28,6 +28,8 @@ export function useKho({ ma, paId, tenPA, maSua, duocSua, ban }: Mo) {
     [ma, paId, maSua, duocSua, tenPA],
   );
   useEffect(() => () => boLuu.huy(), [boLuu]);
+  // Bản nháp còn lại từ lần mở trước: chỉ đọc một lần lúc mở PA, không đọc lại khi đang sửa.
+  const [nhapCu] = useState(() => boLuu.layNhap());
 
   const ap = (moi: TrangThaiPA) => {
     setPA(moi);
@@ -57,6 +59,6 @@ export function useKho({ ma, paId, tenPA, maSua, duocSua, ban }: Mo) {
       truoc.current.push(pa);
       ap(p);
     },
-    nhapCu: boLuu.layNhap(),
+    nhapCu,
   };
 }

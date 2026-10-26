@@ -12,6 +12,10 @@ type Props = {
   onCheDo?: (x: CheDo) => void;
   trangThaiLuu?: TrangThaiLuu;
   dangXuLy?: boolean;
+  duocSua?: boolean;
+  onHoanTac?: () => void;
+  onLamLai?: () => void;
+  thongBao?: ComponentChildren;
 };
 
 /** Bố cục soạn thảo: thanh trên, Nhập (trái), Bản vẽ (giữa), Số liệu (phải). */
@@ -21,7 +25,9 @@ export function KhungSoan(p: Props) {
   return (
     <div class="khung">
       <ThanhTren capDo={p.capDo} cheDoXem={xem} onCheDoXem={setXem} cheDo={p.cheDo} onCheDo={p.onCheDo}
-        trangThaiLuu={p.trangThaiLuu} dangXuLy={p.dangXuLy} />
+        trangThaiLuu={p.trangThaiLuu} dangXuLy={p.dangXuLy} duocSua={p.duocSua}
+        onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} />
+      {p.thongBao}
       <div class="khung-than">
         <aside class="panel-trai" aria-label={t('panel.nhap')}>{p.trai}</aside>
         <main class="panel-giua" aria-label={t('panel.banVe')}>

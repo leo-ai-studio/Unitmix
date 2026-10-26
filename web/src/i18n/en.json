@@ -71,5 +71,10 @@
   "soan.coNhap": "There are unsaved changes from last time on this computer.",
   "soan.khoiPhuc": "Restore",
   "soan.boQua": "Dismiss",
-  "soan.veDuAn": "← Projects"
+  "soan.veDuAn": "← Projects",
+  "loai.stu": "Studio",
+  "loai.1pn": "1BR",
+  "loai.2pn": "2BR",
+  "loai.2pnp": "2BR+",
+  "loai.3pn": "3BR"
 }

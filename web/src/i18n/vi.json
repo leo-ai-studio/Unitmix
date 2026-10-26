@@ -71,5 +71,10 @@
   "soan.coNhap": "Có thay đổi chưa lưu từ lần trước trên máy này.",
   "soan.khoiPhuc": "Khôi phục",
   "soan.boQua": "Bỏ qua",
-  "soan.veDuAn": "← Dự án"
+  "soan.veDuAn": "← Dự án",
+  "loai.stu": "Studio",
+  "loai.1pn": "1PN",
+  "loai.2pn": "2PN",
+  "loai.2pnp": "2PN+",
+  "loai.3pn": "3PN"
 }

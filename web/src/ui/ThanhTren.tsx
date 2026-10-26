@@ -13,6 +13,9 @@ type Props = {
   onCheDo?: (x: CheDo) => void;
   trangThaiLuu?: TrangThaiLuu;
   dangXuLy?: boolean;
+  duocSua?: boolean;
+  onHoanTac?: () => void;
+  onLamLai?: () => void;
 };
 
 export function ThuongHieu({ dangXuLy = false }: { dangXuLy?: boolean }) {
@@ -45,8 +48,8 @@ export function ThanhTren(p: Props) {
   return (
     <header class="thanh-tren">
       <ThuongHieu dangXuLy={p.dangXuLy} />
-      <button class="nut-chu" type="button" aria-label={t('nut.hoanTac')}>↶</button>
-      <button class="nut-chu" type="button" aria-label={t('nut.lamLai')}>↷</button>
+      <button class="nut-chu" type="button" aria-label={t('nut.hoanTac')} title={t('nut.hoanTac')} disabled={!p.onHoanTac || p.cheDo === 'chi_xem'} onClick={p.onHoanTac}>↶</button>
+      <button class="nut-chu" type="button" aria-label={t('nut.lamLai')} title={t('nut.lamLai')} disabled={!p.onLamLai || p.cheDo === 'chi_xem'} onClick={p.onLamLai}>↷</button>
       <nav class="tab-xem" aria-label={t('xem.nhom')}>
         {xem.map(([k, nhan]) => (
           <button type="button" aria-pressed={p.cheDoXem === k} onClick={() => p.onCheDoXem?.(k)}>{t(nhan)}</button>
@@ -75,7 +78,7 @@ export function ThanhTren(p: Props) {
           <span>{t('cheDo.nhan')}</span>
           <div class="nhom-nut" role="group" aria-label={t('cheDo.nhom')}>
             {cheDo.map(([k, nhan]) => (
-              <button type="button" aria-pressed={p.cheDo === k} onClick={() => p.onCheDo?.(k)}>{t(nhan)}</button>
+              <button type="button" aria-pressed={p.cheDo === k} disabled={p.duocSua === false && k !== 'chi_xem'} onClick={() => p.onCheDo?.(k)}>{t(nhan)}</button>
             ))}
           </div>
         </>
