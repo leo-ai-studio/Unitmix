@@ -217,11 +217,12 @@ Thành công nghĩa là:
 ### Chốt thêm ngày 27/10 (chủ nhiệm bảo "làm đi"; các mục có ghi "lựa chọn của tôi" là tôi đặt mặc định, anh đổi được)
 - **Địa chỉ web: `unitmix.leo-ai.dev`** (tên miền riêng gắn vào Cloudflare Pages). Thư mục máy: `E:\Projects\Unitmix`.
 - **Thư viện phải chuẩn hoá tên** khi chép sang: mã tòa và mã căn theo một quy tắc, tên hiển thị tiếng Việt có dấu, không còn tên trống hay tên trùng mã (vd `hn_tm_l3` hiện không có tên đọc được).
-- Lựa chọn của tôi cho 4 câu còn mở, giữ bản đầu gọn:
-  1. Đổi mẫu căn để bám cơ cấu: **chỉ đổi giữa các mẫu cùng bề ngang** trong ô mô-đun; xếp lại cả dãy căn (kiểu `donKhit`/QT-xx) để bản sau.
-  2. Màn Căn bản đầu: **hiện nét vẽ + tổng DT căn và đổi mẫu**; diện tích từng phòng để khi bóc thêm dữ liệu phòng.
-  3. Khối đế bản đầu: **đùn đúng chân tòa**, số tầng đế nhập tay, cao tầng mặc định 4,5 m (đế) và 3,3 m (điển hình), chỉnh được.
-  4. Một PA **được trộn** tòa thương mại và nhà ở xã hội; chỉ tiêu và cơ cấu mục tiêu dùng chung cho lô.
+- Chủ nhiệm trả lời 5 câu còn mở (27/10):
+  1. **Xếp căn**: dùng mẫu căn thư viện, rồi **tối ưu để bám cơ cấu mục tiêu, bảo đảm PCCC**. Được xếp lại dãy căn dọc trục tòa từ các mẫu thư viện (tổng bề ngang khớp đoạn trục); mỗi cách xếp phải qua kiểm PCCC (khoảng cách xa nhất từ cửa căn tới thang thoát nạn, theo `tu_pccc.json` chép từ repo cũ). Thứ tự làm: đổi cùng bề ngang trước, ngay sau đó là bộ tối ưu xếp lại dãy có kiểm PCCC.
+  2. **Màn Căn**: **tổng DT căn trước, có đổi mẫu**; DT từng phòng để sau khi bóc thêm dữ liệu phòng.
+  3. **Khối đế**: trần là **mật độ xây dựng tối đa của QH**. Mặc định đế = đúng chân tháp; người dùng **offset ra** tới gần trần. Các đế gần nhau phải **gộp liền, không để khe** hẹp giữa các tòa.
+  4. **Trộn thương mại và nhà ở xã hội**: được, nhưng **chia theo lô đất, mỗi lô một tem đất** (ký hiệu lô, chức năng, chỉ tiêu riêng). Một dự án có nhiều lô; tòa trên lô nào dùng thư viện và chỉ tiêu của lô đó. Chỉ tiêu và cơ cấu tính theo từng lô và tổng dự án.
+  5. **Repo và Cloudflare**: người làm tự tạo repo `leo-ai-studio/Unitmix` (riêng tư) và tự đưa lên `unitmix.leo-ai.dev`.
 
 ## 10. Để người làm tự quyết
 

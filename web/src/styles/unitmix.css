@@ -1,0 +1,58 @@
+/* Unitmix: bố cục soạn thảo kiểu thanh trên + 3 panel. Màu chỉ lấy từ biến :root của leo-ui.css. */
+:root {
+  --u-stu: #efe9da; --u-1pn: #c9dcd3; --u-2pn: #9cc0b4; --u-2pnp: #6c9c92; --u-3pn: #3e6f70;
+  --ok: #0f6b45; --canh-bao: #8a5300; --vuot: #b42318; --thua: #1559a8;
+  --muted-text: #5f6965;
+}
+body { font-size: 13px; line-height: 1.45; }
+
+.khung { min-height: 100vh; display: flex; flex-direction: column; }
+.khung-than { flex: 1; display: flex; flex-wrap: wrap; min-height: 0; }
+.panel-trai, .panel-phai { background: var(--panel); overflow: auto; max-height: calc(100vh - 53px); }
+.panel-trai { flex: 0 0 270px; border-right: 1px solid var(--line); }
+.panel-phai { flex: 0 0 300px; border-left: 1px solid var(--line); }
+.panel-giua { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; background: var(--panel); }
+@media (max-width: 960px) {
+  .panel-trai, .panel-phai { flex: 1 1 100%; max-height: none; border: 0; border-top: 1px solid var(--line); }
+  .panel-giua { order: -1; min-height: 60vh; }
+}
+
+/* Thanh trên */
+.thanh-tren { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; min-height: 52px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.thuong-hieu { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--green); }
+.thuong-hieu .mark { position: relative; height: 30px; }
+.thuong-hieu .mark img { height: 30px; width: auto; display: block; }
+.thuong-hieu .mark .brand-o { position: absolute; left: 52.93%; top: .88%; width: 46.11%; height: auto; }
+.thuong-hieu strong { font-size: 15px; font-weight: 600; letter-spacing: .08em; }
+.gian { flex: 1; }
+.tab-xem { display: flex; }
+.tab-xem button { border: 1px solid var(--line); background: var(--band); padding: 10px 16px; margin-right: -1px; font-size: 12px; color: var(--ink); }
+.tab-xem button[aria-pressed="true"] { background: var(--panel); font-weight: 700; border-bottom-color: var(--panel); }
+.cap-do { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cap-do button { border: 0; background: none; font-weight: 600; color: var(--ink); padding: 4px 2px; }
+.cap-do .xam { color: var(--muted-text); font-weight: 500; }
+.nhom-nut { display: inline-flex; border: 1px solid var(--line); }
+.nhom-nut button { border: 0; border-right: 1px solid var(--line); background: var(--panel); padding: 6px 9px; font-size: 12px; color: var(--ink); }
+.nhom-nut button:last-child { border-right: 0; }
+.nhom-nut button[aria-pressed="true"] { font-weight: 700; background: var(--soft); }
+.nut-chu { border: 0; background: none; padding: 4px 6px; font-size: 12px; color: var(--ink); }
+.trang-thai-luu { font-size: 12px; color: var(--muted-text); }
+.trang-thai-luu.loi { color: var(--vuot); font-weight: 600; }
+.chon-lang { display: inline-flex; border: 1px solid var(--secondary); border-radius: 4px; overflow: hidden; }
+.chon-lang button { border: 0; background: var(--panel); padding: 5px 8px; font-size: 11px; font-weight: 600; color: var(--ink); }
+.chon-lang button[aria-pressed="true"] { background: var(--green); color: #fff; }
+
+/* Mục gập/mở trong panel */
+.muc-dau { width: 100%; display: flex; gap: 8px; align-items: center; padding: 11px 12px; border: 0; border-bottom: 1px solid var(--line); background: var(--panel); font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; text-align: left; color: var(--ink); }
+.muc-than { padding: 4px 0 10px; }
+.dong { display: flex; justify-content: space-between; gap: 8px; padding: 3px 12px; font-size: 12px; }
+.ok { color: var(--ok); } .canh-bao { color: var(--canh-bao); } .vuot { color: var(--vuot); } .thua { color: var(--thua); }
+
+/* Thanh hiển thị dưới bản vẽ */
+.thanh-hien-thi { display: flex; justify-content: center; padding: 8px 12px; }
+.thanh-hien-thi > div { display: flex; flex-wrap: wrap; border: 1px solid var(--line); background: var(--panel); }
+.thanh-hien-thi button { border: 0; border-right: 1px solid var(--line); background: var(--panel); padding: 7px 10px; font-size: 12px; color: var(--ink); }
+.thanh-hien-thi button:last-child { border-right: 0; }
+.thanh-hien-thi button[aria-pressed="true"] { font-weight: 700; }
+
+.chan-trang { padding: 10px 24px; font-size: 12px; color: var(--muted-text); }

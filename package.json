@@ -1,0 +1,13 @@
+{
+  "name": "unitmix",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Unitmix — lập cơ cấu căn hộ từ chỉ tiêu quy hoạch",
+  "author": "NghiaVT",
+  "workspaces": ["web"],
+  "scripts": {
+    "dev": "npm -w web run dev",
+    "build": "npm -w web run build",
+    "test": "npm -w web run test"
+  }
+}

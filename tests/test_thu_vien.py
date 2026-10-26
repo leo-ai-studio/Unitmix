@@ -75,5 +75,6 @@ def test_hinh_hoc_tach_tep():
 def test_nguon_ghi_commit():
     n = _doc("nguon.json")
     assert re.fullmatch(r"[0-9a-f]{7,40}", n["commit"])
-    assert len(n["tep"]) == 6
+    assert len(n["tep"]) == 7
+    assert (LIB / "pccc.json").exists()
     assert all(re.fullmatch(r"[0-9a-f]{64}", v) for v in n["tep"].values())

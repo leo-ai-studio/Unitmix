@@ -17,7 +17,7 @@ import quy_tac_ten as q  # noqa: E402
 
 GOC = Path(__file__).resolve().parents[1]
 LIB = GOC / "web" / "public" / "lib"
-TEP_NGUON = ["towers.json", "toa_dwg.json", "units.json", "unit_geometry.json", "can3d.json", "core_geometry.json"]
+TEP_NGUON = ["towers.json", "toa_dwg.json", "units.json", "unit_geometry.json", "can3d.json", "core_geometry.json", "tu_pccc.json"]
 
 
 def _doc(p: Path):
@@ -95,6 +95,7 @@ def chep(nguon: Path, bang_ten: bool) -> None:
             "thang_bo": t.get("thang_bo_vi_tri"), "file_dwg": w["file"],
         })
 
+    _ghi(LIB / "pccc.json", d["tu_pccc.json"], gon=False)
     _ghi(LIB / "can.json", can, gon=False)
     _ghi(LIB / "toa.json", toa)
     _ghi(LIB / "nguon.json", {
