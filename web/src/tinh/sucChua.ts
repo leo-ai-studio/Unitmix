@@ -16,7 +16,9 @@ export function sucChua(lo: Lo): SucChua {
   const ct = lo.temDat.chiTieu;
   const dtLo = lo.ranh.length >= 3 ? dienTich(lo.ranh) : 0;
   if (dtLo <= 0) return { dtLo: null, dtxdMax: null, dtSanMax: null, soCanUoc: null, choDoCan: null, choXeMayCan: null, cayXanhCan: null };
-  const soCanUoc = ct.nguoiMoiCan > 0 ? Math.floor(ct.danSoMax / ct.nguoiMoiCan) : null;
+  // Lô không phải đất ở (dịch vụ, cây xanh, giáo dục…) không có căn, nên không ước số căn và chỗ đỗ theo căn.
+  const datO = lo.temDat.chucNang !== 'khac';
+  const soCanUoc = datO && ct.nguoiMoiCan > 0 ? Math.floor(ct.danSoMax / ct.nguoiMoiCan) : null;
   const tron = (v: number) => Math.round(v * 100) / 100;
   return {
     dtLo: tron(dtLo),

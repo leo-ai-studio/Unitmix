@@ -4,7 +4,7 @@ import { t, useLang } from '../i18n/i18n';
 import { useKho } from '../kho/kho';
 import { ghiNhoDuAn, layMaSua, nhanMaTuLink } from '../kho/maSua';
 import type { TrangThaiPA } from '../tinh/kieu';
-import { taoPAMoi } from '../tinh/macDinh';
+import { loDangChonHoacDatO, taoPAMoi } from '../tinh/macDinh';
 import { KhungSoan } from '../ui/KhungSoan';
 import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
 import { tinhChiTieu, type KetQuaChiTieu } from '../tinh/chiTieu';
@@ -85,7 +85,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
   const chungXep = { ...chung, tv, toaId, chonToa: setToaId };
-  const loDangChon = buoc === 'xep' ? loDangXep(kho.pa, loId) : kho.pa.lo.find((l) => l.id === loId) ?? kho.pa.lo[0];
+  const loDangChon = buoc === 'xep' ? loDangXep(kho.pa, loId) : loDangChonHoacDatO(kho.pa.lo, loId);
   const toaDangChon = buoc === 'xep' ? kho.pa.toa.find((x) => x.id === toaId) : undefined;
   const chonBuoc = (
     <div class="chon-buoc">

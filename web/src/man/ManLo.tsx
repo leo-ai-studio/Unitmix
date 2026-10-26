@@ -4,7 +4,7 @@ import { t } from '../i18n/i18n';
 import type { DongChiTieu, KetQuaChiTieu } from '../tinh/chiTieu';
 import { dienTich } from '../tinh/hinhHoc';
 import { LOAI_CAN, type ChiTieuQH, type ChucNang, type HeSoDTSan, type Lo, type TrangThaiPA } from '../tinh/kieu';
-import { taoLo } from '../tinh/macDinh';
+import { loDangChonHoacDatO, taoLo } from '../tinh/macDinh';
 import { sucChua } from '../tinh/sucChua';
 import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { MucGap } from '../ui/MucGap';
@@ -43,7 +43,7 @@ export function LoTrai({ pa, sua, chiXem, loId, chonLo }: Chung) {
   const [loiDoc, setLoiDoc] = useState('');
   const [chon, setChon] = useState({ ranh: '', chiGioi: '', tem: '', xungQuanh: '' });
   const [kt, setKt] = useState({ rong: 80, dai: 60 });
-  const lo = pa.lo.find((l) => l.id === loId) ?? pa.lo[0] ?? null;
+  const lo = loDangChonHoacDatO(pa.lo, loId);
 
   async function docTep(f: File) {
     setLoiDoc('');
@@ -192,7 +192,7 @@ export function LoGiua({ pa, loId, chonLo }: Chung) {
           <polyline key={`xq${i}`} points={sPoly(d)} fill="none" stroke="var(--muted)" stroke-width="1" vector-effect="non-scaling-stroke" />
         ))}
         {pa.lo.map((l) => {
-          const chon = l.id === (loId ?? pa.lo[0].id);
+          const chon = l.id === loDangChonHoacDatO(pa.lo, loId)?.id;
           const xs = l.ranh.map((q) => q[0]), ys = l.ranh.map((q) => q[1]);
           const tam: [number, number] = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
           return (
@@ -217,7 +217,7 @@ export function LoGiua({ pa, loId, chonLo }: Chung) {
 
 /** Panel phải của cấp Lô: sức chứa và chỉ tiêu Đạt / Mục tiêu. */
 export function LoPhai({ pa, loId, kq }: Chung & { kq: KetQuaChiTieu | null }) {
-  const lo = pa.lo.find((l) => l.id === loId) ?? pa.lo[0];
+  const lo = loDangChonHoacDatO(pa.lo, loId);
   if (!lo) return null;
   const sc = sucChua(lo);
   const dong = kq?.theoLo[lo.id]?.dong ?? [];
