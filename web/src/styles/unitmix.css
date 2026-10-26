@@ -7,6 +7,9 @@
 body { font-size: 13px; line-height: 1.45; }
 
 .khung { min-height: 100vh; display: flex; flex-direction: column; }
+/* Kit LEO dựng sẵn bố cục có thanh bên (main lùi 230 px, header cao 76 px); Unitmix dùng thanh trên nên huỷ. */
+.khung main { margin-left: 0; }
+.khung header { height: auto; justify-content: flex-start; }
 .khung-than { flex: 1; display: flex; flex-wrap: wrap; min-height: 0; }
 .panel-trai, .panel-phai { background: var(--panel); overflow: auto; max-height: calc(100vh - 53px); }
 .panel-trai { flex: 0 0 270px; border-right: 1px solid var(--line); }
