@@ -97,3 +97,18 @@ body { font-size: 13px; line-height: 1.45; }
 .bang-ct { display: grid; grid-template-columns: 1.4fr 1.2fr 0.9fr; gap: 6px; }
 .bang-ct span:nth-child(n+2) { text-align: right; }
 .bang-ct.dau { font-weight: 700; color: var(--muted-text); }
+
+/* Màn Xếp tòa */
+.chon-buoc { display: flex; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.chon-buoc .nhom-nut { flex: 1; }
+.chon-buoc .nhom-nut button { flex: 1; }
+.the-mau { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 12px; border-bottom: 1px solid var(--line); font-size: 12px; }
+.the-mau > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.the-mau .nut-phu { padding: 5px 9px; white-space: nowrap; }
+.o-mau { display: inline-block; width: 10px; height: 10px; border: 1px solid var(--line); vertical-align: -1px; }
+.bang-co-cau { overflow-x: auto; }
+.bang-cc { display: grid; gap: 4px; font-size: 11px; width: 100%; border: 0; background: none; color: var(--ink); text-align: left; }
+.bang-cc span:nth-child(n+2), .bang-cc b { text-align: right; }
+.bang-cc.dau { font-weight: 700; color: var(--muted-text); }
+.bang-cc.tong { font-weight: 700; border-top: 1px solid var(--line); }
+.bang-cc.chon { background: var(--selected); }

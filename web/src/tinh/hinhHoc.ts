@@ -54,6 +54,25 @@ export function hopDienTich(polys: Diem[][]): number {
   return ps.length ? dtPaths(hop(ps)) : 0;
 }
 
+/** `poly` nằm trọn trong `vung` (phần chờm ra ngoài dưới 0,01 m²). */
+export const namTrong = (poly: Diem[], vung: Diem[]): boolean =>
+  poly.length >= 3 && vung.length >= 3 && dtPaths(tru([toPath(poly)], [toPath(vung)])) < 0.01;
+
+/** Trọng tâm diện tích của đa giác (đa giác suy biến thì lấy trung bình đỉnh). */
+export function trongTam(poly: Diem[]): Diem {
+  let a = 0, cx = 0, cy = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const [x1, y1] = poly[i];
+    const [x2, y2] = poly[(i + 1) % poly.length];
+    const k = x1 * y2 - x2 * y1;
+    a += k;
+    cx += (x1 + x2) * k;
+    cy += (y1 + y2) * k;
+  }
+  if (Math.abs(a) < 1e-9) return [poly.reduce((s, p) => s + p[0], 0) / poly.length, poly.reduce((s, p) => s + p[1], 0) / poly.length];
+  return [cx / (3 * a), cy / (3 * a)];
+}
+
 export function xoayTinhTien(poly: Diem[], x: number, y: number, gocDo: number): Diem[] {
   const a = (gocDo * Math.PI) / 180;
   const c = Math.cos(a), s = Math.sin(a);

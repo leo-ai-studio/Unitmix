@@ -11,6 +11,7 @@ import { tinhChiTieu, type KetQuaChiTieu } from '../tinh/chiTieu';
 import type { ThuVien } from '../tinh/kieu';
 import { taiThuVien } from '../tinh/thuVien';
 import { LoGiua, LoPhai, LoTrai } from './ManLo';
+import { XepGiua, XepPhai, XepTrai, loDangXep } from './ManXepToa';
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
 
@@ -79,8 +80,20 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
   const chiXem = kho.cheDo === 'chi_xem';
   const kq: KetQuaChiTieu | null = tv ? tinhChiTieu(kho.pa, tv) : null;
+  const [buoc, setBuoc] = useState<'lo' | 'xep'>('lo');
+  const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
-  const loDangChon = kho.pa.lo.find((l) => l.id === loId) ?? kho.pa.lo[0];
+  const chungXep = { ...chung, tv, toaId, chonToa: setToaId };
+  const loDangChon = buoc === 'xep' ? loDangXep(kho.pa, loId) : kho.pa.lo.find((l) => l.id === loId) ?? kho.pa.lo[0];
+  const toaDangChon = buoc === 'xep' ? kho.pa.toa.find((x) => x.id === toaId) : undefined;
+  const chonBuoc = (
+    <div class="chon-buoc">
+      <div class="nhom-nut" role="group" aria-label={t('buoc.nhom')}>
+        <button type="button" aria-pressed={buoc === 'lo'} onClick={() => setBuoc('lo')}>{t('buoc.lo')}</button>
+        <button type="button" aria-pressed={buoc === 'xep'} onClick={() => setBuoc('xep')}>{t('buoc.xep')}</button>
+      </div>
+    </div>
+  );
 
   const thongBao = (
     <>
@@ -97,7 +110,11 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
 
   return (
     <KhungSoan
-      capDo={{ lo: `${da.ten} · ${tenPA}${loDangChon ? ' · ' + loDangChon.temDat.kyHieu : ''}`.toUpperCase(), coTe: 'tren' }}
+      capDo={{
+        lo: `${da.ten} · ${tenPA}${loDangChon ? ' · ' + loDangChon.temDat.kyHieu : ''}`.toUpperCase(),
+        coTe: 'tren',
+        toa: toaDangChon ? tv?.toa.get(toaDangChon.mauId)?.ten_vi ?? toaDangChon.mauId : undefined,
+      }}
       cheDo={kho.cheDo}
       onCheDo={kho.datCheDo}
       duocSua={duocSua}
@@ -105,9 +122,9 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onHoanTac={kho.hoanTac}
       onLamLai={kho.lamLai}
       thongBao={thongBao}
-      trai={<LoTrai {...chung} />}
-      giua={<LoGiua {...chung} />}
-      phai={<LoPhai {...chung} kq={kq} />}
+      trai={<>{chonBuoc}{buoc === 'lo' ? <LoTrai {...chung} /> : <XepTrai {...chungXep} />}</>}
+      giua={buoc === 'lo' ? <LoGiua {...chung} /> : <XepGiua {...chungXep} />}
+      phai={buoc === 'lo' ? <LoPhai {...chung} kq={kq} /> : <XepPhai {...chungXep} kq={kq} />}
     />
   );
 }

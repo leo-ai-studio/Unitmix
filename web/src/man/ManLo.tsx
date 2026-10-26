@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { RANH_HATCH, napDxf, taoLoTuDxf, type BanDxf } from '../dxf/napDxf';
 import { t } from '../i18n/i18n';
-import type { KetQuaChiTieu } from '../tinh/chiTieu';
+import type { DongChiTieu, KetQuaChiTieu } from '../tinh/chiTieu';
 import { dienTich } from '../tinh/hinhHoc';
 import { LOAI_CAN, type ChiTieuQH, type ChucNang, type HeSoDTSan, type Lo, type TrangThaiPA } from '../tinh/kieu';
 import { taoLo } from '../tinh/macDinh';
@@ -222,7 +222,6 @@ export function LoPhai({ pa, loId, kq }: Chung & { kq: KetQuaChiTieu | null }) {
   const sc = sucChua(lo);
   const dong = kq?.theoLo[lo.id]?.dong ?? [];
   const m2 = { donVi: 'm²' };
-  const dv: Record<string, { thapPhan?: number; donVi?: string }> = { matDo: { thapPhan: 1, donVi: '%' }, dtSan: m2, cayXanh: m2 };
   return (
     <>
       <MucGap tieuDe={`${t('muc.sucChua')} · ${lo.temDat.kyHieu}`} mo>
@@ -234,19 +233,28 @@ export function LoPhai({ pa, loId, kq }: Chung & { kq: KetQuaChiTieu | null }) {
         <div class="dong"><span>{t('sc.choXeMayCan')}</span><b>{fmtSo(sc.choXeMayCan, { donVi: t('sc.cho') })}</b></div>
         <div class="dong"><span>{t('sc.cayXanhCan')}</span><b>{fmtSo(sc.cayXanhCan, m2)}</b></div>
       </MucGap>
-      <MucGap tieuDe={t('muc.chiTieuLo')} mo>
-        <div class="dong bang-ct dau"><span>{t('ct.chiTieu')}</span><span>{t('ct.dat')}</span><span>{t('ct.mucTieu')}</span></div>
-        {dong.map((d) => (
-          <div class="dong bang-ct" key={d.khoa}>
-            <span>{t(`dong.${d.khoa}`)}</span>
-            <span class={d.dat === null ? '' : d.muc === 'vuot' ? 'vuot' : d.muc === 'canh_bao' ? 'canh-bao' : 'ok'}>
-              {fmtSo(d.dat, dv[d.khoa])}
-              {d.chenh !== null && ` (${d.chenh > 0 ? '+' : ''}${fmtSo(d.chenh, { thapPhan: dv[d.khoa]?.thapPhan })})`}
-            </span>
-            <span>{d.mucTieu === null ? '—' : `${d.chieu === '<=' ? '≤' : '≥'} ${fmtSo(d.mucTieu, dv[d.khoa])}`}</span>
-          </div>
-        ))}
-      </MucGap>
+      <BangChiTieuLo dong={dong} />
     </>
+  );
+}
+
+/** Bảng chỉ tiêu lô Đạt (kèm chênh) / Mục tiêu; dùng ở cấp Lô và màn Xếp tòa. */
+export function BangChiTieuLo({ dong }: { dong: DongChiTieu[] }) {
+  const m2 = { donVi: 'm²' };
+  const dv: Record<string, { thapPhan?: number; donVi?: string }> = { matDo: { thapPhan: 1, donVi: '%' }, dtSan: m2, cayXanh: m2 };
+  return (
+    <MucGap tieuDe={t('muc.chiTieuLo')} mo>
+      <div class="dong bang-ct dau"><span>{t('ct.chiTieu')}</span><span>{t('ct.dat')}</span><span>{t('ct.mucTieu')}</span></div>
+      {dong.map((d) => (
+        <div class="dong bang-ct" key={d.khoa}>
+          <span>{t(`dong.${d.khoa}`)}</span>
+          <span class={d.dat === null ? '' : d.muc === 'vuot' ? 'vuot' : d.muc === 'canh_bao' ? 'canh-bao' : 'ok'}>
+            {fmtSo(d.dat, dv[d.khoa])}
+            {d.chenh !== null && ` (${d.chenh > 0 ? '+' : ''}${fmtSo(d.chenh, { thapPhan: dv[d.khoa]?.thapPhan })})`}
+          </span>
+          <span>{d.mucTieu === null ? '—' : `${d.chieu === '<=' ? '≤' : '≥'} ${fmtSo(d.mucTieu, dv[d.khoa])}`}</span>
+        </div>
+      ))}
+    </MucGap>
   );
 }

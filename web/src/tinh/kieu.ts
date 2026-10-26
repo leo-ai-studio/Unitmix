@@ -36,6 +36,7 @@ export type ToaDat = {
   coApMai: boolean;
   deOffset: number; // m; 0 = đế bằng đúng chân tháp
   canTheo: Record<string, string>; // id căn gốc -> id căn thay
+  khoa?: boolean; // khoá: không kéo, không sửa thông số
 };
 
 export type ThongSoHam = {
