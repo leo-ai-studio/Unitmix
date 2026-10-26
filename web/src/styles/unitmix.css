@@ -83,3 +83,17 @@ body { font-size: 13px; line-height: 1.45; }
 .dong-link { display: flex; gap: 8px; align-items: center; }
 .dong-link code { flex: 1; overflow-x: auto; white-space: nowrap; background: var(--band); padding: 6px 8px; border-radius: 4px; font-size: 12px; }
 .giua-man { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--muted-text); padding: 40px; }
+
+/* Ô nhập trong panel */
+.o-so, .o-chon { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 12px; font-size: 12px; }
+.o-so-nhap { display: inline-flex; align-items: center; gap: 4px; }
+.o-so input { width: 84px; text-align: right; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; background: var(--panel); }
+.o-chon select, .o-chon input { max-width: 150px; padding: 4px; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; background: var(--panel); }
+.o-so small { color: var(--muted-text); min-width: 18px; }
+.muted { color: var(--muted-text); }
+.muc-lo { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 7px 12px; border: 0; border-bottom: 1px solid var(--line); background: var(--panel); text-align: left; font-size: 12px; color: var(--ink); }
+.muc-lo.chon { background: var(--selected); }
+.muc-lo span { color: var(--muted-text); }
+.bang-ct { display: grid; grid-template-columns: 1.4fr 1.2fr 0.9fr; gap: 6px; }
+.bang-ct span:nth-child(n+2) { text-align: right; }
+.bang-ct.dau { font-weight: 700; color: var(--muted-text); }

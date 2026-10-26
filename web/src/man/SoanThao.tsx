@@ -6,10 +6,11 @@ import { ghiNhoDuAn, layMaSua, nhanMaTuLink } from '../kho/maSua';
 import type { TrangThaiPA } from '../tinh/kieu';
 import { taoPAMoi } from '../tinh/macDinh';
 import { KhungSoan } from '../ui/KhungSoan';
-import { MucGap } from '../ui/MucGap';
-import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
-import { fmtSo } from '../ui/so';
+import { tinhChiTieu, type KetQuaChiTieu } from '../tinh/chiTieu';
+import type { ThuVien } from '../tinh/kieu';
+import { taiThuVien } from '../tinh/thuVien';
+import { LoGiua, LoPhai, LoTrai } from './ManLo';
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
 
@@ -72,7 +73,14 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   useLang();
   const kho = useKho({ ma, paId, tenPA, maSua, duocSua, ban });
   const [boQuaNhap, setBoQuaNhap] = useState(false);
+  const [loId, setLoId] = useState<string | null>(null);
+  const [tv, setTv] = useState<ThuVien | null>(null);
+  useEffect(() => void taiThuVien().then(setTv, () => setTv(null)), []);
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
+  const chiXem = kho.cheDo === 'chi_xem';
+  const kq: KetQuaChiTieu | null = tv ? tinhChiTieu(kho.pa, tv) : null;
+  const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
+  const loDangChon = kho.pa.lo.find((l) => l.id === loId) ?? kho.pa.lo[0];
 
   const thongBao = (
     <>
@@ -89,7 +97,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
 
   return (
     <KhungSoan
-      capDo={{ lo: `${da.ten} · ${tenPA}`.toUpperCase(), coTe: 'tren' }}
+      capDo={{ lo: `${da.ten} · ${tenPA}${loDangChon ? ' · ' + loDangChon.temDat.kyHieu : ''}`.toUpperCase(), coTe: 'tren' }}
       cheDo={kho.cheDo}
       onCheDo={kho.datCheDo}
       duocSua={duocSua}
@@ -97,14 +105,9 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onHoanTac={kho.hoanTac}
       onLamLai={kho.lamLai}
       thongBao={thongBao}
-      trai={<MucGap tieuDe={t('muc.chiTieuQH')} mo><div class="dong"><span>{t('ct.dtLo')}</span><b>{fmtSo(null)}</b></div></MucGap>}
-      giua={
-        <>
-          <div style={{ flex: 1 }} />
-          <ThanhHienThi nhan={t('ht.nhom')} nut={[{ khoa: 'do', nhan: t('ht.do') }, { khoa: 'kt', nhan: t('ht.kichThuoc'), bat: true }, { khoa: 'cc', nhan: t('ht.coCau'), bat: true }]} />
-        </>
-      }
-      phai={<MucGap tieuDe={t('muc.chiTieuLo')} mo><div class="dong"><span>{t('ct.matDo')}</span><span>{fmtSo(kho.pa.lo.length ? null : undefined)}</span></div></MucGap>}
+      trai={<LoTrai {...chung} />}
+      giua={<LoGiua {...chung} />}
+      phai={<LoPhai {...chung} kq={kq} />}
     />
   );
 }
