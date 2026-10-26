@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { napDxf, taoLoTuDxf, type BanDxf } from '../dxf/napDxf';
+import { RANH_HATCH, napDxf, taoLoTuDxf, type BanDxf } from '../dxf/napDxf';
 import { t } from '../i18n/i18n';
 import type { KetQuaChiTieu } from '../tinh/chiTieu';
 import { dienTich } from '../tinh/hinhHoc';
@@ -50,8 +50,12 @@ export function LoTrai({ pa, sua, chiXem, loId, chonLo }: Chung) {
     try {
       const b = napDxf(await f.text());
       setBan(b);
+      // Ranh lập quy hoạch là ranh cả khu, không phải ranh lô.
+      const ranh = doanLop(b.lop.filter((l) => !/l[aậ]p\s*quy\s*ho[aạ]ch/i.test(l)), /RANH|LO|PLOT|BOUND/i);
+      const soHatch = b.lopHatch.reduce((a, l) => a + b.hatch(l).length, 0);
       setChon({
-        ranh: doanLop(b.lop, /RANH|LO|PLOT|BOUND/i),
+        // Bản vẽ SDĐ chỉ có ô đất tô hatch (lớp ranh kín ít ô hơn) thì lấy hatch.
+        ranh: soHatch > (ranh ? b.polyKin(ranh).length : 0) ? RANH_HATCH : ranh,
         chiGioi: doanLop(b.lop, /CGXD|CHI.?GIOI|SETBACK|BUILD.?LINE/i),
         tem: doanLop(b.lop, /TEM|KY.?HIEU|TAG|TEXT/i),
         xungQuanh: doanLop(b.lop, /HT|XQ|NHA|CONTEXT|ENV/i),
@@ -102,6 +106,7 @@ export function LoTrai({ pa, sua, chiXem, loId, chonLo }: Chung) {
                 <span>{t({ ranh: 'lo.lopRanh', chiGioi: 'lo.lopChiGioi', tem: 'lo.lopTem', xungQuanh: 'lo.lopXungQuanh' }[k])}</span>
                 <select value={chon[k]} onChange={(e) => setChon({ ...chon, [k]: e.currentTarget.value })}>
                   <option value="">{t('lo.khongChon')}</option>
+                  {k === 'ranh' && ban.lopHatch.length > 0 && <option value={RANH_HATCH}>{t('lo.ranhHatch')}</option>}
                   {ban.lop.map((l) => <option value={l}>{l}</option>)}
                 </select>
               </label>
