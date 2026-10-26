@@ -1,0 +1,9 @@
+name = "unitmix-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "unitmix"
+database_id = "00000000-0000-0000-0000-000000000000" # thay bằng id thật khi tạo D1 (Việc 12)
+migrations_dir = "migrations"

@@ -4,10 +4,13 @@
   "version": "0.1.0",
   "description": "Unitmix — lập cơ cấu căn hộ từ chỉ tiêu quy hoạch",
   "author": "NghiaVT",
-  "workspaces": ["web"],
+  "workspaces": [
+    "web",
+    "worker"
+  ],
   "scripts": {
     "dev": "npm -w web run dev",
     "build": "npm -w web run build",
-    "test": "npm -w web run test"
+    "test": "npm -w web run test && npm -w worker run test && python -m pytest tests -q"
   }
 }

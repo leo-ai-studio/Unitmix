@@ -1,0 +1,22 @@
+{
+  "name": "unitmix-worker",
+  "private": true,
+  "version": "0.1.0",
+  "author": "NghiaVT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.4.8",
+    "@cloudflare/workers-types": "^5.20261026.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.124.0"
+  },
+  "dependencies": {
+    "hono": "^4.13.14"
+  }
+}
