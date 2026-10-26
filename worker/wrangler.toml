@@ -1,9 +1,18 @@
-name = "unitmix-api"
+name = "unitmix"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
+workers_dev = true
+# Gắn tên miền riêng khi zone leo-ai.dev đã có trong tài khoản Cloudflare:
+# routes = [{ pattern = "unitmix.leo-ai.dev", custom_domain = true }]
+
+# Một Worker phục vụ cả giao diện (web/dist) lẫn API: /api/* vào Worker, còn lại là tệp tĩnh (SPA).
+[assets]
+directory = "../web/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
 
 [[d1_databases]]
 binding = "DB"
 database_name = "unitmix"
-database_id = "00000000-0000-0000-0000-000000000000" # thay bằng id thật khi tạo D1 (Việc 12)
+database_id = "a703077d-cc4e-4d77-819d-dd18108bc00d"
 migrations_dir = "migrations"
