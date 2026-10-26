@@ -11,11 +11,14 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "clipper-lib": "^6.4.2",
     "preact": "^10.24.3",
     "preact-iso": "^2.8.1"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.9.1",
+    "@types/clipper-lib": "^6.4.0",
+    "@types/node": "^24.19.2",
     "typescript": "^5.6.3",
     "vite": "^6.0.3",
     "vitest": "^3.2.7"
