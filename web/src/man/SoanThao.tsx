@@ -10,6 +10,7 @@ import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
 import { tinhChiTieu, type KetQuaChiTieu } from '../tinh/chiTieu';
 import type { ThuVien } from '../tinh/kieu';
 import { taiThuVien } from '../tinh/thuVien';
+import { tomTatPA } from '../tinh/tomTat';
 import { LoGiua, LoPhai, LoTrai } from './ManLo';
 import { XepGiua, XepPhai, XepTrai, loDangXep } from './ManXepToa';
 
@@ -72,10 +73,10 @@ export function SoanThao({ ma }: { ma: string }) {
 
 function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: string }) {
   useLang();
-  const kho = useKho({ ma, paId, tenPA, maSua, duocSua, ban });
+  const [tv, setTv] = useState<ThuVien | null>(null);
+  const kho = useKho({ ma, paId, tenPA, maSua, duocSua, ban, tomTat: tv ? (p) => tomTatPA(p, tv) : undefined });
   const [boQuaNhap, setBoQuaNhap] = useState(false);
   const [loId, setLoId] = useState<string | null>(null);
-  const [tv, setTv] = useState<ThuVien | null>(null);
   useEffect(() => void taiThuVien().then(setTv, () => setTv(null)), []);
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
   const chiXem = kho.cheDo === 'chi_xem';

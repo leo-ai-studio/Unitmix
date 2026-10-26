@@ -6,10 +6,16 @@ import { taoBoLuu } from './luu';
 
 const GIOI_HAN_HOAN_TAC = 100;
 
-type Mo = { ma: string; paId: string; tenPA: string; maSua: string | null; duocSua: boolean; ban: TrangThaiPA };
+type Mo = {
+  ma: string; paId: string; tenPA: string; maSua: string | null; duocSua: boolean; ban: TrangThaiPA;
+  /** Tóm tắt gửi kèm mỗi lần lưu (hiện ở danh sách PA); không có (chưa tải thư viện) thì gửi {}. */
+  tomTat?: (pa: TrangThaiPA) => unknown;
+};
 
 /** Trạng thái PA đang mở: sửa, hoàn tác/làm lại, chế độ sửa, tự lưu. */
-export function useKho({ ma, paId, tenPA, maSua, duocSua, ban }: Mo) {
+export function useKho({ ma, paId, tenPA, maSua, duocSua, ban, tomTat }: Mo) {
+  const tinhTomTat = useRef(tomTat);
+  tinhTomTat.current = tomTat;
   const [pa, setPA] = useState<TrangThaiPA>(ban);
   const [cheDo, setCheDo] = useState<CheDo>(duocSua ? 'tu_dong' : 'chi_xem');
   const [trangThaiLuu, setLuu] = useState<TrangThaiLuu>('da_luu');
@@ -33,7 +39,7 @@ export function useKho({ ma, paId, tenPA, maSua, duocSua, ban }: Mo) {
 
   const ap = (moi: TrangThaiPA) => {
     setPA(moi);
-    boLuu.thayDoi(moi, {});
+    boLuu.thayDoi(moi, tinhTomTat.current?.(moi) ?? {});
   };
 
   return {
