@@ -1,0 +1,87 @@
+/* Chuyển động: ngắn, ease-out, không nảy; kéo / chụm luôn bám tay (hiệu ứng chỉ sau khi thả hoặc khi bấm nút).
+   Chỉ đổi opacity / transform / màu, hoặc nằm trong lớp phủ, nên không bao giờ làm khung giữa đổi kích thước. */
+:root {
+  --dur-1: 120ms; --dur-2: 200ms; --dur-3: 280ms;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-io: cubic-bezier(.4, 0, .2, 1);
+  --nhay: #fdf1c7;
+}
+
+/* H6: nút, ô nhập */
+.nhom-nut button, .tab-xem button, .tab-buoc button, .thanh-hien-thi button, .nut-nho, .muc-lo, .the-mau,
+.nut-chu, .chon-lang button, .muc-dau, .thanh-3d .nhom-3d button, .chip-goc button {
+  transition: background-color var(--dur-1) var(--ease-io), border-color var(--dur-1) var(--ease-io), color var(--dur-1) var(--ease-io), transform var(--dur-1) var(--ease-out);
+}
+.nhom-nut button:not([aria-pressed="true"]):not(:disabled):hover,
+.thanh-hien-thi button:not([aria-pressed="true"]):hover,
+.nut-nho:not([aria-pressed="true"]):not(:disabled):hover,
+.muc-lo:not(.chon):hover, .muc-dau:hover, .nut-chu:not(:disabled):hover,
+.thanh-3d .nhom-3d button:not([aria-pressed="true"]):hover { background-color: var(--hover); }
+.nhom-nut button:active, .tab-xem button:active, .tab-buoc button:active, .thanh-hien-thi button:active, .nut-nho:active,
+.nut-chu:active, .chon-lang button:active, .thanh-3d .nhom-3d button:active { transform: scale(.97); }
+:is(button, input, select, textarea, summary, a):focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+input, select, textarea { transition: border-color var(--dur-1) var(--ease-io), box-shadow var(--dur-1) var(--ease-io); }
+
+/* H8: màu trạng thái */
+.ok, .canh-bao, .vuot, .thua { transition: color var(--dur-2) var(--ease-io); }
+
+/* H3: mục gập trượt mềm */
+.muc-than-boc { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur-3) var(--ease-out); }
+.muc-than-boc[data-mo="1"] { grid-template-rows: 1fr; }
+.muc-than-trong { overflow: hidden; min-height: 0; }
+.mui-ten { display: inline-block; transition: transform var(--dur-2) var(--ease-out); }
+.muc-dau[aria-expanded="true"] .mui-ten { transform: rotate(90deg); }
+
+/* H5: nền tab trượt sang tab mới */
+.tab-truot { position: relative; }
+.tab-truot > button { position: relative; z-index: 1; }
+.tab-truot > button[aria-pressed="true"] { background: transparent; }
+.nen-truot { position: absolute; z-index: 0; pointer-events: none; }
+.nen-truot.san { transition: left var(--dur-2) var(--ease-out), width var(--dur-2) var(--ease-out); }
+.tab-buoc .nen-truot { top: 3px; bottom: 3px; border-radius: 6px; background: var(--green); }
+.tab-xem .nen-truot { top: 0; bottom: 0; background: var(--panel); }
+
+/* H4: hộp thoại — nền mờ dần, thẻ phóng 0,96 → 1 và trồi 6 px (chạy lúc gắn vào DOM) */
+@keyframes nen-vao { from { opacity: 0; } }
+@keyframes the-vao { from { opacity: 0; transform: translateY(6px) scale(.96); } }
+.hop-thoai, .hop-3d { animation: nen-vao var(--dur-2) var(--ease-out); }
+.hop-thoai > div, .hop-3d > * { animation: the-vao var(--dur-2) var(--ease-out); }
+
+/* H7: ô số vừa đổi nháy nền (thêm class thì tức thì, gỡ class thì mờ dần) */
+.so-dong { transition: background-color .6s var(--ease-out); border-radius: 3px; }
+.so-dong.vua-doi { background-color: var(--nhay); transition: none; }
+
+/* H11: trạng thái lưu */
+@keyframes mo-dan { to { opacity: .45; } }
+.trang-thai-luu.dang::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--green); vertical-align: 1px; animation: leo-breathe 1s ease-in-out infinite; }
+.trang-thai-luu.da::after { content: " ✓"; }
+.trang-thai-luu.da { animation: mo-dan var(--dur-3) var(--ease-out) 2s forwards; }
+
+/* H17: 3D hiện dần sau lượt dựng đầu */
+.vung-3d canvas { opacity: 0; }
+.vung-3d.da-dung canvas { opacity: 1; transition: opacity var(--dur-3) var(--ease-out); }
+
+/* H19: tải xong mờ dần sang nội dung (vòng O lát chanh `spin-o` vẫn là chỉ báo tải) */
+@keyframes hien { from { opacity: 0; } }
+.ban-ve-svg { animation: hien var(--dur-2) var(--ease-out); }
+
+/* Menu "⋯" khi thanh trên hẹp: lớp phủ cố định, không chiếm chỗ trên thanh */
+.menu-them { display: none; }
+.menu-them-bang { position: fixed; z-index: 60; min-width: 140px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 20px rgba(0, 0, 0, .14); padding: 4px; animation: the-vao var(--dur-1) var(--ease-out); }
+.menu-them-bang > button { border: 0; background: none; text-align: left; padding: 7px 10px; font-size: 12px; color: var(--ink); border-radius: 4px; white-space: nowrap; }
+.menu-them-bang > button:not(:disabled):hover { background-color: var(--hover); }
+.menu-them-bang > button:disabled { opacity: .4; }
+.menu-them-lang { display: flex; gap: 4px; padding: 4px 4px 2px; }
+.menu-them-lang button { flex: 1; border: 1px solid var(--secondary); background: var(--panel); border-radius: 4px; padding: 4px 8px; font-size: 11px; font-weight: 600; color: var(--ink); }
+.menu-them-lang button[aria-pressed="true"] { background: var(--green); color: #fff; }
+@media (max-width: 1200px) {
+  .thanh-tren .nhom-xuat { display: none; }
+  .thanh-tren .menu-them { display: inline-flex; flex-shrink: 0; }
+}
+
+/* Giảm chuyển động: tắt hết, giữ đổi màu. Vòng O (spin-o, brand-o) đã có quy ước riêng ở leo-ui.css. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.spin-o):not(.brand-o), *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; animation-delay: 0s !important; }
+  .trang-thai-luu.dang::before { animation: none; }
+  .trang-thai-luu.da { animation: none; }
+}

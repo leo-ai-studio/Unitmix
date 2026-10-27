@@ -2,6 +2,7 @@ import { render } from 'preact';
 import { LocationProvider, Route, Router } from 'preact-iso';
 import './styles/leo-ui.css';
 import './styles/unitmix.css';
+import './styles/chuyen-dong.css';
 import { langHienTai } from './i18n/i18n';
 import { DuAn } from './man/DuAn';
 import { SoanThao } from './man/SoanThao';
