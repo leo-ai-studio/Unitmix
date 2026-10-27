@@ -385,7 +385,7 @@
   "tang.chuaCoToa": "No tower yet. Place one in step 2 · Place towers.",
   "tang.toa": "Towers in this option",
   "tang.coCauMucTieu": "Target unit mix",
-  "tang.mixGhiChu": "The mix is only a guide: whole units cannot match the ratio exactly. Optimising only swaps to a type of the same width, depth and middle/corner position; units are never redrawn.",
+  "tang.mixGhiChu": "The mix is only a guide: whole units cannot match the ratio exactly. Optimising swaps to a type of the same depth and middle/corner position; with \"Allow other widths + STRETCH\" on it also swaps pairs of middle units to other widths or stretches them ±100…500 mm through the living room (QT-81), keeping each segment's total width and packing tight; corner units keep their width.",
   "tang.toiUu": "Optimise to the mix",
   "tang.veGoc": "Back to original units",
   "tang.daToiUu": "Swapped {n} units; deviation {a} → {b}.",

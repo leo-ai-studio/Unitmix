@@ -385,7 +385,7 @@
   "tang.chuaCoToa": "Chưa có tòa. Đặt tòa ở bước 2 · Xếp tòa.",
   "tang.toa": "Tòa trong PA",
   "tang.coCauMucTieu": "Cơ cấu căn mục tiêu",
-  "tang.mixGhiChu": "Mix chỉ là hướng dẫn: số căn nguyên không chia đúng tỷ lệ. Tối ưu chỉ đổi sang mẫu cùng bề ngang, cùng chiều sâu, cùng vị trí giữa/góc; không vẽ lại căn.",
+  "tang.mixGhiChu": "Mix chỉ là hướng dẫn: số căn nguyên không chia đúng tỷ lệ. Tối ưu đổi sang mẫu cùng chiều sâu, cùng vị trí giữa/góc; khi bật \"Đổi khác bề ngang + STRETCH\" thì đổi cả cặp căn giữa khác bề ngang hoặc kéo ±100…500 mm qua phòng khách (QT-81), giữ tổng bề ngang đoạn và dồn khít; căn góc chỉ đổi cùng bề ngang.",
   "tang.toiUu": "Tối ưu theo cơ cấu",
   "tang.veGoc": "Về mẫu căn gốc",
   "tang.daToiUu": "Đã đổi {n} căn; điểm lệch {a} → {b}.",
