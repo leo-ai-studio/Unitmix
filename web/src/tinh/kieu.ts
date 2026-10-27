@@ -35,8 +35,14 @@ export type TemDat = {
 };
 export type Lo = { id: string; temDat: TemDat; ranh: Diem[]; chiGioi: Diem[] | null; xungQuanh: Diem[][] };
 
-/** Tỷ lệ (0–1) DT từng hạng mục được tính vào DT sàn chỉ tiêu. Giá trị mặc định chờ chủ nhiệm chốt. */
-export type HeSoDTSan = { can: number; chung: number; thuongMai: number; ham: number };
+/**
+ * Tỷ lệ (0–1) DT từng hạng mục được tính vào DT sàn tính HSSDĐ (QCVN 01:2021/BXD 1.4.21: tổng DT sàn gồm cả tầng hầm,
+ * trừ DT phục vụ kỹ thuật, PCCC, lánh nạn và đỗ xe). `ham` = phần hầm còn lại sau khi trừ đỗ xe / kỹ thuật (`PhanHam`).
+ * `apMai` thiếu thì coi là 1.
+ */
+export type HeSoDTSan = { can: number; chung: number; thuongMai: number; ham: number; apMai?: number };
+/** Tỷ lệ (0–1) sàn hầm dùng cho đỗ xe và kỹ thuật / PCCC — phần này không tính HSSDĐ. Giá trị tạm khi chưa đo từ màn Hầm. */
+export type PhanHam = { doXe: number; kyThuat: number };
 export type NguongMau = { dtCanM2: number; kichThuocM: number; coCauDiem: number };
 
 export type ToaDat = {
@@ -55,7 +61,29 @@ export type ToaDat = {
   canTheo: Record<string, string>; // id căn gốc -> id căn thay
   canViTri?: Record<string, string>; // khoá vị trí trên tầng ("mặt:phần tử") -> id căn thay; thắng canTheo
   khoa?: boolean; // khoá: không kéo, không sửa thông số
+  /** Có ít nhất 1 thang máy chở được băng ca (QCVN 04 chú thích 2.4.1); chưa khai = undefined. */
+  thangBangCa?: boolean;
+  /** Không gian nhân viên quản lý, trông xe, bảo vệ, kỹ thuật của tòa (QCVN 04 2.2.18); chưa khai = undefined. */
+  nhanVien?: { so: number; dtM2: number };
+  congNang?: Record<string, CongNangO>; // khoá vị trí -> công năng ô của bố cục chung (thiếu = căn hộ)
+  /** Bố cục riêng theo tầng: số thứ tự tầng điển hình (1..soTangDH) -> ghi đè lên bố cục chung. Thiếu = mọi tầng như nhau. */
+  tangRieng?: Record<number, BoCucTang>;
+  /** Lõi thang: khoá "mặt:phần tử" của lõi -> cửa vào, đi xuống hầm / lên mái. Chỉ lưu, màn hầm đọc sau. */
+  loi?: Record<string, ThongTinLoi>;
 };
+
+/** Công năng một ô căn trên tầng. Ô khác 'can' không tính là căn (số căn, cơ cấu, dân số); DT cộng vào hạng mục tương ứng. */
+export type CongNangO = 'can' | 'shcd' | 'ky_thuat' | 'thuong_mai' | 'trong';
+export const CONG_NANG_O: CongNangO[] = ['can', 'shcd', 'ky_thuat', 'thuong_mai', 'trong'];
+/** Ghi đè một tầng: chỉ các vị trí khác bố cục chung; `coCauMucTieu` = mục tiêu cơ cấu riêng của tầng (vd. tầng áp mái). */
+export type BoCucTang = { canViTri?: Record<string, string>; congNang?: Record<string, CongNangO>; coCauMucTieu?: Record<LoaiCan, number> };
+/** Thang trong lõi có đi xuống hầm / lên mái không. */
+export type DiXuyen = { ham: boolean; mai: boolean };
+export type ThongTinLoi = { cua: 'trai' | 'phai'; thangBo: DiXuyen; thangMay: DiXuyen; hopKT: DiXuyen };
+
+/** Thông số cấu tạo dùng tính thông thủy: thông thủy = cao tầng − dày sàn + trần. Giá trị tạm, chờ chủ nhiệm chốt. */
+export type CauTao = { daySanTranM: number };
+export const CAU_TAO_MAC_DINH: CauTao = { daySanTranM: 0.3 };
 
 export type ThongSoHam = {
   soTang: number;
@@ -65,6 +93,58 @@ export type ThongSoHam = {
   choDai: number;
   choRong: number;
   dtKho: number;
+  /* Các trường dưới đây thêm cho màn Hầm; PA cũ thiếu thì `hamDayDu` (tinh/ham.ts) điền mặc định. */
+  /** Lùi ranh hầm vào trong so với chỉ giới (nếu có) hoặc ranh lô, m. */
+  lui?: number;
+  /** Chiều cao tầng hầm (sàn tới sàn), m. */
+  caoTang?: number;
+  /** Chiều dày kết cấu sàn + dầm (để tính thông thủy), m. */
+  dayKetCau?: number;
+  /** Cạnh cột kế thừa từ chân tòa, m. */
+  cotRong?: number;
+  /** Số chỗ ô tô cho người khuyết tật (xe lăn, rộng 3,5 m) mỗi tầng hầm. */
+  choXeLan?: number;
+  /** Bề rộng ô kho, m; hành lang kho, m; số kho mỗi tầng. */
+  rongKho?: number;
+  lanKho?: number;
+  khoMoiTang?: number;
+  /** Tầng hầm (1 = B1) đặt khu xe máy, xe đạp; DT dành cho xe máy (m²), null = lấy đúng DT yêu cầu. */
+  tangXeMay?: number;
+  dtXeMay?: number | null;
+  /** Tỷ lệ (0–1) sàn mỗi tầng hầm dành cho phòng kỹ thuật. */
+  tyLeKyThuat?: number;
+  /** Dùng gara cơ khí (QCVN 04:2021 2.2.17.1 d). */
+  garaCoKhi?: boolean;
+  ram?: RamHam;
+  xeDien?: KhuXeDien;
+};
+
+/** Loại ram theo QCVN 13:2018 2.2.1.28 a): thẳng có mái che, cong, hở (không mái che). */
+export type LoaiRam = 'thang_mai' | 'cong' | 'ho';
+/** Ram vào hầm: tâm (x, y) và hướng (độ, theo trục dài ram); null = tự đặt dọc cạnh dài nhất của ranh hầm. */
+export type RamHam = {
+  x: number | null;
+  y: number | null;
+  gocDo: number | null;
+  dai: number; // chiều dài phần dốc theo phương ngang, m
+  rong: number;
+  loai: LoaiRam;
+  docNgang: number; // %
+  coNguoiDi: boolean;
+  viaHe: number; // m
+};
+/** Khu xe điện / sạc / đổi pin theo DỰ THẢO Sửa đổi 01:2026 QCVN 04:2021/BXD (chưa có số, chưa hiệu lực): chỉ cảnh báo. */
+export type KhuXeDien = {
+  bat: boolean;
+  tang: number; // tầng hầm đặt khu sạc (1 = B1)
+  choOto: number; // số chỗ sạc ô tô
+  choXeMay: number; // số chỗ sạc xe máy, xe đạp điện
+  vungOto: number; // số chỗ sạc ô tô mỗi phân vùng
+  vungXeMay: number;
+  dtXeMayMoiCho: number; // m²/chỗ xe máy gồm lối đi (để ước DT khu sạc xe máy)
+  khoangCach: number; // m, giữa các khu / phân vùng
+  tuongNgan: boolean; // có tường / vách ngăn không cháy cao ≥ 2 m
+  tuDoiPinTang: number | null; // tầng hầm đặt tủ đổi pin; null = không có
 };
 
 /** Góc nhìn 3D đã lưu (m, toạ độ three: X = x, Y = cao, Z = −y). `che` = cảnh toàn dự án hay một công trình. */
@@ -77,7 +157,10 @@ export type TrangThaiPA = {
   nguong: NguongMau;
   toa: ToaDat[];
   ham: ThongSoHam;
+  /** Thiếu = PA lưu trước khi tính hầm vào HSSDĐ; `chuanHoaPA` điền mặc định. */
+  phanHam?: PhanHam;
   gocNhin?: GocNhin[];
+  cauTao?: CauTao;
 };
 
 /** Một mẫu tòa trong web/public/lib/toa.json (toạ độ mm như CAD). */
@@ -114,7 +197,29 @@ export type CanMau = {
   dt_tim_m2: number;
   /** Hốc logia lùi vào [x0, x1, y] chuẩn hoá theo rộng × sâu: phần x0..x1 từ độ sâu y tới mặt ngoài không thuộc căn. */
   logia_lui?: number[][] | null;
+  /** Phòng bóc từ CAD (scripts/boc_cad/boc_phong.py); thiếu khi bản vẽ không bóc được. */
+  phong?: Phong[];
+  /** Căn có cửa sổ tường ngoài lỗ thông thủy ≥ 600×600 mm làm cửa cứu nạn (tuỳ chọn). */
+  cua_cuu_nan?: boolean;
 };
+
+export type LoaiPhong = 'ngu' | 'khach' | 'bep' | 'wc' | 'khac';
+/** Một phòng của mẫu căn. `ranh` tính bằng mm trong hệ của mẫu căn: x = u × rong_mm, y = v × sau_mm (y = 0 phía hành lang). */
+export type Phong = {
+  ten: string;
+  loai: LoaiPhong;
+  ranh: Diem[];
+  dt_m2: number;
+  /** Đường kính đường tròn nội tiếp lớn nhất (m). */
+  d_min_m: number;
+  /** Phòng giáp mặt ngoài (thông thoáng, chiếu sáng tự nhiên — QCVN 04:2021/BXD 2.2.4.4). */
+  ke_mat_ngoai: boolean;
+  /** true = loại phòng suy theo quy tắc (CAD không có nhãn tên phòng). */
+  doan?: boolean;
+};
+
+/** Tên cũ dùng ở luật QCVN 04 (tinh/qcvn04.ts). */
+export type PhongCan = Phong;
 
 export type ThuVien = { toa: Map<string, ToaMau>; can: Map<string, CanMau> };
 
@@ -123,5 +228,6 @@ export const taoThuVien = (toa: ToaMau[], can: CanMau[]): ThuVien => ({
   can: new Map(can.map((c) => [c.id, c])),
 });
 
-export const HE_SO_MAC_DINH: HeSoDTSan = { can: 1, chung: 1, thuongMai: 1, ham: 0 };
+export const HE_SO_MAC_DINH: HeSoDTSan = { can: 1, chung: 1, thuongMai: 1, ham: 1, apMai: 1 };
+export const PHAN_HAM_MAC_DINH: PhanHam = { doXe: 0.75, kyThuat: 0.1 };
 export const NGUONG_MAC_DINH: NguongMau = { dtCanM2: 2, kichThuocM: 0.2, coCauDiem: 5 };

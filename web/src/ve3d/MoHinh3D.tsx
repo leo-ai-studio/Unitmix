@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { GocNhin, ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
-import { canDangDung, viTriCan } from '../tinh/matBang';
+import { boCucTang, canDangDung, nhomTang, viTriCan } from '../tinh/matBang';
 import { idLoi, tai, type HinhLoi } from '../ve/hinhHocThuVien';
 import type { ToaVe } from '../ve/MatBangTang';
 import { dungCan, type Khoi3d } from './dungCan';
@@ -33,11 +33,12 @@ type PropsToa = { toa: ToaDat; mau: ToaVe; tv: ThuVien; pa: TrangThaiPA; dauThan
 
 /** Tab Mô hình: 3D cả tòa đang xem (khối đế + tầng điển hình + mái + tum). */
 export function MoHinhToa({ toa, mau, tv, dauThanh, ...luu }: PropsToa) {
-  const canIds = useMemo(() => viTriCan(mau, tv).map((vt) => canDangDung(vt, toa)), [mau, toa.canTheo, toa.canViTri, tv]);
+  // căn của mọi bố cục tầng (chung + tầng riêng); chữ ký bố cục vào khoá để dựng lại khi đổi theo tầng / công năng ô
+  const canIds = useMemo(() => [...new Set(nhomTang(toa).flatMap(({ tang }) => { const bc = boCucTang(toa, tang); return viTriCan(mau, tv).map((vt) => canDangDung(vt, bc)); }))], [mau, toa.canTheo, toa.canViTri, toa.tangRieng, tv]);
   const loiIds = useMemo(() => mau.mat.flatMap((m) => m.phan_tu.filter((q) => q.loai !== 'can').map((q) => idLoi(q.block))), [mau]);
   const nap = useNap3d(canIds, loiIds);
   if (!nap.xong) return <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('m3d.dangDung')}</span></div>;
-  const khoa = ['toa', mau.id, toa.soTangDe, toa.soTangDH, canIds.join()].join('|');
+  const khoa = ['toa', mau.id, toa.soTangDe, toa.soTangDH, canIds.join(), JSON.stringify([toa.canTheo, toa.canViTri, toa.congNang, toa.tangRieng])].join('|');
   return (
     <Khung3D khoa={khoa} gocBac={toa.gocDo} chinhThamSo toaNguyen dauThanh={dauThanh} {...luu} tenAnh={`Unitmix-${mau.id}`}
       tieuDe={`${mau.ten_vi.split(' · ')[0]} · ${toa.soTangDe ? toa.soTangDe + ' + ' : ''}${toa.soTangDH} ${t('m3d.tang')}`}
@@ -67,6 +68,7 @@ type PropsChinh = { pa: TrangThaiPA; tv: ThuVien; sua: (fn: (p: TrangThaiPA) => 
 /** Tab 3D: chọn Toàn dự án (ô đất, cây xanh, mặt nước, khối tòa) hoặc Công trình (tòa đang chọn, chi tiết từng căn); góc nhìn lưu trong PA. */
 export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, tenDuAn }: PropsChinh) {
   const [che, setChe] = useState<'du_an' | 'toa'>('du_an');
+  const [hienHam, setHienHam] = useState(true);
   const xem = che === 'toa' && toa && mau ? 'toa' : 'du_an';
   const gocLuu = (pa.gocNhin ?? []).filter((g) => g.che === xem && (xem === 'du_an' || g.toaId === toa?.id));
   const luu: LuuGoc = {
@@ -80,10 +82,15 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, tenDuAn }: PropsChi
       <button type="button" aria-pressed={xem === 'toa'} disabled={!toa} onClick={() => setChe('toa')}>{t('m3d.congTrinh')}</button>
     </span>
   );
+  const nutHam = (
+    <span class="nhom-3d" role="group" aria-label={t('m3d.ham')}>
+      <button type="button" aria-pressed={hienHam} title={t('m3d.hamGiaiThich')} onClick={() => setHienHam(!hienHam)}>{t('m3d.ham')}</button>
+    </span>
+  );
   if (xem === 'toa' && toa && mau) return <MoHinhToa pa={pa} tv={tv} toa={toa} mau={mau} dauThanh={nut} {...luu} />;
   const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';'), toa?.id ?? ''].join('|');
   return (
-    <Khung3D khoa={khoa} toaNguyen dauThanh={nut} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
-      gocBac={0} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null)} />
+    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham)} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
+      gocBac={0} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, hienHam)} />
   );
 }

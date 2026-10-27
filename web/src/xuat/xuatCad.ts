@@ -5,8 +5,8 @@
  *  · `.dxf`  — một tệp đứng một mình: mỗi mẫu căn là một BLOCK (hình học nhúng, mm), mỗi vị trí là một INSERT (xoay / lật gương).
  * Hàm thuần, toàn bộ chữ trong tệp là ASCII (tệp .scr / .dxf đọc theo bảng mã hệ thống).
  */
-import type { Diem, ThuVien, ToaDat } from '../tinh/kieu';
-import { canDangDung, viTriCan, type NetVe, type ToaCoMat } from '../tinh/matBang';
+import type { CongNangO, Diem, ThuVien } from '../tinh/kieu';
+import { canDangDung, congNangTai, viTriCan, type BoCuc, type NetVe, type ToaCoMat } from '../tinh/matBang';
 
 export const LE_CLIP_MM = 1200;
 /** Thư mục thư viện XREF mặc định, tương đối so với thư mục đặt bản vẽ ghép. */
@@ -14,7 +14,8 @@ export const THU_VIEN_XREF_MAC_DINH = './xref';
 
 export type DuLieuXuat = {
   mau: ToaCoMat & { duong_bao: Diem[]; hanhlang_ve?: Diem[][] };
-  toa: Pick<ToaDat, 'canTheo' | 'canViTri'>;
+  /** Bố cục MỘT tầng (dùng `boCucTang(toa, tang)`): đổi căn và công năng ô. */
+  toa: BoCuc;
   tv: ThuVien;
   /** Tên bản vẽ đích (không đuôi). */
   ten: string;
@@ -59,6 +60,7 @@ export function danhSachChen(d: DuLieuXuat): LuotChen[] {
       if (q.loai === 'can') {
         const vt = vts.get(`${mi}:${i}`);
         if (!vt) return;
+        if (congNangTai(vt.khoa, d.toa) !== 'can') return; // ô đổi công năng: không chèn XREF căn
         const id = canDangDung(vt, d.toa), c = d.tv.can.get(id);
         if (!c) return;
         const rong = vt.a1 - vt.a0;
@@ -68,6 +70,26 @@ export function danhSachChen(d: DuLieuXuat): LuotChen[] {
       }
     });
   });
+  return kq;
+}
+
+/** Lớp khung + nhãn ô đổi công năng (SHCĐ, kỹ thuật, thương mại, trống). */
+export const LOP_CONG_NANG = 'MDI-CONG-NANG';
+const TEN_CONG_NANG: Record<Exclude<CongNangO, 'can'>, string> = { shcd: 'SHCD', ky_thuat: 'KY THUAT', thuong_mai: 'THUONG MAI', trong: 'O TRONG' };
+export type OCongNang = { cn: Exclude<CongNangO, 'can'>; goc: Diem[]; x: number; y: number; ten: string; dt: string };
+
+/** Các ô đổi công năng của tầng: khung 4 góc (mm, thế giới), tâm, tên ASCII và DT thông thủy của ô (như tính trong congNang.ts). */
+export function oCongNang(d: DuLieuXuat): OCongNang[] {
+  const kq: OCongNang[] = [];
+  for (const vt of viTriCan(d.mau, d.tv)) {
+    const cn = congNangTai(vt.khoa, d.toa);
+    if (cn === 'can') continue;
+    const dt = d.tv.can.get(canDangDung(vt, d.toa))?.dt_tt_m2;
+    kq.push({
+      cn, goc: vt.goc, x: vt.goc.reduce((a, p) => a + p[0], 0) / 4, y: vt.goc.reduce((a, p) => a + p[1], 0) / 4,
+      ten: TEN_CONG_NANG[cn], dt: dt !== undefined && Number.isFinite(dt) ? `${dt.toFixed(1)} m2` : '-',
+    });
+  }
   return kq;
 }
 
@@ -94,7 +116,9 @@ export function taoScr(d: DuLieuXuat): string {
   const ds = danhSachChen(d), tenDwg = asciiHoa(d.ten) + '.dwg';
   say('PHIEU LAP GHEP MAT BANG TU XREF - MDIUnitmix');
   say(`mau toa   : ${d.mau.id}`);
+  const oc = oCongNang(d);
   say(`so luot   : ${ds.length} (${ds.filter((x) => x.loai === 'can').length} can)`);
+  if (oc.length) say(`o cong nang: ${oc.length} (khung + nhan tren lop ${LOP_CONG_NANG}, khong chen XREF can)`);
   say(`thu vien  : ${d.goc} (duong dan TUONG DOI theo thu muc ban ve)`);
   say(`xuat ra   : ${tenDwg}`);
   say('CACH DUNG : dat tep .scr nay canh thu muc thu vien XREF; mo AutoCAD > lenh SCRIPT > chon tep .scr.');
@@ -104,6 +128,7 @@ export function taoScr(d: DuLieuXuat): string {
   L.push('_SAVEAS', '', `"${tenDwg}"`);
   L.push('INSUNITS', '4', 'MEASUREMENT', '1', 'XCLIPFRAME', '0', 'GRIDMODE', '0', 'OSMODE', '0', 'ATTREQ', '0');
   for (const [ten, mau] of [['MDI-BAO', 1], ['MDI-HANHLANG', 30], ['MDI-NHAN', 2], ['MDI-XREF', 8]] as const) L.push('_-LAYER', '_M', ten, '_C', String(mau), ten, '');
+  if (oc.length) L.push('_-LAYER', '_M', LOP_CONG_NANG, '_C', '5', LOP_CONG_NANG, '');
   L.push('_-LAYER', '_S', 'MDI-XREF', '');
   const thieu: string[] = [];
   let ncat = 0;
@@ -120,6 +145,17 @@ export function taoScr(d: DuLieuXuat): string {
   if (d.mau.duong_bao.length > 2) {
     say('net bao dien tich san');
     L.push('_-LAYER', '_S', 'MDI-BAO', '', '_.PLINE', ...d.mau.duong_bao.map((p) => `${f4(p[0])},${f4(p[1])}`), '_C');
+  }
+  if (oc.length) {
+    say('o doi cong nang: khung + gach cheo + nhan');
+    L.push('_-LAYER', '_S', LOP_CONG_NANG, '');
+    for (const o of oc) {
+      const g = o.goc.map((p) => `${f4(p[0])},${f4(p[1])}`);
+      L.push('_.PLINE', ...g, '_C');
+      L.push('_.LINE', g[0], g[2], '', '_.LINE', g[1], g[3], '');
+      L.push('_.TEXT', '_J', '_MC', `${f4(o.x)},${f4(o.y + CAO_CHU_NHAN_MM * 0.7)}`, String(CAO_CHU_NHAN_MM), '0', o.ten);
+      L.push('_.TEXT', '_J', '_MC', `${f4(o.x)},${f4(o.y - CAO_CHU_NHAN_MM * 0.7)}`, String(CAO_CHU_NHAN_MM), '0', o.dt);
+    }
   }
   L.push('_.ZOOM', '_E', '_QSAVE');
   return L.join('\r\n') + '\r\n';
@@ -141,11 +177,37 @@ function polyDxf(lop: string, pts: Diem[], dong: boolean): string {
   for (const p of pts) s += nhom([0, 'VERTEX'], [8, lop], ...diemDxf(p));
   return s + nhom([0, 'SEQEND'], [8, lop]);
 }
+/** Lớp nhãn phòng: tên mẫu căn + DT thông thủy đặt ở tâm mỗi căn. */
+export const LOP_NHAN_CAN = 'MDI-NHAN-CAN';
+export const CAO_CHU_NHAN_MM = 250;
+export type NhanCan = { x: number; y: number; ten: string; dt: string };
+
+/** Nhãn ở tâm từng căn của tầng điển hình (toạ độ thế giới, mm). Chữ ASCII: bỏ dấu, DT thông thủy làm tròn 0,1 m². */
+export function nhanCanDxf(d: DuLieuXuat): NhanCan[] {
+  const kq: NhanCan[] = [];
+  for (const it of danhSachChen(d)) {
+    const c = it.loai === 'can' && it.no ? d.tv.can.get(it.no) : undefined;
+    if (!c) continue;
+    const t = rad(it.rot), lx = it.sx * (it.rong / 2), ly = it.sau / 2;
+    kq.push({
+      x: it.x + lx * Math.cos(t) - ly * Math.sin(t),
+      y: it.y + lx * Math.sin(t) + ly * Math.cos(t),
+      ten: asciiHoa(c.ten_vi.split(' · ')[0]).trim() || asciiHoa(c.id),
+      dt: Number.isFinite(c.dt_tt_m2) ? `${c.dt_tt_m2.toFixed(1)} m2` : '-',
+    });
+  }
+  return kq;
+}
+/** Một TEXT căn giữa (R12: nhóm 72 = 1, 73 = 2 và điểm căn 11/21/31). */
+const textDxf = (lop: string, x: number, y: number, chu: string): string =>
+  nhom([0, 'TEXT'], [8, lop], ...diemDxf([x, y]), [40, CAO_CHU_NHAN_MM], [1, chu], [72, 1], [11, +x.toFixed(4)], [21, +y.toFixed(4)], [31, 0], [73, 2]);
 const khoiTen = (id: string) => 'CAN_' + id.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 
 /** Tệp DXF R12 ASCII, đơn vị mm: nét bao DTXD, hành lang, mỗi mẫu căn một BLOCK (nét đã nhân rộng × sâu) + INSERT, lõi / thang bộ là nét rời. */
 export function taoDxf(d: DuLieuXuat): string {
-  const lops = new Map<string, number>([['MDI-BAO', 1], ['MDI-HANHLANG', 30], ['MDI-NHAN', 2], ['MDI-LOI', 8]]);
+  const lops = new Map<string, number>([['MDI-BAO', 1], ['MDI-HANHLANG', 30], ['MDI-NHAN', 2], ['MDI-LOI', 8], [LOP_NHAN_CAN, 3]]);
+  const oc = oCongNang(d);
+  if (oc.length) lops.set(LOP_CONG_NANG, 5);
   for (const [l, c] of Object.values(LOP_THEO_NET)) lops.set(l, c);
   let s = nhom([0, 'SECTION'], [2, 'HEADER'], [9, '$ACADVER'], [1, 'AC1009'], [9, '$INSUNITS'], [70, 4], [9, '$MEASUREMENT'], [70, 1], [0, 'ENDSEC']);
   s += nhom([0, 'SECTION'], [2, 'TABLES'], [0, 'TABLE'], [2, 'LAYER'], [70, lops.size]);
@@ -181,6 +243,15 @@ export function taoDxf(d: DuLieuXuat): string {
         s += polyDxf('MDI-LOI', n.pts.map(([x, y]): Diem => [it.x + x * it.sx * c - y * it.sy * sn, it.y + x * it.sx * sn + y * it.sy * c]), false);
       }
     }
+  }
+  for (const n of nhanCanDxf(d)) {
+    s += textDxf(LOP_NHAN_CAN, n.x, n.y + CAO_CHU_NHAN_MM * 0.7, n.ten);
+    s += textDxf(LOP_NHAN_CAN, n.x, n.y - CAO_CHU_NHAN_MM * 0.7, n.dt);
+  }
+  for (const o of oc) {
+    s += polyDxf(LOP_CONG_NANG, o.goc, true) + polyDxf(LOP_CONG_NANG, [o.goc[0], o.goc[2]], false) + polyDxf(LOP_CONG_NANG, [o.goc[1], o.goc[3]], false);
+    s += textDxf(LOP_CONG_NANG, o.x, o.y + CAO_CHU_NHAN_MM * 0.7, o.ten);
+    s += textDxf(LOP_CONG_NANG, o.x, o.y - CAO_CHU_NHAN_MM * 0.7, o.dt);
   }
   s += nhom([0, 'ENDSEC'], [0, 'EOF']);
   return s;

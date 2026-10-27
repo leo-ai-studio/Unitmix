@@ -1,5 +1,7 @@
 # Đối chiếu Architechtures → Unitmix (27/10/2026)
 
+> Bản học kỹ hơn (sổ tay 89 trang, 21 video, bấm thử app thật, bộ tham số trích từ app, chọn lọc theo QCVN 01 / 04 / 06 / 13): [hoc_architechtures_app_2026-10-27.md](hoc_architechtures_app_2026-10-27.md).
+
 Nguồn: `MDI_Unitmix_v4/docs/nghien_cuu/hoc_architechtures_dao_sau_2026-10-26.md` (blog công khai + soi trình soạn ở gói VIEW) và thiết kế `docs/superpowers/specs/2026-10-27-unitmix-moi-design.md`.
 Trạng thái tính theo bản chạy ở main `87e0396`. ✔ có · ◐ có một phần · ✘ chưa có · ⊘ chủ ý không làm.
 

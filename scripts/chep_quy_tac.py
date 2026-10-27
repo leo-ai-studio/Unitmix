@@ -393,6 +393,32 @@ def _sha(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
+# Luật QCVN 04:2021/BXD bổ sung thủ công (không có trong yaml app cũ). Mã DC-06… nối tiếp sau các luật đã đánh mã để không đổi mã cũ.
+# bo_sung: luật mới không có ở app cũ nên ma_cu rỗng
+_BS = dict(buoc="doi_mau_can", nhom="qcvn04", ap_dung="ca_hai", thay_the_boi=None, thay_cho=[], ham="qcvn04.ts", bo_sung=True)
+LUAT_BO_SUNG = [
+    dict(id="qcvn04_phong_ngu_9", bat_buoc=True, ten_vi="Phòng ngủ tối thiểu 9 m²", ten_en="Minimum bedroom area",
+         nguon="QCVN 04:2021/BXD 2.2.4.4", nguong=[N(9, "m²", "DT mỗi phòng ngủ", ">=")], ma_kiem="phong_ngu_9",
+         cach_tinh="mọi phòng loại ngủ của mẫu căn ≥ 9 m²; mẫu căn chưa có trường phong[] thì báo chưa đủ dữ liệu (không tính là đạt)", ma_cu=[], **_BS),
+    dict(id="qcvn04_phong_ngu_sang", bat_buoc=True, ten_vi="Phòng ngủ thông thoáng, chiếu sáng tự nhiên", ten_en="Bedroom natural ventilation and daylight",
+         nguon="QCVN 04:2021/BXD 2.2.4.4", nguong=[], ma_kiem="phong_ngu_sang",
+         cach_tinh="mọi phòng ngủ có ke_mat_ngoai = true; thiếu trường thì chưa đủ dữ liệu", ma_cu=[], **_BS),
+    dict(id="qcvn04_thong_thuy", bat_buoc=True, ten_vi="Chiều cao thông thủy tối thiểu", ten_en="Minimum clear height",
+         nguon="QCVN 04:2021/BXD 2.2.10",
+         nguong=[N(2.6, "m", "phòng ở", ">="), N(2.3, "m", "bếp, WC", ">="), N(2.0, "m", "hầm, kỹ thuật", ">=")], ma_kiem="thong_thuy",
+         cach_tinh="thông thủy = cao tầng (caoDH / caoDe) − dày sàn + trần (cauTao.daySanTranM, mặc định 0,30 m là giá trị tạm chờ chủ nhiệm chốt); tầng căn hộ ≥ 2,6 m; tầng đế < 2,6 m cảnh báo, < 2,0 m vượt; hầm chưa có chiều cao nên chưa kiểm", ma_cu=[], **_BS),
+    dict(id="qcvn04_cua_cuu_nan", bat_buoc=True, ten_vi="Cửa sổ cứu nạn cho căn không có ban công / lô gia", ten_en="Rescue window for units without balcony / loggia",
+         nguon="QCVN 04:2021/BXD 2.2.11", nguong=[N(600, "mm", "lỗ thông thủy 600 × 600", ">=")], ma_kiem="cua_cuu_nan",
+         cach_tinh="căn không có logia_lui phải có cửa sổ tường ngoài ≥ 600 × 600 mm (cua_cuu_nan); chưa khai thì cảnh báo cần kiểm", ma_cu=[], **_BS),
+    dict(id="qcvn04_thang_bang_ca", bat_buoc=True, ten_vi="Thang máy chở được băng ca", ten_en="Stretcher-capable lift",
+         nguon="QCVN 04:2021/BXD chú thích 2.4.1", nguong=[N(1, "thang", "tối thiểu mỗi nhà có thang máy", ">=")], ma_kiem="thang_bang_ca",
+         cach_tinh="tòa khai thangBangCa = true là đạt, false là vượt, chưa khai thì cảnh báo", ma_cu=[], **_BS),
+    dict(id="qcvn04_nhan_vien", bat_buoc=False, ten_vi="Không gian nhân viên quản lý, trông xe, bảo vệ, kỹ thuật", ten_en="Staff space",
+         nguon="QCVN 04:2021/BXD 2.2.18", nguong=[N(5, "m²/người", None, ">=")], ma_kiem="nhan_vien",
+         cach_tinh="DT khai / số nhân viên khai ≥ 5 m²/người; chưa khai thì bỏ qua", ma_cu=[], **_BS),
+]
+
+
 def qt_trong_doc(md: str) -> list[str]:
     ids = sorted(set(re.findall(r"QT-\d+[a-z]?", md)), key=lambda s: (int(re.search(r"\d+", s)[0]), s))
     return ids
@@ -446,6 +472,14 @@ def chep(nguon: Path) -> dict:
             d["ten_vi"], d["ten_en"] = y["title"]["vi"], y["title"]["en"]
             d["yaml"] = {"tep": "rules/" + y["_tep"], "nhom": y["group"], "nguon": y.get("source"), "trich": y.get("cite")}
         ra.append(d)
+
+    # luật bổ sung: mã nối tiếp theo bước, không đổi mã luật cũ
+    for x in LUAT_BO_SUNG:
+        dem[x["buoc"]] = dem.get(x["buoc"], 0) + 1
+        ra.append({"ma": f"{tien_to[x['buoc']]}-{dem[x['buoc']]:02d}", **x})
+    # giữ quy ước: trong mỗi bước luật bắt buộc đứng trước luật nội bộ (sắp ổn định)
+    thu_tu = [b["ma"] for b in BUOC]
+    ra.sort(key=lambda x: (thu_tu.index(x["buoc"]), not x["bat_buoc"]))
 
     ma_moi = {x["id"]: x["ma"] for x in ra}
     qt_goc = []

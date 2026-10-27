@@ -1,0 +1,26 @@
+/* Lớp phòng trên mặt bằng tầng (web/src/ve/LopPhong.tsx): vòng nội tiếp + nhãn DT / Ø theo mức đạt. */
+.lop-phong {
+  --phong-xanh: #2f7d4f;
+  --phong-cam: #d98a00;
+  --phong-do: #b42318;
+  --phong-khong: #6b7a7a;
+}
+.lop-phong .vong-phong { fill-opacity: 0.12; stroke-width: 1.5; stroke-dasharray: 5 3; }
+.lop-phong .vong-phong.muc-xanh { fill: var(--phong-xanh); stroke: var(--phong-xanh); }
+.lop-phong .vong-phong.muc-cam { fill: var(--phong-cam); stroke: var(--phong-cam); }
+.lop-phong .vong-phong.muc-do { fill: var(--phong-do); stroke: var(--phong-do); }
+.lop-phong .vong-phong.muc-khong { fill: var(--phong-khong); stroke: var(--phong-khong); fill-opacity: 0.06; }
+.lop-phong .nhan-phong {
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 600;
+  fill: #132132;
+  stroke: #fff;
+  stroke-opacity: 0.85;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+.lop-phong .nhan-phong.doan .ten { font-style: italic; }
+.lop-phong .nhan-phong .muc-xanh { fill: var(--phong-xanh); }
+.lop-phong .nhan-phong .muc-cam { fill: var(--phong-cam); }
+.lop-phong .nhan-phong .muc-do { fill: var(--phong-do); }
+.lop-phong .nhan-phong .muc-khong { fill: #3d4a4a; font-weight: 500; }

@@ -2,11 +2,13 @@ import { useEffect, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { api, type DuAnApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
+import { useDongHop } from '../ui/useDongHop';
 import { dsDuAnDaMo, ghiNhoDuAn, layMaSua, linkSua, linkXem, luuMaSua, phanTichLink } from '../kho/maSua';
 import { taoPAMoi } from '../tinh/macDinh';
 import { LOAI_CAN } from '../tinh/kieu';
 import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
 import { fmtSo } from '../ui/so';
+import { SoSanhPA } from './SoSanhPA';
 
 type Dong = { ma: string; da: DuAnApi | null; loi: boolean };
 
@@ -21,6 +23,7 @@ function ChepNut({ chu }: { chu: string }) {
 
 /** Hộp tạo dự án; tạo xong hiện mã sửa đúng một lần. */
 function HopTaoDuAn({ dong }: { dong: () => void }) {
+  const { lop, dongMem } = useDongHop(dong);
   const { route } = useLocation();
   const [ten, setTen] = useState('');
   const [diaDiem, setDiaDiem] = useState('');
@@ -46,7 +49,7 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
   }
 
   return (
-    <div class="hop-thoai" role="dialog" aria-modal="true" aria-labelledby="tieu-de-tao">
+    <div class={`hop-thoai${lop}`} role="dialog" aria-modal="true" aria-labelledby="tieu-de-tao">
       {!kq ? (
         <form onSubmit={tao}>
           <h2 id="tieu-de-tao">{t('duAn.moi').replace('+ ', '')}</h2>
@@ -54,7 +57,7 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
           <label>{t('duAn.diaDiem')}<input value={diaDiem} onInput={(e) => setDiaDiem(e.currentTarget.value)} /></label>
           {loi && <p class="vuot" role="alert">{loi}</p>}
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-            <button type="button" class="nut-phu" onClick={dong}>{t('duAn.huy')}</button>
+            <button type="button" class="nut-phu" onClick={dongMem}>{t('duAn.huy')}</button>
             <button type="submit" class="nut-chinh" disabled={dangTao}>
               {dangTao && <img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '16px', height: '16px', verticalAlign: '-3px', marginRight: '6px', filter: 'invert(1)' }} />}
               {t('duAn.tao')}
@@ -89,6 +92,7 @@ export function DuAn() {
   const [suaDa, setSuaDa] = useState<{ ma: string; ten: string; diaDiem: string } | null>(null);
   const [suaPA, setSuaPA] = useState<{ ma: string; id: string; ten: string } | null>(null);
   const [loiHang, setLoiHang] = useState('');
+  const [soSanh, setSoSanh] = useState<string | null>(null);
 
   const napLai = async (ma: string) => {
     const da = await api.docDuAn(ma);
@@ -141,12 +145,9 @@ export function DuAn() {
     route(`/du-an/${r.ma}`);
   }
 
+  /** Nhân bản một phương án trong cùng dự án (cần mã sửa); lỗi thì báo, thành công thì nạp lại danh sách. */
   async function nhanBan(ma: string, id: string) {
-    const maSua = layMaSua(ma);
-    if (!maSua) return;
-    await api.nhanBan(ma, id, maSua);
-    const da = await api.docDuAn(ma);
-    setDong((ds) => ds.map((x) => (x.ma === ma ? { ...x, da } : x)));
+    await ghi(ma, (m) => api.nhanBan(ma, id, m));
   }
 
   return (
@@ -191,6 +192,7 @@ export function DuAn() {
                 )}
                 {!coMa && <span class="so">{t('duAn.chiXem')}</span>}
                 <span class="so">{t('duAn.soPA')}: <b>{da ? da.phuong_an.length : '—'}</b></span>
+                {da && da.phuong_an.length >= 2 && <button type="button" class="nut-phu" onClick={() => setSoSanh(ma)}>{t('ss.nut')}</button>}
                 <code style={{ fontSize: '12px' }}>{linkXem(ma).replace(/^https?:\/\//, '')}</code>
                 <ChepNut chu={linkXem(ma)} />
               </div>
@@ -224,6 +226,7 @@ export function DuAn() {
       </main>
       <footer class="chan-trang">{t('app.tacGia')}</footer>
       {moTao && <HopTaoDuAn dong={() => setMoTao(false)} />}
+      {soSanh && dong.find((x) => x.ma === soSanh)?.da && <SoSanhPA ma={soSanh} da={dong.find((x) => x.ma === soSanh)!.da!} dong={() => setSoSanh(null)} />}
     </div>
   );
 }

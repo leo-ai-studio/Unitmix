@@ -9,6 +9,7 @@ import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
+import { SoDong } from '../ui/SoDong';
 import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
 import { BangChiTieuLo, ChonLoCaoTang, LoChiTieu, LoNhap, SucChuaLo } from './ManLo';
 
@@ -31,9 +32,9 @@ const doiToa = (p: TrangThaiPA, id: string, fn: (x: ToaDat) => ToaDat): TrangTha
 const idMoi = () => `toa-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 const tenNgan = (m: ToaMau | undefined) => m?.ten_vi.split(' · ')[0] ?? '?';
 
-function O({ nhan, gt, donVi, onDoi, tat, buoc = 1, am = false }: { nhan: string; gt: number; donVi?: string; onDoi: (v: number) => void; tat: boolean; buoc?: number; am?: boolean }) {
+function O({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1, am = false }: { nhan: string; tip?: string; gt: number; donVi?: string; onDoi: (v: number) => void; tat: boolean; buoc?: number; am?: boolean }) {
   return (
-    <label class="o-so">
+    <label class="o-so" title={tip}>
       <span>{nhan}</span>
       <span class="o-so-nhap">
         <input type="number" value={gt} step={buoc} min={am ? undefined : 0} disabled={tat}
@@ -75,7 +76,7 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
           <div class="dong">
             <div class="nhom-nut" role="group" aria-label={t('xep.thuVien')}>
               {(['tm', 'xh'] as const).map((k) => (
-                <button type="button" aria-pressed={nhomXem === k} onClick={() => setNhom(k)}>{t(k === 'tm' ? 'xep.nhomTm' : 'xep.nhomXh')}</button>
+                <button type="button" title={t('gt.xep.nhom')} aria-pressed={nhomXem === k} onClick={() => setNhom(k)}>{t(k === 'tm' ? 'xep.nhomTm' : 'xep.nhomXh')}</button>
               ))}
             </div>
           </div>
@@ -87,7 +88,7 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
                 <span class="muted">{t('xep.canTang').replace('{n}', String(m.so_can_tang))} · {fmtSo(m.dtxd_m2, { donVi: 'm²' })}</span>
                 <span class={hop ? 'ok' : 'vuot'}>{hop ? `✓ ${t('xep.hopLo')}` : `✕ ${t('xep.khongHop')}`}</span>
               </div>
-              <button type="button" class="nut-phu" disabled={chiXem}
+              <button type="button" class="nut-phu" title={t('gt.xep.dat')} disabled={chiXem}
                 onClick={() => { const moi = taoToaTrenLo(m, lo, idMoi()); sua((p) => ({ ...p, toa: [...p.toa, moi] })); chonToa(moi.id); }}>
                 {t('xep.dat')}
               </button>
@@ -97,7 +98,7 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
       )}
 
       {lo && (
-        <MucGap tieuDe={`${t('xep.toaTrenLo')} · ${toaLo.length}`} mo>
+        <MucGap tieuDe={`${t('xep.toaTrenLo')} · ${toaLo.length}`} giaiThich={t('gt.xep.toaTrenLo')} mo>
           {!toaLo.length && <p class="dong muted">{t('xep.chuaCoToa')}</p>}
           {toaLo.map((x) => {
             const m = tv?.toa.get(x.mauId);
@@ -112,15 +113,15 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
       )}
 
       {toa && (
-        <MucGap tieuDe={`${t('xep.thongSo')} · ${tenNgan(tv?.toa.get(toa.mauId))}`} mo>
-          <O nhan={t('xep.soTangDH')} gt={toa.soTangDH} tat={tat} onDoi={(v) => v >= 1 && datTs('soTangDH')(Math.round(v))} />
-          <O nhan={t('xep.soTangDe')} gt={toa.soTangDe} tat={tat} onDoi={(v) => datTs('soTangDe')(Math.round(v))} />
-          <O nhan={t('xep.goc')} gt={toa.gocDo} donVi="°" buoc={5} am tat={tat} onDoi={(v) => datTs('gocDo')(((v % 360) + 360) % 360)} />
-          <O nhan={t('xep.deOffset')} gt={toa.deOffset} donVi="m" buoc={0.5} tat={tat} onDoi={datTs('deOffset')} />
-          <O nhan={t('xep.x')} gt={toa.x} donVi="m" buoc={0.5} am tat={tat} onDoi={datTs('x')} />
-          <O nhan={t('xep.y')} gt={toa.y} donVi="m" buoc={0.5} am tat={tat} onDoi={datTs('y')} />
+        <MucGap tieuDe={`${t('xep.thongSo')} · ${tenNgan(tv?.toa.get(toa.mauId))}`} giaiThich={t('gt.xep.thongSo')} mo>
+          <O nhan={t('xep.soTangDH')} tip={t('gt.xep.soTangDH')} gt={toa.soTangDH} tat={tat} onDoi={(v) => v >= 1 && datTs('soTangDH')(Math.round(v))} />
+          <O nhan={t('xep.soTangDe')} tip={t('gt.xep.soTangDe')} gt={toa.soTangDe} tat={tat} onDoi={(v) => datTs('soTangDe')(Math.round(v))} />
+          <O nhan={t('xep.goc')} tip={t('gt.xep.goc')} gt={toa.gocDo} donVi="°" buoc={5} am tat={tat} onDoi={(v) => datTs('gocDo')(((v % 360) + 360) % 360)} />
+          <O nhan={t('xep.deOffset')} tip={t('gt.xep.deOffset')} gt={toa.deOffset} donVi="m" buoc={0.5} tat={tat} onDoi={datTs('deOffset')} />
+          <O nhan={t('xep.x')} tip={t('gt.xep.x')} gt={toa.x} donVi="m" buoc={0.5} am tat={tat} onDoi={datTs('x')} />
+          <O nhan={t('xep.y')} tip={t('gt.xep.y')} gt={toa.y} donVi="m" buoc={0.5} am tat={tat} onDoi={datTs('y')} />
           <div class="dong" style={{ justifyContent: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
-            <button type="button" class="nut-phu" disabled={chiXem}
+            <button type="button" class="nut-phu" title={t('gt.xep.nhanBan')} disabled={chiXem}
               onClick={() => {
                 // Dời bản sao sang cạnh bản gốc theo phương ngang thân tòa: bề sâu tòa + 12 m.
                 const m = tv?.toa.get(toa.mauId);
@@ -132,10 +133,10 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
               }}>
               {t('xep.nhanBan')}
             </button>
-            <button type="button" class="nut-phu" disabled={chiXem} onClick={() => sua((p) => doiToa(p, toa.id, (x) => ({ ...x, khoa: !x.khoa })))}>
+            <button type="button" class="nut-phu" title={t('gt.xep.khoa')} disabled={chiXem} onClick={() => sua((p) => doiToa(p, toa.id, (x) => ({ ...x, khoa: !x.khoa })))}>
               {toa.khoa ? t('xep.moKhoa') : t('xep.khoa')}
             </button>
-            <button type="button" class="nut-phu" disabled={tat} onClick={() => { sua((p) => ({ ...p, toa: p.toa.filter((x) => x.id !== toa.id) })); chonToa(null); }}>
+            <button type="button" class="nut-phu" title={t('gt.xep.xoa')} disabled={tat} onClick={() => { sua((p) => ({ ...p, toa: p.toa.filter((x) => x.id !== toa.id) })); chonToa(null); }}>
               {t('xep.xoa')}
             </button>
           </div>
@@ -234,13 +235,15 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
           );
         })}
       </BanVe>
-      <ChuGiaiDat />
-      <p class="dong muted" style={{ justifyContent: 'center' }}>{t('xep.keoGoiY')}</p>
-      <ThanhHienThi nhan={t('ht.nhom')} nut={[
-        { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
-        { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
-        { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
-      ]} />
+      <div class="noi-duoi">
+        <ChuGiaiDat />
+        <p class="dong muted" style={{ justifyContent: 'center' }}>{t('xep.keoGoiY')}</p>
+        <ThanhHienThi nhan={t('ht.nhom')} nut={[
+          { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
+          { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
+          { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
+        ]} />
+      </div>
     </>
   );
 }
@@ -281,16 +284,21 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQ
   return (
     <>
       <BangChiTieuLo dong={r?.dong ?? []} />
-      <MucGap tieuDe={`${t('xep.dtLo')} · ${lo.temDat.kyHieu}`} mo>
+      <MucGap tieuDe={`${t('xep.dtLo')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.xep.dtLo')} mo>
         <div class="dong bang-ct dau"><span /><span>{t('xep.xayDung')}</span><span>{t('xep.tinhHSSDD')}</span></div>
         <div class="dong bang-ct"><span>{t('sc.dtLo')}</span><span>{fmtSo(dtLo, m2)}</span><span>{fmtSo(dtLo, m2)}</span></div>
-        <div class="dong bang-ct"><span>{t('xep.dtDe')} / {t('xep.dtSan')}</span><span>{fmtSo(r && toaLo.length ? r.dtDe : null, m2)}</span><span>{fmtSo(r && toaLo.length ? r.dtSanTinhHSSDD : null, m2)}</span></div>
+        <div class="dong bang-ct"><span>{t('xep.dtDe')} / {t('xep.dtSan')}</span><span><SoDong value={r && toaLo.length ? r.dtDe : null} {...m2} /></span><span><SoDong value={r && toaLo.length ? r.dtSanTinhHSSDD : null} {...m2} /></span></div>
+        {r && toaLo.length > 0 && (['thap', 'de', 'apMai', 'hamTinh', 'hamTru', 'oKyThuat'] as const).map((k) => (
+          <div class="dong bang-ct muted" key={k} title={t('heSo.canCu')}>
+            <span>· {t(`dtSan.${k}`)}</span><span /><span>{k === 'hamTru' || k === 'oKyThuat' ? `(${fmtSo(r.dtSanChiTiet[k], m2)})` : fmtSo(r.dtSanChiTiet[k], m2)}</span>
+          </div>
+        ))}
         <div class="dong bang-ct"><span>{t('xep.matDo')} / {t('xep.hssdd')}</span>
           <span>{fmtSo(r && toaLo.length && dtLo ? (r.dtDe / dtLo) * 100 : null, { thapPhan: 1, donVi: '%' })}</span>
           <span>{fmtSo(r && toaLo.length && dtLo ? r.dtSanTinhHSSDD / dtLo : null, { thapPhan: 2 })}</span>
         </div>
       </MucGap>
-      <MucGap tieuDe={t('xep.coCau')} mo>
+      <MucGap tieuDe={t('xep.coCau')} giaiThich={t('gt.xep.coCau')} mo>
         <div class="dong" style={{ alignItems: 'center' }}>
           <VongCoCau pct={pct} />
           <div style={{ flex: 1 }}>

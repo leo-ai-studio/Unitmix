@@ -1,0 +1,56 @@
+/* Màn Hầm: màu bản vẽ hầm và bảng kiểm. Bảng màu theo brand LEO (xanh rêu / kem). */
+:root {
+  --ham-san: #f4f2ec;
+  --ham-lan: #ece8de;
+  --ham-cho: #ffffff;
+  --ham-xe-lan: #cfe0ef;
+  --ham-xe-may: #f1e3c8;
+  --ham-kho: #e3d9f0;
+  --ham-ky-thuat: #e0e0e0;
+  --ham-loi: #5c6662;
+  --ham-ram: #f6d8b8;
+  --ham-sac: #c9e6c4;
+}
+
+.ham-ve .ranh-ham { fill: var(--ham-san); stroke: var(--green); stroke-width: 2; }
+.ham-ve .lan { fill: var(--ham-lan); stroke: none; }
+.ham-ve .cho { fill: var(--ham-cho); stroke: var(--muted); stroke-width: 0.8; }
+.ham-ve .xe-lan { fill: var(--ham-xe-lan); stroke: var(--thua); stroke-width: 1; }
+.ham-ve .sac { stroke: var(--ok); stroke-width: 1.2; }
+.ham-ve .xe-may { fill: var(--ham-xe-may); stroke: #c7aa76; stroke-width: 1; }
+.ham-ve .kho { fill: var(--ham-kho); stroke: #8f7bb0; stroke-width: 0.8; }
+.ham-ve .ky-thuat { fill: var(--ham-ky-thuat); stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 3; }
+.ham-ve .loi { fill: var(--ham-loi); fill-opacity: 0.85; stroke: none; }
+.ham-ve .cot { fill: var(--ink); stroke: none; }
+.ham-ve .ram { fill: var(--ham-ram); stroke: #a15c1d; stroke-width: 1.5; }
+.ham-ve .chan-toa { fill: none; stroke: var(--ink); stroke-width: 1; stroke-dasharray: 6 4; }
+.ham-ve .ranh-lo { fill: none; stroke: var(--muted); stroke-width: 1; }
+.ham-ve text { pointer-events: none; fill: var(--ink); }
+
+.ham-tang { display: flex; gap: 4px; justify-content: center; padding: 6px 12px; }
+.ham-tang button { border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 92%, transparent); padding: 4px 10px; font-size: 12px; border-radius: 4px; color: var(--ink); }
+.ham-tang button[aria-pressed="true"] { border-color: var(--green); color: var(--green); font-weight: 700; background: var(--soft); }
+
+.ham-kiem { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 2px 6px; padding: 3px 12px; font-size: 12px; align-items: baseline; }
+.ham-kiem span:nth-child(n+2) { text-align: right; }
+.ham-kiem small { display: block; color: var(--muted-text); font-size: 10px; }
+.ham-kiem.dau { font-weight: 700; color: var(--muted-text); }
+.nhan-du-thao { display: inline-block; margin-left: 4px; padding: 0 4px; font-size: 9px; border-radius: 3px; background: #fdf0d9; color: var(--canh-bao); vertical-align: 1px; }
+.ham-ghi-chu { padding: 4px 12px; font-size: 11px; color: var(--muted-text); }
+.o-tich { display: flex; align-items: center; gap: 6px; padding: 4px 12px; font-size: 12px; }
+
+/* Vẽ tay ranh hầm */
+.ham-tang .nut-ve-ranh { margin-left: 10px; }
+.ham-ve-thanh { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 12px; padding: 6px 10px; font-size: 13px; background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--line); border-radius: 8px; }
+.ham-ve-thanh label { display: inline-flex; align-items: center; gap: 6px; }
+.ham-ve-thanh input[type="number"] { width: 72px; }
+.ham-ve-ghi { margin: 0 12px; font-size: 12px; color: var(--muted); }
+.ham-ve-thanh .ham-ve-ghi { margin: 0; flex: 1 1 100%; }
+.ve-ranh .ve-ranh-net { fill: none; stroke: var(--green); stroke-width: 2; }
+.ve-ranh .ve-ranh-tam { fill: none; stroke: var(--green); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.ve-ranh .ve-ranh-dinh { fill: var(--panel); stroke: var(--green); stroke-width: 2; }
+.ve-ranh .ve-ranh-dinh.dau { fill: var(--green); }
+.ve-ranh .ve-ranh-dinh.sua { cursor: move; }
+.ve-ranh .ve-ranh-dinh.sua:hover { fill: var(--green); }
+.ve-ranh .ve-ranh-bat { fill: none; stroke: var(--thua); stroke-width: 1.5; pointer-events: none; }
+.ve-ranh .ve-ranh-dai { fill: var(--ink); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }

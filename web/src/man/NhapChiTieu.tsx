@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
+import { useDongHop } from '../ui/useDongHop';
 import { apChiTieu, chonSheet, docBangChiTieu, ghepLo, ghepTay, type BangChiTieu, type KetQuaGhep, type TruongBang } from '../nhap/bangChiTieu';
 import { docTepExcel } from '../nhap/docExcel';
 import type { Sheet } from '../nhap/luoi';
@@ -16,6 +17,7 @@ const COT_HIEN: TruongBang[] = ['matDoDe', 'matDoThap', 'tangHam', 'tangDe', 'ta
 
 /** Hộp thoại: chọn Excel chỉ tiêu QH → chọn sheet → đối chiếu với lô DXF (DT lệch %) → áp chỉ tiêu vào lô. */
 export function NhapChiTieu({ lo, dong, ap }: { lo: Lo[]; dong: () => void; ap: (moi: Lo[]) => void }) {
+  const { lop, dongMem } = useDongHop(dong);
   const [tep, setTep] = useState('');
   const [sheets, setSheets] = useState<Sheet[] | null>(null);
   const [bang, setBang] = useState<BangChiTieu | null>(null);
@@ -53,18 +55,18 @@ export function NhapChiTieu({ lo, dong, ap }: { lo: Lo[]; dong: () => void; ap: 
   const dongThieuLo = bang && ghep ? bang.dong.filter((d) => !d.noiBo && !d.tongHop && d.gt.dtDat && !ghep.ghep.find((g) => g.dong === d.dong)!.loIds.length) : [];
 
   return (
-    <div class="hop-thoai" role="dialog" aria-modal="true" aria-labelledby="tieu-de-nct">
+    <div class={`hop-thoai${lop}`} role="dialog" aria-modal="true" aria-labelledby="tieu-de-nct">
       <div class="hop-rong">
         <h2 id="tieu-de-nct">{t('nct.tieuDe')}</h2>
         <p class="muted" style={{ margin: 0 }}>{t('nct.giaiThich')}</p>
         <div class="dong" style={{ gap: '8px', padding: 0 }}>
-          <label class="nut-phu" style={{ cursor: 'pointer', flexDirection: 'row' }}>
+          <label class="nut-phu" title={t('gt.nct.chonTep')} style={{ cursor: 'pointer', flexDirection: 'row' }}>
             {t('nct.chonTep')}
             <input type="file" accept=".xlsx,.xls,.xlsm" class="sr-only" onChange={(e) => e.currentTarget.files?.[0] && chonTep(e.currentTarget.files[0])} />
           </label>
           {tep && <span class="muted">{tep}</span>}
           {sheets && bang && (
-            <label class="o-chon" style={{ flexDirection: 'row', marginLeft: 'auto' }}>
+            <label class="o-chon" style={{ flexDirection: 'row', marginLeft: 'auto' }} title={t('gt.nct.sheet')}>
               <span>{t('nct.sheet')}</span>
               <select value={bang.sheet} onChange={(e) => doiSheet(e.currentTarget.value)}>
                 {sheets.map((s) => <option value={s.ten}>{s.ten}</option>)}
@@ -119,9 +121,9 @@ export function NhapChiTieu({ lo, dong, ap }: { lo: Lo[]; dong: () => void; ap: 
           </>
         )}
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-          <button type="button" class="nut-phu" onClick={dong}>{t('duAn.huy')}</button>
+          <button type="button" class="nut-phu" onClick={dongMem}>{t('duAn.huy')}</button>
           <button type="button" class="nut-chinh" disabled={!bang || !ghep || !soLoGhep}
-            onClick={() => { ap(apChiTieu(lo, bang!, ghep!, tep)); dong(); }}>
+            onClick={() => { ap(apChiTieu(lo, bang!, ghep!, tep)); dongMem(); }}>
             {t('nct.ap').replace('{n}', String(soLoGhep))}
           </button>
         </div>

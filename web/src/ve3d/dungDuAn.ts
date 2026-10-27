@@ -3,9 +3,11 @@
  * nét hạ tầng xung quanh, khối đế + thân tháp từng tòa (vạch sàn từng tầng). Tòa đang chọn tô nhấn.
  */
 import type * as THREE from 'three';
+import { khoiHam, raiHam, ranhHam } from '../tinh/ham';
 import { chanToa, khoiDe, trongTam } from '../tinh/hinhHoc';
 import type { Diem, ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang, loaiDat, MAU_DAT, type LoaiDat } from '../tinh/loaiDat';
+import { chuanHoaHam } from '../tinh/macDinh';
 import type { KieuVe3D, T3, VatLieu3D } from './dungCan';
 import type { CanhDung, GocDeXuat } from './Khung3D';
 import { t } from '../i18n/i18n';
@@ -37,7 +39,7 @@ export function diemCay(poly: Diem[], buoc: number, toiDa: number): Diem[] {
   return kq;
 }
 
-export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, pa: TrangThaiPA, tv: ThuVien, toaChon: string | null): CanhDung | null {
+export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, pa: TrangThaiPA, tv: ThuVien, toaChon: string | null, hienHam = false): CanhDung | null {
   if (!pa.lo.length) return null;
   const trang = kieu === 'trang';
   const shape = (pts: Diem[]) => { const s = new T.Shape(); pts.forEach((p, i) => (i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1]))); return s; };
@@ -68,6 +70,12 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     }
     return m;
   };
+  /** Ô đất cao tầng khi bật hầm: bán trong suốt để nhìn xuyên xuống khối hầm. */
+  const vlDatTrong = (l: LoaiDat) => {
+    const m = vlDat(l).clone();
+    m.transparent = true; m.opacity = 0.22; m.depthWrite = false;
+    return m;
+  };
   const netXq = new T.LineBasicMaterial({ color: trang ? 0xc9ccc8 : 0xb8b0a3 });
   const netLo = new T.LineBasicMaterial({ color: trang ? 0x9aa29e : 0x174f52 });
   const netCg = new T.LineBasicMaterial({ color: 0xb42318, transparent: true, opacity: 0.7 });
@@ -77,11 +85,33 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     if (l.ranh.length < 3) continue;
     const loai = loaiDat(l);
     if (loai === 'mat_nuoc') khoi(l.ranh, 0.05, vlDat(loai), -0.35);
-    else khoi(l.ranh, loai === 'o_cao_tang' ? 0.2 : 0.12, vlDat(loai), 0);
+    else khoi(l.ranh, loai === 'o_cao_tang' ? 0.2 : 0.12, hienHam && laCaoTang(l) ? vlDatTrong(loai) : vlDat(loai), 0);
     if (loai === 'cay_xanh') cay.push(...diemCay(l.ranh, 9, 600));
     if (laCaoTang(l)) {
       duong(l.ranh, 0.25, netLo, true);
       if (l.chiGioi) duong(l.chiGioi, 0.24, netCg, true);
+    }
+  }
+
+  // --- hầm: khối bán trong suốt dưới cốt 0 (ranh hầm × số tầng × cao tầng), ram và lõi ---
+  if (hienHam) {
+    const h = chuanHoaHam(pa.ham);
+    const vlHam = new T.MeshStandardMaterial({ color: trang ? 0xdfe6e3 : 0x2f7d79, roughness: 0.9, transparent: true, opacity: 0.3, depthWrite: false });
+    const vlRam = new T.MeshStandardMaterial({ color: 0xe0933a, roughness: 0.9, transparent: true, opacity: 0.6, depthWrite: false });
+    const vlLoi = new T.MeshStandardMaterial({ color: trang ? 0xb9bdba : 0x5c6662, roughness: 0.9 });
+    const vienHam = new T.LineBasicMaterial({ color: 0x174f52 }), sanHam = new T.LineBasicMaterial({ color: 0x174f52, transparent: true, opacity: 0.45 });
+    for (const l of pa.lo) {
+      if (!laCaoTang(l) || !pa.toa.some((x) => x.loId === l.id)) continue;
+      // ranh cố định trong PA chỉ áp cho lô chứa nó; các lô còn lại lấy ranh mặc định
+      const dung = !h.ranh || trong(trongTam(h.ranh), l.ranh);
+      const kq = dung ? raiHam(pa, tv, l) : null;
+      const kh = khoiHam(kq?.ranh ?? ranhHam(l, { ranh: null, lui: h.lui }), h.soTang, h.caoTang);
+      if (!kh) continue;
+      const me = khoi(kh.ranh, -kh.yDuoi, vlHam, kh.yDuoi, vienHam);
+      me.castShadow = false; me.receiveShadow = false;
+      for (const y of kh.yTang.slice(1, -1)) duong(kh.ranh, y, sanHam, true);
+      for (const p of kq?.loi ?? []) if (p.length >= 3) khoi(p, -kh.yDuoi, vlLoi, kh.yDuoi);
+      if (kq?.ram && kq.ram.poly.length >= 3) { const r = khoi(kq.ram.poly, h.caoTang, vlRam, -h.caoTang); r.castShadow = false; }
     }
   }
 
@@ -151,5 +181,5 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     const h = 0.2 + chon.soTangDe * chon.caoDe + chon.soTangDH * chon.caoDH, banKinh = Math.max(...c.map((p) => Math.hypot(p[0] - tx, p[1] - ty))), r = Math.max(60, h * 1.2, banKinh * 2.4);
     ds.push({ ten: t('m3d.g.toaChon'), vt: [tx + r * 0.7, h * 0.65, -ty + r * 0.9], dich: [tx, h * 0.45, -ty], gio: 15 });
   }
-  return { tam, coCanh, cao: caoMax + 4, goc: ds, nen: true };
+  return { tam, coCanh, cao: caoMax + 4, goc: ds, nen: true, nenTrongSuot: hienHam };
 }

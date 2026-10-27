@@ -50,3 +50,15 @@ describe('quy_tac.json', () => {
     expect(traLuat(bo, 'qcvn06_travel_max')!.thay_cho).toContain('QT-15');
   });
 });
+
+describe('luật QCVN 04 bổ sung', () => {
+  it('đủ 6 luật DC-06…DC-11, mã cũ không đổi', () => {
+    const ids = ['qcvn04_phong_ngu_9', 'qcvn04_phong_ngu_sang', 'qcvn04_thong_thuy', 'qcvn04_cua_cuu_nan', 'qcvn04_thang_bang_ca', 'qcvn04_nhan_vien'];
+    expect(ids.map((i) => traLuat(bo, i)!.ma)).toEqual(['DC-06', 'DC-07', 'DC-08', 'DC-09', 'DC-10', 'DC-11']);
+    expect(traLuat(bo, 'qcvn04_min_area')!.ma).toBe('DC-01');
+    expect(traLuat(bo, 'mdi_toi_uu_mot_toa')!.ma).toBe('DC-05');
+    expect(nguongSo(traLuat(bo, 'qcvn04_phong_ngu_9')!)).toBe(9);
+    expect(nguongSo(traLuat(bo, 'qcvn04_thong_thuy')!, 'phòng ở')).toBe(2.6);
+    expect(bo.thong_ke.luat_moi).toBe(bo.luat.length);
+  });
+});

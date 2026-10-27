@@ -1,3 +1,4 @@
+import { nhanPhamVi } from '../ui/ChonTang';
 import { useEffect, useState } from 'preact/hooks';
 import { api, LoiApi, type DuAnApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
@@ -12,8 +13,11 @@ import type { ThuVien } from '../tinh/kieu';
 import { soCanChuVi, viTriCan } from '../tinh/matBang';
 import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
+import { diemLechPA } from '../tinh/diemPA';
+import { baoCaoPA, tenTepXls, xuatXls } from '../xuat/xuatXls';
+import { HamGiua, HamPhai, HamTrai } from './ManHam';
 import { HopXuatCad } from './HopXuatCad';
-import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem } from './ManTang';
+import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
@@ -83,17 +87,21 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
   const chiXem = kho.cheDo === 'chi_xem';
   const kq: KetQuaChiTieu | null = tv ? tinhChiTieu(kho.pa, tv) : null;
-  const [buoc, setBuoc] = useState<'tmb' | 'tang'>('tmb');
+  const [buoc, setBuoc] = useState<'tmb' | 'tang' | 'ham'>('tmb');
+  const [tangHam, setTangHam] = useState(1);
   const [canKhoa, setCanKhoa] = useState<string | null>(null);
   const [moXuat, setMoXuat] = useState(false);
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
   const chungXep = { ...chung, tv, toaId, chonToa: setToaId };
   const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };
+  const chungHam = { ...chung, tv, tangHam, chonTangHam: setTangHam };
+  const soTangHam = Math.max(1, Math.round(kho.pa.ham.soTang));
   const xemXuat = toaDangXem(kho.pa, tv, loId, toaId);
   const xemTang = buoc === 'tang' ? toaDangXem(kho.pa, tv, loId, toaId) : null;
-  const loDangChon = buoc === 'tmb' ? loDangXep(kho.pa, loId) : xemTang?.lo;
+  const loDangChon = buoc !== 'tang' ? loDangXep(kho.pa, loId) : xemTang?.lo;
   const toaDangChon = buoc === 'tmb' ? kho.pa.toa.find((x) => x.id === toaId) : xemTang?.toa;
+  const chonO = useChonO(buoc === 'tang' ? toaDangChon ?? null : null);
   const thongBao = (
     <>
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}
@@ -112,9 +120,11 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
     <KhungSoan
       capDo={{
         lo: `${da.ten} · ${tenPA}${loDangChon ? ' · ' + loDangChon.temDat.kyHieu : ''}`.toUpperCase(),
-        coTe: 'tren',
-        toa: toaDangChon ? tv?.toa.get(toaDangChon.mauId)?.ten_vi ?? toaDangChon.mauId : undefined,
-        tang: buoc === 'tang' && toaDangChon ? t('tang.dienHinh') : undefined,
+        coTe: buoc === 'ham' ? 'duoi' : 'tren',
+        onCoTe: () => setBuoc(buoc === 'ham' ? 'tmb' : 'ham'),
+        toa: buoc !== 'ham' && toaDangChon ? tv?.toa.get(toaDangChon.mauId)?.ten_vi ?? toaDangChon.mauId : undefined,
+        tang: buoc === 'ham' ? `B${Math.min(tangHam, soTangHam)}` : buoc === 'tang' && toaDangChon ? (chonO.tangs ? nhanPhamVi(chonO.tangs, toaDangChon.soTangDe) : t('tang.dienHinh')) : undefined,
+        onTang: buoc === 'ham' ? () => setTangHam((Math.min(tangHam, soTangHam) % soTangHam) + 1) : undefined,
         can: buoc === 'tang' && canKhoa && xemTang ? tenCanChon(xemTang, tv, canKhoa) : undefined,
       }}
       cheDo={kho.cheDo}
@@ -125,11 +135,12 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onLamLai={kho.lamLai}
       thongBao={thongBao}
       onXuatCad={xemXuat && tv ? () => setMoXuat(true) : undefined}
+      onXuatXls={tv && kq ? () => void xuatXls(baoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)), tenTepXls(da.ten, tenPA)) : undefined}
       moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} />}
-      buoc={{ ds: [['tmb', t('buoc.tmb')], ['tang', t('buoc.tang')]], chon: buoc, onChon: (k) => setBuoc(k as 'tmb' | 'tang') }}
-      trai={buoc === 'tmb' ? <TmbTrai {...chungXep} /> : <TangTrai {...chungTang} />}
-      giua={buoc === 'tmb' ? <XepGiua {...chungXep} /> : <TangGiua {...chungTang} />}
-      phai={buoc === 'tmb' ? <TmbPhai {...chungXep} kq={kq} /> : <TangPhai {...chungTang} />}
+      buoc={{ ds: [['tmb', t('buoc.tmb')], ['tang', t('buoc.tang')], ['ham', t('buoc.ham')]], chon: buoc, onChon: (k) => setBuoc(k as 'tmb' | 'tang' | 'ham') }}
+      trai={buoc === 'tmb' ? <TmbTrai {...chungXep} /> : buoc === 'ham' ? <HamTrai {...chungHam} /> : <TangTrai {...chungTang} />}
+      giua={buoc === 'tmb' ? <XepGiua {...chungXep} /> : buoc === 'ham' ? <HamGiua {...chungHam} /> : <TangGiua {...chungTang} />}
+      phai={buoc === 'tmb' ? <TmbPhai {...chungXep} kq={kq} /> : buoc === 'ham' ? <HamPhai {...chungHam} /> : <TangPhai {...chungTang} />}
     />
   );
 }

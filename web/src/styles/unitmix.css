@@ -235,3 +235,27 @@ body { font-size: 13px; line-height: 1.45; }
 .chip-goc button { border: 0; background: transparent; padding: 2px 9px; font-size: 12px; color: var(--green); }
 .chip-goc .xoa { padding: 2px 7px; color: var(--muted-text); border-left: 1px solid var(--line); }
 .thanh-3d .nut-phu, .thanh-3d .nut-chinh { padding: 4px 10px; font-size: 12px; }
+
+/* ===== Khung làm việc giữa cố định =====
+   Bản vẽ (TMB, MB tầng) và 3D luôn phủ kín panel giữa; thanh công cụ, chú giải, gợi ý, thông báo nổi đè lên
+   trên chứ không chiếm chỗ, nên đổi màn / bật tắt / hiện thông báo không bóp hay xô lệch khung nhìn. */
+.panel-giua > .ban-ve, .panel-giua > .khung-3d { position: absolute; inset: 0; }
+.khung-3d { position: relative; }
+.khung-3d .vung-3d { position: absolute; inset: 0; min-height: 0; }
+.noi-tren, .noi-duoi { position: absolute; left: 0; right: 0; z-index: 3; display: flex; flex-direction: column; pointer-events: none; }
+.noi-tren { top: 0; }
+.noi-duoi { bottom: 8px; align-items: center; gap: 4px; }
+.noi-tren > *, .noi-duoi > * { pointer-events: auto; }
+.noi-tren > .thanh-3d, .noi-tren > .tham-so-3d { background: color-mix(in srgb, var(--panel) 92%, transparent); }
+.noi-duoi > .thanh-hien-thi { padding: 0; }
+.noi-duoi > .chu-giai-dat, .noi-duoi > .dong, .noi-duoi > .goi-y-3d { max-width: calc(100% - 24px); background: color-mix(in srgb, var(--panel) 88%, transparent); border-radius: 6px; padding: 2px 10px; }
+.lop-thong-bao { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 4; width: max-content; max-width: calc(100% - 24px); display: flex; flex-direction: column; gap: 6px; }
+.lop-thong-bao .thong-bao { border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 4px 14px rgba(0, 0, 0, .08); }
+/* Thanh trên luôn một dòng (dư thì cuộn ngang) để chiều cao không đổi khi đường dẫn dài ra. */
+.khung-soan .thanh-tren { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; height: 52px; min-height: 0; box-sizing: border-box; }
+.khung-soan .thanh-tren > :not(.gian):not(.cap-do) { flex-shrink: 0; }
+.khung-soan .thanh-tren button { white-space: nowrap; }
+.khung-soan .cap-do { flex: 1 1 auto; flex-wrap: nowrap; min-width: 0; overflow: hidden; }
+.khung-soan .cap-do button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Panel hai bên giữ chỗ thanh cuộn, nội dung không nhảy khi thanh cuộn hiện / ẩn. */
+.panel-trai, .panel-phai { scrollbar-gutter: stable; }

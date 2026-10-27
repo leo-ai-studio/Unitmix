@@ -22,7 +22,8 @@ def test_truong_bat_buoc():
         assert x["ap_dung"] in ("tm", "xh", "ca_hai")
         assert x["buoc"] in buoc
         assert re.fullmatch(r"(LO|MT|XC|DC|PC|HA|CT)-\d{2}", x["ma"])
-        assert x["ma_cu"]
+        # luật bổ sung (không có ở app cũ) được phép không có mã cũ, nhưng phải ghi rõ nguồn quy chuẩn
+        assert x["ma_cu"] or (x.get("bo_sung") and x["nguon"])
 
 
 def test_ma_duy_nhat_va_thu_tu():

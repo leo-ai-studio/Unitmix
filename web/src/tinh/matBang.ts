@@ -2,7 +2,7 @@
  * Mặt bằng tầng điển hình ghép từ mẫu tòa (`mat[].phan_tu`) + hình học mẫu căn / lõi trong thư viện.
  * Hàm thuần, toạ độ mm như toa.json. Một mặt có hệ trục: thế giới = a·u + (truc + b)·n, căn chiếm a ∈ [a0, a1], b ∈ [0, sâu].
  */
-import type { CanMau, Diem, ThuVien, ToaDat, ToaMau } from './kieu';
+import type { BoCucTang, CanMau, CongNangO, Diem, LoaiCan, ThuVien, ToaDat, ToaMau } from './kieu';
 import type { MatToa, PhanTuMat } from './pccc';
 
 export type ToaCoMat = ToaMau & { mat: MatToa[] };
@@ -50,24 +50,75 @@ export function viTriCan(mau: ToaCoMat, tv: ThuVien): ViTriCan[] {
   return kq;
 }
 
-type DoiCan = Pick<ToaDat, 'canTheo' | 'canViTri'>;
+/** Bố cục MỘT tầng: đổi căn theo mẫu / vị trí và công năng ô. */
+export type BoCuc = Pick<ToaDat, 'canTheo' | 'canViTri' | 'congNang'>;
+/** Bố cục cả tòa: bố cục chung + ghi đè theo tầng. */
+export type BoCucToa = BoCuc & Pick<ToaDat, 'tangRieng' | 'soTangDH'>;
 
 /** Căn đang dùng ở từng vị trí: đổi theo vị trí thắng đổi theo mẫu, rồi mới đến căn gốc. */
-export const canDangDung = (vt: ViTriCan, toa: DoiCan): string => toa.canViTri?.[vt.khoa] ?? toa.canTheo[vt.canGocId] ?? vt.canGocId;
+export const canDangDung = (vt: ViTriCan, toa: Pick<ToaDat, 'canTheo' | 'canViTri'>): string => toa.canViTri?.[vt.khoa] ?? toa.canTheo[vt.canGocId] ?? vt.canGocId;
+/** Công năng ô tại vị trí (thiếu = căn hộ). */
+export const congNangTai = (khoa: string, bc: Pick<ToaDat, 'congNang'>): CongNangO => bc.congNang?.[khoa] ?? 'can';
 
 export const coMat = (m: ToaMau): m is ToaCoMat => Array.isArray((m as ToaCoMat).mat);
 
+const gonMap = <V>(m: Record<string, V> | undefined): Record<string, V> | undefined => (m && Object.keys(m).length ? m : undefined);
+
+/** Ghi đè của tầng `tang` (1..soTangDH) nếu có và còn nằm trong số tầng điển hình; không thì null. */
+export function ghiDeTang(toa: Pick<ToaDat, 'tangRieng' | 'soTangDH'>, tang: number): BoCucTang | null {
+  if (!Number.isInteger(tang) || tang < 1 || tang > toa.soTangDH) return null;
+  const g = toa.tangRieng?.[tang];
+  return g && (gonMap(g.canViTri) || gonMap(g.congNang) || g.coCauMucTieu) ? g : null;
+}
+
+/** Bố cục thực của một tầng: chung (tang = null) hoặc chung + ghi đè riêng của tầng. */
+export function boCucTang(toa: BoCucToa, tang: number | null): BoCuc {
+  const g = tang === null ? null : ghiDeTang(toa, tang);
+  if (!g || (!gonMap(g.canViTri) && !gonMap(g.congNang))) return { canTheo: toa.canTheo, canViTri: toa.canViTri, congNang: toa.congNang };
+  return {
+    canTheo: toa.canTheo,
+    canViTri: gonMap({ ...(toa.canViTri ?? {}), ...(g.canViTri ?? {}) }),
+    congNang: gonMap({ ...(toa.congNang ?? {}), ...(g.congNang ?? {}) }),
+  };
+}
+
+/** Các tầng có bố cục riêng (đã sắp, trong 1..soTangDH, có ghi đè căn / công năng). */
+export const tangCoRieng = (toa: Pick<ToaDat, 'tangRieng' | 'soTangDH'>): number[] =>
+  Object.keys(toa.tangRieng ?? {}).map(Number).filter((k) => { const g = ghiDeTang(toa, k); return !!g && (!!gonMap(g.canViTri) || !!gonMap(g.congNang)); }).sort((a, b) => a - b);
+
+/** Nhóm tầng cùng bố cục: bố cục chung × số tầng không ghi đè + từng tầng có ghi đè × 1. */
+export function nhomTang(toa: BoCucToa): { tang: number | null; so: number }[] {
+  const rieng = tangCoRieng(toa);
+  const chung = Math.max(0, toa.soTangDH - rieng.length);
+  return [...(chung ? [{ tang: null, so: chung }] : []), ...rieng.map((k) => ({ tang: k, so: 1 }))];
+}
+
+/** Mục tiêu cơ cấu riêng của tầng (S12); không có thì null. */
+export const coCauRiengTang = (toa: Pick<ToaDat, 'tangRieng' | 'soTangDH'>, tang: number | null): Record<LoaiCan, number> | null =>
+  (tang === null ? null : ghiDeTang(toa, tang)?.coCauMucTieu) ?? null;
+
 /**
- * Căn của một tầng điển hình dạng gộp [id căn, số căn]. Tòa chưa đổi theo vị trí thì lấy thẳng `co_cau` (mẫu thư viện không cần
- * hình học mặt tầng); có đổi theo vị trí thì đếm theo từng vị trí. Hai đường cho cùng kết quả khi không có đổi theo vị trí.
+ * Căn của MỘT tầng (bố cục `toa`) dạng gộp [id căn, số căn]; ô đổi công năng không tính. Tòa chưa đổi theo vị trí / công năng thì
+ * lấy thẳng `co_cau` (mẫu thư viện không cần hình học mặt tầng); có thì đếm theo từng vị trí. Hai đường cho cùng kết quả khi không đổi.
  */
-export function canCuaToa(mau: ToaMau, toa: DoiCan, tv: ThuVien): [string, number][] {
-  if (toa.canViTri && Object.keys(toa.canViTri).length && coMat(mau)) {
+export function canCuaToa(mau: ToaMau, toa: BoCuc, tv: ThuVien): [string, number][] {
+  if ((gonMap(toa.canViTri) || gonMap(toa.congNang)) && coMat(mau)) {
     const dem = new Map<string, number>();
-    for (const vt of viTriCan(mau, tv)) dem.set(canDangDung(vt, toa), (dem.get(canDangDung(vt, toa)) ?? 0) + 1);
+    for (const vt of viTriCan(mau, tv)) {
+      if (congNangTai(vt.khoa, toa) !== 'can') continue;
+      const id = canDangDung(vt, toa);
+      dem.set(id, (dem.get(id) ?? 0) + 1);
+    }
     return [...dem];
   }
   return Object.entries(mau.co_cau).map(([g, n]) => [toa.canTheo[g] ?? g, n]);
+}
+
+/** Căn của cả tòa (mọi tầng điển hình, theo bố cục từng tầng) dạng gộp [id căn, số căn]. */
+export function canCaToa(mau: ToaMau, toa: BoCucToa, tv: ThuVien): [string, number][] {
+  const dem = new Map<string, number>();
+  for (const { tang, so } of nhomTang(toa)) for (const [id, n] of canCuaToa(mau, boCucTang(toa, tang), tv)) dem.set(id, (dem.get(id) ?? 0) + n * so);
+  return [...dem];
 }
 
 /**
