@@ -925,5 +925,17 @@
   "phong.ten.bep": "Bếp",
   "phong.ten.logia": "Lô gia",
   "phong.ten.chung": "Phòng ở chung",
-  "phong.ten.sanh": "Sảnh / hành lang"
+  "phong.ten.sanh": "Sảnh / hành lang",
+  "st.tieuDe": "STRETCH",
+  "st.khongApDung": "Mẫu căn này không có đường cắt phòng khách — không STRETCH được.",
+  "gt.st.nut": "STRETCH như lệnh STRETCH của CAD qua phòng khách (QT-81 · DC-04): bước 100 mm, tối đa ±500 mm. Căn kề trong cùng đoạn co / giãn bù ngược để tổng bề ngang đoạn không đổi (XC-04); không bù được thì chặn. Hoàn tác được; DT, số căn, thoát nạn tự tính lại.",
+  "st.ok": "CH-{a} kéo {d} mm · CH-{b} bù {e} mm (tổng bề ngang đoạn giữ nguyên).",
+  "st.loi.khongPhaiCan": "Ô này không phải căn hộ — không STRETCH được.",
+  "st.loi.khongKeoDuoc": "Mẫu căn này không có đường cắt phòng khách (QT-81) — không STRETCH được.",
+  "st.loi.vuotGioiHan": "Vượt giới hạn STRETCH {v} mm (DC-04): mỗi căn chỉ kéo tối đa ±500 mm so với mẫu gốc.",
+  "st.loi.daiRa": "CH-{n} là căn duy nhất của đoạn, không có căn kề để bù. Kéo căn này làm dãy dài ra / ngắn lại (QT-69) kéo theo nét bao và DTXD; app giữ nét bao cố định theo mẫu tòa nên chặn.",
+  "st.loi.khongBu": "Không có căn kề STRETCH được để bù trong đoạn (căn kề không có đường cắt phòng khách, đã kéo tới ±500 mm hoặc là ô công năng khác). Kéo như vậy làm dãy dài ra / ngắn lại (QT-69) kéo theo nét bao và DTXD; app giữ nét bao cố định theo mẫu tòa nên chặn.",
+  "st.loi.khongKhit": "Kéo xong dãy căn không còn khít (khe hoặc đè mốc lõi / thang) — đã chặn, bố cục giữ nguyên.",
+  "st.xuatGhiChu": "{n} mẫu căn STRETCH: xuất nét đã kéo (.dxf = block riêng, .scr = vẽ nét), không XREF mẫu gốc.",
+  "gt.st.xuat": "Thư viện CAD chỉ có tệp .dwg của mẫu gốc. Căn đã kéo (QT-81 · DC-04) được xuất bằng hình đã kéo theo đúng luật lệnh STRETCH, không tham chiếu tệp mẫu gốc."
 }

@@ -21,6 +21,8 @@ import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
 import { MoHinhCan, MoHinhChinh } from '../ve3d/MoHinh3D';
 import { datCaiTang, useCaiTang } from './caiTang';
+import { datBaoStretch, useBaoStretch } from './baoStretch';
+import { ST_BUOC, stretchTay, tachMa } from '../tinh/stretch';
 
 export type ChungTang = {
   pa: TrangThaiPA;
@@ -222,6 +224,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   const dsO = oDangChon(canKhoa, co.ds);
   const soCanTang = sl.can.filter((c) => c.cn === 'can').length;
   const phamVi = nhanPhamVi(co.tangs, toa.soTangDe);
+  const baoSt = useBaoStretch();
 
   const onChonO = (khoa: string, e: MouseEvent) => {
     if (e.shiftKey || e.ctrlKey || e.metaKey) {
@@ -292,6 +295,12 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
             deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2} />
         </BanVe>
       </div>
+      {baoSt && (
+        <div key={baoSt.id} class={`lop-st-bao ${baoSt.loai}`} role={baoSt.loai === 'loi' ? 'alert' : 'status'}>
+          <span>{baoSt.chu}</span>
+          <button type="button" aria-label={t('m3d.dong')} onClick={() => datBaoStretch(null)}>×</button>
+        </div>
+      )}
       {khungChon && (
         <div class="khung-chon" aria-hidden="true" style={{
           left: `${Math.min(khungChon.x0, khungChon.x1)}px`, top: `${Math.min(khungChon.y0, khungChon.y1)}px`,
@@ -361,7 +370,26 @@ export function TangPhai(p: ChungTang) {
   const doi = (canMoi: string) => chon && sua((q) => doiToa(q, toa.id, (x) =>
     co.tangs ? doiCanTheoTang(x, co.tangs, chon.vt, canMoi, sl.vts, cai.suaNhieu) : doiCanTaiViTri(x, chon.vt, canMoi, sl.vts, cai.suaNhieu)));
   const dsO = oDangChon(canKhoa, co.ds);
-  const dongSh = (nhan: string, k: typeof shToa) => (
+  /** STRETCH tay (DC-04 · QT-81): kéo căn đang chọn `d` mm, căn kề bù ngược; không bù được thì chặn và báo bằng lớp phủ. */
+  const keoTay = (d: number) => {
+    if (!chon) return;
+    const ks = co.tangs ?? [null];
+    const kqs = ks.map((k) => ({ k, r: stretchTay(mau, boCucTang(toa, k), tv, chon.vt.khoa, d) }));
+    const hong = kqs.find((x) => !x.r.ok);
+    if (hong && !hong.r.ok) {
+      datBaoStretch({ loai: 'loi', chu: t(`st.loi.${hong.r.lyDo}`).replace('{v}', hong.r.chiTiet ?? '').replace('{n}', String(chon.no).padStart(2, '0')) });
+      return;
+    }
+    const vtOf = (kh: string) => sl.vts.find((v) => v.khoa === kh)!;
+    sua((q) => doiToa(q, toa.id, (x0) => kqs.reduce((x, { k, r }) => (!r.ok ? x : r.doi.reduce((a, [kh, id]) =>
+      (k === null ? doiCanTaiViTri(a, vtOf(kh), id, sl.vts, false) : doiCanTheoTang(a, [k], vtOf(kh), id, sl.vts, false)), x)), x0)));
+    const r0 = kqs[0].r;
+    const bu = r0.ok ? sl.can.find((c) => c.vt.khoa === r0.doi[1][0])?.no : undefined;
+    const cc = (n: number | undefined) => String(n ?? 0).padStart(2, '0');
+    const dau = (v: number) => `${v > 0 ? '+' : ''}${v}`;
+    datBaoStretch({ loai: 'ok', chu: t('st.ok').replace('{a}', cc(chon.no)).replace('{d}', dau(d)).replace('{b}', cc(bu)).replace('{e}', dau(-d)) });
+  };
+  const dongSh =(nhan: string, k: typeof shToa) => (
     <div class="dong"><span>{nhan}</span><b class={k.m2MoiCan === null ? '' : LOP_MUC[k.muc]}>{k.m2MoiCan === null ? '—' : fmtSo(k.m2MoiCan, { thapPhan: 2, donVi: t('oc.sh.donVi') })}</b></div>
   );
 
@@ -442,6 +470,23 @@ export function TangPhai(p: ChungTang) {
                 <div class="dong"><span>{t('tang.timTuong')}</span><b>{fmtSo(cChon.dt_tim_m2, { thapPhan: 2, ...m2 })}</b></div>
                 {deBai[cChon.loai] ? <div class="dong"><span>{t('xep.dtDeBai')}</span><b>{fmtSo(deBai[cChon.loai]!, { thapPhan: 1, ...m2 })}</b></div> : null}
                 {(() => {
+                  const { goc, st } = tachMa(chon.canId), g = tv.can.get(goc);
+                  if (!g?.stretch) return <p class="dong muted" style={{ margin: 0 }} title={t('gt.st.nut')}>{t('st.khongApDung')}</p>;
+                  const nut = (d: number, nhan: string, id: string) => (
+                    <button type="button" id={id} class="nut-phu nut-st" disabled={chiXem || !d} title={t('gt.st.nut')} onClick={() => keoTay(d)}>{nhan}</button>
+                  );
+                  return (
+                    <div class="dong khoi-st" role="group" aria-label={t('st.tieuDe')} title={t('gt.st.nut')}>
+                      <span>{t('st.tieuDe')} <b class="st-muc">{st > 0 ? '+' : ''}{st} mm</b></span>
+                      <span class="nhom-nut-st">
+                        {nut(-ST_BUOC, `−${ST_BUOC}`, 'st-tru')}
+                        {nut(ST_BUOC, `+${ST_BUOC}`, 'st-cong')}
+                        {nut(-st, '0', 'st-ve0')}
+                      </span>
+                    </div>
+                  );
+                })()}
+                {(() => {
                   const ung = ungVienDoi(chon.canId, tv);
                   return (
                     <>
@@ -469,7 +514,7 @@ export function TangPhai(p: ChungTang) {
               <div class="hop-3d" role="dialog" aria-modal="true" aria-label={t('m3d.xemCan')} onClick={(e) => { if (e.target === e.currentTarget) setMo3d(false); }}>
                 <div class="hop-3d-trong">
                   <button type="button" class="dong-hop" onClick={() => setMo3d(false)} aria-label={t('m3d.dong')}>×</button>
-                  <MoHinhCan canId={chon.canId} ten={`CH-${String(chon.no).padStart(2, '0')} · ${cChon.ten_vi}`} />
+                  <MoHinhCan canId={chon.canId} tv={tv} ten={`CH-${String(chon.no).padStart(2, '0')} · ${cChon.ten_vi}`} />
                 </div>
               </div>
             )}

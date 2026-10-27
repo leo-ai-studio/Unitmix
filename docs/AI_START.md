@@ -66,5 +66,5 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 
 - Tab Chi phí đã gộp (`tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`) — mọi đơn giá / giá bán là số tạm trong `CHI_PHI_MAC_DINH`, chờ QS chốt; thang máy chưa đếm từ lõi.
 - Đơn giá dự toán = định mức app cũ (`dinh_muc_du_toan.json`), xem chú thích `CHI_PHI_MAC_DINH`. Chưa có: QLDA lũy thoái TT 38/2026, chọn nhóm 8 / 15 tầng theo tòa.
-- Đã có: gợi ý xếp tòa MT-05 (`tinh/xepToa.ts`), tối ưu tầng + STRETCH (`tinh/stretch.ts`, `tinh/toiUu.ts`), dồn khít XC-04. Chưa có: XC-03, XC-05, XC-06, XC-07, PC-11 (lõi / sảnh / hành lang cố định theo mẫu tòa — cần mô hình tầng mới), STRETCH tay, CAD / 3D căn kéo.
+- Đã có: gợi ý xếp tòa MT-05 (`tinh/xepToa.ts`), tối ưu tầng + STRETCH (`tinh/stretch.ts`, `tinh/toiUu.ts`), dồn khít XC-04. Chưa có: XC-03, XC-05, XC-06, XC-07, PC-11 (lõi / sảnh / hành lang cố định theo mẫu tòa — cần mô hình tầng mới), STRETCH làm dãy dài ra (QT-69, cần nét bao / DTXD riêng của tòa). Đã có STRETCH tay từng căn (`stretchTay`, nút ở panel phải màn Tầng), 3D căn kéo (`ve3d/stretch3d.ts`), CAD căn kéo nhúng nét đã kéo (xem NHAT_KY).
 - Chờ chủ nhiệm chốt: xem `hoc_architechtures_app_2026-10-27.md` mục 6.
