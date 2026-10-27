@@ -58,13 +58,13 @@ export function NhapChiTieu({ lo, dong, ap }: { lo: Lo[]; dong: () => void; ap: 
         <h2 id="tieu-de-nct">{t('nct.tieuDe')}</h2>
         <p class="muted" style={{ margin: 0 }}>{t('nct.giaiThich')}</p>
         <div class="dong" style={{ gap: '8px', padding: 0 }}>
-          <label class="nut-phu" style={{ cursor: 'pointer', flexDirection: 'row' }}>
+          <label class="nut-phu" title={t('gt.nct.chonTep')} style={{ cursor: 'pointer', flexDirection: 'row' }}>
             {t('nct.chonTep')}
             <input type="file" accept=".xlsx,.xls,.xlsm" class="sr-only" onChange={(e) => e.currentTarget.files?.[0] && chonTep(e.currentTarget.files[0])} />
           </label>
           {tep && <span class="muted">{tep}</span>}
           {sheets && bang && (
-            <label class="o-chon" style={{ flexDirection: 'row', marginLeft: 'auto' }}>
+            <label class="o-chon" style={{ flexDirection: 'row', marginLeft: 'auto' }} title={t('gt.nct.sheet')}>
               <span>{t('nct.sheet')}</span>
               <select value={bang.sheet} onChange={(e) => doiSheet(e.currentTarget.value)}>
                 {sheets.map((s) => <option value={s.ten}>{s.ten}</option>)}
