@@ -2,6 +2,18 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-28 · tự chỉnh mặt bằng tầng XC-03/05/06/07 · PC-11 · QT-69 · agent Opus
+
+**Đã làm** (nhánh agent, đã gộp `nang-cap/architechtures` @ `6215025` trước khi làm QT-69):
+- Mô hình tầng sửa được: `ToaDat.matBang` (`MatBangSua`: ô thang bộ, độ dời căn `dich`, mép mặt `mep`, nét bao, hành lang, sảnh, báo cáo) + `ToaDat.duongBao` / `dtxdM2` (nét bao + DTXD riêng của tòa). Mẫu thư viện không đổi; `apMatBang` dựng "mẫu tòa hiệu dụng" (khoá căn giữ "mặt:chỉ số" qua `PhanTuMat.khoa`, dải lõi `bang: true`). PA cũ: `chuanHoaToa` gọi `chuanHoaMatBang`, sai cấu trúc thì bỏ.
+- `tinh/loiThang.ts`: XC-03 ô thang 3.000 (hút khe ≤ 600, QT-60 nới ô thiếu — xh-z5 +450 mm); XC-05 dải nét bao MDI-BAO-TM chiếu lên mặt làm mốc, `donKhit` neo về lõi (QT-56b), `khe.ts` coi chồng ≤ 200 mm với lõi là tường chung; XC-06 đo sảnh trên nét tường (`sanhLoi`), phân loại 2.800, nét HL nối qua tim sảnh; XC-07 đồ thị liền / không chéo, kéo trục tới cửa ĐÃ DỜI xa nhất; PC-11 dời / thêm thang cạnh căn tệ nhất (đo bằng `thoatNan`), cắt bớt giữ ≥ 2; QT-69 dãy dài ra / ngắn lại ở đầu cánh tự do theo `lech` của dồn khít, nét bao nối theo.
+- `stretchTay` (QT-69): không có căn bù mà đầu dãy là đầu cánh tự do thì nhận (`daiRa`), chặn khi chạm lõi / thang / cánh khác hoặc đang sửa tầng riêng. `chanToa` đọc `toa.duongBao` (tâm vẫn theo nét bao mẫu) → chỉ tiêu, dự toán, 3D dự án, hầm theo.
+- Màn Tầng: `man/tuChinhTang.ts` bọc `sua` (đổi căn, STRETCH tay, tối ưu, về mẫu gốc) — tự chỉnh chạy trong CÙNG bước sửa, hoàn tác một lần; một dòng tóm tắt ở panel phải (chi tiết ở tooltip); bản vẽ thêm nét tim hành lang mảnh.
+
+**Kiểm:** tsc 0, web 298/298 (mới `tinh/loiThang.test.ts` 25 test trên tm-i1, tm-u2, xh-i1, tm-z1, tm-l1, xh-z2, xh-z5, xh-v1, tm-u4), build qua. Trên app (vite 5401, API 8787), tòa tm-l1 24 tầng: tối ưu → thang 2→3, căn vượt cự ly 2→1, DTXD 1.710,2 m²; hoàn tác về mẫu; STRETCH +100 căn đầu cánh (căn kề là phòng KT) → QT-69 dài 100 mm, DTXD +0,85 m², −100 về lại. Khung giữa 270,52 · 870×848 trước / sau mọi bước.
+
+**Còn dở:** PC-11 chỉ dời thang trong cùng đoạn / thêm ở đoạn có đầu tự do (không chuyển thang sang mặt khác như `datThangBo`); xét trên bố cục chung, tầng riêng không có thang riêng. 3D (`ve3d/*`) và xuất CAD vẫn vẽ theo mẫu thư viện (không thuộc phạm vi đợt này). Sàn hành lang kéo dài chỉ nối nét bao khi có cạnh biên phủ dải. Số tạm chờ chủ nhiệm chốt: hở ≤ 200 mm giữa căn và nét bao lõi vẫn coi là khít; lệch dải lõi > 1 m = lõi hub không đo theo mặt.
+
 ## 2026-10-28 · QLDA TT 38 + gộp STRETCH tay · Claude Code
 
 - `0eaba60`: QLDA tự tra Bảng 1.1 TT 38/2026 (`tinh/duToan.ts` `tyLeQldaTT38`, nội suy, ×0,8 khi TB ≥ 50 %), ô tích trên tab Chi phí, `ChiPhiPA.qldaTT38` mặc định true. Dự án thử 789 tỷ → 1,355 %.

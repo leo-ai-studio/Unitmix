@@ -6,7 +6,7 @@ import { idLoi, type HinhHocTai } from './hinhHocThuVien';
 import { LopPhong } from './LopPhong';
 import { CHU_CO_CHAN, CHU_KHONG_CHAN, CHU_MAY, KIEU_MB, NET, NET_NOI_THAT, NHAN_LOAI, type KieuMb } from './kieuMb';
 
-export type ToaVe = ToaCoMat & { duong_bao: Diem[] };
+export type ToaVe = ToaCoMat & { duong_bao: Diem[]; hanh_lang?: { ten: string; noi: boolean; p0: Diem; p1: Diem }[] };
 
 type Props = {
   mau: ToaVe;
@@ -89,7 +89,7 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
     const kq: { khoa: string; san: string | null; tam: Diem; nhom: (readonly [string, string])[] }[] = [];
     mau.mat.forEach((m, mi) =>
       m.phan_tu.forEach((q, i) => {
-        if (q.loai === 'can') return;
+        if (q.loai === 'can' || q.bang) return; // dải lõi chiếu lên mặt (XC-05) chỉ là mốc, lõi vẽ một lần
         const g = hinh.loi.get(idLoi(q.block));
         if (!g) return;
         const theoNhom = new Map<string, string[]>();
@@ -104,7 +104,7 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
           san = d(pts) + 'Z';
           tam = trongTam(pts);
         }
-        kq.push({ khoa: `${mi}:${i}`, san, tam, nhom: [...theoNhom].map(([cat, ds]) => [cat, ds.join('')] as const) });
+        kq.push({ khoa: q.khoa ?? `${mi}:${i}`, san, tam, nhom: [...theoNhom].map(([cat, ds]) => [cat, ds.join('')] as const) });
       }),
     );
     return kq;
@@ -166,6 +166,11 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
           </text>
         );
       })}
+      {/* tim hành lang (XC-07: liền qua góc, kéo tới cửa xa nhất) — nét mảnh, không bắt chuột */}
+      {(mau.hanh_lang ?? []).map((s, i) => (
+        <path key={`hl${i}`} d={d([s.p0, s.p1])} fill="none" stroke="#8a8f98" stroke-width="1" stroke-dasharray="6 4" stroke-opacity="0.7"
+          vector-effect="non-scaling-stroke" pointer-events="none" data-hl={s.noi ? 'noi' : 'truc'} />
+      ))}
       {/* nét bao DTXD như app cũ: kiểu màn hình = nét đỏ đứt dày 300 mm theo mét thật (phủ kín mép tường khi phóng); kiểu salekit = nét liền mảnh màu tường */}
       <path d={d(mau.duong_bao) + 'Z'} fill="none" pointer-events="none" stroke-linejoin="miter"
         {...(K.sanTrang

@@ -933,9 +933,11 @@
   "st.loi.khongPhaiCan": "This cell is not a dwelling unit — it cannot be stretched.",
   "st.loi.khongKeoDuoc": "This unit template has no living-room cut line (QT-81) — it cannot be stretched.",
   "st.loi.vuotGioiHan": "STRETCH limit exceeded {v} mm (DC-04): each unit may be stretched at most ±500 mm from its base template.",
-  "st.loi.daiRa": "Unit {n} is the only unit in its run, so no neighbour can compensate. Stretching it would lengthen / shorten the run (QT-69) and move the outline and building footprint; this app keeps the outline fixed to the tower template, so it is blocked.",
-  "st.loi.khongBu": "No stretchable neighbour in the run can compensate (neighbours have no cut line, are already at ±500 mm, or are other-function cells). That would lengthen / shorten the run (QT-69) and move the outline and building footprint; this app keeps the outline fixed to the tower template, so it is blocked.",
+  "st.loi.daiRa": "Unit {n} is the only unit in its run, so no neighbour can compensate, and the run end is not a free wing end (it touches a core / stair / another wing) or a single floor is being edited — the run cannot lengthen / shorten (QT-69), so it is blocked.",
+  "st.loi.khongBu": "No stretchable neighbour in the run can compensate, and the run end is not a free wing end (it touches a core / stair / another wing) or a single floor is being edited — the run cannot lengthen / shorten (QT-69), so it is blocked.",
   "st.loi.khongKhit": "After stretching the run would no longer fit tight (gap or overlap with core / stair) — blocked, layout unchanged.",
   "st.xuatGhiChu": "{n} STRETCH unit template(s): the stretched geometry is exported (.dxf = own block, .scr = drawn lines), not an XREF of the base template.",
-  "gt.st.xuat": "The CAD library only holds .dwg files of base templates. Stretched units (QT-81 · DC-04) are exported with the stretched geometry following the STRETCH command rule, without referencing the base template file."
+  "gt.st.xuat": "The CAD library only holds .dwg files of base templates. Stretched units (QT-81 · DC-04) are exported with the stretched geometry following the STRETCH command rule, without referencing the base template file.",
+  "st.daiRa": "Unit {a} stretched {d} mm with no compensating unit: the run changes {d} mm at its free wing end; the tower outline and footprint follow (QT-69).",
+  "tc.tomTat": "Floor auto-adjust (XC-03/05/06/07 · PC-11 · QT-69): {n} rules fixed · {c} to review · stairs {t} · units over escape distance {v} · footprint {d} m²"
 }

@@ -103,13 +103,18 @@ describe('STRETCH tay từng căn (DC-04 · QT-81)', () => {
     expect(stretchTay(m, trong, tv, vt.khoa, 150)).toMatchObject({ ok: false, lyDo: 'khongKeoDuoc' });
     expect(stretchTay(m, { canTheo: {}, congNang: { [vt.khoa]: 'ky_thuat' } }, tv, vt.khoa, 100)).toMatchObject({ ok: false, lyDo: 'khongPhaiCan' });
   });
-  it('không có căn kề bù được thì chặn (không dài dãy ra / nét bao cố định)', () => {
+  it('không có căn kề bù: QT-69 dài dãy ở đầu cánh tự do, không thì chặn; tầng riêng (choDaiRa = false) luôn chặn', () => {
     const { m, vt } = timCa();
     const vts = viTriCan(m, tv), dn = doanCan(vts).find((o) => o.ds.includes(vts.findIndex((v) => v.khoa === vt.khoa)))!;
     const congNang = Object.fromEntries(dn.ds.filter((i) => vts[i].khoa !== vt.khoa).map((i) => [vts[i].khoa, 'ky_thuat' as const]));
     const r = stretchTay(m, { canTheo: {}, congNang }, tv, vt.khoa, 100);
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(['daiRa', 'khongBu']).toContain(r.lyDo);
+    if (r.ok) {
+      expect(r.daiRa).toMatchObject({ matIdx: vt.matIdx, mm: 100 });
+      expect(r.doi).toHaveLength(1);
+    } else expect(['daiRa', 'khongBu']).toContain(r.lyDo);
+    const r2 = stretchTay(m, { canTheo: {}, congNang }, tv, vt.khoa, 100, { choDaiRa: false });
+    expect(r2.ok).toBe(false);
+    if (!r2.ok) expect(['daiRa', 'khongBu']).toContain(r2.lyDo);
   });
   it('hoàn tác: kéo +100 rồi −100 trả đúng bố cục ban đầu (mẫu, số căn, tổng DT)', () => {
     const { m, vt, r } = timCa();
@@ -135,7 +140,9 @@ describe('STRETCH tay từng căn (DC-04 · QT-81)', () => {
         if (!r.ok) { chan++; continue; }
         ok++;
         const bc = ap(trong, r.doi, m), dk = donKhit(m, viTriCan(m, tv), bc, tv);
-        expect(dk.lech, `${t.id} ${vt.khoa} ${d}`).toEqual([]);
+        // QT-69: không có căn bù thì đúng một đoạn dài ra / ngắn lại đúng d ở đầu tự do; còn lại tổng bề ngang giữ nguyên
+        if (r.daiRa) expect(dk.lech.map((l) => [l.matIdx, l.mm]), `${t.id} ${vt.khoa} ${d}`).toEqual([[vt.matIdx, d]]);
+        else expect(dk.lech, `${t.id} ${vt.khoa} ${d}`).toEqual([]);
         expect(dk.de, `${t.id} ${vt.khoa} ${d}`).toEqual([]);
       }
     }
