@@ -53,7 +53,7 @@ export function khungCatCan(ve: NetVe[] | undefined, rong: number, sau: number):
 
 /** Danh sách lượt chèn của tầng điển hình: căn theo mẫu đang dùng, lõi / thang bộ giữ nguyên. */
 export function danhSachChen(d: DuLieuXuat): LuotChen[] {
-  const vts = new Map(viTriCan(d.mau, d.tv).map((v) => [v.khoa, v]));
+  const vts = new Map(viTriCan(d.mau, d.tv, d.toa).map((v) => [v.khoa, v]));
   const kq: LuotChen[] = [];
   d.mau.mat.forEach((m, mi) => {
     m.phan_tu.forEach((q, i) => {

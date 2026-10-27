@@ -1,0 +1,13 @@
+/* Gợi ý xếp tòa (MT-05) — panel trái màn Tổng mặt bằng. Xem trước nằm trong SVG bản vẽ, không đổi khung giữa. */
+.goi-y-xep { display: flex; flex-direction: column; gap: 4px; }
+.goi-y-tien-do { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.goi-y-tien-do .spin-o { width: 18px; height: 18px; }
+.goi-y-ds { list-style: none; margin: 0; padding: 0; }
+.goi-y-the { display: flex; flex-direction: column; gap: 4px; padding: 7px 12px; border-bottom: 1px solid var(--line); font-size: 12px;
+  transition: background var(--dur-1, 120ms) var(--ease-out, ease-out); }
+.goi-y-the.xem { background: var(--selected); }
+.goi-y-dau { display: flex; justify-content: space-between; gap: 8px; }
+.goi-y-dau b { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.goi-y-so { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 10px; color: var(--muted-text); }
+.goi-y-cb { margin: 0; font-size: 11px; }
+.goi-y-the .nut-phu { align-self: flex-start; padding: 4px 10px; }

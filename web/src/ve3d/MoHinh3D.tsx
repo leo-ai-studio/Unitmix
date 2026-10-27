@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { GocNhin, ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { boCucTang, canDangDung, nhomTang, viTriCan } from '../tinh/matBang';
+import { idTepCan } from '../tinh/stretch';
 import { idLoi, tai, type HinhLoi } from '../ve/hinhHocThuVien';
 import type { ToaVe } from '../ve/MatBangTang';
 import { dungCan, type Khoi3d } from './dungCan';
@@ -20,7 +21,7 @@ export function useNap3d(canIds: string[], loiIds: string[]): Nap {
     const [c, l] = khoa.split('|').map((x) => (x ? x.split(',') : []));
     setKq((o) => ({ ...o, xong: false }));
     Promise.all([
-      Promise.all(c.map((id) => tai<{ khoi3d: Khoi3d | null }>(`/lib/can/${id}.json`).then((j) => [id, j?.khoi3d ?? null] as const))),
+      Promise.all(c.map((id) => tai<{ khoi3d: Khoi3d | null }>(`/lib/can/${idTepCan(id)}.json`).then((j) => [id, j?.khoi3d ?? null] as const))),
       Promise.all(l.map((id) => tai<HinhLoi>(`/lib/loi/${id}.json`).then((j) => [id, { bao_tuong_mm: j?.bao_tuong_mm }] as const))),
     ]).then(([a, b]) => { if (!huy) setKq({ khoi3d: new Map(a), loi: new Map(b), xong: true }); });
     return () => { huy = true; };

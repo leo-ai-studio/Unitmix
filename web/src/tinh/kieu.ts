@@ -235,6 +235,11 @@ export type CanMau = {
   phong?: Phong[];
   /** Căn có cửa sổ tường ngoài lỗ thông thủy ≥ 600×600 mm làm cửa cứu nạn (tuỳ chọn). */
   cua_cuu_nan?: boolean;
+  /** Đường cắt STRETCH qua phòng khách (DC-04 · QT-81, scripts/boc_stretch.py app cũ): x cắt (mm), chiều sâu cắt qua
+   * thông thủy / tim tường, nét thuộc block [chỉ số nét, 1 dời / 0 đứng]. Thiếu = không kéo được. */
+  stretch?: { x_mm: number; sau_tt_mm: number; sau_tim_mm: number; cung: [number, number][] };
+  /** Có ở mẫu biến thể STRETCH (tinh/stretch.ts): id mẫu gốc + mức kéo (mm). */
+  stretchGoc?: { id: string; st: number };
 };
 
 export type LoaiPhong = 'ngu' | 'khach' | 'bep' | 'wc' | 'khac';
