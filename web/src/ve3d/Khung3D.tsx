@@ -10,12 +10,14 @@ type V3 = [number, number, number];
 /** Góc nhìn đề xuất của cảnh (m, toạ độ three). */
 export type GocDeXuat = { ten: string; vt: V3; dich: V3; gio?: number };
 /** Kết quả dựng: tâm cảnh, cỡ cảnh và chiều cao (m) để đặt camera, mặt trời, thanh cắt; góc đề xuất; có mặt đất hay không. */
-export type CanhDung = { tam: V3; coCanh: number; cao: number; goc?: GocDeXuat[]; nen?: boolean };
+export type CanhDung = { tam: V3; coCanh: number; cao: number; goc?: GocDeXuat[]; nen?: boolean; /** Mặt đất bán trong suốt (để thấy công trình ngầm như hầm). */ nenTrongSuot?: boolean };
 export type NguCanh = { T: T3; goc: import('three').Group; M: VatLieu3D; G: NhomHien; P: ThamSo3D; kieu: KieuVe3D };
 
 type Props = {
   /** Khoá thay đổi thì dựng lại cảnh. */
   khoa: string;
+  /** Khoá đổi thì dựng lại cảnh nhưng giữ góc nhìn (vd. bật / tắt hầm). */
+  khoaNhe?: string;
   dung: (c: NguCanh) => CanhDung | null;
   /** Góc (độ, chiều kim đồng hồ) từ trục +Y bản vẽ tới hướng Bắc; dùng đặt mặt trời. */
   gocBac?: number;
@@ -57,7 +59,7 @@ export function gocMacDinh(c: Pick<CanhDung, 'tam' | 'coCanh' | 'cao'>): GocDeXu
 }
 
 /** Khung WebGL: xoay / di / phóng, mặt trời theo giờ, cắt ngang, kiểu Brand / mô hình trắng, góc đề xuất, lưu góc, xuất ảnh. Three.js nạp lười. */
-export function Khung3D({ khoa, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D' }: Props) {
+export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D' }: Props) {
   useLang();
   const hop = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -100,6 +102,7 @@ export function Khung3D({ khoa, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe
         const mp = new T.Plane(new T.Vector3(0, -1, 0), 3.3);
         const M = taoVatLieu(T, [mp], kieuVe);
         const matDat = new T.MeshStandardMaterial({ color: N.dat, roughness: 1 });
+        const matDatTrong = new T.MeshStandardMaterial({ color: N.dat, roughness: 1, transparent: true, opacity: 0.4, depthWrite: false });
         const cam = new T.PerspectiveCamera(40, 1, 0.1, 5000);
         const goc = new T.Group();
         scene.add(goc);
@@ -173,7 +176,7 @@ export function Khung3D({ khoa, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe
           if (canh) {
             const [x, y, z] = canh.tam;
             if (canh.nen) {
-              const dat = new T.Mesh(new T.PlaneGeometry(canh.coCanh * 8, canh.coCanh * 8), matDat);
+              const dat = new T.Mesh(new T.PlaneGeometry(canh.coCanh * 8, canh.coCanh * 8), canh.nenTrongSuot ? matDatTrong : matDat);
               dat.rotation.x = -Math.PI / 2; dat.position.set(x, -0.05, z); dat.receiveShadow = true;
               goc.add(dat);
             }
@@ -202,6 +205,7 @@ export function Khung3D({ khoa, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe
   }, [khoa, kieu]);
 
   // Đổi tham số đứng: dựng lại giữ góc nhìn. Đổi hiển thị / giờ / cắt: cập nhật nhẹ.
+  useEffect(() => { he.current?.ve(); }, [khoaNhe]);
   useEffect(() => { he.current?.ve(); try { localStorage.setItem(LUU, kt); } catch { /* không lưu được */ } }, [kt]);
   useEffect(() => { (hop.current as (HTMLDivElement & { _cap?: () => void }) | null)?._cap?.(); }, [hien, gio, cat, gocBac]);
   useEffect(() => { try { localStorage.setItem(LUU_KIEU, kieu); } catch { /* không lưu được */ } }, [kieu]);

@@ -397,3 +397,55 @@ export function raiHam(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaHam |
   ];
   return { ts, ranh, loi, cot, ram, tang, soCan, dtsd, noxh, yeuCau, tong, tyLe, kiem };
 }
+
+/* ---------- Vẽ tay ranh hầm, khối hầm 3D ---------- */
+
+/** Điểm gần nhất trong `ds` cách `p` không quá `banKinh` (m); không có thì null. Dùng bắt điểm vào đỉnh ranh lô / chỉ giới. */
+export function batDiemRanh(p: Diem, ds: Diem[], banKinh: number): Diem | null {
+  let tot: Diem | null = null, dMin = banKinh;
+  for (const q of ds) {
+    const d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (d <= dMin) { dMin = d; tot = q; }
+  }
+  return tot;
+}
+
+/** Điểm cách `a` đúng `d` mét theo hướng từ `a` tới `huong`; hướng trùng `a` thì null. */
+export function diemTheoDoDai(a: Diem, huong: Diem, d: number): Diem | null {
+  const dx = huong[0] - a[0], dy = huong[1] - a[1], l = Math.hypot(dx, dy);
+  if (l < 1e-9 || !(d > 0)) return null;
+  return [a[0] + (dx / l) * d, a[1] + (dy / l) * d];
+}
+
+const catNhau = (a: Diem, b: Diem, c: Diem, d: Diem): boolean => {
+  const ccw = (p: Diem, q: Diem, r: Diem) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+  return ccw(a, b, c) * ccw(a, b, d) < 0 && ccw(c, d, a) * ccw(c, d, b) < 0;
+};
+
+/**
+ * Đóng đa giác ranh vừa vẽ: bỏ đỉnh trùng liên tiếp (và đỉnh cuối trùng đỉnh đầu), đưa về ngược chiều kim đồng hồ.
+ * Trả null nếu < 3 đỉnh, diện tích < 1 m² hoặc có hai cạnh không kề cắt nhau.
+ */
+export function dongRanhVe(pts: Diem[]): Diem[] | null {
+  const p: Diem[] = [];
+  for (const q of pts) { const l = p[p.length - 1]; if (!l || Math.hypot(q[0] - l[0], q[1] - l[1]) > 1e-6) p.push(q); }
+  while (p.length > 1 && Math.hypot(p[0][0] - p[p.length - 1][0], p[0][1] - p[p.length - 1][1]) <= 1e-6) p.pop();
+  if (p.length < 3) return null;
+  const dt = dtCoDau(p);
+  if (Math.abs(dt) < 1) return null;
+  const n = p.length;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue;
+      if (catNhau(p[i], p[(i + 1) % n], p[j], p[(j + 1) % n])) return null;
+    }
+  }
+  return dt < 0 ? p.slice().reverse() : p;
+}
+
+/** Khối hầm 3D (mét): ranh, cốt đỉnh 0, cốt đáy âm, cốt sàn từng tầng (từ đỉnh xuống). */
+export function khoiHam(ranh: Diem[], soTang: number, caoTang: number): { ranh: Diem[]; yDuoi: number; yTang: number[] } | null {
+  const n = Math.round(soTang);
+  if (ranh.length < 3 || n < 1 || !(caoTang > 0)) return null;
+  return { ranh, yDuoi: -n * caoTang, yTang: Array.from({ length: n + 1 }, (_, i) => -i * caoTang) };
+}

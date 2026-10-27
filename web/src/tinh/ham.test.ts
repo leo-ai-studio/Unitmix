@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coVao, dongKiem, hinhRam, kiemRam, kiemXeDien, raiHam, ranhHam, yeuCauDoXe } from './ham';
+import { batDiemRanh, coVao, diemTheoDoDai, dongKiem, dongRanhVe, khoiHam, hinhRam, kiemRam, kiemXeDien, raiHam, ranhHam, yeuCauDoXe } from './ham';
 import { dienTich } from './hinhHoc';
 import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, taoThuVien, type CanMau, type ChiTieuQH, type Diem, type Lo, type ThongSoHam, type ToaDat, type ToaMau, type TrangThaiPA } from './kieu';
 import { chuanHoaPA, RAM_MAC_DINH, XE_DIEN_MAC_DINH } from './macDinh';
@@ -148,5 +148,38 @@ describe('ranh hầm, rải tầng', () => {
     expect(dongKiem('x', 101, 100, '>=', { canCu: '' }).muc).toBe('canh_bao');
     expect(dongKiem('x', 90, 100, '>=', { canCu: '' }).muc).toBe('vuot');
     expect(dongKiem('x', 90, 100, '>=', { canCu: '', duThao: true }).muc).toBe('canh_bao');
+  });
+});
+
+describe('vẽ tay ranh hầm', () => {
+  it('bắt điểm trong bán kính, chọn điểm gần nhất', () => {
+    const ds: Diem[] = [[0, 0], [10, 0], [10.4, 0.2]];
+    expect(batDiemRanh([10.3, 0.1], ds, 1)).toEqual([10.4, 0.2]);
+    expect(batDiemRanh([5, 5], ds, 1)).toBeNull();
+  });
+  it('điểm theo độ dài cạnh', () => {
+    expect(diemTheoDoDai([0, 0], [3, 4], 10)).toEqual([6, 8]);
+    expect(diemTheoDoDai([1, 1], [1, 1], 5)).toBeNull();
+    expect(diemTheoDoDai([0, 0], [1, 0], 0)).toBeNull();
+  });
+  it('đóng đa giác: bỏ đỉnh trùng, đưa về ngược chiều kim đồng hồ', () => {
+    const cw: Diem[] = [[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]];
+    const r = dongRanhVe(cw)!;
+    expect(r).toHaveLength(4);
+    expect(dienTich(r)).toBeCloseTo(100);
+    expect(r[0]).toEqual([10, 0]);
+  });
+  it('từ chối < 3 đỉnh, diện tích quá nhỏ và đa giác tự cắt', () => {
+    expect(dongRanhVe([[0, 0], [5, 0]])).toBeNull();
+    expect(dongRanhVe([[0, 0], [0.5, 0], [0.5, 0.5]])).toBeNull();
+    expect(dongRanhVe([[0, 0], [10, 10], [10, 0], [0, 10]])).toBeNull();
+  });
+  it('khối hầm: cốt đáy và cốt sàn các tầng', () => {
+    const k = khoiHam(hcn(0, 0, 10, 10), 3, 3.3)!;
+    expect(k.yDuoi).toBeCloseTo(-9.9);
+    expect(k.yTang).toHaveLength(4);
+    expect(k.yTang[0]).toBeCloseTo(0);
+    expect(khoiHam([[0, 0], [1, 1]], 2, 3)).toBeNull();
+    expect(khoiHam(hcn(0, 0, 10, 10), 0, 3)).toBeNull();
   });
 });
