@@ -92,12 +92,13 @@ describe('preset', () => {
 
   it('cấp: phanHam (nếu PA có) được lưu và áp nguyên khối', () => {
     const pa = paMau();
-    const nguon = { ...pa, phanHam: { doXe: { a: 1 }, kyThuat: 2 } } as TrangThaiPA;
+    const nguon: TrangThaiPA = { ...pa, phanHam: { doXe: 0.6, kyThuat: 0.2 } };
     const du = chupPreset('cap', nguon, null);
-    expect(du.phanHam).toEqual({ doXe: { a: 1 }, kyThuat: 2 });
-    const ra = apPreset('cap', pa, du, 'pa', null) as TrangThaiPA & { phanHam?: unknown };
-    expect(ra.phanHam).toEqual({ doXe: { a: 1 }, kyThuat: 2 });
-    expect(chupPreset('cap', pa, null).phanHam).toBeUndefined();
+    expect(du.phanHam).toEqual({ doXe: 0.6, kyThuat: 0.2 });
+    const ra = apPreset('cap', pa, du, 'pa', null);
+    expect(ra.phanHam).toEqual({ doXe: 0.6, kyThuat: 0.2 });
+    const { phanHam: _bo, ...khongPhanHam } = pa;
+    expect(chupPreset('cap', khongPhanHam as TrangThaiPA, null).phanHam).toBeUndefined();
   });
 
   it('xuất rồi nhập sang máy khác; sai nhóm và file hỏng bị từ chối', () => {

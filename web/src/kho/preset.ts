@@ -163,7 +163,7 @@ export function chupPreset(nhom: NhomPreset, pa: TrangThaiPA, lo: Lo | null | un
     if (f === 'chiTieu' && lo) du.chiTieu = sao(lo.temDat.chiTieu);
     else if (f === 'coCau' && lo) du.coCau = sao(lo.temDat.coCauMucTieu);
     else if (f === 'heSo') du.heSo = sao(pa.heSo);
-    else if (f === 'phanHam') { const x = (pa as { phanHam?: unknown }).phanHam; if (x !== undefined) du.phanHam = sao(x); }
+    else if (f === 'phanHam') { if (pa.phanHam !== undefined) du.phanHam = sao(pa.phanHam); }
     else if (f === 'nguong') du.nguong = sao(pa.nguong);
     else if (f === 'ham') { const { ranh: _ranh, ...con } = pa.ham; du.ham = sao(con); }
   }
@@ -193,7 +193,7 @@ export function apPreset(nhom: NhomPreset, pa: TrangThaiPA, du: DuLieuPreset, ph
   if (chung) {
     const ok = (f: keyof DuLieuPreset) => du[f] !== undefined && TRUONG_NHOM[nhom].includes(f);
     if (ok('heSo')) ra = { ...ra, heSo: sao(du.heSo) as TrangThaiPA['heSo'] };
-    if (ok('phanHam')) ra = { ...ra, phanHam: sao(du.phanHam) } as TrangThaiPA;
+    if (ok('phanHam')) ra = { ...ra, phanHam: sao(du.phanHam) as TrangThaiPA['phanHam'] };
     if (ok('nguong')) ra = { ...ra, nguong: sao(du.nguong!) };
     if (ok('ham')) ra = { ...ra, ham: { ...ra.ham, ...sao(du.ham!) } };
   }
