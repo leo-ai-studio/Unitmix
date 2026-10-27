@@ -780,5 +780,15 @@
   "ham.kho": "Kho",
   "ham.kyThuat": "Kỹ thuật",
   "ham.loiCot": "Lõi, cột",
-  "ham.ram": "Ram"
+  "ham.ram": "Ram",
+  "phong.kichThuoc": "Kích thước tối thiểu",
+  "phong.dienTich": "Diện tích",
+  "phong.ten.ngu": "Phòng ngủ",
+  "phong.ten.wc": "WC",
+  "phong.ten.khachBep": "Khách + bếp",
+  "phong.ten.khach": "Phòng khách",
+  "phong.ten.bep": "Bếp",
+  "phong.ten.logia": "Lô gia",
+  "phong.ten.chung": "Phòng ở chung",
+  "phong.ten.sanh": "Sảnh / hành lang"
 }

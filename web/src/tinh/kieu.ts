@@ -197,20 +197,29 @@ export type CanMau = {
   dt_tim_m2: number;
   /** Hốc logia lùi vào [x0, x1, y] chuẩn hoá theo rộng × sâu: phần x0..x1 từ độ sâu y tới mặt ngoài không thuộc căn. */
   logia_lui?: number[][] | null;
-  /** Danh sách phòng của căn (tuỳ chọn). */
-  phong?: PhongCan[];
+  /** Phòng bóc từ CAD (scripts/boc_cad/boc_phong.py); thiếu khi bản vẽ không bóc được. */
+  phong?: Phong[];
   /** Căn có cửa sổ tường ngoài lỗ thông thủy ≥ 600×600 mm làm cửa cứu nạn (tuỳ chọn). */
   cua_cuu_nan?: boolean;
 };
 
-/** Một phòng trong mẫu căn (bóc từ CAD; tuỳ chọn, chưa có thì các luật cần phòng ra "chưa đủ dữ liệu"). */
-export type PhongCan = {
+export type LoaiPhong = 'ngu' | 'khach' | 'bep' | 'wc' | 'khac';
+/** Một phòng của mẫu căn. `ranh` tính bằng mm trong hệ của mẫu căn: x = u × rong_mm, y = v × sau_mm (y = 0 phía hành lang). */
+export type Phong = {
   ten: string;
-  loai: 'ngu' | 'khach' | 'bep' | 'wc' | 'khac';
+  loai: LoaiPhong;
+  ranh: Diem[];
   dt_m2: number;
-  /** Phòng có cạnh giáp tường ngoài (thông thoáng, chiếu sáng tự nhiên); thiếu = chưa biết. */
-  ke_mat_ngoai?: boolean;
+  /** Đường kính đường tròn nội tiếp lớn nhất (m). */
+  d_min_m: number;
+  /** Phòng giáp mặt ngoài (thông thoáng, chiếu sáng tự nhiên — QCVN 04:2021/BXD 2.2.4.4). */
+  ke_mat_ngoai: boolean;
+  /** true = loại phòng suy theo quy tắc (CAD không có nhãn tên phòng). */
+  doan?: boolean;
 };
+
+/** Tên cũ dùng ở luật QCVN 04 (tinh/qcvn04.ts). */
+export type PhongCan = Phong;
 
 export type ThuVien = { toa: Map<string, ToaMau>; can: Map<string, CanMau> };
 

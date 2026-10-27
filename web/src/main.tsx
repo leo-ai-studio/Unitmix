@@ -8,6 +8,7 @@ import './styles/so-sanh.css';
 import './styles/preset.css';
 import './styles/ham.css';
 import './styles/o-can.css';
+import './styles/phong.css';
 import { langHienTai } from './i18n/i18n';
 import { DuAn } from './man/DuAn';
 import { SoanThao } from './man/SoanThao';

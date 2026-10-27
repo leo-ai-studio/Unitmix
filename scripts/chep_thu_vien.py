@@ -30,6 +30,26 @@ def _ghi(p: Path, obj, gon=True):
     p.write_text(json.dumps(obj, ensure_ascii=False, **kw), encoding="utf-8", newline="\n")
 
 
+def ghi_can(ds: list, f: Path) -> None:
+    """can.json: indent=1 như _ghi(gon=False), riêng mỗi phòng (`phong`, do boc_cad/boc_phong.py bóc) nằm gọn MỘT dòng."""
+    the, ban = {}, []
+    for c in ds:
+        c2 = dict(c)
+        if c2.get("phong"):
+            ph = []
+            for i, p in enumerate(c2["phong"]):
+                key = f"@@PHONG_{c['id']}_{i}@@"
+                the[json.dumps(key)] = json.dumps(p, ensure_ascii=False, separators=(",", ":"))
+                ph.append(key)
+            c2["phong"] = ph
+        ban.append(c2)
+    s = json.dumps(ban, ensure_ascii=False, indent=1)
+    for k, v in the.items():
+        s = s.replace(k, v)
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(s, encoding="utf-8", newline="\n")
+
+
 def _loi(msg):
     sys.exit(f"LỖI THƯ VIỆN: {msg}")
 
@@ -100,7 +120,13 @@ def chep(nguon: Path, bang_ten: bool) -> None:
         })
 
     _ghi(LIB / "pccc.json", d["tu_pccc.json"], gon=False)
-    _ghi(LIB / "can.json", can, gon=False)
+    # giữ dữ liệu phòng đã bóc từ CAD (repo nguồn không có) — bóc lại bằng scripts/boc_cad/boc_phong.py
+    cu = LIB / "can.json"
+    phong = {x["id"]: x["phong"] for x in _doc(cu) if x.get("phong")} if cu.exists() else {}
+    for x in can:
+        if x["id"] in phong:
+            x["phong"] = phong[x["id"]]
+    ghi_can(can, cu)
     _ghi(LIB / "toa.json", toa)
     _ghi(LIB / "nguon.json", {
         "repo": "MDI_Unitmix_v4", "duong_dan": str(nguon), "commit": commit,

@@ -3,6 +3,7 @@ import type { CongNangO, Diem, LoaiCan, ThongTinLoi, ThuVien } from '../tinh/kie
 import { canDangDung, canVuaModule, congNangTai, coDaGiac, hinhLogia, khungCanNet, ranhTo, soCanChuVi, veCanTaiViTri, veLoiTaiViTri, viTriCan, vungCatCan, type BoCuc, type ToaCoMat } from '../tinh/matBang';
 import { datTemCan, TEM_H, TEM_W } from '../tinh/temCan';
 import { idLoi, type HinhHocTai } from './hinhHocThuVien';
+import { LopPhong } from './LopPhong';
 import { CHU_CO_CHAN, CHU_KHONG_CHAN, CHU_MAY, KIEU_MB, NET, NET_NOI_THAT, NHAN_LOAI, type KieuMb } from './kieuMb';
 
 export type ToaVe = ToaCoMat & { duong_bao: Diem[] };
@@ -179,6 +180,7 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
         <text key={`cn${vt.khoa}`} x="0" y="0" class="nhan-o" text-anchor="middle" font-size="800" pointer-events="none"
           transform={`translate(${Math.round(tam[0])} ${Math.round(tam[1])}) scale(1 -1)`}>{nhanCongNang(cn)}</text>
       ))}
+      <LopPhong can={can} mau={mau} tv={tv} />
       {hienTem && can.map(({ vt, canId, no, cn }, i) => {
         const c = tv.can.get(canId);
         const t = tem[i];

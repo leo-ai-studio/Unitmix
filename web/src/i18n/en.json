@@ -780,5 +780,15 @@
   "ham.kho": "Storage",
   "ham.kyThuat": "MEP",
   "ham.loiCot": "Cores, columns",
-  "ham.ram": "Ramp"
+  "ham.ram": "Ramp",
+  "phong.kichThuoc": "Minimum size",
+  "phong.dienTich": "Area",
+  "phong.ten.ngu": "Bedroom",
+  "phong.ten.wc": "WC",
+  "phong.ten.khachBep": "Living + kitchen",
+  "phong.ten.khach": "Living room",
+  "phong.ten.bep": "Kitchen",
+  "phong.ten.logia": "Loggia",
+  "phong.ten.chung": "Studio room",
+  "phong.ten.sanh": "Hall"
 }

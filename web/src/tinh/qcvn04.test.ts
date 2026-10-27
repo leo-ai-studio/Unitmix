@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { taoThuVien, type CanMau, type ToaDat, type ToaMau } from './kieu';
+import { taoThuVien, type CanMau, type ToaDat, type ToaMau, type Phong } from './kieu';
 import { kiemCuaCuuNan, kiemDtCanToiThieu, kiemNhanVien, kiemPhongNgu9, kiemPhongNguSang, kiemQCVN04, kiemThangBangCa, kiemThongThuy, kiemTyLeCanNho } from './qcvn04';
 
 const can = (id: string, dt: number, kh: Partial<CanMau> = {}): CanMau => ({
@@ -7,6 +7,9 @@ const can = (id: string, dt: number, kh: Partial<CanMau> = {}): CanMau => ({
 });
 const cs = (...x: [CanMau, number?][]) => x.map(([c, n]) => ({ can: c, n: n ?? 1 }));
 const toa: ToaDat = { id: 'T', loId: 'L', mauId: 'M', x: 0, y: 0, gocDo: 0, soTangDH: 10, soTangDe: 1, caoDe: 4.5, caoDH: 3.3, coApMai: false, deOffset: 0, canTheo: {} };
+
+// Phòng giả: thêm ranh / Ø để khớp kiểu Phong; thiếu ke_mat_ngoai = dữ liệu cũ chưa biết.
+const ph = (o: Pick<Phong, 'ten' | 'loai' | 'dt_m2'> & Partial<Phong>): Phong => ({ ranh: [], d_min_m: 3, ...o }) as Phong;
 
 describe('DT căn tối thiểu / tỷ lệ căn nhỏ', () => {
   it('căn < 25 m² là vượt', () => {
@@ -25,25 +28,25 @@ describe('phòng ngủ ≥ 9 m²', () => {
     expect(kiemPhongNgu9(cs([can('a', 50)])).trangThai).toBe('chua_du_du_lieu');
   });
   it('phòng ngủ 8,5 m² là vượt; đủ cả thì đạt', () => {
-    const sai = can('a', 50, { phong: [{ ten: 'PN2', loai: 'ngu', dt_m2: 8.5 }, { ten: 'PK', loai: 'khach', dt_m2: 5 }] });
-    const dung = can('b', 50, { phong: [{ ten: 'PN', loai: 'ngu', dt_m2: 9 }] });
+    const sai = can('a', 50, { phong: [ph({ ten: 'PN2', loai: 'ngu', dt_m2: 8.5 }), ph({ ten: 'PK', loai: 'khach', dt_m2: 5 })] });
+    const dung = can('b', 50, { phong: [ph({ ten: 'PN', loai: 'ngu', dt_m2: 9 })] });
     expect(kiemPhongNgu9(cs([sai], [dung])).trangThai).toBe('vuot');
     expect(kiemPhongNgu9(cs([dung])).trangThai).toBe('dat');
   });
   it('một số căn thiếu phòng thì không được đạt', () => {
-    const dung = can('b', 50, { phong: [{ ten: 'PN', loai: 'ngu', dt_m2: 12 }] });
+    const dung = can('b', 50, { phong: [ph({ ten: 'PN', loai: 'ngu', dt_m2: 12 })] });
     expect(kiemPhongNgu9(cs([dung], [can('c', 40)])).trangThai).toBe('chua_du_du_lieu');
   });
 });
 
 describe('phòng ngủ thông thoáng, chiếu sáng', () => {
   it('thiếu ke_mat_ngoai thì chưa đủ dữ liệu', () => {
-    const c = can('a', 50, { phong: [{ ten: 'PN', loai: 'ngu', dt_m2: 12 }] });
+    const c = can('a', 50, { phong: [ph({ ten: 'PN', loai: 'ngu', dt_m2: 12 })] });
     expect(kiemPhongNguSang(cs([c])).trangThai).toBe('chua_du_du_lieu');
   });
   it('false là vượt, true hết là đạt', () => {
-    const k = can('a', 50, { phong: [{ ten: 'PN', loai: 'ngu', dt_m2: 12, ke_mat_ngoai: false }] });
-    const d = can('b', 50, { phong: [{ ten: 'PN', loai: 'ngu', dt_m2: 12, ke_mat_ngoai: true }] });
+    const k = can('a', 50, { phong: [ph({ ten: 'PN', loai: 'ngu', dt_m2: 12, ke_mat_ngoai: false })] });
+    const d = can('b', 50, { phong: [ph({ ten: 'PN', loai: 'ngu', dt_m2: 12, ke_mat_ngoai: true })] });
     expect(kiemPhongNguSang(cs([k], [d])).trangThai).toBe('vuot');
     expect(kiemPhongNguSang(cs([d])).trangThai).toBe('dat');
   });
