@@ -10,6 +10,7 @@ import { BanVe, khungBao, type DieuKhienVe } from '../ve/BanVe';
 import { idLoi, useHinhHoc } from '../ve/hinhHocThuVien';
 import { DS_KIEU_MB, KIEU_MB, NHAN_LOAI } from '../ve/kieuMb';
 import { MatBangTang, soLieuTang, type ToaVe } from '../ve/MatBangTang';
+import { BangTuanThu } from '../ui/BangTuanThu';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
@@ -202,21 +203,27 @@ export function TangPhai(p: ChungTang) {
 
       <MucGap tieuDe={t('tang.loaiCanTrongTang')} mo>
         <div class="bang-nhap-nho" role="table">
-          <div class="dong hang-lc dau" role="row"><span>{t('tang.mauCan')}</span><span>{t('tang.soCan')}</span><span>{t('tang.thongThuy')}</span><span>{t('tang.timTuong')}</span><span>{t('tang.phanChung')}</span></div>
+          <div class="dong hang-lc hang-lc7 dau" role="row"><span>{t('tang.mauCan')}</span><span>{t('tang.soCan')}</span><span>{t('tang.thongThuy')}</span><span>{t('tang.timTuong')}</span><span>{t('tang.phanChung')}</span><span class="tieu-co-tip" title={t('tang.dtBanGhiChu')}>{t('tang.banDT')}</span><span class="tieu-co-tip" title={t('tang.dtBanGhiChu')}>{t('tang.heSoTt')}</span></div>
           {dsMau.map(({ id, n, c }) => {
             const db = deBai[c.loai];
             return (
-              <div class={`dong hang-lc${chon?.canId === id ? ' chon' : ''}`} role="row" key={id}>
+              <div class={`dong hang-lc hang-lc7${chon?.canId === id ? ' chon' : ''}`} role="row" key={id}>
                 <span><i class="o-mau" style={{ background: KIEU_MB.leo.u[c.loai] }} /> {c.ten_vi}</span>
                 <span>{n}</span>
                 <span>{fmtSo(c.dt_tt_m2, { thapPhan: 2 })}{db ? <small class={Math.abs(c.dt_tt_m2 - db) <= pa.nguong.dtCanM2 ? 'ok' : 'vuot'}> ({c.dt_tt_m2 - db > 0 ? '+' : ''}{fmtSo(c.dt_tt_m2 - db, { thapPhan: 1 })})</small> : null}</span>
                 <span>{fmtSo(c.dt_tim_m2, { thapPhan: 2 })}</span>
                 <span>{hl.uocTinh ? '≈ ' : ''}{fmtSo(chung[id] ?? 0, { thapPhan: 1 })}</span>
+                <span>{hl.uocTinh ? '≈ ' : ''}{fmtSo(c.dt_tt_m2 + (chung[id] ?? 0), { thapPhan: 1 })}</span>
+                <span>{c.dt_tim_m2 > 0 ? fmtSo(c.dt_tt_m2 / c.dt_tim_m2, { thapPhan: 2 }) : '—'}</span>
               </div>
             );
           })}
         </div>
         <p class="dong muted" style={{ margin: 0 }}>{t('tang.phanChungGhiChu').replace('{m}', fmtSo(hl.m2, { thapPhan: 1 }))}{hl.uocTinh ? ` ${t('tang.uocTinh')}` : ''}</p>
+      </MucGap>
+
+      <MucGap tieuDe={t('tt.tieuDe')} mo>
+        {tv.toa.get(toa.mauId) && <BangTuanThu pa={pa} sua={sua} chiXem={chiXem} toa={toa} mau={tv.toa.get(toa.mauId)!} tv={tv} />}
       </MucGap>
 
       <MucGap tieuDe={chon ? `${t('tang.canDangChon')} · CH-${String(chon.no).padStart(2, '0')}` : t('tang.canDangChon')} mo>

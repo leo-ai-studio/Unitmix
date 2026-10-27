@@ -55,7 +55,15 @@ export type ToaDat = {
   canTheo: Record<string, string>; // id căn gốc -> id căn thay
   canViTri?: Record<string, string>; // khoá vị trí trên tầng ("mặt:phần tử") -> id căn thay; thắng canTheo
   khoa?: boolean; // khoá: không kéo, không sửa thông số
+  /** Có ít nhất 1 thang máy chở được băng ca (QCVN 04 chú thích 2.4.1); chưa khai = undefined. */
+  thangBangCa?: boolean;
+  /** Không gian nhân viên quản lý, trông xe, bảo vệ, kỹ thuật của tòa (QCVN 04 2.2.18); chưa khai = undefined. */
+  nhanVien?: { so: number; dtM2: number };
 };
+
+/** Thông số cấu tạo dùng tính thông thủy: thông thủy = cao tầng − dày sàn + trần. Giá trị tạm, chờ chủ nhiệm chốt. */
+export type CauTao = { daySanTranM: number };
+export const CAU_TAO_MAC_DINH: CauTao = { daySanTranM: 0.3 };
 
 export type ThongSoHam = {
   soTang: number;
@@ -78,6 +86,7 @@ export type TrangThaiPA = {
   toa: ToaDat[];
   ham: ThongSoHam;
   gocNhin?: GocNhin[];
+  cauTao?: CauTao;
 };
 
 /** Một mẫu tòa trong web/public/lib/toa.json (toạ độ mm như CAD). */
@@ -114,6 +123,19 @@ export type CanMau = {
   dt_tim_m2: number;
   /** Hốc logia lùi vào [x0, x1, y] chuẩn hoá theo rộng × sâu: phần x0..x1 từ độ sâu y tới mặt ngoài không thuộc căn. */
   logia_lui?: number[][] | null;
+  /** Danh sách phòng của căn (tuỳ chọn). */
+  phong?: PhongCan[];
+  /** Căn có cửa sổ tường ngoài lỗ thông thủy ≥ 600×600 mm làm cửa cứu nạn (tuỳ chọn). */
+  cua_cuu_nan?: boolean;
+};
+
+/** Một phòng trong mẫu căn (bóc từ CAD; tuỳ chọn, chưa có thì các luật cần phòng ra "chưa đủ dữ liệu"). */
+export type PhongCan = {
+  ten: string;
+  loai: 'ngu' | 'khach' | 'bep' | 'wc' | 'khac';
+  dt_m2: number;
+  /** Phòng có cạnh giáp tường ngoài (thông thoáng, chiếu sáng tự nhiên); thiếu = chưa biết. */
+  ke_mat_ngoai?: boolean;
 };
 
 export type ThuVien = { toa: Map<string, ToaMau>; can: Map<string, CanMau> };
