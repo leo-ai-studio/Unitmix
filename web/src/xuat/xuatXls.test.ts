@@ -3,7 +3,9 @@ import * as XLSX from 'xlsx';
 import { describe, expect, it } from 'vitest';
 import { tinhChiTieu } from '../tinh/chiTieu';
 import { chiSoPA, diemLechPA } from '../tinh/diemPA';
+import { tinhDuToan, tinhKhoiLuong } from '../tinh/duToan';
 import { taoToaTrenLo } from '../tinh/hopLo';
+import { tinhTaiChinh } from '../tinh/taiChinh';
 import { taoThuVien, type CanMau, type ToaMau } from '../tinh/kieu';
 import { taoLo, taoPAMoi } from '../tinh/macDinh';
 import { baoCaoPA, baoCaoSoSanh, oSo, taoSach, tenSheet, tenTepXls } from './xuatXls';
@@ -27,10 +29,10 @@ describe('xuất XLS', () => {
     expect(tenTepXls('Dự án: A', 'PA 1')).toBe('Dự án A - PA 1.xlsx');
   });
 
-  it('báo cáo PA: 4 sheet tiếng Việt có dấu, số căn khớp, đọc lại được từ tệp xlsx', () => {
+  it('báo cáo PA: 6 sheet tiếng Việt có dấu, số căn khớp, đọc lại được từ tệp xlsx', () => {
     const pa = paMau(10), kq = tinhChiTieu(pa, tv);
     const sheets = baoCaoPA(pa, tv, kq, 'Dự án Đồng Quan', 'PA 1', diemLechPA(pa, kq));
-    expect(sheets.map((s) => s.ten)).toEqual(['Tổng hợp chỉ tiêu', 'Cơ cấu theo tòa', 'Danh sách căn', 'Luật vượt']);
+    expect(sheets.map((s) => s.ten)).toEqual(['Tổng hợp chỉ tiêu', 'Cơ cấu theo tòa', 'Danh sách căn', 'Luật vượt', 'Dự toán', 'Tài chính']);
     for (const s of sheets) for (const o of tatCa(s.hang)) { expect(o).not.toBeUndefined(); expect(Number.isNaN(o)).toBe(false); }
     const buf = XLSX.write(taoSach(XLSX, sheets), { type: 'array', bookType: 'xlsx' });
     const wb = XLSX.read(buf, { type: 'array' });
@@ -62,5 +64,26 @@ describe('xuất XLS', () => {
     expect(chenh[1]).toBe(0);
     expect(chenh[2]).toBe(ds[1].chiSo.soCan - ds[0].chiSo.soCan);
     for (const o of tatCa(s.hang)) expect(Number.isNaN(o)).toBe(false);
+  });
+  it('sheet Dự toán / Tài chính: tổng mức và lợi nhuận khớp hàm tính, có ghi chú số tạm', () => {
+    const pa = paMau(10), kq = tinhChiTieu(pa, tv), lech = diemLechPA(pa, kq);
+    const sheets = baoCaoPA(pa, tv, kq, 'D', 'P', lech);
+    const kl = tinhKhoiLuong(pa, tv), dt = tinhDuToan(kl, pa.chiPhi), tc = tinhTaiChinh(pa, tv, kl, dt, lech);
+    const duToan = sheets[4].hang, taiChinh = sheets[5].hang;
+    expect(tatCa(duToan).join(' ')).toContain('SỐ TẠM');
+    expect(tatCa(duToan).join(' ')).toContain('Nghị định 10/2021/NĐ-CP');
+    expect(duToan.find((h) => h[0] === 'Tổng mức đầu tư (chưa gồm đất)')!.at(-1)).toBe(oSo(dt.tongMuc));
+    expect(taiChinh.find((h) => h[0] === 'Lợi nhuận')![1]).toBe(oSo(tc.loiNhuan));
+    expect(dt.tongMuc).toBeGreaterThan(0);
+  });
+
+  it('bảng so sánh: thêm hàng tổng mức, lợi nhuận khi có', () => {
+    const a = paMau(10);
+    const chiSo = chiSoPA(a, tinhChiTieu(a, tv));
+    const [s] = baoCaoSoSanh([{ ten: 'A', chiSo, tien: { tongMuc: 1e12, loiNhuan: null } }, { ten: 'B', chiSo }], 0, 'D');
+    expect(s.hang.find((h) => h[0] === 'Tổng mức đầu tư (đ)')).toEqual(['Tổng mức đầu tư (đ)', 1e12, '—']);
+    expect(s.hang.find((h) => h[0] === 'Lợi nhuận (đ)')).toEqual(['Lợi nhuận (đ)', '—', '—']);
+    const [k] = baoCaoSoSanh([{ ten: 'B', chiSo }], 0, 'D');
+    expect(k.hang.some((h) => h[0] === 'Lợi nhuận (đ)')).toBe(false);
   });
 });

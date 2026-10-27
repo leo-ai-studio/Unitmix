@@ -8,10 +8,11 @@ import { LOAI_CAN, type TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaPA } from '../tinh/macDinh';
 import { taiThuVien } from '../tinh/thuVien';
 import { fmtSo } from '../ui/so';
+import { ketQua as ketQuaChiPhi } from './ManChiPhi';
 import { baoCaoSoSanh, nhanKhoa, tenTepXls, xuatXls } from '../xuat/xuatXls';
 
 const TOI_DA = 6;
-type Muc = { id: string; ten: string; chiSo: ChiSoPA };
+type Muc = { id: string; ten: string; chiSo: ChiSoPA; tien: { tongMuc: number | null; loiNhuan: number | null } };
 
 /** Số chữ số thập phân khi hiện từng cột. */
 const thapPhan = (k: KhoaSo): number => (k === 'lech' || k === 'matDo' || (LOAI_CAN as string[]).includes(k) ? 1 : 0);
@@ -48,7 +49,9 @@ export function SoSanhPA({ ma, da, dong }: { ma: string; da: DuAnApi; dong: () =
       const [tv, pas] = await Promise.all([taiThuVien(), Promise.all(chon.map((id) => api.docPA(ma, id)))]);
       const kq = pas.map((p) => {
         const pa = chuanHoaPA(p.trang_thai as TrangThaiPA);
-        return { id: p.id, ten: p.ten, chiSo: chiSoPA(pa, tinhChiTieu(pa, tv)) };
+        const kqCT = tinhChiTieu(pa, tv);
+        const cp = ketQuaChiPhi(pa, tv, kqCT);
+        return { id: p.id, ten: p.ten, chiSo: chiSoPA(pa, kqCT), tien: { tongMuc: cp.dt.tongMuc, loiNhuan: cp.tc.loiNhuan } };
       });
       setDs(kq);
       setGoc(kq[0].id);
@@ -162,6 +165,9 @@ export function SoSanhPA({ ma, da, dong }: { ma: string; da: DuAnApi; dong: () =
                     <tr key={'sl' + l}><th scope="row">{t('xls.soCan')} {t(`loai.${l}`)}</th>{sapXep.map((x) => <td key={x.id}>{fmtSo(x.chiSo.coCau[l])}</td>)}</tr>
                   ))}
                   <tr><th scope="row">{t('dong.danSo')}</th>{sapXep.map((x) => <td key={x.id}>{fmtSo(x.chiSo.danSo)}</td>)}</tr>
+                  {(['tongMuc', 'loiNhuan'] as const).map((k) => (
+                    <tr key={k} title={t('chiPhi.soTam')}><th scope="row">{t(`xls.${k}`).replace(/\s*\(.*\)$/, '')} ({t('chiPhi.tyDong')})</th>{sapXep.map((x) => <td key={x.id}>{fmtSo(x.tien[k] === null ? null : x.tien[k]! / 1e9, { thapPhan: 1 })}</td>)}</tr>
+                  ))}
                 </tbody>
               </table>
             </div>

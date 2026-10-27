@@ -1,9 +1,9 @@
 import { laCaoTang } from '../tinh/loaiDat';
-import { CHI_TIEU_MAC_DINH } from '../tinh/macDinh';
-import { LOAI_CAN, type ChiTieuQH, type Lo, type LoaiCan, type NguongMau, type ThongSoHam, type TrangThaiPA } from '../tinh/kieu';
+import { CHI_TIEU_MAC_DINH, chuanHoaChiPhi } from '../tinh/macDinh';
+import { LOAI_CAN, type ChiPhiPA, type ChiTieuQH, type Lo, type LoaiCan, type NguongMau, type ThongSoHam, type TrangThaiPA } from '../tinh/kieu';
 
 /** Preset hai tầng: nhóm `cap` (cả bộ cấu hình) và các nhóm theo mục. Lưu ở localStorage, khoá `unitmix.preset.<nhóm>`. */
-export type NhomPreset = 'cap' | 'chiTieu' | 'coCau' | 'heSo' | 'nguong' | 'ham';
+export type NhomPreset = 'cap' | 'chiTieu' | 'coCau' | 'heSo' | 'nguong' | 'ham' | 'chiPhi';
 export type PhamViPreset = 'lo' | 'pa';
 export type HamPreset = Omit<ThongSoHam, 'ranh'>;
 
@@ -15,11 +15,13 @@ export type DuLieuPreset = {
   phanHam?: unknown; // khối JSON nguyên của pa.phanHam (nếu PA có)
   nguong?: NguongMau;
   ham?: HamPreset;
+  /** Đơn giá dự toán + tỷ lệ + giá bán (dùng lại giữa dự án). Dòng "Khác" và chi phí đất là của từng dự án, không lưu. */
+  chiPhi?: ChiPhiPA;
 };
 export type Preset = { ten: string; du: DuLieuPreset };
 export type KhoPreset = Pick<Storage, 'getItem' | 'setItem'>;
 
-export const DS_NHOM: NhomPreset[] = ['cap', 'chiTieu', 'coCau', 'heSo', 'nguong', 'ham'];
+export const DS_NHOM: NhomPreset[] = ['cap', 'chiTieu', 'coCau', 'heSo', 'nguong', 'ham', 'chiPhi'];
 const TRUONG_NHOM: Record<NhomPreset, (keyof DuLieuPreset)[]> = {
   cap: ['chiTieu', 'coCau', 'heSo', 'phanHam', 'nguong', 'ham'],
   chiTieu: ['chiTieu'],
@@ -27,6 +29,7 @@ const TRUONG_NHOM: Record<NhomPreset, (keyof DuLieuPreset)[]> = {
   heSo: ['heSo', 'phanHam'],
   nguong: ['nguong'],
   ham: ['ham'],
+  chiPhi: ['chiPhi'],
 };
 const TRUONG_LO: (keyof DuLieuPreset)[] = ['chiTieu', 'coCau'];
 const DINH_DANG = 'unitmix-preset';
@@ -62,6 +65,9 @@ function sachSoCoKhoa<K extends string>(v: unknown, khoa: K[]): Record<K, number
   return Object.fromEntries(khoa.map((k) => [k, v[k]])) as Record<K, number>;
 }
 
+/** Bỏ phần riêng của dự án (dòng "Khác", chi phí đất) khỏi preset chi phí. */
+const boRiengDuAn = (cp: ChiPhiPA): ChiPhiPA => ({ ...cp, khac: { xd: 0, tb: 0 }, ban: { ...cp.ban, chiPhiDat: 0 } });
+
 /** Giữ đúng các trường của nhóm; trả null nếu nhóm thiếu dữ liệu hợp lệ. */
 export function lamSachDuLieu(nhom: NhomPreset, v: unknown): DuLieuPreset | null {
   if (!laDoiTuong(v)) return null;
@@ -72,6 +78,7 @@ export function lamSachDuLieu(nhom: NhomPreset, v: unknown): DuLieuPreset | null
     else if (f === 'coCau') { const x = sachCoCau(v[f]); if (x) kq.coCau = x; }
     else if (f === 'nguong') { const x = sachSoCoKhoa(v[f], KHOA_NGUONG); if (x) kq.nguong = x as NguongMau; }
     else if (f === 'ham') { const x = sachSoCoKhoa(v[f], KHOA_HAM); if (x) kq.ham = x as unknown as HamPreset; }
+    else if (f === 'chiPhi') { if (laDoiTuong(v[f])) kq.chiPhi = boRiengDuAn(chuanHoaChiPhi(v[f])); }
     else if (laDoiTuong(v[f])) kq[f as 'heSo' | 'phanHam'] = sao(v[f]);
   }
   // Nhóm theo mục phải có đúng trường của nó; nhóm cấp cần ít nhất một trường.
@@ -167,6 +174,7 @@ export function chupPreset(nhom: NhomPreset, pa: TrangThaiPA, lo: Lo | null | un
     else if (f === 'phanHam') { if (pa.phanHam !== undefined) du.phanHam = sao(pa.phanHam); }
     else if (f === 'nguong') du.nguong = sao(pa.nguong);
     else if (f === 'ham') { const { ranh: _ranh, ...con } = pa.ham; du.ham = sao(con); }
+    else if (f === 'chiPhi') du.chiPhi = boRiengDuAn(chuanHoaChiPhi(pa.chiPhi));
   }
   return du;
 }
@@ -197,6 +205,11 @@ export function apPreset(nhom: NhomPreset, pa: TrangThaiPA, du: DuLieuPreset, ph
     if (ok('phanHam')) ra = { ...ra, phanHam: sao(du.phanHam) as TrangThaiPA['phanHam'] };
     if (ok('nguong')) ra = { ...ra, nguong: sao(du.nguong!) };
     if (ok('ham')) ra = { ...ra, ham: { ...ra.ham, ...sao(du.ham!) } };
+    if (ok('chiPhi')) {
+      // Giữ dòng "Khác" và chi phí đất của dự án đang mở.
+      const cu = chuanHoaChiPhi(ra.chiPhi), moi = chuanHoaChiPhi(du.chiPhi);
+      ra = { ...ra, chiPhi: { ...moi, khac: cu.khac, ban: { ...moi.ban, chiPhiDat: cu.ban.chiPhiDat } } };
+    }
   }
   return ra;
 }
