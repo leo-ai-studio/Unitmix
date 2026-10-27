@@ -2,6 +2,13 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-28 · kiểm QT-69 sân trong + chặn căn không vừa trên app · Claude Code
+
+- `kho.ts` `sua`: phép sửa không đổi PA (vd đổi căn bị chặn) không ghi bước hoàn tác rỗng.
+- Kiểm trên 5180, dự án thử `6evyxom9` (bản sao tm-u1 của `qlzn28zt`, tạo qua API dev để có mã sửa): CH-25 → 2PN M1 ở đầu sân: DTXD 2.185,7 → 2.211,2 m², căn vượt 4→0, khung giữa giữ nguyên, hoàn tác về 2.185,7. Quét đổi từng căn giữa sang 2PN M1: 12 lần đổi được (dãy dài / khít), CH-22 bị chặn "ô rộng 5,8 m, mẫu hẹp nhất cần 7,0 m", giữ căn cũ.
+- Bẫy: lớp phủ báo chặn tự tắt sau vài giây — bắt bằng MutationObserver khi kiểm tự động.
+- Chờ chủ nhiệm: thứ tự ưu tiên khít đoạn kẹp; 13 ca phần dư không lấp được (đang chặn — cho khe kỹ thuật hay gợi ý loại khác?). Chưa push `main`.
+
 ## 2026-10-28 · QT-69 đầu dãy hở ra sân trong · chặn đổi loại căn vừa chọn tay · agent Opus
 
 **Đã làm** (nhánh agent, từ `main` @ `675ac94`):
