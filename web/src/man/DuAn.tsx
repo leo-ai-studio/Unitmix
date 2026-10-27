@@ -1,3 +1,4 @@
+import { nhanPhienBan } from '../phienBan';
 import { useEffect, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { api, type DuAnApi } from '../api';
@@ -224,7 +225,7 @@ export function DuAn() {
           );
         })}
       </main>
-      <footer class="chan-trang">{t('app.tacGia')}</footer>
+      <footer class="chan-trang">{t('app.tacGia')} · <span class="phien-ban">{nhanPhienBan()}</span></footer>
       {moTao && <HopTaoDuAn dong={() => setMoTao(false)} />}
       {soSanh && dong.find((x) => x.ma === soSanh)?.da && <SoSanhPA ma={soSanh} da={dong.find((x) => x.ma === soSanh)!.da!} dong={() => setSoSanh(null)} />}
     </div>
