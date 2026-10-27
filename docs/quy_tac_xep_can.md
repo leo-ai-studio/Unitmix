@@ -170,6 +170,7 @@ Kết quả: **28/33 tòa khớp hoàn toàn** (số căn cụt / đôi, căn v�
 lệch đúng **2 căn góc trên mặt xiên** mỗi tòa: mặt này không song song trục nào, app cũ lấy toạ độ dọc mặt xiên đặt thẳng lên
 trục A (tm-v1 CH-08 ra 1,3 m, xh-v1 CH-01 ra 0,4 m cho căn thực tế cách thang 11–21 m). App mới gán hai căn này vào đoạn nối
 góc song song với mặt (đường đi thật, thoát hai hướng). Ngoài 10 căn đó, mọi căn của 33 tòa khớp app cũ.
+**Chủ nhiệm chốt 27/10/2026: căn góc mặt xiên tòa V tính theo đường đi thật (cách app mới), không theo app cũ.**
 
 Chỗ lệch còn lại:
 
