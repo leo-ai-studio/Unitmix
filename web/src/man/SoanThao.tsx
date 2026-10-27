@@ -12,6 +12,8 @@ import type { ThuVien } from '../tinh/kieu';
 import { soCanChuVi, viTriCan } from '../tinh/matBang';
 import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
+import { diemLechPA } from '../tinh/diemPA';
+import { baoCaoPA, tenTepXls, xuatXls } from '../xuat/xuatXls';
 import { HopXuatCad } from './HopXuatCad';
 import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
@@ -125,6 +127,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onLamLai={kho.lamLai}
       thongBao={thongBao}
       onXuatCad={xemXuat && tv ? () => setMoXuat(true) : undefined}
+      onXuatXls={tv && kq ? () => void xuatXls(baoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)), tenTepXls(da.ten, tenPA)) : undefined}
       moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} />}
       buoc={{ ds: [['tmb', t('buoc.tmb')], ['tang', t('buoc.tang')]], chon: buoc, onChon: (k) => setBuoc(k as 'tmb' | 'tang') }}
       trai={buoc === 'tmb' ? <TmbTrai {...chungXep} /> : <TangTrai {...chungTang} />}

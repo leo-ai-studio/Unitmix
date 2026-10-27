@@ -17,6 +17,7 @@ type Props = {
   onHoanTac?: () => void;
   onLamLai?: () => void;
   onXuatCad?: () => void;
+  onXuatXls?: () => void;
   /** Các bước làm việc chính (tab cố định trên thanh trên). */
   buoc?: { ds: [string, string][]; chon: string; onChon: (k: string) => void };
 };
@@ -93,7 +94,7 @@ export function ThanhTren(p: Props) {
           </div>
         </>
       )}
-      <button class="nut-chu" type="button">{t('xuat.xls')}</button>
+      <button class="nut-chu" type="button" disabled={!p.onXuatXls} onClick={p.onXuatXls}>{t('xuat.xls')}</button>
       <button class="nut-chu" type="button" disabled={!p.onXuatCad} onClick={p.onXuatCad}>{t('xuat.cad')}</button>
       <ChonLang />
     </header>

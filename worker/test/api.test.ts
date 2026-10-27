@@ -90,3 +90,36 @@ describe('API dự án và phương án', () => {
     expect(((await (await goi(`/api/du-an/${ma}`)).json()) as { ten: string }).ten).toBe('M7 Đan Phượng');
   });
 });
+
+describe('nhân bản phương án', () => {
+  const nhanBan = (ma: string, id: string, maSua?: string) =>
+    goi(`/api/du-an/${ma}/pa/${id}/nhan-ban`, { method: 'POST', headers: maSua ? { 'X-Ma-Sua': maSua } : {} });
+
+  it('cần mã sửa; PA không có -> 404; dự án không có -> 404', async () => {
+    const { ma, ma_sua } = await taoDuAn();
+    await goi(`/api/du-an/${ma}/pa/p1`, json(PA, ma_sua));
+    expect((await nhanBan(ma, 'p1')).status).toBe(403);
+    expect((await nhanBan(ma, 'p1', 'sai')).status).toBe(403);
+    expect((await nhanBan(ma, 'khong', ma_sua)).status).toBe(404);
+    expect((await nhanBan('khongco1', 'p1', ma_sua)).status).toBe(404);
+    expect(((await (await goi(`/api/du-an/${ma}`)).json()) as { phuong_an: unknown[] }).phuong_an).toHaveLength(1);
+  });
+
+  it('bản sao có id mới, tên "(bản sao)", cùng trạng thái và tóm tắt; sửa bản sao không đụng bản gốc', async () => {
+    const { ma, ma_sua } = await taoDuAn();
+    const goc = { ...PA, trang_thai: { phienBan: 1, toa: [{ id: 'a' }] }, tom_tat: { soCan: 120 } };
+    await goi(`/api/du-an/${ma}/pa/p1`, json(goc, ma_sua));
+    const r = await nhanBan(ma, 'p1', ma_sua);
+    expect(r.status).toBe(201);
+    const { id } = (await r.json()) as { id: string };
+    expect(id).toMatch(/^pa-[a-z0-9]{6}$/);
+    const ban = (await (await goi(`/api/du-an/${ma}/pa/${id}`)).json()) as { ten: string; trang_thai: unknown };
+    expect(ban).toMatchObject({ ten: 'PA 1 (bản sao)', trang_thai: goc.trang_thai });
+    await goi(`/api/du-an/${ma}/pa/${id}`, json({ ...goc, trang_thai: { phienBan: 1, toa: [] } }, ma_sua));
+    const g = (await (await goi(`/api/du-an/${ma}/pa/p1`)).json()) as { trang_thai: unknown };
+    expect(g.trang_thai).toEqual(goc.trang_thai);
+    const ds = (await (await goi(`/api/du-an/${ma}`)).json()) as { phuong_an: { tom_tat: unknown }[] };
+    expect(ds.phuong_an.map((p) => p.tom_tat)).toEqual([{ soCan: 120 }, { soCan: 120 }]);
+  });
+});
+
