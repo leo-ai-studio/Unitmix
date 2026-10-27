@@ -1,14 +1,15 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
-import { raiHam, type HamDayDu, type KetQuaHam, type KiemHam } from '../tinh/ham';
+import { diemTheoDoDai, dongRanhVe, raiHam, type HamDayDu, type KetQuaHam, type KiemHam } from '../tinh/ham';
 import { chanToa } from '../tinh/hinhHoc';
-import { PHAN_HAM_MAC_DINH, type Lo, type LoaiRam, type ThongSoHam, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
+import { PHAN_HAM_MAC_DINH, type Diem, type Lo, type LoaiRam, type ThongSoHam, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaHam } from '../tinh/macDinh';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
 import { BanVe, khungBao, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { ChuGiaiHam, MatBangHam } from '../ve/MatBangHam';
+import { VeRanh } from '../ve/VeRanh';
 import { ChonLoCaoTang } from './ManLo';
 import { loDangXep } from './ManXepToa';
 
@@ -173,30 +174,87 @@ export function HamTrai({ pa, sua, chiXem, loId, chonLo, tv, tangHam, chonTangHa
   );
 }
 
-/** Bản vẽ màn Hầm: ranh lô, chân tòa (nét đứt), mặt bằng tầng hầm đang chọn; chọn tầng ở lớp phủ trên. */
-export function HamGiua({ pa, loId, tv, tangHam, chonTangHam }: ChungHam) {
+/** Bản vẽ màn Hầm: ranh lô, chân tòa (nét đứt), mặt bằng tầng hầm đang chọn; chọn tầng và công cụ Vẽ ranh ở lớp phủ trên. */
+export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: ChungHam) {
   const [dk, setDk] = useState<DieuKhienVe | null>(null);
+  const [ve, setVe] = useState(false);
+  const [pts, setPts] = useState<Diem[]>([]);
+  const [con, setCon] = useState<Diem | null>(null);
+  const [bao, setBao] = useState('');
+  const [doDai, setDoDai] = useState('');
   const lo = loDangXep(pa, loId);
+  const huyVe = () => { setVe(false); setPts([]); setCon(null); setBao(''); setDoDai(''); };
+  const dongVe = (ds: Diem[]) => {
+    const r = dongRanhVe(ds);
+    if (!r) { setBao(t('ham.ve.khongHopLe')); return; }
+    suaHam(sua, () => ({ ranh: r.map(([x, y]) => [Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000] as Diem) }));
+    huyVe();
+  };
+  const lui = () => { setPts(pts.slice(0, -1)); setBao(''); };
+  useEffect(() => { huyVe(); }, [lo?.id]);
+  useEffect(() => {
+    if (!ve) return;
+    const phim = (e: KeyboardEvent) => {
+      const trongO = e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement;
+      if (e.key === 'Escape') huyVe();
+      else if (trongO) return;
+      else if (e.key === 'Enter') dongVe(pts);
+      else if (e.key === 'Backspace') { e.preventDefault(); lui(); }
+    };
+    window.addEventListener('keydown', phim);
+    return () => window.removeEventListener('keydown', phim);
+  }, [ve, pts]);
   if (!lo) return <div class="giua-man"><span>{t('xep.chuaCoLo')}</span></div>;
   const kq = ketQuaHam(pa, tv, lo);
   if (!kq) return <div class="giua-man"><span>{t('ham.ranhRong')}</span></div>;
   const tang = kq.tang[Math.min(Math.max(1, tangHam), kq.tang.length) - 1];
+  const h = chuanHoaHam(pa.ham);
   const khung = khungBao([lo.ranh, kq.ranh]);
   const coChu = Math.max(1, khung ? (khung[2] - khung[0]) / 70 : 2);
   const chan = tv ? pa.toa.filter((x) => x.loId === lo.id && tv.toa.has(x.mauId)).map((x) => chanToa(tv.toa.get(x.mauId)!, x)) : [];
+  const nut: Diem[] = [...lo.ranh, ...(lo.chiGioi ?? [])];
+  const datDoDai = () => {
+    const v = Number(doDai.replace(',', '.')), a = pts[pts.length - 1];
+    if (!a || !con || !(v > 0)) return;
+    const p = diemTheoDoDai(a, con, v);
+    if (p) { setPts([...pts, p]); setDoDai(''); setBao(''); }
+  };
   return (
     <>
       <BanVe khung={khung} nhan={t('ham.banVe')} onDieuKhien={setDk}>
         <g class="ham-ve"><polygon class="ranh-lo" points={sPoly(lo.ranh)} vector-effect="non-scaling-stroke" /></g>
         <MatBangHam kq={kq} tang={tang} coChu={coChu} />
         <g class="ham-ve">{chan.map((p, i) => <polygon key={i} class="chan-toa" points={sPoly(p)} vector-effect="non-scaling-stroke" />)}</g>
+        <VeRanh dangVe={ve} pts={pts} con={con} nut={nut} ranh={h.ranh} coChu={coChu} chiXem={chiXem}
+          onCon={setCon} onBam={(p) => {
+            if (pts.length >= 3 && p[0] === pts[0][0] && p[1] === pts[0][1]) dongVe(pts);
+            else { setPts([...pts, p]); setBao(''); }
+          }}
+          onSuaRanh={(r) => suaHam(sua, () => ({ ranh: r }))} />
       </BanVe>
       <div class="noi-tren">
         <nav class="ham-tang" aria-label={t('ham.chonTang')}>
           {kq.tang.map((x) => (
             <button type="button" key={x.tang} aria-pressed={x.tang === tang.tang} onClick={() => chonTangHam(x.tang)}>{`B${x.tang}`}</button>
           ))}
+          {!chiXem && <button type="button" class="nut-ve-ranh" aria-pressed={ve} onClick={() => (ve ? huyVe() : setVe(true))}>{t('ham.ve.nut')}</button>}
         </nav>
+        {ve && (
+          <div class="ham-ve-thanh" role="group" aria-label={t('ham.ve.nut')}>
+            <span class="ham-ve-ghi">{t('ham.ve.huongDan')}</span>
+            <label title={t('ham.ve.doDaiGoiY')}>
+              <span>{t('ham.ve.doDai')}</span>
+              <input type="number" min="0" step="0.1" value={doDai} disabled={!pts.length}
+                onInput={(e) => setDoDai(e.currentTarget.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); datDoDai(); } }} />
+            </label>
+            <button type="button" disabled={!pts.length} onClick={lui}>{t('ham.ve.lui')}</button>
+            <button type="button" class="nut-chinh" disabled={pts.length < 3} onClick={() => dongVe(pts)}>{t('ham.ve.dong')}</button>
+            <button type="button" onClick={huyVe}>{t('ham.ve.huy')}</button>
+            {bao && <span class="vuot" role="alert">{bao}</span>}
+          </div>
+        )}
+        {!ve && !chiXem && h.ranh && <p class="ham-ve-ghi">{t('ham.ve.keoDinh')}</p>}
       </div>
       <div class="noi-duoi">
         <ChuGiaiHam coSac={tang.vungSac.length > 0} />
