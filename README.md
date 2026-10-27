@@ -3,6 +3,8 @@
 Lập cơ cấu căn hộ từ chỉ tiêu quy hoạch: lô đất → xếp mẫu tòa → tầng, căn → hầm → 3D → so sánh phương án.
 Web: https://unitmix.leo-ai.dev · Người tạo: NghiaVT · Nhận diện: LEO AI
 
+**AI làm tiếp: đọc [docs/AI_START.md](docs/AI_START.md) và mục mới nhất của [docs/NHAT_KY.md](docs/NHAT_KY.md) trước.**
+
 - Thiết kế: `docs/superpowers/specs/2026-10-27-unitmix-moi-design.md`
 - Kế hoạch: `docs/superpowers/plans/2026-10-27-unitmix.md`
 - Thư viện mẫu tòa, mẫu căn: `web/public/lib/` (chép từ MDI_Unitmix_v4, chỉ đọc). Chép lại:
