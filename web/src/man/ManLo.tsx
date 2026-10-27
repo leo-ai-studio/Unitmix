@@ -6,7 +6,7 @@ import { dienTich } from '../tinh/hinhHoc';
 import { LOAI_CAN, type ChiTieuQH, type ChucNang, type HeSoDTSan, type Lo, type TrangThaiPA } from '../tinh/kieu';
 import { loDangChonHoacDatO, taoLo } from '../tinh/macDinh';
 import { sucChua } from '../tinh/sucChua';
-import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
+import { BanVe, khungBao, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
@@ -249,7 +249,6 @@ export function LoGiua({ pa, loId, chonLo }: Chung) {
             </g>
           );
         })}
-        {khung && <g aria-hidden="true">{(() => { const L = dk?.tyLeM ?? 10; const p0: [number, number] = [khung[0], khung[1] - coChu * 2]; return (<><polyline points={`${s(p0)} ${s([p0[0] + L, p0[1]])}`} stroke="var(--ink)" stroke-width="2" vector-effect="non-scaling-stroke" /><text x={p0[0]} y={-p0[1] + coChu * 1.3} font-size={coChu} fill="var(--ink)">{fmtSo(L, { donVi: 'm' })}</text></>); })()}</g>}
       </BanVe>
       <ThanhHienThi nhan={t('ht.nhom')} nut={[
         { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },

@@ -128,7 +128,7 @@ function TangVe({ tv, toa, mau, lo, canKhoa, chonCan, pa }: ChungTang & { tv: Th
         {tenNgan(mau.ten_vi)} · {t('tang.dienHinh')} · {t('tang.apCho').replace('{n}', String(toa.soTangDH))} · {t('xep.canTang').replace('{n}', String(sl.vts.length))}
         {hinh.dangTai && <img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '14px', height: '14px', marginLeft: '8px', verticalAlign: '-2px' }} />}
       </div>
-      <BanVe khung={khung} nhan={t('tang.banVe')} onDieuKhien={setDk}>
+      <BanVe khung={khung} nhan={t('tang.banVe')} onDieuKhien={setDk} gocBac={toa.gocDo}>
         <MatBangTang mau={mau} toa={toa} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa} chonCan={chonCan}
           deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2} />
       </BanVe>

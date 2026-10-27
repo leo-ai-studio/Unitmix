@@ -299,5 +299,12 @@
   "kieu.leo": "Mặc định (LEO)",
   "kieu.sk_galia": "Salekit · Galia",
   "kieu.sk_hh1": "Salekit · HH1",
-  "kieu.sk_rivea": "Salekit · Rivea"
+  "kieu.sk_rivea": "Salekit · Rivea",
+  "duAn.luu": "Lưu",
+  "duAn.doiTenDA": "Sửa tên dự án",
+  "duAn.doiTenPA": "Đổi tên",
+  "duAn.xoaPA": "Xoá",
+  "duAn.tenPA": "Tên phương án",
+  "duAn.xoaHoi": "Xoá phương án “{ten}”? Không khôi phục lại được.",
+  "ve.bac": "B"
 }

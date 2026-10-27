@@ -117,9 +117,11 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
       {lop.map(({ vt, vanh }) => vanh && <path key={`v${vt.khoa}`} d={vanh} fill-rule="evenodd" fill={K.tuong} fill-opacity={K.sanTrang ? 0.85 : 0.42} pointer-events="none" />)}
       {lop.map(({ vt, nhom, cat }) => <g key={`n${vt.khoa}`} clip-path={cat ? `url(#cat-${vt.khoa.replace(':', '_')})` : undefined}>{nhomNet(nhom, vt.khoa)}</g>)}
       {loi.map((l) => <g key={`l${l.khoa}`}>{nhomNet(l.nhom, `l${l.khoa}`)}</g>)}
-      {/* nét bao DTXD */}
-      <path d={d(mau.duong_bao) + 'Z'} fill="none" stroke={K.sanTrang ? K.duongDan : 'var(--vuot, #E0382B)'} stroke-width={K.sanTrang ? 0.8 : 1.4}
-        stroke-dasharray={K.sanTrang ? undefined : '6 3'} vector-effect="non-scaling-stroke" pointer-events="none" />
+      {/* nét bao DTXD như app cũ: kiểu màn hình = nét đỏ đứt dày 300 mm theo mét thật (phủ kín mép tường khi phóng); kiểu salekit = nét liền mảnh màu tường */}
+      <path d={d(mau.duong_bao) + 'Z'} fill="none" pointer-events="none" stroke-linejoin="miter"
+        {...(K.sanTrang
+          ? { stroke: K.tuong, 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }
+          : { stroke: '#E0201B', 'stroke-width': 300, 'stroke-dasharray': '2000 1000' })} />
       {canKhoa && lop.filter((x) => x.vt.khoa === canKhoa).map(({ ranh }) => (
         <path key="chon" d={ranh} fill="none" stroke="var(--green)" stroke-width="3" vector-effect="non-scaling-stroke" pointer-events="none" />
       ))}

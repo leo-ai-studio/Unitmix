@@ -14,7 +14,7 @@ body { font-size: 13px; line-height: 1.45; }
 .panel-trai, .panel-phai { background: var(--panel); overflow: auto; max-height: calc(100vh - 53px); }
 .panel-trai { flex: 0 0 270px; border-right: 1px solid var(--line); }
 .panel-phai { flex: 0 0 300px; border-left: 1px solid var(--line); }
-.panel-giua { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; background: var(--panel); }
+.panel-giua { flex: 999 1 560px; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--panel); overflow: hidden; }
 @media (max-width: 960px) {
   .panel-trai, .panel-phai { flex: 1 1 100%; max-height: none; border: 0; border-top: 1px solid var(--line); }
   .panel-giua { order: -1; min-height: 60vh; }
@@ -135,3 +135,26 @@ body { font-size: 13px; line-height: 1.45; }
 .hang-lc small { font-size: 10.5px; }
 
 .panel-giua { position: relative; }
+
+/* Sửa tên ngay trong danh sách dự án */
+.sua-ten { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.sua-ten input { padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px; min-width: 0; flex: 1 1 140px; font-size: 13px; }
+.nut-xoa { color: var(--vuot); border-color: var(--vuot); }
+
+/* Màn soạn thảo: khung cố định theo cửa sổ, hai panel tự cuộn, bản vẽ không phình ra ngoài */
+.khung-soan { height: 100vh; height: 100dvh; overflow: hidden; }
+.khung-soan .khung-than { flex: 1 1 0; flex-wrap: nowrap; min-height: 0; }
+.khung-soan .panel-trai, .khung-soan .panel-phai { max-height: none; min-height: 0; }
+@media (max-width: 960px) {
+  .khung-soan { height: auto; min-height: 100vh; overflow: visible; }
+  .khung-soan .khung-than { flex-wrap: wrap; }
+  .khung-soan .panel-giua { order: -1; flex: 0 0 auto; height: 72vh; height: 72dvh; min-height: 320px; width: 100%; }
+}
+
+/* Bản vẽ: ô chứa cố định, thước tỷ lệ và hoa gió là lớp phủ đứng yên */
+.ban-ve { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; background: var(--panel); touch-action: none; }
+.ban-ve-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ban-ve-phu { position: absolute; inset: 0; pointer-events: none; }
+.thuoc-ty-le { position: absolute; left: 14px; bottom: 12px; height: 8px; border: 1.5px solid var(--ink); border-top: 0; min-width: 4px; }
+.thuoc-ty-le span { position: absolute; left: 0; bottom: 10px; font-size: 11px; font-weight: 600; color: var(--ink); background: var(--panel); padding: 0 3px; border-radius: 3px; white-space: nowrap; }
+.hoa-gio { position: absolute; right: 14px; top: 12px; }

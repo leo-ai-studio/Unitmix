@@ -23,7 +23,7 @@ export function KhungSoan(p: Props) {
   useLang();
   const [xem, setXem] = useState<CheDoXem>('mat_bang');
   return (
-    <div class="khung">
+    <div class="khung khung-soan">
       <ThanhTren capDo={p.capDo} cheDoXem={xem} onCheDoXem={setXem} cheDo={p.cheDo} onCheDo={p.onCheDo}
         trangThaiLuu={p.trangThaiLuu} dangXuLy={p.dangXuLy} duocSua={p.duocSua}
         onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} />

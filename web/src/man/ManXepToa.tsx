@@ -210,6 +210,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
                 if (!b || b.id !== x.id) return;
                 setKeo({ id: x.id, dx: (e.clientX - b.cx) / b.k, dy: -(e.clientY - b.cy) / b.k });
               }}
+              onLostPointerCapture={() => { batDau.current = null; setKeo(null); }}
               onPointerUp={() => {
                 const b = batDau.current;
                 batDau.current = null;
@@ -228,7 +229,6 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
             </g>
           );
         })}
-        {khung && <g aria-hidden="true">{(() => { const L = dk?.tyLeM ?? 10; const p0: Diem = [khung[0], khung[1] - coChu * 2]; return (<><polyline points={`${s(p0)} ${s([p0[0] + L, p0[1]])}`} stroke="var(--ink)" stroke-width="2" vector-effect="non-scaling-stroke" /><text x={p0[0]} y={-p0[1] + coChu * 1.3} font-size={coChu} fill="var(--ink)">{fmtSo(L, { donVi: 'm' })}</text></>); })()}</g>}
       </BanVe>
       <p class="dong muted" style={{ justifyContent: 'center' }}>{t('xep.keoGoiY')}</p>
       <ThanhHienThi nhan={t('ht.nhom')} nut={[

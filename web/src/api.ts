@@ -28,5 +28,9 @@ export const api = {
     goi<{ ok: true }>(`/api/du-an/${ma}/pa/${id}`, { method: 'PUT', body: JSON.stringify({ ten, trang_thai, tom_tat }) }, maSua),
   nhanBan: (ma: string, id: string, maSua: string) =>
     goi<{ id: string }>(`/api/du-an/${ma}/pa/${id}/nhan-ban`, { method: 'POST' }, maSua),
+  doiTenDuAn: (ma: string, maSua: string, ten: string, dia_diem: string) =>
+    goi<{ ok: true }>(`/api/du-an/${ma}`, { method: 'PATCH', body: JSON.stringify({ ten, dia_diem }) }, maSua),
+  doiTenPA: (ma: string, id: string, maSua: string, ten: string) =>
+    goi<{ ok: true }>(`/api/du-an/${ma}/pa/${id}`, { method: 'PATCH', body: JSON.stringify({ ten }) }, maSua),
   xoaPA: (ma: string, id: string, maSua: string) => goi<void>(`/api/du-an/${ma}/pa/${id}`, { method: 'DELETE' }, maSua),
 };

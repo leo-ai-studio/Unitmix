@@ -68,4 +68,25 @@ describe('API dự án và phương án', () => {
     expect(dung.duocSua).toBe(true);
     expect(sai.duocSua).toBe(false);
   });
+
+  it('đổi tên dự án và phương án cần mã sửa; tên rỗng bị từ chối; không đụng trạng thái PA', async () => {
+    const { ma, ma_sua } = await taoDuAn();
+    await goi(`/api/du-an/${ma}/pa/p1`, json(PA, ma_sua));
+    const patch = (duong: string, body: unknown, maSua?: string): Promise<Response> =>
+      goi(duong, { method: 'PATCH', headers: { 'content-type': 'application/json', ...(maSua ? { 'X-Ma-Sua': maSua } : {}) }, body: JSON.stringify(body) });
+    expect((await patch(`/api/du-an/${ma}`, { ten: 'X' })).status).toBe(403);
+    expect((await patch(`/api/du-an/${ma}/pa/p1`, { ten: 'X' }, 'saima')).status).toBe(403);
+    expect((await patch(`/api/du-an/${ma}`, { ten: '  ' }, ma_sua)).status).toBe(400);
+    expect((await patch(`/api/du-an/${ma}/pa/p1`, { ten: '' }, ma_sua)).status).toBe(400);
+    expect((await patch(`/api/du-an/${ma}/pa/khongco`, { ten: 'X' }, ma_sua)).status).toBe(404);
+    expect((await patch(`/api/du-an/${ma}`, { ten: '  M7 Đan Phượng ', dia_diem: 'Hà Nội' }, ma_sua)).status).toBe(200);
+    expect((await patch(`/api/du-an/${ma}/pa/p1`, { ten: 'PA chốt' }, ma_sua)).status).toBe(200);
+    const da = (await (await goi(`/api/du-an/${ma}`)).json()) as { ten: string; dia_diem: string; phuong_an: { ten: string }[] };
+    expect([da.ten, da.dia_diem, da.phuong_an[0].ten]).toEqual(['M7 Đan Phượng', 'Hà Nội', 'PA chốt']);
+    const pa = (await (await goi(`/api/du-an/${ma}/pa/p1`)).json()) as { trang_thai: unknown };
+    expect(pa.trang_thai).toEqual(PA.trang_thai);
+    // chỉ gửi địa điểm: giữ tên
+    await patch(`/api/du-an/${ma}`, { dia_diem: 'Đan Phượng' }, ma_sua);
+    expect(((await (await goi(`/api/du-an/${ma}`)).json()) as { ten: string }).ten).toBe('M7 Đan Phượng');
+  });
 });

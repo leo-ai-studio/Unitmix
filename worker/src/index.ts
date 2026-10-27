@@ -86,6 +86,33 @@ app.put('/api/du-an/:ma/pa/:id', async (c) => {
   return c.json({ ok: true });
 });
 
+/** Đổi tên (và địa điểm) dự án. Tên rỗng thì giữ tên cũ; địa điểm không gửi thì giữ nguyên. */
+app.patch('/api/du-an/:ma', async (c) => {
+  const da = await choPhepGhi(c);
+  if (da instanceof Response) return da;
+  const b = await docBody<{ ten?: string; dia_diem?: string }>(c);
+  if (!b) return c.json({ loi: 'qua_lon' }, 413);
+  const ten = (b.ten ?? '').trim();
+  if (b.ten !== undefined && !ten) return c.json({ loi: 'ten_rong' }, 400);
+  await c.env.DB.prepare('UPDATE du_an SET ten = ?, dia_diem = ? WHERE ma = ?')
+    .bind(ten || da.ten, b.dia_diem === undefined ? da.dia_diem : b.dia_diem.trim(), da.ma)
+    .run();
+  return c.json({ ok: true });
+});
+
+/** Đổi tên một phương án, không đụng trạng thái. */
+app.patch('/api/du-an/:ma/pa/:id', async (c) => {
+  const da = await choPhepGhi(c);
+  if (da instanceof Response) return da;
+  const b = await docBody<{ ten?: string }>(c);
+  if (!b) return c.json({ loi: 'qua_lon' }, 413);
+  const ten = (b.ten ?? '').trim();
+  if (!ten) return c.json({ loi: 'ten_rong' }, 400);
+  const r = await c.env.DB.prepare('UPDATE phuong_an SET ten = ? WHERE du_an_ma = ? AND id = ?').bind(ten, da.ma, c.req.param('id')).run();
+  if (!r.meta.changes) return c.json({ loi: 'khong_co' }, 404);
+  return c.json({ ok: true });
+});
+
 app.post('/api/du-an/:ma/pa/:id/nhan-ban', async (c) => {
   const da = await choPhepGhi(c);
   if (da instanceof Response) return da;
