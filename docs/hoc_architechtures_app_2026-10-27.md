@@ -125,3 +125,24 @@ Căn cứ trích từ kho `E:\OneDrive\_QCVN-TCVN\`. QCVN 04:2021 ghi tắt là 
 | A14 | Kiểm tra "không còn `undefined` / `NaN` / tổng = 0 khi dòng con có số / nhãn chưa dịch" thành test chung cho mọi bảng | §2 | — |
 
 **Văn bản cần rà thêm**: kho có QCVN 01:**2021**; nếu QCVN 01:2026 đã ban hành thì phải đối chiếu lại S1. TT 31/2026 trong kho là bản dự thảo.
+
+## 6. Đã làm (28/10/2026, nhánh `nang-cap/architechtures`)
+
+| Mục | Trạng thái | Ghi chú |
+|---|---|---|
+| S1, S2, A3′ DT sàn HSSDĐ theo QCVN 01 1.4.21 | ✔ | Cộng hầm (trừ đỗ xe, kỹ thuật theo `pa.phanHam`), tầng áp mái, căn theo bố cục từng tầng, trừ ô đổi sang phòng kỹ thuật; bảng chi tiết hạng mục ở panel Xếp tòa; PA cũ tự chuẩn hoá |
+| S3–S6, S11, S13, A12 luật QCVN 04 | ✔ | DC-06…DC-11 (`tinh/qcvn04.ts`), panel "Tuân thủ QCVN 04" ở màn Tầng. DC-06/07 (phòng ngủ) "chưa đủ dữ liệu" tới khi có dữ liệu phòng từ CAD |
+| S10 SHCĐ ≥ 0,8 m²/căn | ✔ | Panel "Công năng ô · SHCĐ" theo tòa và lô |
+| L1 tooltip kèm căn cứ | ✔ | 114 khoá `gt.*` |
+| L2 / A4 preset hai tầng | ✔ | Theo cấp (lô / cả PA) + theo mục; lưu máy, xuất / nhập JSON |
+| L4 bảng loại căn | ✔ | Thêm DT bán (thông thủy + phân bổ, quy ước tạm) và hệ số TT/tim |
+| L8, L9 menu ô căn / lõi, chọn nhiều | ✔ | Chuột phải ô; Shift/Ctrl chọn nhiều; menu lõi cửa trái/phải, xuống hầm / lên mái |
+| L10, S12, A9 sửa nhiều tầng | ✔ | `ToaDat.tangRieng`, ô "Tầng áp dụng", mục tiêu cơ cấu riêng tầng; breadcrumb hiện tầng đang xem |
+| S8, S9, A6′ màn Hầm | ✔ | QCVN 13 (chỗ đỗ, ram), QCVN 04 2.2.17 (DT đỗ xe theo m²), khu xe điện theo dự thảo (công tắc, chỉ cảnh báo); "Áp tỷ lệ đo được" ghi `phanHam` |
+| L12, L16 so sánh PA, nhân bản, điểm lệch | ✔ | Lớp phủ so sánh ≤ 6 PA |
+| L14 xuất XLS, nhãn DXF | ✔ | 4 sheet báo cáo PA + sheet so sánh; lớp `MDI-NHAN-CAN` |
+| Hiệu ứng H1–H8, H11–H13, H15–H19 | ✔ | Xem `hieu_ung_ui.md`; H14 thay bằng mờ vào khi mount bản vẽ |
+| Khung giữa cố định | ✔ | 0 lần lệch ở 1440×900, 1200×800 qua mọi thao tác, cả màn Hầm |
+
+Còn chờ chủ nhiệm chốt: cách tính ban công / lô gia vào DT sàn xây dựng; tỷ lệ đỗ xe / kỹ thuật trên sàn hầm khi chưa đo; lõi xếp vào phần "kỹ thuật" (không tính HSSDĐ) khi đo hầm; khoảng lùi ranh hầm; số chỗ đỗ M7; ngưỡng thông thủy cho tầng đế; quy ước "DT bán"; cách hiểu QCVN 04 2.2.12; bản chính thức SĐ 01:2026 (xe điện); QCVN 01:2026 nếu đã thay QCVN 01:2021.
+Chưa làm: dự toán / tài chính (chờ khung chi phí Việt Nam và đơn giá), 3D khối hầm, vẽ tay ranh hầm, xuất CAD theo bố cục từng tầng và công năng ô.
