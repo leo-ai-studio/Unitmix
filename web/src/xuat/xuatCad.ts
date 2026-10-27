@@ -116,7 +116,7 @@ export function daiHanhLangKeo(d: Pick<DuLieuXuat, 'mau'>): Diem[][] {
 
 /** Lớp khung + nhãn ô đổi công năng (SHCĐ, kỹ thuật, thương mại, trống). */
 export const LOP_CONG_NANG = 'MDI-CONG-NANG';
-const TEN_CONG_NANG: Record<Exclude<CongNangO, 'can'>, string> = { shcd: 'SHCD', ky_thuat: 'KY THUAT', thuong_mai: 'THUONG MAI', trong: 'O TRONG' };
+const TEN_CONG_NANG: Record<Exclude<CongNangO, 'can'>, string> = { shcd: 'SHCD', ky_thuat: 'KY THUAT', thuong_mai: 'THUONG MAI', trong: 'O TRONG', bo: '' };
 export type OCongNang = { cn: Exclude<CongNangO, 'can'>; goc: Diem[]; x: number; y: number; ten: string; dt: string };
 
 /** Các ô đổi công năng của tầng: khung 4 góc (mm, thế giới), tâm, tên ASCII và DT thông thủy của ô (như tính trong congNang.ts). */
@@ -124,7 +124,7 @@ export function oCongNang(d: DuLieuXuat): OCongNang[] {
   const kq: OCongNang[] = [];
   for (const vt of viTriCan(d.mau, d.tv)) {
     const cn = congNangTai(vt.khoa, d.toa);
-    if (cn === 'can') continue;
+    if (cn === 'can' || cn === 'bo') continue; // căn bỏ (gỡ thoát nạn): không có ô
     const dt = d.tv.can.get(canDangDung(vt, d.toa))?.dt_tt_m2;
     kq.push({
       cn, goc: vt.goc, x: vt.goc.reduce((a, p) => a + p[0], 0) / 4, y: vt.goc.reduce((a, p) => a + p[1], 0) / 4,

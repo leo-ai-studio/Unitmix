@@ -7,7 +7,7 @@ import type { MucDo } from './chiTieu';
 import type { CongNangO, ThuVien, ToaDat, TrangThaiPA } from './kieu';
 import { boCucTang, canDangDung, coMat, congNangTai, nhomTang, viTriCan, type BoCucToa } from './matBang';
 
-export type HangMucO = Exclude<CongNangO, 'can'>;
+export type HangMucO = Exclude<CongNangO, 'can' | 'bo'>;
 export type DtCongNang = Record<HangMucO, number>;
 export const dtCongNangRong = (): DtCongNang => ({ shcd: 0, ky_thuat: 0, thuong_mai: 0, trong: 0 });
 
@@ -27,7 +27,7 @@ export function dtCongNangToa(toa: BoCucToa & Pick<ToaDat, 'mauId'>, tv: ThuVien
     if (!bc.congNang) continue;
     for (const vt of vts) {
       const cn = congNangTai(vt.khoa, bc);
-      if (cn !== 'can') kq[cn] += so * (tv.can.get(canDangDung(vt, bc))?.dt_tt_m2 ?? 0);
+      if (cn !== 'can' && cn !== 'bo') kq[cn] += so * (tv.can.get(canDangDung(vt, bc))?.dt_tt_m2 ?? 0);
     }
   }
   return kq;
