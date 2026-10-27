@@ -78,6 +78,15 @@ export type ToaDat = {
   /** false = tắt tự chỉnh mặt bằng tầng; thiếu = bật (như app cũ). */
   tuChinhMB?: boolean;
   /**
+   * false = KHÔNG tự gỡ căn vượt cự ly thoát nạn (giữ nguyên căn, chỉ báo "vượt"); thiếu = bật như app cũ: xếp lại dãy căn
+   * (giữ cơ cấu) rồi giamCanThoatNan (bỏ căn giữa gần mép / đổi ô thành phòng kỹ thuật).
+   */
+  giamCanTN?: boolean;
+  /** Thang bộ liền suốt chiều cao khi có tầng riêng: 'hop' (mặc định) = hợp thang mọi tầng; 'chung' = ép theo tầng chung. */
+  thangLien?: 'hop' | 'chung';
+  /** Thay đổi do tự chỉnh tự ghi (đổi căn / công năng ô) — gỡ ra trước mỗi lần tự chỉnh lại, tắt thì trả về như cũ. */
+  tuDong?: ThayDoiTuDong[];
+  /**
    * Nét bao sàn tầng điển hình RIÊNG của tòa (mm, hệ toạ độ mẫu tòa) khi dãy dài ra / ngắn lại (QT-69 STRETCH đầu cánh,
    * PC-11 thêm / bớt thang): chanToa, chỉ tiêu, dự toán đọc nét này thay nét bao mẫu. Thiếu = nét bao mẫu.
    */
@@ -105,6 +114,40 @@ export type BaoCaoTuChinh = {
   soCan: number;
   dtxdM2: number;
   dtHanhLangM2: number;
+  /** Gỡ căn vượt cự ly sau PC-11 (app cũ tự sinh + giamCanThoatNan); thiếu = không cần (không có căn vượt). */
+  giamCan?: BaoCaoGiamCan;
+  /** Thang bộ liền suốt chiều cao (tòa có tầng riêng): kết quả hợp / ép thang. */
+  thangLien?: BaoCaoThangLien;
+};
+/** Một thay đổi tự chỉnh tự ghi vào bố cục: `tang` null = bố cục chung; `cu` = giá trị trước (thiếu = không có ghi đè). */
+export type ThayDoiTuDong = { tang: number | null; truong: 'canViTri' | 'congNang'; khoa: string; cu?: string; moi: string };
+export type BaoCaoGiamCan = {
+  bat: boolean;
+  /** Số vị trí xếp lại giữ cơ cấu (co STRETCH, đổi mẫu cùng loại hẹp hơn, đổi chỗ hai căn). */
+  xepLai: number;
+  /** Số ô căn đổi thành phòng kỹ thuật / số căn bỏ (co cánh). */
+  doi: number;
+  bo: number;
+  vuotTruoc: number;
+  vuotSau: number;
+  soCanTruoc: number;
+  soCanSau: number;
+  coCauTruoc: Record<LoaiCan, number>;
+  coCauSau: Record<LoaiCan, number>;
+};
+export type BaoCaoThangLien = {
+  cheDo: 'hop' | 'chung';
+  /** Số thang bộ chung cả tòa sau khi hợp / ép. */
+  soThang: number;
+  /** Số tầng riêng phải đặt lại thang cho liền. */
+  soTang: number;
+  /** Thang không đặt được ở tầng này (không có chỗ cắt / không có đầu tự do). */
+  khongDat: number;
+  /** Căn vượt cự ly ở tầng này sau khi ép thang (trước gỡ căn). */
+  vuot: number;
+  /** Số căn co / giãn STRETCH nhường chỗ cho ô thang ở tầng này; phần lệch (mm) chưa khít được. */
+  nhuong: number;
+  conLech: number;
 };
 export type MatBangSua = {
   phienBan: 1;
@@ -118,12 +161,15 @@ export type MatBangSua = {
   hanhLang: DoanHanhLangMB[];
   /** Nét hành lang vẽ thêm (để tính DT hành lang) khi trục kéo dài tới cửa căn xa nhất. */
   hanhLangThem?: Diem[][];
+  /** Căn bỏ (giamCanThoatNan, công năng 'bo'): ô không dựng, căn phía đầu tự do dồn vào, mặt co lại. */
+  boCan?: string[];
   sanh?: SanhMB[];
   baoCao?: BaoCaoTuChinh;
 };
 
 /** Công năng một ô căn trên tầng. Ô khác 'can' không tính là căn (số căn, cơ cấu, dân số); DT cộng vào hạng mục tương ứng. */
-export type CongNangO = 'can' | 'shcd' | 'ky_thuat' | 'thuong_mai' | 'trong';
+/** 'bo' = căn bị bỏ khi gỡ thoát nạn (giamCanThoatNan app cũ): không dựng ô, dãy co lại — chỉ tự chỉnh đặt, không có trong menu. */
+export type CongNangO = 'can' | 'shcd' | 'ky_thuat' | 'thuong_mai' | 'trong' | 'bo';
 export const CONG_NANG_O: CongNangO[] = ['can', 'shcd', 'ky_thuat', 'thuong_mai', 'trong'];
 /** Ghi đè một tầng: chỉ các vị trí khác bố cục chung; `coCauMucTieu` = mục tiêu cơ cấu riêng của tầng (vd. tầng áp mái). */
 export type BoCucTang = {
