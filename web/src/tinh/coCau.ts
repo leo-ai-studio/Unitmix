@@ -1,4 +1,5 @@
 import { LOAI_CAN, type LoaiCan, type ThuVien, type TrangThaiPA } from './kieu';
+import { canCuaToa } from './matBang';
 
 export const coCauRong = (): Record<LoaiCan, number> => ({ stu: 0, '1pn': 0, '2pn': 0, '2pnp': 0, '3pn': 0 });
 
@@ -12,8 +13,8 @@ export function demCan(pa: TrangThaiPA, tv: ThuVien): Record<string, Record<Loai
     const dem = coCauRong();
     const mau = tv.toa.get(t.mauId);
     if (mau) {
-      for (const [canGoc, n] of Object.entries(mau.co_cau)) {
-        const can = tv.can.get(canThucTe(canGoc, t.canTheo));
+      for (const [id, n] of canCuaToa(mau, t, tv)) {
+        const can = tv.can.get(id);
         if (can) dem[can.loai] += n * t.soTangDH;
       }
     }
@@ -57,8 +58,8 @@ export function dtTbTheoLoai(pa: TrangThaiPA, tv: ThuVien, loId: string): Record
   for (const t of pa.toa) {
     const mau = t.loId === loId ? tv.toa.get(t.mauId) : undefined;
     if (!mau) continue;
-    for (const [canGoc, n] of Object.entries(mau.co_cau)) {
-      const can = tv.can.get(canThucTe(canGoc, t.canTheo));
+    for (const [id, n] of canCuaToa(mau, t, tv)) {
+      const can = tv.can.get(id);
       if (!can) continue;
       tong[can.loai] += n * t.soTangDH * can.dt_tt_m2;
       dem[can.loai] += n * t.soTangDH;

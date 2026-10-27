@@ -9,9 +9,11 @@ import { KhungSoan } from '../ui/KhungSoan';
 import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
 import { tinhChiTieu, type KetQuaChiTieu } from '../tinh/chiTieu';
 import type { ThuVien } from '../tinh/kieu';
+import { soCanChuVi, viTriCan } from '../tinh/matBang';
 import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
 import { LoGiua, LoPhai, LoTrai } from './ManLo';
+import { TangGiua, TangPhai, TangTrai, toaDangXem } from './ManTang';
 import { XepGiua, XepPhai, XepTrai, loDangXep } from './ManXepToa';
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
@@ -81,17 +83,21 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
   const chiXem = kho.cheDo === 'chi_xem';
   const kq: KetQuaChiTieu | null = tv ? tinhChiTieu(kho.pa, tv) : null;
-  const [buoc, setBuoc] = useState<'lo' | 'xep'>('lo');
+  const [buoc, setBuoc] = useState<'lo' | 'xep' | 'tang'>('lo');
+  const [canKhoa, setCanKhoa] = useState<string | null>(null);
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
   const chungXep = { ...chung, tv, toaId, chonToa: setToaId };
-  const loDangChon = buoc === 'xep' ? loDangXep(kho.pa, loId) : loDangChonHoacDatO(kho.pa.lo, loId);
-  const toaDangChon = buoc === 'xep' ? kho.pa.toa.find((x) => x.id === toaId) : undefined;
+  const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };
+  const xemTang = buoc === 'tang' ? toaDangXem(kho.pa, tv, loId, toaId) : null;
+  const loDangChon = buoc === 'xep' ? loDangXep(kho.pa, loId) : buoc === 'tang' ? xemTang?.lo : loDangChonHoacDatO(kho.pa.lo, loId);
+  const toaDangChon = buoc === 'xep' ? kho.pa.toa.find((x) => x.id === toaId) : xemTang?.toa;
   const chonBuoc = (
     <div class="chon-buoc">
       <div class="nhom-nut" role="group" aria-label={t('buoc.nhom')}>
         <button type="button" aria-pressed={buoc === 'lo'} onClick={() => setBuoc('lo')}>{t('buoc.lo')}</button>
         <button type="button" aria-pressed={buoc === 'xep'} onClick={() => setBuoc('xep')}>{t('buoc.xep')}</button>
+        <button type="button" aria-pressed={buoc === 'tang'} onClick={() => setBuoc('tang')}>{t('buoc.tang')}</button>
       </div>
     </div>
   );
@@ -115,6 +121,8 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
         lo: `${da.ten} · ${tenPA}${loDangChon ? ' · ' + loDangChon.temDat.kyHieu : ''}`.toUpperCase(),
         coTe: 'tren',
         toa: toaDangChon ? tv?.toa.get(toaDangChon.mauId)?.ten_vi ?? toaDangChon.mauId : undefined,
+        tang: buoc === 'tang' && toaDangChon ? t('tang.dienHinh') : undefined,
+        can: buoc === 'tang' && canKhoa && xemTang ? tenCanChon(xemTang, tv, canKhoa) : undefined,
       }}
       cheDo={kho.cheDo}
       onCheDo={kho.datCheDo}
@@ -123,9 +131,16 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onHoanTac={kho.hoanTac}
       onLamLai={kho.lamLai}
       thongBao={thongBao}
-      trai={<>{chonBuoc}{buoc === 'lo' ? <LoTrai {...chung} /> : <XepTrai {...chungXep} />}</>}
-      giua={buoc === 'lo' ? <LoGiua {...chung} /> : <XepGiua {...chungXep} />}
-      phai={buoc === 'lo' ? <LoPhai {...chung} kq={kq} /> : <XepPhai {...chungXep} kq={kq} />}
+      trai={<>{chonBuoc}{buoc === 'lo' ? <LoTrai {...chung} /> : buoc === 'xep' ? <XepTrai {...chungXep} /> : <TangTrai {...chungTang} />}</>}
+      giua={buoc === 'lo' ? <LoGiua {...chung} /> : buoc === 'xep' ? <XepGiua {...chungXep} /> : <TangGiua {...chungTang} />}
+      phai={buoc === 'lo' ? <LoPhai {...chung} kq={kq} /> : buoc === 'xep' ? <XepPhai {...chungXep} kq={kq} /> : <TangPhai {...chungTang} />}
     />
   );
+}
+
+/** Tên CH-xx của căn đang chọn trên tầng (cho đường dẫn trên thanh trên). */
+function tenCanChon(xem: NonNullable<ReturnType<typeof toaDangXem>>, tv: ThuVien | null, khoa: string): string | undefined {
+  if (!tv) return undefined;
+  const so = soCanChuVi(xem.mau.duong_bao, viTriCan(xem.mau, tv)).get(khoa);
+  return so ? `CH-${String(so).padStart(2, '0')}` : undefined;
 }

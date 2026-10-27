@@ -1,4 +1,5 @@
-import { canThucTe, congCoCau, demCan, phanTram } from './coCau';
+import { congCoCau, demCan, phanTram } from './coCau';
+import { canCuaToa } from './matBang';
 import { chanToa, dienTich, dtVung, hopDienTich, khoiDe } from './hinhHoc';
 import type { LoaiCan, ThuVien, TrangThaiPA } from './kieu';
 
@@ -51,7 +52,7 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
     let dtSan = 0;
     for (let i = 0; i < toaLo.length; i++) {
       const t = toaLo[i], mau = tv.toa.get(t.mauId)!;
-      const dtCanTang = Object.entries(mau.co_cau).reduce((a, [g, n]) => a + n * (tv.can.get(canThucTe(g, t.canTheo))?.dt_tim_m2 ?? 0), 0);
+      const dtCanTang = canCuaToa(mau, t, tv).reduce((a, [id, n]) => a + n * (tv.can.get(id)?.dt_tim_m2 ?? 0), 0);
       const dtChanThap = dienTich(chan[i]);
       dtSan += t.soTangDH * (pa.heSo.can * dtCanTang + pa.heSo.chung * Math.max(0, dtChanThap - dtCanTang));
     }
