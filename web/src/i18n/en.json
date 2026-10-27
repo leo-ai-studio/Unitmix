@@ -64,6 +64,8 @@
   "chiPhi.dv.thang": "lift",
   "chiPhi.coSo": "Construction + equipment",
   "chiPhi.lop.qlda": "Project management",
+  "chiPhi.qldaTT38": "Circular 38/2026",
+  "chiPhi.qldaTT38Ghi": "Look up Table 1.1 of Circular 38/2026/TT-BXD by construction + equipment cost (interpolated; ×0.8 when equipment ≥ 50 %). Untick to enter manually. QS to verify.",
   "chiPhi.lop.tuVan": "Consultancy",
   "chiPhi.lop.khac": "Other costs",
   "chiPhi.lop.duPhongKL": "Contingency — quantities",

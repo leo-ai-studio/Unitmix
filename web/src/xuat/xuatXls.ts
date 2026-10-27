@@ -122,7 +122,7 @@ export function bangDuToan(dt: DuToan, cp: ChiPhiPA): OXls[][] {
   h.push([]);
   h.push([t('chiPhi.coSo'), TRONG, TRONG, TRONG, TRONG, TRONG, oSo(dt.xd + dt.tb)]);
   const lop: [string, number, number][] = [
-    ['qlda', cp.tyLe.qlda, dt.qlda], ['tuVan', cp.tyLe.tuVan, dt.tuVan], ['khac', cp.tyLe.khac, dt.khac],
+    ['qlda', dt.tlQlda, dt.qlda], ['tuVan', cp.tyLe.tuVan, dt.tuVan], ['khac', cp.tyLe.khac, dt.khac],
   ];
   for (const [k, pct, v] of lop) h.push([t(`chiPhi.lop.${k}`), TRONG, '%', oSo(pct), TRONG, TRONG, oSo(v)]);
   h.push([t('chiPhi.truocDuPhong'), TRONG, TRONG, TRONG, TRONG, TRONG, oSo(dt.truocDuPhong)]);

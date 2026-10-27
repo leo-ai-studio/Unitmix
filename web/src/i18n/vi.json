@@ -64,6 +64,8 @@
   "chiPhi.dv.thang": "thang",
   "chiPhi.coSo": "Xây dựng + thiết bị",
   "chiPhi.lop.qlda": "Chi phí quản lý dự án",
+  "chiPhi.qldaTT38": "TT 38/2026",
+  "chiPhi.qldaTT38Ghi": "Tự tra Bảng 1.1 TT 38/2026/TT-BXD theo quy mô chi phí XD + TB (nội suy; ×0,8 khi thiết bị ≥ 50 %). Bỏ chọn để nhập tay. QS kiểm lại.",
   "chiPhi.lop.tuVan": "Chi phí tư vấn đầu tư xây dựng",
   "chiPhi.lop.khac": "Chi phí khác",
   "chiPhi.lop.duPhongKL": "Dự phòng khối lượng phát sinh",

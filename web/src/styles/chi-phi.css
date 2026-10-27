@@ -30,3 +30,6 @@
 .chi-phi .cp-luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 16px; margin-bottom: 12px; }
 .chi-phi .cp-luoi label { display: flex; flex-direction: row; text-align: left; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
 .chi-phi .cp-luoi .cp-o { width: 130px; }
+
+/* Ô tích QLDA theo TT 38/2026 đứng trước ô %; không đổi bề rộng cột. */
+.cp-tt38 { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; font-size: 11px; color: var(--muted, #667); white-space: nowrap; }
