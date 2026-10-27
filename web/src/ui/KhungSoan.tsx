@@ -7,6 +7,8 @@ type Props = {
   capDo: CapDo;
   trai: ComponentChildren;
   giua: ComponentChildren;
+  /** Nội dung tab MÔ HÌNH (3D); không có thì dùng bản vẽ giữa. */
+  moHinh?: ComponentChildren;
   phai: ComponentChildren;
   cheDo?: CheDo;
   onCheDo?: (x: CheDo) => void;
@@ -15,6 +17,7 @@ type Props = {
   duocSua?: boolean;
   onHoanTac?: () => void;
   onLamLai?: () => void;
+  onXuatCad?: () => void;
   thongBao?: ComponentChildren;
 };
 
@@ -26,12 +29,12 @@ export function KhungSoan(p: Props) {
     <div class="khung khung-soan">
       <ThanhTren capDo={p.capDo} cheDoXem={xem} onCheDoXem={setXem} cheDo={p.cheDo} onCheDo={p.onCheDo}
         trangThaiLuu={p.trangThaiLuu} dangXuLy={p.dangXuLy} duocSua={p.duocSua}
-        onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} />
+        onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} onXuatCad={p.onXuatCad} />
       {p.thongBao}
       <div class="khung-than">
         <aside class="panel-trai" aria-label={t('panel.nhap')}>{p.trai}</aside>
         <main class="panel-giua" aria-label={t('panel.banVe')}>
-          {xem === 'chi_phi' ? <p style={{ padding: '24px' }}>{t('chiPhi.dangLam')}</p> : p.giua}
+          {xem === 'chi_phi' ? <p style={{ padding: '24px' }}>{t('chiPhi.dangLam')}</p> : xem === 'mo_hinh' && p.moHinh ? p.moHinh : p.giua}
         </main>
         <aside class="panel-phai" aria-label={t('panel.soLieu')}>{p.phai}</aside>
       </div>

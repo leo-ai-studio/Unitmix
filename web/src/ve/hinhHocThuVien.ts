@@ -5,7 +5,7 @@ export type HinhLoi = { paths: NetVe[]; bao_tuong_mm?: [number, number, number, 
 
 const nho = new Map<string, Promise<unknown>>();
 /** Tải một tệp hình học thư viện, nhớ cả khi lỗi để không gọi lại liên tục. */
-function tai<T>(duong: string): Promise<T | null> {
+export function tai<T>(duong: string): Promise<T | null> {
   let p = nho.get(duong) as Promise<T | null> | undefined;
   if (!p) {
     p = fetch(duong).then((r) => (r.ok ? (r.json() as Promise<T>) : null), () => null);
