@@ -2,6 +2,19 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-28 · khít đoạn kẹp: hết đè / khe khi tầng riêng đổi căn khác bề ngang · agent Opus
+
+**Đã làm** (nhánh agent, từ `main` @ `acd129e`):
+- `tinh/loiThang.ts` `khitDoanKep` (chạy trong `tinhGiam`, sau PC-11 / `epThang`, trước gỡ căn vượt): đo đè / khe từng mặt bằng `tinh/khe.ts` (so mốc = cùng mặt bằng với bề ngang bản vẽ, nên sân trong chữ U không tính); dãy căn nào trả về bề ngang bản vẽ thì bớt lỗi là dãy gây lỗi → chọn lại mẫu cho cả dãy bằng quy hoạch động theo tổng bề ngang. Thứ tự (như app cũ tự sinh dãy / dồn khít, chi phí cộng dồn `GIA_KHIT`, so với căn của bố cục vào): (1) căn khác → mẫu cùng loại / biến thể STRETCH (giữ cơ cấu); (2) chính căn người dùng chọn → mẫu cùng loại rộng nhất còn vừa; (3) căn khác → loại khác; (4) bỏ căn DT nhỏ nhất, không bỏ căn người dùng chọn (`boCanKep`: dãy kẹp không có đầu tự do, căn còn lại xích về mốc giữ chỗ; `apBoCan` dùng khi `boCanTren` không được); (5) đường cùng — dãy chỉ có căn người dùng chọn mà không mẫu cùng loại nào vừa — đổi căn đó sang loại khác vừa đoạn, báo rõ. Dãy kẹp hai mốc sát (≤ 400 mm): khít khi neo đầu nào cũng được, hở ≤ 400 mm là tường; dãy có một đầu hở ra khoảng trống: giữ đúng chiều dài bản vẽ. Chạy lại đủ bước tự chỉnh với bố cục mới (DT, số căn, thoát nạn, DTXD tính lại), chỉ nhận khi đo lại thật sự bớt đè / khe; thay đổi ghi `tuDong` (gỡ được, hoàn tác qua `kho.sua`). `TuyChonTuChinh.giu` = ô người dùng tự chọn (tuChinhToa lấy từ bố cục trước tự chỉnh).
+- Gỡ căn vượt (xếp lại / bỏ căn) không được nhận nếu để lại đè / khe mới (trước đây xh-z2 có ca bỏ căn kẹp giữa thang và căn góc → khe 7.500 ở tầng chung).
+- `thangLien.conLech` giờ đo lại bằng khe.ts (trước lấy ước lượng của epThang). Báo cáo mới `BaoCaoTuChinh.khitKep` (căn đổi từ → đến, căn bỏ, mm còn lại); panel phải màn Tầng liệt kê từng căn "CH-22: 2PN tm-2pn-m2 → 1PN tm-1pn-m1". i18n vi + en `tc.khit.*`.
+
+**Số ca đè / khe** (quét tm-i1, tm-l1, tm-u1, tm-z1, xh-z2 · 24 tầng · tầng 5 riêng · mỗi căn giữa đổi sang mẫu rộng nhất cùng loại và mỗi loại khác = 386 ca): trước 72 ca đè + 33 ca khe (105 dòng lỗi) → sau 0 đè, 0 khe, thang liền mọi tầng, không ca nào báo còn lệch. Cách khít đã dùng: đổi căn khác cùng loại 14, khác loại 70, đổi chính căn vừa chọn cùng loại 8 / khác loại 25 (đường cùng), bỏ căn 9 (đếm trên tầng 5 + tầng chung).
+
+**Kiểm:** tsc 0, web 332/332 (mới `tinh/quetThangLien.test.ts` quét 386 ca; sửa kỳ vọng `tuChinhMoRong.test.ts` từ "còn lệch 200 mm" sang khít: tm-i1 tầng 5 1PN → 2PN, đổi 2PN 0:7 sang 1PN, 0 đè), build qua. Trên app (vite 5405, API 8787, dự án `dsf1rxc3`, 1440×900): tm-i1 tầng 6 riêng (0:1 → 2PN M2) → "Khít đoạn kẹp … đổi 1 căn · bỏ 0 căn · CH-22: 2PN tm-2pn-m2 → 1PN tm-1pn-m1", thang liền 4 thang, hoàn tác bằng nút ↶ đúng. Khung giữa 870×848 tại (270, 52) trước / sau.
+
+**Còn dở / chờ chủ nhiệm:** thứ tự ưu tiên GIA_KHIT là luật nội bộ (đổi căn khác sang loại khác đứng trước bỏ căn); 25/386 ca phải đổi chính căn người dùng chọn sang loại khác vì đoạn kẹp chỉ có một ô (vd tm-i1 0:8 giữa thang và lõi chỉ vừa 5,9 m) — người dùng thấy căn mình chọn bị đổi, có báo; dãy hở ra sân trong (tm-u1) bị giữ đúng chiều dài bản vẽ, chưa cho nét bao theo như QT-69 ở đầu cánh; chỉ quét tầng riêng đổi một căn, chưa quét tối ưu cơ cấu nhiều căn.
+
 ## 2026-10-28 · gộp đợt 3 + kiểm trên app · Claude Code
 
 - `6e6ddd0` gộp nhánh gỡ căn / thang liền; sửa danh sách tòa ở panel trái màn Tầng: số căn/tầng theo mặt bằng đã tự chỉnh (tm-t2 42 → 40), không theo mẫu thư viện.
