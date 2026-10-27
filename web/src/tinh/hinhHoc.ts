@@ -79,11 +79,15 @@ export function xoayTinhTien(poly: Diem[], x: number, y: number, gocDo: number):
   return poly.map(([px, py]) => [x + px * c - py * s, y + px * s + py * c]);
 }
 
-/** Chân tháp của một tòa trên lô (m): đường bao mẫu, tâm khung bao về gốc, xoay rồi dời tới (x, y). */
+/**
+ * Chân tháp của một tòa trên lô (m): đường bao mẫu, tâm khung bao về gốc, xoay rồi dời tới (x, y). Tòa có nét bao riêng
+ * (`toa.duongBao`: dãy dài ra / ngắn lại — QT-69, PC-11) thì dùng nét đó, vẫn lấy tâm theo nét bao MẪU để tòa không xê dịch trên lô.
+ */
 export function chanToa(mau: ToaMau, toa: ToaDat): Diem[] {
   const xs = mau.duong_bao.map((p) => p[0]), ys = mau.duong_bao.map((p) => p[1]);
   const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-  const m = mau.duong_bao.map(([px, py]) => [(px - cx) / 1000, (py - cy) / 1000] as Diem);
+  const bao = toa.duongBao && toa.duongBao.length >= 3 ? toa.duongBao : mau.duong_bao;
+  const m = bao.map(([px, py]) => [(px - cx) / 1000, (py - cy) / 1000] as Diem);
   return xoayTinhTien(m, toa.x, toa.y, toa.gocDo);
 }
 

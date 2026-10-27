@@ -114,7 +114,16 @@ export function ChiPhiGiua({ pa, tv, kq, sua, chiXem }: Props) {
               {lop.map(([k, v]) => (
                 <tr key={k}>
                   <th>{t(`chiPhi.lop.${k}`)}</th><td>%</td><td />
-                  <td class="so"><ONhapSo gt={cp.tyLe[k]} buoc={0.1} min={0} max={100} tat={chiXem} nhan={t(`chiPhi.lop.${k}`)} onDoi={suaTyLe(k)} /></td>
+                  <td class="so">
+                    {k === 'qlda' && (
+                      <label class="cp-tt38" title={t('chiPhi.qldaTT38Ghi')}>
+                        <input type="checkbox" checked={cp.qldaTT38} disabled={chiXem} onChange={(e) => suaCP((c) => ({ ...c, qldaTT38: e.currentTarget.checked }))} />
+                        {t('chiPhi.qldaTT38')}
+                      </label>
+                    )}
+                    <ONhapSo gt={k === 'qlda' && cp.qldaTT38 ? Math.round(dt.tlQlda * 1000) / 1000 : cp.tyLe[k]} buoc={0.1} min={0} max={100}
+                      tat={chiXem || (k === 'qlda' && cp.qldaTT38)} nhan={t(`chiPhi.lop.${k}`)} onDoi={suaTyLe(k)} />
+                  </td>
                   <OSo v={trieu(v)} />
                 </tr>
               ))}

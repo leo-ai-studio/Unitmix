@@ -167,6 +167,25 @@ export function tinhKhoiLuong(pa: TrangThaiPA, tv: ThuVien, coRaiHam = true): Kh
 
 /* ---------- Dự toán ---------- */
 
+/**
+ * Tỷ lệ chi phí QLDA công trình dân dụng theo quy mô chi phí XD + TB (chưa VAT) — TT 38/2026/TT-BXD Bảng 1.1,
+ * nội suy tuyến tính, ngoài dải lấy mốc biên; ×0,8 khi chi phí thiết bị ≥ 50 %. Bảng chép từ app cũ
+ * (`MDI_Unitmix_v4/data/master/dinh_muc_du_toan.json` → `qlda_tt38`, nguồn tệp KBB đối chiếu TT 38-2026) — QS kiểm lại.
+ */
+export const QLDA_TT38 = {
+  mocTy: [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 30000],
+  danDung: [3.446, 2.923, 2.61, 2.017, 1.886, 1.514, 1.239, 0.958, 0.711, 0.51, 0.381, 0.305],
+  kThietBi50: 0.8,
+};
+/** % QLDA theo TT 38/2026 cho chi phí XD + TB `ty` (tỷ đ), phần thiết bị `phanTB` (0…1). */
+export function tyLeQldaTT38(ty: number, phanTB = 0): number {
+  const { mocTy: m, danDung: v } = QLDA_TT38;
+  let p = v[v.length - 1];
+  if (ty <= m[0]) p = v[0];
+  else for (let i = 1; i < m.length; i++) if (ty <= m[i]) { p = v[i - 1] - ((v[i - 1] - v[i]) * (ty - m[i - 1])) / (m[i] - m[i - 1]); break; }
+  return phanTB >= 0.5 ? p * QLDA_TT38.kThietBi50 : p;
+}
+
 /** Một dòng dự toán: nhóm, đơn vị, khối lượng lấy từ tổng khối lượng. */
 export type MauDong = { khoa: KhoaDongDuToan; nhom: NhomChiPhi; donVi: string; kl: (t: TongKhoiLuong) => number };
 export const DONG_DU_TOAN: MauDong[] = [
@@ -190,6 +209,8 @@ export type DuToan = {
   nhom: Record<NhomChiPhi, NhomDuToan>;
   xd: number; tb: number;
   qlda: number; tuVan: number; khac: number;
+  /** % QLDA đã dùng (tra TT 38/2026 hoặc nhập tay). */
+  tlQlda: number;
   truocDuPhong: number;
   duPhongKL: number; duPhongTruotGia: number;
   /** Tổng mức đầu tư chưa gồm chi phí đất (đ). */
@@ -212,13 +233,14 @@ export function tinhDuToan(kl: KhoiLuong, cp: ChiPhiPA = CHI_PHI_MAC_DINH): DuTo
     return [n, { nhom: n, dieuChinh: cp.dieuChinh[n] ?? 0, khac, congDong, tong: congDong + khac }];
   })) as Record<NhomChiPhi, NhomDuToan>;
   const xd = nhom.xd.tong, tb = nhom.tb.tong, coSo = xd + tb;
-  const qlda = (coSo * cp.tyLe.qlda) / 100, tuVan = (coSo * cp.tyLe.tuVan) / 100, khac = (coSo * cp.tyLe.khac) / 100;
+  const tlQlda = cp.qldaTT38 ? tyLeQldaTT38(coSo / 1e9, coSo > 0 ? tb / coSo : 0) : cp.tyLe.qlda;
+  const qlda = (coSo * tlQlda) / 100, tuVan = (coSo * cp.tyLe.tuVan) / 100, khac = (coSo * cp.tyLe.khac) / 100;
   const truocDuPhong = coSo + qlda + tuVan + khac;
   const duPhongKL = (truocDuPhong * cp.tyLe.duPhongKL) / 100;
   const duPhongTruotGia = (truocDuPhong * cp.tyLe.duPhongTruotGia) / 100;
   const tongMuc = truocDuPhong + duPhongKL + duPhongTruotGia;
   return {
-    dong, nhom, xd, tb, qlda, tuVan, khac, truocDuPhong, duPhongKL, duPhongTruotGia, tongMuc,
+    dong, nhom, xd, tb, qlda, tuVan, khac, tlQlda, truocDuPhong, duPhongKL, duPhongTruotGia, tongMuc,
     suatM2: kl.tong.dtSanTong > 0 ? tongMuc / kl.tong.dtSanTong : null,
     suatCan: kl.tong.tongCan > 0 ? tongMuc / kl.tong.tongCan : null,
   };

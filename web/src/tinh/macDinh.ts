@@ -1,3 +1,4 @@
+import { chuanHoaMatBang } from './loiThang';
 import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiPhiPA, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type ToaDat, type TrangThaiPA } from './kieu';
 
 /** Chỉ tiêu mặc định khi chưa nhập (giá trị tạm, ghi rõ trên giao diện là chờ chủ nhiệm chốt). */
@@ -55,6 +56,7 @@ export const CHI_PHI_MAC_DINH: ChiPhiPA = {
   dieuChinh: { xd: 0, tb: 0 },
   khac: { xd: 0, tb: 0 },
   tyLe: { qlda: 1.5, tuVan: 3.5, khac: 2, duPhongKL: 0, duPhongTruotGia: 3 },
+  qldaTT38: true,
   ban: {
     can: { stu: 45_000_000, '1pn': 45_000_000, '2pn': 42_000_000, '2pnp': 42_000_000, '3pn': 40_000_000 },
     tangMoiTang: 0.3, soTangThap: 3, tangThap: -3, tangTren: 5,
@@ -87,6 +89,7 @@ export function chuanHoaChiPhi(v: unknown): ChiPhiPA {
     dieuChinh: { xd: kep(dc.xd, DIEU_CHINH_MIN, DIEU_CHINH_MAX), tb: kep(dc.tb, DIEU_CHINH_MIN, DIEU_CHINH_MAX) },
     khac: tronSo(m.khac, o.khac),
     tyLe: tronSo(m.tyLe, o.tyLe),
+    qldaTT38: typeof o.qldaTT38 === 'boolean' ? o.qldaTT38 : m.qldaTT38,
     ban: { ...tronSo(banSo, banVao), can: tronSo(canMac, banVao.can) as Record<LoaiCan, number> },
   };
 }
@@ -125,9 +128,13 @@ export const loDangChonHoacDatO = (ds: Lo[], id: string | null): Lo | null =>
 
 /** Bố cục theo tầng: bỏ khoá không phải số tầng nguyên dương (PA cũ không có trường này thì giữ nguyên). */
 const chuanHoaToa = (t: ToaDat): ToaDat => {
-  if (!t.tangRieng) return { ...t, canTheo: t.canTheo ?? {} };
+  // mặt bằng tự chỉnh + nét bao riêng (tinh/loiThang.ts): sai cấu trúc thì bỏ, về theo mẫu tòa
+  const diem = (p: unknown) => Array.isArray(p) && p.length === 2 && p.every((x) => typeof x === 'number' && Number.isFinite(x));
+  const duongBao = Array.isArray(t.duongBao) && t.duongBao.length >= 3 && t.duongBao.every(diem) ? t.duongBao : undefined;
+  const mb = { matBang: chuanHoaMatBang(t.matBang), duongBao, dtxdM2: duongBao && typeof t.dtxdM2 === 'number' && Number.isFinite(t.dtxdM2) ? t.dtxdM2 : undefined };
+  if (!t.tangRieng) return { ...t, ...mb, canTheo: t.canTheo ?? {} };
   const tangRieng = Object.fromEntries(Object.entries(t.tangRieng).filter(([k, g]) => Number.isInteger(Number(k)) && Number(k) >= 1 && g && typeof g === 'object'));
-  return { ...t, canTheo: t.canTheo ?? {}, tangRieng: Object.keys(tangRieng).length ? tangRieng : undefined };
+  return { ...t, ...mb, canTheo: t.canTheo ?? {}, tangRieng: Object.keys(tangRieng).length ? tangRieng : undefined };
 };
 
 /**

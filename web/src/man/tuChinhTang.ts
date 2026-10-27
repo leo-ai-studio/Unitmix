@@ -1,0 +1,57 @@
+import { useEffect, useState } from 'preact/hooks';
+import type { ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
+import { mauHieuDung, tuChinhToa, type DuLieuMB, type HinhLoiMB, type ToaMB } from '../tinh/loiThang';
+import { coMat } from '../tinh/matBang';
+import { idLoi, tai, taiCuaCan } from '../ve/hinhHocThuVien';
+
+/**
+ * Dữ liệu cho tự chỉnh mặt bằng tầng (tinh/loiThang.ts): hình lõi (nét bao MDI-BAO-TM, tường để đo sảnh) của mọi khối lõi / thang
+ * trong thư viện mẫu tòa + tim cửa căn. Tải một lần, nhớ cấp module để hàm thuần dùng đồng bộ.
+ */
+let dl: DuLieuMB | null = null;
+let dangTai: Promise<DuLieuMB> | null = null;
+const nghe = new Set<() => void>();
+
+export const layDuLieuMB = (): DuLieuMB | null => dl;
+
+function taiDuLieuMB(tv: ThuVien): Promise<DuLieuMB> {
+  if (!dangTai) {
+    const khoi = new Set<string>();
+    for (const m of tv.toa.values()) if (coMat(m)) for (const f of m.mat) for (const q of f.phan_tu) if (q.loai !== 'can' && q.block) khoi.add(q.block);
+    dangTai = Promise.all([
+      Promise.all([...khoi].map((b) => tai<HinhLoiMB>(`/lib/loi/${idLoi(b)}.json`).then((j) => [b, j] as const))),
+      taiCuaCan(tv, 'tm'),
+      taiCuaCan(tv, 'xh'),
+    ]).then(([loi, a, b]) => {
+      dl = { loi: new Map(loi.filter((x): x is readonly [string, HinhLoiMB] => !!x[1])), cuaCan: { ...a, ...b } };
+      nghe.forEach((f) => f());
+      return dl;
+    });
+  }
+  return dangTai;
+}
+
+/** Hook: tải dữ liệu (một lần) và vẽ lại khi xong. */
+export function useDuLieuMB(tv: ThuVien | null): DuLieuMB | null {
+  const [, ve] = useState(0);
+  useEffect(() => {
+    const f = () => ve((n) => n + 1);
+    nghe.add(f);
+    if (tv && !dl) void taiDuLieuMB(tv);
+    return () => void nghe.delete(f);
+  }, [tv]);
+  return dl;
+}
+
+/** Mẫu tòa hiệu dụng của tòa (mặt bằng đã tự chỉnh / mặc định của mẫu). */
+export const mauCuaToa = <T extends ToaMB>(toa: ToaDat, mau: T): T => mauHieuDung(toa, mau, dl);
+
+/**
+ * Bọc `sua` của màn Tầng: sau phép sửa (đổi căn, STRETCH, tối ưu) chạy lại tự chỉnh mặt bằng của tòa `toaId` trong CÙNG một bước
+ * sửa — hoàn tác một lần là về trước cả phép sửa lẫn phần tự chỉnh. Chưa tải xong dữ liệu thì vẫn sửa, chưa tự chỉnh.
+ */
+export const suaTuChinh = (sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void, tv: ThuVien, toaId: string) =>
+  (fn: (p: TrangThaiPA) => TrangThaiPA) => sua((q) => {
+    const p = fn(q);
+    return { ...p, toa: p.toa.map((x) => (x.id === toaId && dl ? tuChinhToa(x, tv.toa.get(x.mauId) as ToaMB | undefined, tv, dl) : x)) };
+  });

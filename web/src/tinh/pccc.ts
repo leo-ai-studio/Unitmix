@@ -27,6 +27,10 @@ export type PhanTuMat = {
   rot: number;
   sx: number;
   sy: number;
+  /** Khoá vị trí ổn định khi mặt bằng đã tự chỉnh (tinh/loiThang.ts); thiếu = "<mặt>:<chỉ số>". */
+  khoa?: string;
+  /** Dải lõi chiếu lên mặt (XC-05): chỉ làm mốc dồn khít / đo khe, không vẽ. */
+  bang?: boolean;
 };
 export type MatToa = { goc_deg: number; truc_mm: number; a_dau: number; a_cuoi: number; ten?: string; phan_tu: PhanTuMat[] };
 export type TrucToa = { ten: string; goc_deg: number; hanh_lang_mm: number; a_dau: number; a_cuoi: number; dai_mm: number; b_mm: number };

@@ -76,7 +76,8 @@ describe('dồn khít (XC-04) và khe (XC-02 / XC-10)', () => {
     const vts = viTriCan(i1, tv);
     const a = vts.find((v) => v.canGocId === 'tm-2pn-m2')!;
     const r = donKhit(i1, vts, { canTheo: {}, canViTri: { [a.khoa]: 'tm-2pn-m2~s+500' } }, tv);
-    expect(r.lech).toEqual([{ matIdx: a.matIdx, mm: 500 }]);
+    expect(r.lech).toMatchObject([{ matIdx: a.matIdx, mm: 500 }]);
+    expect(r.lech).toHaveLength(1);
   });
 });
 
