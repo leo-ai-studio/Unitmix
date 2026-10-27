@@ -31,11 +31,12 @@ export function KhungSoan(p: Props) {
       <ThanhTren capDo={p.capDo} cheDoXem={xem} onCheDoXem={setXem} cheDo={p.cheDo} onCheDo={p.onCheDo}
         trangThaiLuu={p.trangThaiLuu} dangXuLy={p.dangXuLy} duocSua={p.duocSua}
         onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} onXuatCad={p.onXuatCad} buoc={p.buoc} />
-      {p.thongBao}
       <div class="khung-than">
         <aside class="panel-trai" aria-label={t('panel.nhap')}>{p.trai}</aside>
         <main class="panel-giua" aria-label={t('panel.banVe')}>
           {xem === 'chi_phi' ? <p style={{ padding: '24px' }}>{t('chiPhi.dangLam')}</p> : xem === 'mo_hinh' && p.moHinh ? p.moHinh : p.giua}
+          {/* Thông báo nổi trên bản vẽ, không đẩy khung làm việc. */}
+          {p.thongBao && <div class="lop-thong-bao">{p.thongBao}</div>}
         </main>
         <aside class="panel-phai" aria-label={t('panel.soLieu')}>{p.phai}</aside>
       </div>

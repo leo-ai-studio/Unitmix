@@ -140,13 +140,15 @@ function TangVe({ tv, toa, mau, lo, canKhoa, chonCan, pa }: ChungTang & { tv: Th
         <MatBangTang mau={mau} toa={toa} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa} chonCan={chonCan}
           deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2} />
       </BanVe>
-      <ThanhHienThi nhan={t('ht.nhom')} nut={[
-        { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
-        { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
-        { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
-        { khoa: 'tem', nhan: t('tang.hienTem'), bat: cai.hienTem, onClick: () => datCaiTang({ hienTem: !cai.hienTem }) },
-        { khoa: 'noi', nhan: t('tang.noiThat'), bat: cai.noiThat, onClick: () => datCaiTang({ noiThat: !cai.noiThat }) },
-      ]} />
+      <div class="noi-duoi">
+        <ThanhHienThi nhan={t('ht.nhom')} nut={[
+          { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
+          { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
+          { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
+          { khoa: 'tem', nhan: t('tang.hienTem'), bat: cai.hienTem, onClick: () => datCaiTang({ hienTem: !cai.hienTem }) },
+          { khoa: 'noi', nhan: t('tang.noiThat'), bat: cai.noiThat, onClick: () => datCaiTang({ noiThat: !cai.noiThat }) },
+        ]} />
+      </div>
     </>
   );
 }

@@ -212,6 +212,7 @@ export function Khung3D({ khoa, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe
   const dsHien: [keyof typeof hien, string][] = [['dam', 'm3d.dam'], ['lov', 'm3d.lover'], ['mo', 'm3d.moCua'], ['top', 'm3d.sanTren'], ['vien', 'm3d.vien']];
   return (
     <div class="khung-3d">
+      <div class="noi-tren">
       <div class="thanh-3d">
         {dauThanh}
         {tieuDe && <b class="tieu-de-3d">{tieuDe}</b>}
@@ -257,12 +258,13 @@ export function Khung3D({ khoa, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe
           </div>
         </details>
       )}
+      </div>
       <div class="vung-3d" ref={hop}>
         <canvas ref={cv} />
         {dang && !loi && <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('m3d.dangDung')}</span></div>}
         {loi && <div class="giua-man"><span>{loi}</span></div>}
       </div>
-      <p class="goi-y-3d">{t('m3d.goiY')}</p>
+      <div class="noi-duoi"><p class="goi-y-3d">{t('m3d.goiY')}</p></div>
     </div>
   );
 }

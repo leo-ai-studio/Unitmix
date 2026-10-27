@@ -234,13 +234,15 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
           );
         })}
       </BanVe>
-      <ChuGiaiDat />
-      <p class="dong muted" style={{ justifyContent: 'center' }}>{t('xep.keoGoiY')}</p>
-      <ThanhHienThi nhan={t('ht.nhom')} nut={[
-        { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
-        { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
-        { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
-      ]} />
+      <div class="noi-duoi">
+        <ChuGiaiDat />
+        <p class="dong muted" style={{ justifyContent: 'center' }}>{t('xep.keoGoiY')}</p>
+        <ThanhHienThi nhan={t('ht.nhom')} nut={[
+          { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
+          { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
+          { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
+        ]} />
+      </div>
     </>
   );
 }
