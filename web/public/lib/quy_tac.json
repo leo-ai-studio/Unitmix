@@ -1996,6 +1996,160 @@
     "trich": "Bảng chuẩn Viện Thiết Kế"
    },
    "thay_cho": []
+  },
+  {
+   "ma": "DC-06",
+   "id": "qcvn04_phong_ngu_9",
+   "bat_buoc": true,
+   "ten_vi": "Phòng ngủ tối thiểu 9 m²",
+   "ten_en": "Minimum bedroom area",
+   "nguon": "QCVN 04:2021/BXD 2.2.4.4",
+   "nguong": [
+    {
+     "gia_tri": 9,
+     "don_vi": "m²",
+     "chieu": ">=",
+     "dieu_kien": "DT mỗi phòng ngủ"
+    }
+   ],
+   "ma_kiem": "phong_ngu_9",
+   "cach_tinh": "mọi phòng loại ngủ của mẫu căn ≥ 9 m²; mẫu căn chưa có trường phong[] thì báo chưa đủ dữ liệu (không tính là đạt)",
+   "ma_cu": [],
+   "buoc": "doi_mau_can",
+   "nhom": "qcvn04",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "ham": "qcvn04.ts"
+  },
+  {
+   "ma": "DC-07",
+   "id": "qcvn04_phong_ngu_sang",
+   "bat_buoc": true,
+   "ten_vi": "Phòng ngủ thông thoáng, chiếu sáng tự nhiên",
+   "ten_en": "Bedroom natural ventilation and daylight",
+   "nguon": "QCVN 04:2021/BXD 2.2.4.4",
+   "nguong": [],
+   "ma_kiem": "phong_ngu_sang",
+   "cach_tinh": "mọi phòng ngủ có ke_mat_ngoai = true; thiếu trường thì chưa đủ dữ liệu",
+   "ma_cu": [],
+   "buoc": "doi_mau_can",
+   "nhom": "qcvn04",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "ham": "qcvn04.ts"
+  },
+  {
+   "ma": "DC-08",
+   "id": "qcvn04_thong_thuy",
+   "bat_buoc": true,
+   "ten_vi": "Chiều cao thông thủy tối thiểu",
+   "ten_en": "Minimum clear height",
+   "nguon": "QCVN 04:2021/BXD 2.2.10",
+   "nguong": [
+    {
+     "gia_tri": 2.6,
+     "don_vi": "m",
+     "chieu": ">=",
+     "dieu_kien": "phòng ở"
+    },
+    {
+     "gia_tri": 2.3,
+     "don_vi": "m",
+     "chieu": ">=",
+     "dieu_kien": "bếp, WC"
+    },
+    {
+     "gia_tri": 2.0,
+     "don_vi": "m",
+     "chieu": ">=",
+     "dieu_kien": "hầm, kỹ thuật"
+    }
+   ],
+   "ma_kiem": "thong_thuy",
+   "cach_tinh": "thông thủy = cao tầng (caoDH / caoDe) − dày sàn + trần (cauTao.daySanTranM, mặc định 0,30 m là giá trị tạm chờ chủ nhiệm chốt); tầng căn hộ ≥ 2,6 m; tầng đế < 2,6 m cảnh báo, < 2,0 m vượt; hầm chưa có chiều cao nên chưa kiểm",
+   "ma_cu": [],
+   "buoc": "doi_mau_can",
+   "nhom": "qcvn04",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "ham": "qcvn04.ts"
+  },
+  {
+   "ma": "DC-09",
+   "id": "qcvn04_cua_cuu_nan",
+   "bat_buoc": true,
+   "ten_vi": "Cửa sổ cứu nạn cho căn không có ban công / lô gia",
+   "ten_en": "Rescue window for units without balcony / loggia",
+   "nguon": "QCVN 04:2021/BXD 2.2.11",
+   "nguong": [
+    {
+     "gia_tri": 600,
+     "don_vi": "mm",
+     "chieu": ">=",
+     "dieu_kien": "lỗ thông thủy 600 × 600"
+    }
+   ],
+   "ma_kiem": "cua_cuu_nan",
+   "cach_tinh": "căn không có logia_lui phải có cửa sổ tường ngoài ≥ 600 × 600 mm (cua_cuu_nan); chưa khai thì cảnh báo cần kiểm",
+   "ma_cu": [],
+   "buoc": "doi_mau_can",
+   "nhom": "qcvn04",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "ham": "qcvn04.ts"
+  },
+  {
+   "ma": "DC-10",
+   "id": "qcvn04_thang_bang_ca",
+   "bat_buoc": true,
+   "ten_vi": "Thang máy chở được băng ca",
+   "ten_en": "Stretcher-capable lift",
+   "nguon": "QCVN 04:2021/BXD chú thích 2.4.1",
+   "nguong": [
+    {
+     "gia_tri": 1,
+     "don_vi": "thang",
+     "chieu": ">=",
+     "dieu_kien": "tối thiểu mỗi nhà có thang máy"
+    }
+   ],
+   "ma_kiem": "thang_bang_ca",
+   "cach_tinh": "tòa khai thangBangCa = true là đạt, false là vượt, chưa khai thì cảnh báo",
+   "ma_cu": [],
+   "buoc": "doi_mau_can",
+   "nhom": "qcvn04",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "ham": "qcvn04.ts"
+  },
+  {
+   "ma": "DC-11",
+   "id": "qcvn04_nhan_vien",
+   "bat_buoc": false,
+   "ten_vi": "Không gian nhân viên quản lý, trông xe, bảo vệ, kỹ thuật",
+   "ten_en": "Staff space",
+   "nguon": "QCVN 04:2021/BXD 2.2.18",
+   "nguong": [
+    {
+     "gia_tri": 5,
+     "don_vi": "m²/người",
+     "chieu": ">="
+    }
+   ],
+   "ma_kiem": "nhan_vien",
+   "cach_tinh": "DT khai / số nhân viên khai ≥ 5 m²/người; chưa khai thì bỏ qua",
+   "ma_cu": [],
+   "buoc": "doi_mau_can",
+   "nhom": "qcvn04",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "ham": "qcvn04.ts"
   }
  ],
  "qt_goc": [
@@ -2991,7 +3145,7 @@
   "qt_goc": 132,
   "qt_giu": 90,
   "qt_bo": 42,
-  "luat_moi": 51,
+  "luat_moi": 57,
   "bo_theo_loai": {
    "thay_the": 8,
    "trung": 0,
