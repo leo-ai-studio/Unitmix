@@ -33,7 +33,7 @@ describe('xuất CAD', () => {
     const thieu = new Set<string>();
     for (const t of toaDs) for (const x of danhSachChen(du(t.id))) if (x.loai !== 'can' && !coFile(duongXref(x.loai, x.ten, './xref')!)) thieu.add(x.ten);
     expect([...thieu]).toEqual([]);
-  });
+  }, 30_000); // quét tệp XREF trên đĩa của 33 mẫu tòa, chậm khi máy bận
   it('.scr: SAVEAS trước XREF đầu tiên, ASCII thuần, đủ lượt attach và XCLIP cho căn', () => {
     const d = du('tm-u2'), s = taoScr(d), ds = danhSachChen(d);
     expect(s.indexOf('_SAVEAS')).toBeGreaterThan(-1);
