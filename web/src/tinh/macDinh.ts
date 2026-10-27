@@ -3,9 +3,14 @@ import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, type ChiTieuQH, type ChucNang, type Di
 /** Chỉ tiêu mặc định khi chưa nhập (giá trị tạm, ghi rõ trên giao diện là chờ chủ nhiệm chốt). */
 export const CHI_TIEU_MAC_DINH: ChiTieuQH = {
   matDoMax: 40,
+  matDoThapMax: null,
   hssddMax: 3.5,
   tangCaoMax: 25,
+  tangDe: null,
+  tangCanHo: null,
+  tangHam: null,
   danSoMax: 1600,
+  soCanMax: null,
   nguoiMoiCan: 3.5,
   choDoOtoMoiCan: 1,
   choXeMayMoiCan: 2,
@@ -34,3 +39,9 @@ export const taoPAMoi = (): TrangThaiPA => ({
 /** Lô đang làm: lô đã chọn; chưa chọn thì lô đất ở đầu tiên, không có đất ở thì lô đầu. */
 export const loDangChonHoacDatO = (ds: Lo[], id: string | null): Lo | null =>
   ds.find((l) => l.id === id) ?? ds.find((l) => l.temDat.chucNang !== 'khac') ?? ds[0] ?? null;
+
+/** PA lưu từ bản cũ thiếu trường chỉ tiêu mới: điền giá trị mặc định (null = chưa quy định). */
+export const chuanHoaPA = (pa: TrangThaiPA): TrangThaiPA => ({
+  ...pa,
+  lo: pa.lo.map((l) => ({ ...l, temDat: { ...l.temDat, chiTieu: { ...CHI_TIEU_MAC_DINH, ...l.temDat.chiTieu } } })),
+});

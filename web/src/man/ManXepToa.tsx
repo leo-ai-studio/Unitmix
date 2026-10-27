@@ -1,10 +1,10 @@
 import { useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { KetQuaChiTieu } from '../tinh/chiTieu';
-import { demCan, diemLechCoCau } from '../tinh/coCau';
+import { demCan, diemLechCoCau, dtTbTheoLoai } from '../tinh/coCau';
 import { chanToa, dienTich, khoiDe, namTrong } from '../tinh/hinhHoc';
 import { hopLo, taoToaTrenLo, vungDat } from '../tinh/hopLo';
-import { LOAI_CAN, type Diem, type Lo, type ThuVien, type ToaDat, type ToaMau, type TrangThaiPA } from '../tinh/kieu';
+import { LOAI_CAN, type Diem, type Lo, type LoaiCan, type ThuVien, type ToaDat, type ToaMau, type TrangThaiPA } from '../tinh/kieu';
 import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
@@ -258,6 +258,8 @@ function VongCoCau({ pct }: { pct: Record<string, number> }) {
   );
 }
 
+const coCauRongNull = (): Record<LoaiCan, number | null> => ({ stu: null, '1pn': null, '2pn': null, '2pnp': null, '3pn': null });
+
 /** Panel phải màn Xếp tòa: chỉ tiêu lô, diện tích hai cột, cơ cấu căn theo tòa so với mục tiêu. */
 export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQuaChiTieu | null }) {
   const lo = loDangXep(pa, loId);
@@ -267,6 +269,7 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQ
   const dem = tv ? demCan(pa, tv) : {};
   const dtLo = lo.ranh.length >= 3 ? dienTich(lo.ranh) : 0;
   const mucTieu = lo.temDat.coCauMucTieu;
+  const dtTb = tv ? dtTbTheoLoai(pa, tv, lo.id) : coCauRongNull();
   const pct = r?.coCauPct ?? { stu: 0, '1pn': 0, '2pn': 0, '2pnp': 0, '3pn': 0 };
   const m2 = { donVi: 'm²' };
   const cot = { gridTemplateColumns: `1.3fr repeat(${LOAI_CAN.length}, 1fr) 1fr` };
@@ -309,6 +312,19 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQ
           <div class="dong bang-cc tong" style={cot} role="row"><span>{t('xep.tong')}</span>{LOAI_CAN.map((k) => <span key={k}>{fmtSo(r?.coCau[k] ?? 0)}</span>)}<b>{fmtSo(r?.soCan ?? 0)}</b></div>
           <div class="dong bang-cc" style={cot} role="row"><span>{t('xep.tyLe')}</span>{LOAI_CAN.map((k) => <span key={k}>{fmtSo(pct[k], { thapPhan: 1 })}</span>)}<span>100</span></div>
           <div class="dong bang-cc" style={cot} role="row"><span>{t('xep.mucTieu')}</span>{LOAI_CAN.map((k) => <span key={k}>{fmtSo(mucTieu[k], { thapPhan: 1 })}</span>)}<span /></div>
+          {lo.temDat.deBai && Object.keys(lo.temDat.deBai.dtCan).length > 0 && (
+            <>
+              <div class="dong bang-cc" style={cot} role="row"><span>{t('xep.dtDeBai')}</span>{LOAI_CAN.map((k) => <span key={k}>{fmtSo(lo.temDat.deBai!.dtCan[k] ?? null, { thapPhan: 1 })}</span>)}<span>m²</span></div>
+              <div class="dong bang-cc" style={cot} role="row"><span>{t('xep.dtDat')}</span>
+                {LOAI_CAN.map((k) => {
+                  const muc = lo.temDat.deBai!.dtCan[k], dat = dtTb[k];
+                  const lech = muc && dat !== null ? Math.abs(dat - muc) > pa.nguong.dtCanM2 : false;
+                  return <span key={k} class={dat === null || !muc ? '' : lech ? 'vuot' : 'ok'}>{fmtSo(dat, { thapPhan: 1 })}</span>;
+                })}
+                <span>m²</span>
+              </div>
+            </>
+          )}
           <div class="dong bang-cc" style={cot} role="row"><span>{t('xep.lech')}</span>
             {LOAI_CAN.map((k) => {
               const l = (r?.soCan ? pct[k] : 0) - mucTieu[k];

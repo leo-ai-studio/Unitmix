@@ -112,3 +112,14 @@ body { font-size: 13px; line-height: 1.45; }
 .bang-cc.dau { font-weight: 700; color: var(--muted-text); }
 .bang-cc.tong { font-weight: 700; border-top: 1px solid var(--line); }
 .bang-cc.chon { background: var(--selected); }
+
+/* Hộp thoại nhập bảng (chỉ tiêu QH, đề bài KD) */
+.hop-thoai > div.hop-rong { width: min(1180px, 100%); max-height: calc(100vh - 32px); overflow: auto; }
+.hop-thoai textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.bang-nhap { border: 1px solid var(--line); border-radius: 4px; overflow-x: auto; font-size: 12px; }
+.hang-nhap { display: grid; grid-template-columns: 70px 92px minmax(220px, 2fr) 92px 70px repeat(9, minmax(52px, 1fr)); gap: 6px; align-items: center; padding: 5px 8px; border-bottom: 1px solid var(--line); min-width: 1060px; }
+.hang-nhap > span:nth-child(2), .hang-nhap > span:nth-child(n+4) { text-align: right; }
+.hang-nhap.dau { background: var(--band); font-weight: 600; color: var(--muted-text); position: sticky; top: 0; }
+.hang-nhap select { width: 100%; max-width: 280px; padding: 3px; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; background: var(--panel); }
+.hang-nhap.hang-db { grid-template-columns: 1.6fr 1fr 1fr 1fr; min-width: 0; }
+.hop-thoai select { padding: 6px; border: 1px solid var(--line); border-radius: 5px; font-size: 13px; background: var(--panel); }

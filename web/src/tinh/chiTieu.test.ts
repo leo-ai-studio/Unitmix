@@ -1,3 +1,4 @@
+import type { ChiTieuQH } from './kieu';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { tinhChiTieu } from './chiTieu';
@@ -23,7 +24,7 @@ const toaGia: ToaMau = {
 };
 const tvGia = taoThuVien([toaGia], canGia);
 
-const chiTieu = { matDoMax: 40, hssddMax: 3.5, tangCaoMax: 25, danSoMax: 1600, nguoiMoiCan: 3.5, choDoOtoMoiCan: 1, choXeMayMoiCan: 2, cayXanhMin: 20 };
+const chiTieu: ChiTieuQH = { matDoMax: 40, matDoThapMax: null, hssddMax: 3.5, tangCaoMax: 25, tangDe: null, tangCanHo: null, tangHam: null, danSoMax: 1600, soCanMax: null, nguoiMoiCan: 3.5, choDoOtoMoiCan: 1, choXeMayMoiCan: 2, cayXanhMin: 20 };
 const lo = (ranh: Diem[]): Lo => ({
   id: 'A', ranh, chiGioi: null, xungQuanh: [],
   temDat: { kyHieu: 'CC-02', chucNang: 'tm', chiTieu, coCauMucTieu: { stu: 5, '1pn': 20, '2pn': 45, '2pnp': 15, '3pn': 15 } },
@@ -74,6 +75,20 @@ describe('chỉ tiêu lô', () => {
     const md = kq.theoLo.A.dong.find((d) => d.khoa === 'matDo')!;
     expect(md.dat).toBeCloseTo(4, 1); // 400 / 10000 = 4 %
     expect(md.muc).toBe('ok');
+  });
+  it('bảng QH có MĐXD tháp, tầng đế, tầng căn hộ, số căn -> thêm dòng kiểm; không có thì không hiện', () => {
+    const l = lo(hcn(100, 100));
+    const coBang = { ...l, temDat: { ...l.temDat, chiTieu: { ...chiTieu, matDoThapMax: 3, tangDe: 1, tangCanHo: 8, soCanMax: 25 } } };
+    const t1 = { ...toa('T1', 20, 20, 10), soTangDe: 2 };
+    const dong = tinhChiTieu(pa(coBang, [t1]), tvGia).theoLo.A.dong;
+    const lay = (k: string) => dong.find((d) => d.khoa === k)!;
+    expect(lay('matDoThap')).toMatchObject({ dat: 4, mucTieu: 3, muc: 'vuot' });
+    expect(lay('tangDe')).toMatchObject({ dat: 2, mucTieu: 1, muc: 'vuot' });
+    expect(lay('tangCanHo')).toMatchObject({ dat: 10, mucTieu: 8, muc: 'vuot' });
+    expect(lay('soCan')).toMatchObject({ dat: 30, mucTieu: 25, muc: 'vuot' });
+    const khong = tinhChiTieu(pa(l, [t1]), tvGia).theoLo.A.dong.map((d) => d.khoa);
+    expect(khong).not.toContain('matDoThap');
+    expect(khong).not.toContain('soCan');
   });
   it('DT sàn chỉ tiêu theo hệ số; hệ số căn = 0 thì chỉ còn phần chung', () => {
     const p = pa(lo(hcn(100, 100)), [toa('T1', 20, 20, 10)]);

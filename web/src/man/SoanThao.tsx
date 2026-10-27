@@ -4,7 +4,7 @@ import { t, useLang } from '../i18n/i18n';
 import { useKho } from '../kho/kho';
 import { ghiNhoDuAn, layMaSua, nhanMaTuLink } from '../kho/maSua';
 import type { TrangThaiPA } from '../tinh/kieu';
-import { loDangChonHoacDatO, taoPAMoi } from '../tinh/macDinh';
+import { chuanHoaPA, loDangChonHoacDatO, taoPAMoi } from '../tinh/macDinh';
 import { KhungSoan } from '../ui/KhungSoan';
 import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
 import { tinhChiTieu, type KetQuaChiTieu } from '../tinh/chiTieu';
@@ -47,7 +47,7 @@ export function SoanThao({ ma }: { ma: string }) {
         let tenPA = t('pa.mau');
         if (da.phuong_an.length) {
           const pa = await api.docPA(ma, paId);
-          ban = pa.trang_thai as TrangThaiPA;
+          ban = chuanHoaPA(pa.trang_thai as TrangThaiPA);
           tenPA = pa.ten;
         } else {
           ban = taoPAMoi();

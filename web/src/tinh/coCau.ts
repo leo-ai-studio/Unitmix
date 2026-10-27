@@ -50,3 +50,19 @@ export function doiMauCungBeNgang(canId: string, loaiMoi: LoaiCan, tv: ThuVien):
     .sort((a, b) => Number(b.vi_tri === goc.vi_tri) - Number(a.vi_tri === goc.vi_tri) || a.id.localeCompare(b.id));
   return ung[0]?.id ?? null;
 }
+
+/** DT thông thủy trung bình theo loại căn của các tòa trên lô (để so với DT đề bài KD); loại không có căn thì null. */
+export function dtTbTheoLoai(pa: TrangThaiPA, tv: ThuVien, loId: string): Record<LoaiCan, number | null> {
+  const tong = coCauRong(), dem = coCauRong();
+  for (const t of pa.toa) {
+    const mau = t.loId === loId ? tv.toa.get(t.mauId) : undefined;
+    if (!mau) continue;
+    for (const [canGoc, n] of Object.entries(mau.co_cau)) {
+      const can = tv.can.get(canThucTe(canGoc, t.canTheo));
+      if (!can) continue;
+      tong[can.loai] += n * t.soTangDH * can.dt_tt_m2;
+      dem[can.loai] += n * t.soTangDH;
+    }
+  }
+  return Object.fromEntries(LOAI_CAN.map((k) => [k, dem[k] ? tong[k] / dem[k] : null])) as Record<LoaiCan, number | null>;
+}

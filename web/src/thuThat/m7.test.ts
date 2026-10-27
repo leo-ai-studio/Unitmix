@@ -9,9 +9,13 @@ import { dienTich } from '../tinh/hinhHoc';
 import type { ChucNang, Lo } from '../tinh/kieu';
 import { taoPAMoi } from '../tinh/macDinh';
 import { sucChua } from '../tinh/sucChua';
+import * as XLSX from 'xlsx';
+import { apChiTieu, chonSheet, ghepLo } from '../nhap/bangChiTieu';
+import { sheetTuWorkbook } from '../nhap/docExcel';
 
 const THU_MUC = 'E:/OneDrive/2025-Tan A/6.TADT-Dan Phuong-M7/01_QH/1.WIP/261019,QH moi';
 const DXF = `${THU_MUC}/SDD M7 261019.dxf`;
+const XLS = `${THU_MUC}/261019-Chi tieu SDĐ NOXH M7.xlsx`;
 const RA = process.env.UNITMIX_THU_RA; // nơi ghi trạng thái PA để nạp vào app (tuỳ chọn)
 
 /** Chỉ tiêu thật, sheet "@ 261019-Chỉ tiêu M7" của 261019-Chi tieu SDĐ NOXH M7.xlsx (theo nhóm đất). */
@@ -68,5 +72,30 @@ describe.skipIf(!existsSync(DXF))('dữ liệu thật M7 Đan Phượng', () => 
     console.log(`Số căn ước theo dân số (cộng các lô ở): ${soCanUoc} / bảng ${NHOM.xh!.soCan + NHOM.tm!.soCan}`);
     expect(Math.abs(soCanUoc - (NHOM.xh!.soCan + NHOM.tm!.soCan))).toBeLessThan(60);
     if (RA) writeFileSync(RA, JSON.stringify(pa));
+  });
+
+  it('nhập Excel chỉ tiêu: tự chọn sheet 261019, ghép lô DXF, áp chỉ tiêu', () => {
+    const tho = taoLoTuDxf(napDxf(readFileSync(DXF, 'utf-8')), { ranh: RANH_HATCH }); // chưa sửa chức năng tay
+    const bang = chonSheet(sheetTuWorkbook(XLSX.read(readFileSync(XLS), { type: 'buffer' }), XLSX))!;
+    expect(bang.sheet).toBe('@ 261019-Chỉ tiêu M7');
+    const kq = ghepLo(bang, tho);
+    const ten = new Map(tho.map((l) => [l.id, l.temDat.kyHieu]));
+    for (const g of kq.ghep.filter((x) => x.loIds.length)) {
+      const d = bang.dong.find((x) => x.dong === g.dong)!;
+      console.log(`GHEP ${d.stt || '-'} ${d.ten} ${d.gt.dtDat} <- ${g.loIds.map((i) => ten.get(i)).join('+')} ${g.dtDxf.toFixed(1)} (${g.cach}, ${g.lechPct?.toFixed(2)} %)`);
+    }
+    console.log('LO CHUA GHEP', kq.loChuaGhep.map((i) => `${ten.get(i)} ${dt(tho.find((l) => l.id === i)!).toFixed(1)}`).join(', '));
+    const ghepCua = (stt: string) => kq.ghep.find((g) => g.dong === bang.dong.find((d) => d.stt === stt)!.dong)!;
+    expect(ghepCua('1.1').loIds.map((i) => ten.get(i)).sort()).toEqual(['CT-1', 'CT-2']);
+    expect(ghepCua('1.2').loIds.map((i) => ten.get(i)).sort()).toEqual(['HH-1', 'HH-2']);
+    const moi = apChiTieu(tho, bang, kq, 'chi tieu.xlsx');
+    const ct = moi.filter((l) => l.temDat.kyHieu.startsWith('CT-'));
+    expect(ct.every((l) => l.temDat.chucNang === 'xh')).toBe(true);
+    expect(ct[0].temDat.chiTieu).toMatchObject({ tangHam: 1, tangDe: 1, tangCanHo: 11, tangCaoMax: 12, matDoMax: 21.59, matDoThapMax: 19.9, hssddMax: 2.395, cayXanhMin: 20 });
+    expect(ct.reduce((a, l) => a + l.temDat.chiTieu.soCanMax!, 0)).toBe(2810);
+    expect(ct.reduce((a, l) => a + l.temDat.chiTieu.danSoMax, 0)).toBe(5396);
+    const hh = moi.filter((l) => l.temDat.kyHieu.startsWith('HH-'));
+    expect(hh[0].temDat.chiTieu).toMatchObject({ tangHam: 2, tangDe: 2, tangCanHo: 26, tangCaoMax: 28, hssddMax: 8.502, cayXanhMin: 20 });
+    expect(hh.reduce((a, l) => a + l.temDat.chiTieu.soCanMax!, 0)).toBe(2184);
   });
 });

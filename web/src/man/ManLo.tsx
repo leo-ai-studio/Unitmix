@@ -10,6 +10,8 @@ import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
+import { NhapChiTieu } from './NhapChiTieu';
+import { NhapDeBai } from './NhapDeBai';
 
 type Chung = { pa: TrangThaiPA; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; loId: string | null; chonLo: (id: string) => void };
 
@@ -33,6 +35,25 @@ function O({ nhan, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; gt: number
   );
 }
 
+/** Ô nhập số có thể bỏ trống (null = bảng QH không quy định). */
+function ON({ nhan, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; gt: number | null; donVi?: string; onDoi: (v: number | null) => void; tat: boolean; buoc?: number }) {
+  return (
+    <label class="o-so">
+      <span>{nhan}</span>
+      <span class="o-so-nhap">
+        <input type="number" value={gt ?? ''} placeholder="—" step={buoc} min={0} disabled={tat}
+          onChange={(e) => {
+            const s = e.currentTarget.value.trim();
+            const v = Number(s);
+            if (!s) onDoi(null);
+            else if (Number.isFinite(v) && v >= 0) onDoi(v);
+          }} />
+        {donVi && <small>{donVi}</small>}
+      </span>
+    </label>
+  );
+}
+
 function doanLop(lop: string[], mau: RegExp): string {
   return lop.find((l) => mau.test(l)) ?? '';
 }
@@ -43,6 +64,7 @@ export function LoTrai({ pa, sua, chiXem, loId, chonLo }: Chung) {
   const [loiDoc, setLoiDoc] = useState('');
   const [chon, setChon] = useState({ ranh: '', chiGioi: '', tem: '', xungQuanh: '' });
   const [kt, setKt] = useState({ rong: 80, dai: 60 });
+  const [hop, setHop] = useState<'chiTieu' | 'deBai' | null>(null);
   const lo = loDangChonHoacDatO(pa.lo, loId);
 
   async function docTep(f: File) {
@@ -84,7 +106,7 @@ export function LoTrai({ pa, sua, chiXem, loId, chonLo }: Chung) {
 
   const loiRanh = ban && chon.ranh ? ban.loiLop(chon.ranh) : null;
   const ct = lo?.temDat.chiTieu;
-  const datCt = (k: keyof ChiTieuQH) => (v: number) => lo && sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, chiTieu: { ...l.temDat.chiTieu, [k]: v } } })));
+  const datCt = (k: keyof ChiTieuQH) => (v: number | null) => lo && sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, chiTieu: { ...l.temDat.chiTieu, [k]: v } } })));
   const tongCoCau = lo ? LOAI_CAN.reduce((a, k) => a + lo.temDat.coCauMucTieu[k], 0) : 100;
   const datHeSo = (k: keyof HeSoDTSan) => (v: number) => sua((p) => ({ ...p, heSo: { ...p.heSo, [k]: v / 100 } }));
 
@@ -122,6 +144,16 @@ export function LoTrai({ pa, sua, chiXem, loId, chonLo }: Chung) {
         </div>
       </MucGap>
 
+      {hop === 'chiTieu' && <NhapChiTieu lo={pa.lo} dong={() => setHop(null)} ap={(ds) => sua((p) => ({ ...p, lo: ds }))} />}
+      {hop === 'deBai' && lo && <NhapDeBai ds={pa.lo} loChon={lo} dong={() => setHop(null)} ap={(ds) => sua((p) => ({ ...p, lo: ds }))} />}
+      {pa.lo.length > 0 && (
+        <MucGap tieuDe={t('lo.nhapBang')} giaiThich={t('nct.giaiThich')} mo>
+          <div class="dong" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
+            <button type="button" class="nut-phu" disabled={chiXem} onClick={() => setHop('chiTieu')}>{t('lo.nhapChiTieu')}</button>
+            <button type="button" class="nut-phu" disabled={chiXem || !lo} onClick={() => setHop('deBai')}>{t('lo.nhapDeBai')}</button>
+          </div>
+        </MucGap>
+      )}
       {pa.lo.length > 0 && (
         <MucGap tieuDe={t('lo.dsLo')} mo>
           {pa.lo.map((l) => (
@@ -146,9 +178,20 @@ export function LoTrai({ pa, sua, chiXem, loId, chonLo }: Chung) {
             </label>
           </MucGap>
           <MucGap tieuDe={t('muc.chiTieuQH')} mo>
+            {lo.temDat.nguonChiTieu && (
+              <p class="dong muted" style={{ margin: 0 }}>
+                {t('lo.nguonCt').replace('{d}', String(lo.temDat.nguonChiTieu.dong)).replace('{t}', lo.temDat.nguonChiTieu.ten).replace('{s}', lo.temDat.nguonChiTieu.sheet)}
+                {lo.temDat.nguonChiTieu.soLo > 1 && ` ${t('lo.nguonCtNhom').replace('{n}', String(lo.temDat.nguonChiTieu.soLo))}`}
+              </p>
+            )}
             <O nhan={t('ct.matDoMax')} gt={ct.matDoMax} donVi="%" tat={chiXem} onDoi={datCt('matDoMax')} />
+            <ON nhan={t('ct.matDoThapMax')} gt={ct.matDoThapMax} donVi="%" buoc={0.1} tat={chiXem} onDoi={datCt('matDoThapMax')} />
             <O nhan={t('ct.hssddMax')} gt={ct.hssddMax} buoc={0.1} tat={chiXem} onDoi={datCt('hssddMax')} />
             <O nhan={t('ct.tangCaoMax')} gt={ct.tangCaoMax} tat={chiXem} onDoi={datCt('tangCaoMax')} />
+            <ON nhan={t('ct.tangDe')} gt={ct.tangDe} tat={chiXem} onDoi={datCt('tangDe')} />
+            <ON nhan={t('ct.tangCanHo')} gt={ct.tangCanHo} tat={chiXem} onDoi={datCt('tangCanHo')} />
+            <ON nhan={t('ct.tangHam')} gt={ct.tangHam} tat={chiXem} onDoi={datCt('tangHam')} />
+            <ON nhan={t('ct.soCanMax')} gt={ct.soCanMax} buoc={10} tat={chiXem} onDoi={datCt('soCanMax')} />
             <O nhan={t('ct.danSoMax')} gt={ct.danSoMax} buoc={10} tat={chiXem} onDoi={datCt('danSoMax')} />
             <O nhan={t('ct.nguoiMoiCan')} gt={ct.nguoiMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('nguoiMoiCan')} />
             <O nhan={t('ct.choDoOtoMoiCan')} gt={ct.choDoOtoMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('choDoOtoMoiCan')} />
@@ -156,8 +199,10 @@ export function LoTrai({ pa, sua, chiXem, loId, chonLo }: Chung) {
             <O nhan={t('ct.cayXanhMin')} gt={ct.cayXanhMin} donVi="%" tat={chiXem} onDoi={datCt('cayXanhMin')} />
           </MucGap>
           <MucGap tieuDe={t('muc.coCauMucTieu')}>
+            {lo.temDat.deBai && <p class="dong muted" style={{ margin: 0 }}>{t('lo.nguonDeBai').replace('{n}', lo.temDat.deBai.nguon)}</p>}
             {LOAI_CAN.map((k) => (
-              <O key={k} nhan={t(`loai.${k}`)} gt={lo.temDat.coCauMucTieu[k]} donVi="%" tat={chiXem}
+              <O key={k} nhan={lo.temDat.deBai?.dtCan[k] ? `${t(`loai.${k}`)} · ${fmtSo(lo.temDat.deBai.dtCan[k]!, { thapPhan: 1, donVi: 'm²' })}` : t(`loai.${k}`)}
+                gt={lo.temDat.coCauMucTieu[k]} donVi="%" tat={chiXem}
                 onDoi={(v) => sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, coCauMucTieu: { ...l.temDat.coCauMucTieu, [k]: v } } })))} />
             ))}
             <div class="dong"><span>{t('coCau.tong')}</span><b class={Math.abs(tongCoCau - 100) > 0.01 ? 'vuot' : 'ok'}>{fmtSo(tongCoCau, { donVi: '%' })}</b></div>
@@ -227,8 +272,9 @@ export function LoPhai({ pa, loId, kq }: Chung & { kq: KetQuaChiTieu | null }) {
       <MucGap tieuDe={`${t('muc.sucChua')} · ${lo.temDat.kyHieu}`} mo>
         <div class="dong"><span>{t('sc.dtLo')}</span><b>{fmtSo(sc.dtLo, m2)}</b></div>
         <div class="dong"><span>{t('sc.dtxdMax')}</span><b>{fmtSo(sc.dtxdMax, m2)}</b></div>
+        {sc.dtxdThapMax !== null && <div class="dong"><span>{t('sc.dtxdThapMax')}</span><b>{fmtSo(sc.dtxdThapMax, m2)}</b></div>}
         <div class="dong"><span>{t('sc.dtSanMax')}</span><b>{fmtSo(sc.dtSanMax, m2)}</b></div>
-        <div class="dong"><span>{t('sc.soCanUoc')}</span><b>{fmtSo(sc.soCanUoc, { donVi: t('sc.can') })}</b></div>
+        <div class="dong"><span>{t(lo.temDat.chiTieu.soCanMax !== null ? 'sc.soCanBang' : 'sc.soCanUoc')}</span><b>{fmtSo(sc.soCanUoc, { donVi: t('sc.can') })}</b></div>
         <div class="dong"><span>{t('sc.choDoCan')}</span><b>{fmtSo(sc.choDoCan, { donVi: t('sc.cho') })}</b></div>
         <div class="dong"><span>{t('sc.choXeMayCan')}</span><b>{fmtSo(sc.choXeMayCan, { donVi: t('sc.cho') })}</b></div>
         <div class="dong"><span>{t('sc.cayXanhCan')}</span><b>{fmtSo(sc.cayXanhCan, m2)}</b></div>
@@ -241,7 +287,7 @@ export function LoPhai({ pa, loId, kq }: Chung & { kq: KetQuaChiTieu | null }) {
 /** Bảng chỉ tiêu lô Đạt (kèm chênh) / Mục tiêu; dùng ở cấp Lô và màn Xếp tòa. */
 export function BangChiTieuLo({ dong }: { dong: DongChiTieu[] }) {
   const m2 = { donVi: 'm²' };
-  const dv: Record<string, { thapPhan?: number; donVi?: string }> = { matDo: { thapPhan: 1, donVi: '%' }, dtSan: m2, cayXanh: m2 };
+  const dv: Record<string, { thapPhan?: number; donVi?: string }> = { matDo: { thapPhan: 1, donVi: '%' }, matDoThap: { thapPhan: 1, donVi: '%' }, dtSan: m2, cayXanh: m2 };
   return (
     <MucGap tieuDe={t('muc.chiTieuLo')} mo>
       <div class="dong bang-ct dau"><span>{t('ct.chiTieu')}</span><span>{t('ct.dat')}</span><span>{t('ct.mucTieu')}</span></div>

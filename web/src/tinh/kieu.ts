@@ -5,17 +5,34 @@ export const LOAI_CAN: LoaiCan[] = ['stu', '1pn', '2pn', '2pnp', '3pn'];
 export type ChucNang = 'tm' | 'xh' | 'khac';
 
 export type ChiTieuQH = {
-  matDoMax: number; // %
+  matDoMax: number; // % — MĐXD khối đế (hoặc MĐXD chung khi bảng QH không tách đế/tháp)
+  matDoThapMax: number | null; // % — MĐXD khối tháp; null = bảng QH không quy định
   hssddMax: number;
-  tangCaoMax: number;
+  tangCaoMax: number; // tổng tầng cao (không tính hầm)
+  tangDe: number | null; // số tầng khối đế theo QH
+  tangCanHo: number | null; // số tầng khối tháp (tầng căn hộ) theo QH
+  tangHam: number | null;
   danSoMax: number; // người
+  soCanMax: number | null; // số căn theo bảng QH; null = ước từ dân số
   nguoiMoiCan: number;
   choDoOtoMoiCan: number;
   choXeMayMoiCan: number;
   cayXanhMin: number; // % DT lô
 };
 
-export type TemDat = { kyHieu: string; chucNang: ChucNang; chiTieu: ChiTieuQH; coCauMucTieu: Record<LoaiCan, number> };
+/** Đề bài cơ cấu của kinh doanh: tỷ lệ % (ghi vào coCauMucTieu) và DT căn mong muốn theo loại. */
+export type DeBaiKD = { dtCan: Partial<Record<LoaiCan, number>>; soCan: Partial<Record<LoaiCan, number>>; nguon: string };
+/** Dòng bảng chỉ tiêu Excel đã áp cho lô (để lần sau đối chiếu lại). */
+export type NguonChiTieu = { tep: string; sheet: string; dong: number; ten: string; dtBang: number | null; soLo: number };
+
+export type TemDat = {
+  kyHieu: string;
+  chucNang: ChucNang;
+  chiTieu: ChiTieuQH;
+  coCauMucTieu: Record<LoaiCan, number>;
+  deBai?: DeBaiKD;
+  nguonChiTieu?: NguonChiTieu;
+};
 export type Lo = { id: string; temDat: TemDat; ranh: Diem[]; chiGioi: Diem[] | null; xungQuanh: Diem[][] };
 
 /** Tỷ lệ (0–1) DT từng hạng mục được tính vào DT sàn chỉ tiêu. Giá trị mặc định chờ chủ nhiệm chốt. */

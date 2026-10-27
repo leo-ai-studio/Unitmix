@@ -30,11 +30,13 @@ export function hopLo(mau: ToaMau, chiGioi: Diem[]): { hop: boolean; gocHop: num
 /** Vùng được đặt tòa của lô: chỉ giới nếu có, không thì ranh lô. */
 export const vungDat = (lo: Lo): Diem[] => lo.chiGioi ?? lo.ranh;
 
-/** Tòa mới trên lô: tại trọng tâm vùng đặt, góc hợp lô (không hợp thì 0°), 1 tầng đế, phần còn lại của tầng cao tối đa là điển hình. */
+/** Tòa mới trên lô: tại trọng tâm vùng đặt, góc hợp lô (không hợp thì 0°). Số tầng đế / tầng căn hộ theo bảng QH;
+ * bảng không ghi thì 1 tầng đế, phần còn lại của tầng cao tối đa là điển hình. */
 export function taoToaTrenLo(mau: ToaMau, lo: Lo, id: string): ToaDat {
   const vung = vungDat(lo);
   const [x, y] = vung.length >= 3 ? trongTam(vung) : [0, 0];
-  const soTangDe = 1;
+  const ct = lo.temDat.chiTieu;
+  const soTangDe = ct.tangDe ?? 1;
   return {
     id,
     loId: lo.id,
@@ -42,7 +44,7 @@ export function taoToaTrenLo(mau: ToaMau, lo: Lo, id: string): ToaDat {
     x: Math.round(x * 100) / 100,
     y: Math.round(y * 100) / 100,
     gocDo: hopLo(mau, vung).gocHop ?? 0,
-    soTangDH: Math.max(1, Math.round(lo.temDat.chiTieu.tangCaoMax) - soTangDe),
+    soTangDH: Math.max(1, ct.tangCanHo ?? Math.round(ct.tangCaoMax) - soTangDe),
     soTangDe,
     caoDe: 4.5,
     caoDH: 3.3,

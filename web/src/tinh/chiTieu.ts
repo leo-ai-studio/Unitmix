@@ -1,10 +1,10 @@
 import { canThucTe, congCoCau, demCan, phanTram } from './coCau';
-import { chanToa, dienTich, dtVung, khoiDe } from './hinhHoc';
+import { chanToa, dienTich, dtVung, hopDienTich, khoiDe } from './hinhHoc';
 import type { LoaiCan, ThuVien, TrangThaiPA } from './kieu';
 
 export type MucDo = 'ok' | 'canh_bao' | 'vuot';
 export type DongChiTieu = {
-  khoa: 'matDo' | 'dtSan' | 'tangCao' | 'danSo' | 'choDo' | 'cayXanh';
+  khoa: 'matDo' | 'matDoThap' | 'dtSan' | 'tangCao' | 'tangDe' | 'tangCanHo' | 'soCan' | 'danSo' | 'choDo' | 'cayXanh';
   dat: number | null;
   mucTieu: number | null;
   chieu: '<=' | '>=';
@@ -68,12 +68,17 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
     const coToa = toaLo.length > 0;
     const coDat = dtLo > 0;
     const tangCao = coToa ? Math.max(...toaLo.map((t) => t.soTangDe + t.soTangDH + (t.coApMai ? 1 : 0))) : null;
+    const maxTang = (f: (t: (typeof toaLo)[number]) => number) => (coToa ? Math.max(...toaLo.map(f)) : null);
     theoLo[lo.id] = {
       dtLo, dtDe, dtSanTinhHSSDD: dtSan, soCan, coCau, coCauPct: phanTram(coCau),
       dong: [
         dong('matDo', coDat && coToa ? (dtDe / dtLo) * 100 : null, ct.matDoMax, '<='),
+        ...(ct.matDoThapMax !== null ? [dong('matDoThap', coDat && coToa ? (hopDienTich(chan) / dtLo) * 100 : null, ct.matDoThapMax, '<=')] : []),
         dong('dtSan', coToa ? dtSan : null, coDat ? ct.hssddMax * dtLo : null, '<='),
         dong('tangCao', tangCao, ct.tangCaoMax, '<='),
+        ...(ct.tangDe !== null ? [dong('tangDe', maxTang((t) => t.soTangDe), ct.tangDe, '<=')] : []),
+        ...(ct.tangCanHo !== null ? [dong('tangCanHo', maxTang((t) => t.soTangDH), ct.tangCanHo, '<=')] : []),
+        ...(ct.soCanMax !== null ? [dong('soCan', coToa ? soCan : null, ct.soCanMax, '<=')] : []),
         dong('danSo', coToa ? soCan * ct.nguoiMoiCan : null, ct.danSoMax, '<='),
         dong('choDo', null, coToa ? Math.ceil(soCan * ct.choDoOtoMoiCan) : null, '>='),
         dong('cayXanh', null, coDat ? (dtLo * ct.cayXanhMin) / 100 : null, '>='),

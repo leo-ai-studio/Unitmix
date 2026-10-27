@@ -14,7 +14,8 @@
     "clipper-lib": "^6.4.2",
     "dxf-parser": "^1.1.2",
     "preact": "^10.24.3",
-    "preact-iso": "^2.8.1"
+    "preact-iso": "^2.8.1",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.9.1",
