@@ -52,6 +52,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | Preset, lưu | `kho/preset.ts`, `kho/kho.ts`, `kho/luu.ts` |
 | Xuất | `xuat/xuatCad.ts`, `xuat/xuatXls.ts`, `man/HopXuatCad.tsx` |
 | So sánh PA | `man/SoSanhPA.tsx`, `tinh/diemPA.ts` |
+| Chi phí, tài chính | `tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`, số tạm `CHI_PHI_MAC_DINH` trong `tinh/macDinh.ts` |
 
 ## Tài liệu khác
 
@@ -62,7 +63,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 
 ## Đang dở (cập nhật mỗi đợt)
 
-- Tab Chi phí: dự toán + tài chính (agent đang làm, nhánh worktree riêng) — đơn giá đều là số tạm.
+- Tab Chi phí đã gộp (`tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`) — mọi đơn giá / giá bán là số tạm trong `CHI_PHI_MAC_DINH`, chờ QS chốt; thang máy chưa đếm từ lõi.
 - Tự xếp tòa TMB (MT-05) + tối ưu MB tầng có STRETCH như app cũ, bật mặc định (agent đang làm).
 - Tự chỉnh căn / thang / dồn khít theo QT app cũ (agent đang làm cùng gói trên): XC-02…XC-08, XC-10, PC-11 — trước đợt này chỉ có trong `quy_tac.json`, chưa có mã.
 - Chờ chủ nhiệm chốt: xem `hoc_architechtures_app_2026-10-27.md` mục 6.
