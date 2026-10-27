@@ -126,7 +126,13 @@ export type MatBangSua = {
 export type CongNangO = 'can' | 'shcd' | 'ky_thuat' | 'thuong_mai' | 'trong';
 export const CONG_NANG_O: CongNangO[] = ['can', 'shcd', 'ky_thuat', 'thuong_mai', 'trong'];
 /** Ghi đè một tầng: chỉ các vị trí khác bố cục chung; `coCauMucTieu` = mục tiêu cơ cấu riêng của tầng (vd. tầng áp mái). */
-export type BoCucTang = { canViTri?: Record<string, string>; congNang?: Record<string, CongNangO>; coCauMucTieu?: Record<LoaiCan, number> };
+export type BoCucTang = {
+  canViTri?: Record<string, string>;
+  congNang?: Record<string, CongNangO>;
+  coCauMucTieu?: Record<LoaiCan, number>;
+  /** Mặt bằng tự chỉnh RIÊNG của tầng (thang, căn dồn, nét bao, hành lang theo căn của tầng); thiếu = như bố cục chung. */
+  matBang?: MatBangSua;
+};
 /** Thang trong lõi có đi xuống hầm / lên mái không. */
 export type DiXuyen = { ham: boolean; mai: boolean };
 export type ThongTinLoi = { cua: 'trai' | 'phai'; thangBo: DiXuyen; thangMay: DiXuyen; hopKT: DiXuyen };

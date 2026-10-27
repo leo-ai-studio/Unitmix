@@ -133,7 +133,8 @@ const chuanHoaToa = (t: ToaDat): ToaDat => {
   const duongBao = Array.isArray(t.duongBao) && t.duongBao.length >= 3 && t.duongBao.every(diem) ? t.duongBao : undefined;
   const mb = { matBang: chuanHoaMatBang(t.matBang), duongBao, dtxdM2: duongBao && typeof t.dtxdM2 === 'number' && Number.isFinite(t.dtxdM2) ? t.dtxdM2 : undefined };
   if (!t.tangRieng) return { ...t, ...mb, canTheo: t.canTheo ?? {} };
-  const tangRieng = Object.fromEntries(Object.entries(t.tangRieng).filter(([k, g]) => Number.isInteger(Number(k)) && Number(k) >= 1 && g && typeof g === 'object'));
+  const tangRieng = Object.fromEntries(Object.entries(t.tangRieng).filter(([k, g]) => Number.isInteger(Number(k)) && Number(k) >= 1 && g && typeof g === 'object')
+    .map(([k, g]) => { const { matBang, ...con } = g; const m = chuanHoaMatBang(matBang); return [k, m ? { ...con, matBang: m } : con]; }));
   return { ...t, ...mb, canTheo: t.canTheo ?? {}, tangRieng: Object.keys(tangRieng).length ? tangRieng : undefined };
 };
 
