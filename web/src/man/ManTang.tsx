@@ -342,10 +342,11 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
  * Panel phải · gỡ căn vượt cự ly (app cũ giamCanThoatNan) + thang liền suốt chiều cao: dòng báo kết quả (số căn đổi / bỏ, căn và
  * cơ cấu trước → sau), nút tắt tự gỡ (giữ nguyên căn, chỉ báo vượt), chọn cách giữ thang liền khi tòa có tầng riêng.
  */
-function KhoiGiamCan({ bcTc, toa, coRieng, chiXem, datToa }: {
+function KhoiGiamCan({ bcTc, toa, coRieng, chiXem, datToa, tenO, tenCan }: {
   bcTc: BaoCaoTuChinh | undefined; toa: ToaDat; coRieng: boolean; chiXem: boolean; datToa: (fn: (x: ToaDat) => ToaDat) => void;
+  tenO: (khoa: string) => string; tenCan: (id: string) => string;
 }) {
-  const g = bcTc?.giamCan, l = bcTc?.thangLien;
+  const g = bcTc?.giamCan, l = bcTc?.thangLien, kk = bcTc?.khitKep;
   const bat = toa.giamCanTN !== false;
   const coCau = g ? LOAI_CAN.filter((k) => g.coCauTruoc[k] || g.coCauSau[k]).map((k) => `${NHAN_LOAI[k]} ${g.coCauTruoc[k]}→${g.coCauSau[k]}`).join(' · ') : '';
   return (
@@ -371,6 +372,16 @@ function KhoiGiamCan({ bcTc, toa, coRieng, chiXem, datToa }: {
           {l.conLech ? t('tc.lien.lech').replace('{n}', fmtSo(l.conLech)) : ''}
           {l.khongDat ? t('tc.lien.khongDat').replace('{n}', String(l.khongDat)) : ''}
         </p>
+      )}
+      {kk && (kk.doi.length + kk.bo.length > 0 || kk.conMm > 0) && (
+        <div class={`dong ${kk.conMm ? 'canh-bao' : 'muted'}`} role="status" title={t('tc.khit.gt')} id="khit-kep" style={{ flexDirection: 'column', gap: '2px' }}>
+          <p style={{ margin: 0 }}>{t('tc.khit.tomTat').replace('{d}', String(kk.doi.length)).replace('{b}', String(kk.bo.length))}</p>
+          <ul style={{ margin: 0, paddingLeft: '1.1em' }}>
+            {kk.doi.map((d) => <li key={`d${d.khoa}`}>{t('tc.khit.doi').replace('{o}', tenO(d.khoa)).replace('{a}', tenCan(d.tu)).replace('{b}', tenCan(d.den))}</li>)}
+            {kk.bo.map((b) => <li key={`b${b.khoa}`}>{t('tc.khit.bo').replace('{o}', tenO(b.khoa)).replace('{a}', tenCan(b.id))}</li>)}
+          </ul>
+          {kk.conMm ? <p style={{ margin: 0 }}>{t('tc.khit.con').replace('{n}', fmtSo(kk.conMm))}</p> : null}
+        </div>
       )}
       {coRieng && (
         <label class="o-chon" title={t('tc.lien.gt')}><span>{t('tc.lien.cheDo')}</span>
@@ -514,6 +525,8 @@ export function TangPhai(p: ChungTang) {
         </p>
       )}
       <KhoiGiamCan bcTc={bcTc} toa={toa} coRieng={tangCoRieng(toa).length > 0} chiXem={chiXem}
+        tenO={(k) => { const x = sl.can.find((c) => c.vt.khoa === k); return x ? `CH-${String(x.no).padStart(2, '0')}` : `ô ${k}`; }}
+        tenCan={(id) => { const c = tv.can.get(id), { st } = tachMa(id); return c ? `${NHAN_LOAI[c.loai]} ${tachMa(id).goc}${st ? ` (STRETCH ${st > 0 ? '+' : ''}${st})` : ''}` : id; }}
         datToa={(fn) => suaTuChinh(sua, tv, toa.id)((q) => doiToa(q, toa.id, fn))} />
       <MucGap tieuDe={t('tt.tieuDe')} mo>
         {tv.toa.get(toa.mauId) && <BangTuanThu pa={pa} sua={sua} chiXem={chiXem} toa={toa} mau={tv.toa.get(toa.mauId)!} tv={tv} />}

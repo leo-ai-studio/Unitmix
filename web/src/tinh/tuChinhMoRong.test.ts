@@ -100,13 +100,16 @@ describe('Thang bộ / tự chỉnh theo từng tầng có bố cục riêng', (
     // DTXD báo cáo của tầng = diện tích nét bao của tầng
     const dt = (P: [number, number][]) => Math.abs(P.reduce((s, p, i) => { const q = P[(i + 1) % P.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
     expect(mb5!.baoCao!.dtxdM2).toBeCloseTo(dt(mb5!.duongBao ?? m.duong_bao) / 1e6, 1);
-    // thang tầng riêng khác tầng chung → hợp thang, ép liền suốt chiều cao; căn 2PN rộng hơn kẹp giữa hai thang chỉ co được
-    // 1.500 / 1.700 mm (STRETCH ≤ ±500) → còn lệch 200 mm, báo cần chủ nhiệm xem (mức cảnh báo)
+    // thang tầng riêng khác tầng chung → hợp thang, ép liền suốt chiều cao; căn 2PN rộng hơn kẹp giữa hai thang: STRETCH chỉ co
+    // được 1.500 / 1.700 mm → khít đoạn kẹp đổi căn 2PN khác trong đoạn sang 1PN (cùng loại không đủ), hết lệch, không đè
     const q11 = mb5!.baoCao!.quyTac.find((q) => q.ma === 'PC-11')!;
     expect(q11.ghiChu).toMatch(/liền suốt chiều cao/);
-    expect(q11.ghiChu).toMatch(/còn lệch 200 mm/);
-    expect(q11.muc).toBe('canh_bao');
-    expect(mb5!.baoCao!.thangLien).toMatchObject({ cheDo: 'hop', soTang: 1, conLech: 200 });
+    expect(q11.ghiChu).not.toMatch(/còn lệch/);
+    expect(mb5!.baoCao!.thangLien).toMatchObject({ cheDo: 'hop', soTang: 1, conLech: 0 });
+    expect(mb5!.baoCao!.khitKep).toEqual({ doi: [{ khoa: '0:7', tu: 'tm-2pn-m2', den: 'tm-1pn-m1' }], bo: [], conMm: 0 });
+    // ghi vào bố cục tầng 5 (tuDong, gỡ được), căn người dùng chọn giữ nguyên
+    expect(toa.tuDong).toEqual([{ tang: 5, truong: 'canViTri', khoa: '0:7', moi: 'tm-1pn-m1' }]);
+    expect(boCucTang(toa, 5).canViTri?.['0:1']).toBe('tm-2pn-m2');
     // mẫu hiệu dụng theo tầng
     expect(mauHieuDung(toa, m, dl, 5)).not.toBe(mauHieuDung(toa, m, dl, null));
     expect(mauHieuDung(toa, m, dl, 6)).toBe(mauHieuDung(toa, m, dl, null));
@@ -117,8 +120,8 @@ describe('Thang bộ / tự chỉnh theo từng tầng có bố cục riêng', (
     expect(mb5.baoCao!.vuotSau).toBe(vuotDoc(m, mb5, bc5));
     expect(mb5.baoCao!.vuotSau).toBe(0);
     const hd = apMatBang(m, mb5, dl);
-    // một chỗ đè đúng bằng phần còn lệch đã báo (200 mm); tầng chung không khe / đè
-    expect(tongKhe(hd, tv, bc5).de).toBe(1);
+    // khít đoạn kẹp: tầng riêng và tầng chung đều không khe / đè
+    expect(tongKhe(hd, tv, bc5)).toEqual({ mm: 0, de: 0 });
     expect(tongKhe(apMatBang(m, toa.matBang!, dl), tv, boCucTang(toa, null))).toEqual({ mm: 0, de: 0 });
     expect(viTriCan(hd, tv).length).toBe(viTriCan(m, tv).length);
   });
