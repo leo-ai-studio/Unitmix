@@ -121,6 +121,7 @@
   "heSo.thuongMai": "Podium retail",
   "heSo.ham": "Basement (excl. parking, MEP)",
   "heSo.ghiChu": "Provisional values, awaiting sign-off.",
+  "dtSan.oKyThuat": "Cells converted to MEP rooms (excluded)",
   "dtSan.hamTru": "Basement parking, MEP (excluded)",
   "dtSan.hamTinh": "Basement (counted)",
   "dtSan.apMai": "Penthouse floor",

@@ -132,3 +132,16 @@ describe('cơ cấu riêng tầng (S12), SHCĐ, lõi', () => {
     expect(thongTinLoi(t, '1:0').cua).toBe('trai');
   });
 });
+
+describe('DT sàn tính HSSDĐ theo công năng ô (QCVN 01:2021 1.4.21)', () => {
+  const k0 = viTriCan(mau, tv)[0];
+  it('ô đổi sang phòng kỹ thuật bị trừ khỏi DT sàn; SHCĐ vẫn tính', () => {
+    const goc = tinhChiTieu(pa(dat()), tv).theoLo.L;
+    const kt = tinhChiTieu(pa(doiCongNang(dat(), null, [k0.khoa], 'ky_thuat')), tv).theoLo.L;
+    const shcd = tinhChiTieu(pa(doiCongNang(dat(), null, [k0.khoa], 'shcd')), tv).theoLo.L;
+    const dtTt = tv.can.get(k0.canGocId)!.dt_tt_m2 * 10;
+    expect(kt.dtSanChiTiet.oKyThuat).toBeCloseTo(dtTt);
+    expect(kt.dtSanTinhHSSDD).toBeCloseTo(goc.dtSanTinhHSSDD - dtTt, 1);
+    expect(shcd.dtSanTinhHSSDD).toBeCloseTo(goc.dtSanTinhHSSDD, 1);
+  });
+});

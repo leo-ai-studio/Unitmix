@@ -1,5 +1,6 @@
 import { congCoCau, demCan, phanTram } from './coCau';
-import { canCuaToa } from './matBang';
+import { dtCongNangToa } from './congNang';
+import { canCaToa } from './matBang';
 import { chanToa, dienTich, dtVung, hopDienTich, khoiDe } from './hinhHoc';
 import { PHAN_HAM_MAC_DINH, type LoaiCan, type ThuVien, type TrangThaiPA } from './kieu';
 
@@ -12,8 +13,11 @@ export type DongChiTieu = {
   chenh: number | null;
   muc: MucDo;
 };
-/** DT sàn theo hạng mục (m², đã nhân hệ số). `hamTru` = sàn hầm đỗ xe + kỹ thuật, không tính HSSDĐ (QCVN 01:2021 1.4.21). */
-export type DTSanChiTiet = { thap: number; de: number; apMai: number; hamTinh: number; hamTru: number };
+/**
+ * DT sàn theo hạng mục (m², đã nhân hệ số). Không tính HSSDĐ (QCVN 01:2021 1.4.21): `hamTru` = sàn hầm đỗ xe + kỹ thuật,
+ * `oKyThuat` = ô căn trên tầng đã đổi sang phòng kỹ thuật.
+ */
+export type DTSanChiTiet = { thap: number; de: number; apMai: number; hamTinh: number; hamTru: number; oKyThuat: number };
 export type KetQuaLo = {
   dtLo: number;
   dtDe: number;
@@ -52,12 +56,15 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
     const de = khoiDe(chan, toaLo.map((t) => t.deOffset));
     const dtDe = dtVung(de);
 
-    const ct0: DTSanChiTiet = { thap: 0, de: 0, apMai: 0, hamTinh: 0, hamTru: 0 };
+    const ct0: DTSanChiTiet = { thap: 0, de: 0, apMai: 0, hamTinh: 0, hamTru: 0, oKyThuat: 0 };
     for (let i = 0; i < toaLo.length; i++) {
       const t = toaLo[i], mau = tv.toa.get(t.mauId)!;
-      const dtCanTang = canCuaToa(mau, t, tv).reduce((a, [id, n]) => a + n * (tv.can.get(id)?.dt_tim_m2 ?? 0), 0);
+      // Căn cộng theo từng tầng (bố cục riêng tầng); ô đổi sang kỹ thuật bị trừ, ô SHCĐ / thương mại rơi vào phần chung.
+      const dtCan = canCaToa(mau, t, tv).reduce((a, [id, n]) => a + n * (tv.can.get(id)?.dt_tim_m2 ?? 0), 0);
+      const dtKyThuat = dtCongNangToa(t, tv).ky_thuat;
       const dtChanThap = dienTich(chan[i]);
-      ct0.thap += t.soTangDH * (pa.heSo.can * dtCanTang + pa.heSo.chung * Math.max(0, dtChanThap - dtCanTang));
+      ct0.oKyThuat += dtKyThuat;
+      ct0.thap += pa.heSo.can * dtCan + pa.heSo.chung * Math.max(0, t.soTangDH * dtChanThap - dtCan - dtKyThuat);
       // Tầng áp mái tính như một tầng trên chân tháp (gần đúng: chưa trừ phần lùi mái).
       if (t.coApMai) ct0.apMai += (pa.heSo.apMai ?? 1) * dtChanThap;
     }

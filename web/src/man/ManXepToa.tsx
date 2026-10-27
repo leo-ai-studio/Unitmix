@@ -288,9 +288,9 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQ
         <div class="dong bang-ct dau"><span /><span>{t('xep.xayDung')}</span><span>{t('xep.tinhHSSDD')}</span></div>
         <div class="dong bang-ct"><span>{t('sc.dtLo')}</span><span>{fmtSo(dtLo, m2)}</span><span>{fmtSo(dtLo, m2)}</span></div>
         <div class="dong bang-ct"><span>{t('xep.dtDe')} / {t('xep.dtSan')}</span><span><SoDong value={r && toaLo.length ? r.dtDe : null} {...m2} /></span><span><SoDong value={r && toaLo.length ? r.dtSanTinhHSSDD : null} {...m2} /></span></div>
-        {r && toaLo.length > 0 && (['thap', 'de', 'apMai', 'hamTinh', 'hamTru'] as const).map((k) => (
+        {r && toaLo.length > 0 && (['thap', 'de', 'apMai', 'hamTinh', 'hamTru', 'oKyThuat'] as const).map((k) => (
           <div class="dong bang-ct muted" key={k} title={t('heSo.canCu')}>
-            <span>· {t(`dtSan.${k}`)}</span><span /><span>{k === 'hamTru' ? `(${fmtSo(r.dtSanChiTiet[k], m2)})` : fmtSo(r.dtSanChiTiet[k], m2)}</span>
+            <span>· {t(`dtSan.${k}`)}</span><span /><span>{k === 'hamTru' || k === 'oKyThuat' ? `(${fmtSo(r.dtSanChiTiet[k], m2)})` : fmtSo(r.dtSanChiTiet[k], m2)}</span>
           </div>
         ))}
         <div class="dong bang-ct"><span>{t('xep.matDo')} / {t('xep.hssdd')}</span>
