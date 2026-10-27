@@ -1,6 +1,6 @@
 import { useMemo } from 'preact/hooks';
 import type { Diem, LoaiCan, ThuVien, ToaDat } from '../tinh/kieu';
-import { canDangDung, soCanChuVi, veCanTaiViTri, veLoiTaiViTri, viTriCan, type ToaCoMat } from '../tinh/matBang';
+import { canDangDung, canVuaModule, coDaGiac, hinhLogia, khungCanNet, ranhTo, soCanChuVi, veCanTaiViTri, veLoiTaiViTri, viTriCan, vungCatCan, type ToaCoMat } from '../tinh/matBang';
 import { datTemCan, TEM_H, TEM_W } from '../tinh/temCan';
 import { idLoi, type HinhHocTai } from './hinhHocThuVien';
 import { CHU_CO_CHAN, CHU_KHONG_CHAN, CHU_MAY, KIEU_MB, NET, NET_NOI_THAT, NHAN_LOAI, type KieuMb } from './kieuMb';
@@ -46,14 +46,22 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
     () =>
       can.map(({ vt, canId }) => {
         const ve = hinh.can.get(canId) ?? [];
+        const canMau = tv.can.get(canId);
+        const nets = veCanTaiViTri(ve, vt, mau);
         const theoNhom = new Map<string, string[]>();
-        for (const n of veCanTaiViTri(ve, vt, mau)) {
+        for (const n of nets) {
           if (!NET[n.cat] || n.pts.length < 2) continue;
           (theoNhom.get(n.cat) ?? theoNhom.set(n.cat, []).get(n.cat)!).push(d(n.pts));
         }
-        return { vt, canId, nhom: [...theoNhom].map(([cat, ds]) => [cat, ds.join('')] as const) };
+        // Như app cũ: tô theo đường bao tim tường (đã loại hốc logia); vành tường 125 mm theo khung căn V / ô có hốc logia / ô module.
+        const khung = khungCanNet(nets);
+        const daGiac = khung ?? hinhLogia(vt, mau, canMau?.logia_lui) ?? vt.goc;
+        const ranh = ranhTo(nets) ?? daGiac;
+        const vanh = ve.length ? d(daGiac) + 'Z' + d(coDaGiac(daGiac, 125)) + 'Z' : '';
+        const cat = canMau && ve.length && canVuaModule(ve, canMau.rong_mm, !!khung) ? d(vungCatCan(vt, mau)) + 'Z' : null;
+        return { vt, canId, ranh: d(ranh) + 'Z', vanh, cat, nhom: [...theoNhom].map(([cat2, ds]) => [cat2, ds.join('')] as const) };
       }),
-    [can, hinh.can, mau],
+    [can, hinh.can, mau, tv],
   );
 
   const loi = useMemo(() => {
@@ -95,20 +103,25 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
       {/* sàn hành lang và sảnh */}
       <path d={d(mau.duong_bao) + 'Z'} fill={K.sanMau} pointer-events="none" />
       {loi.map((l) => l.san && <path key={`s${l.khoa}`} d={l.san} fill={K.loiMau} pointer-events="none" />)}
-      {lop.map(({ vt, canId }) => {
+      <defs>
+        {lop.map(({ vt, cat }) => cat && <clipPath key={`cp${vt.khoa}`} id={`cat-${vt.khoa.replace(':', '_')}`}><path d={cat} /></clipPath>)}
+      </defs>
+      {lop.map(({ vt, canId, ranh }) => {
         const c = tv.can.get(canId);
         return (
-          <path key={`f${vt.khoa}`} d={d(vt.goc) + 'Z'} fill={c ? K.u[c.loai] : '#eee'} fill-opacity={K.doDac} style={{ cursor: 'pointer' }}
+          <path key={`f${vt.khoa}`} d={ranh} fill={c ? K.u[c.loai] : '#eee'} fill-opacity={K.doDac} style={{ cursor: 'pointer' }}
             onClick={() => chonCan(vt.khoa === canKhoa ? null : vt.khoa)} />
         );
       })}
-      {lop.map(({ vt, nhom }) => <g key={`n${vt.khoa}`}>{nhomNet(nhom, vt.khoa)}</g>)}
+      {/* vành tường quanh căn: tường chung giữa hai căn chỉ được vẽ một lần trong CAD nên phải bù lại */}
+      {lop.map(({ vt, vanh }) => vanh && <path key={`v${vt.khoa}`} d={vanh} fill-rule="evenodd" fill={K.tuong} fill-opacity={K.sanTrang ? 0.85 : 0.42} pointer-events="none" />)}
+      {lop.map(({ vt, nhom, cat }) => <g key={`n${vt.khoa}`} clip-path={cat ? `url(#cat-${vt.khoa.replace(':', '_')})` : undefined}>{nhomNet(nhom, vt.khoa)}</g>)}
       {loi.map((l) => <g key={`l${l.khoa}`}>{nhomNet(l.nhom, `l${l.khoa}`)}</g>)}
       {/* nét bao DTXD */}
       <path d={d(mau.duong_bao) + 'Z'} fill="none" stroke={K.sanTrang ? K.duongDan : 'var(--vuot, #E0382B)'} stroke-width={K.sanTrang ? 0.8 : 1.4}
         stroke-dasharray={K.sanTrang ? undefined : '6 3'} vector-effect="non-scaling-stroke" pointer-events="none" />
-      {canKhoa && lop.filter((x) => x.vt.khoa === canKhoa).map(({ vt }) => (
-        <path key="chon" d={d(vt.goc) + 'Z'} fill="none" stroke="var(--green)" stroke-width="3" vector-effect="non-scaling-stroke" pointer-events="none" />
+      {canKhoa && lop.filter((x) => x.vt.khoa === canKhoa).map(({ ranh }) => (
+        <path key="chon" d={ranh} fill="none" stroke="var(--green)" stroke-width="3" vector-effect="non-scaling-stroke" pointer-events="none" />
       ))}
       {hienTem && can.map(({ vt, canId, no }, i) => {
         const c = tv.can.get(canId);

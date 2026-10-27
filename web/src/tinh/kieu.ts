@@ -108,6 +108,8 @@ export type CanMau = {
   ten_en: string;
   dt_tt_m2: number;
   dt_tim_m2: number;
+  /** Hốc logia lùi vào [x0, x1, y] chuẩn hoá theo rộng × sâu: phần x0..x1 từ độ sâu y tới mặt ngoài không thuộc căn. */
+  logia_lui?: number[][] | null;
 };
 
 export type ThuVien = { toa: Map<string, ToaMau>; can: Map<string, CanMau> };

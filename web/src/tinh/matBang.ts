@@ -134,3 +134,73 @@ export function veLoiTaiViTri(paths: NetVe[], q: Pick<PhanTuMat, 'x' | 'y' | 'ro
     }),
   }));
 }
+
+const dtDG = (P: Diem[]): number => {
+  let a = 0;
+  for (let i = 0; i < P.length; i++) { const A = P[i], B = P[(i + 1) % P.length]; a += A[0] * B[1] - B[0] * A[1]; }
+  return Math.abs(a) / 2;
+};
+
+/** Ranh tô màu của căn: đường bao tim tường lớn nhất (nét `tim`, đã loại hốc logia), toạ độ thế giới. Không có thì null. */
+export function ranhTo(nets: NetVe[]): Diem[] | null {
+  let tot: Diem[] | null = null, dtTot = 0;
+  for (const n of nets) {
+    if (n.cat !== 'tim' || n.pts.length < 4) continue;
+    const dt = dtDG(n.pts);
+    if (dt > dtTot) { dtTot = dt; tot = n.pts; }
+  }
+  return tot;
+}
+
+/** Ranh căn hình đặc biệt (nét `khung`, căn góc tòa V): đa giác kín DefPoints. Không có thì null. */
+export const khungCanNet = (nets: NetVe[]): Diem[] | null => nets.find((n) => n.cat === 'khung' && n.pts.length >= 3)?.pts ?? null;
+
+/** Ô module của căn có hốc logia lùi (khuyết ở góc ngoài): đa giác 6 hoặc 4 đỉnh theo thế giới. Không có hốc thì null. */
+export function hinhLogia(vt: ViTriCan, mau: ToaCoMat, logia: number[][] | null | undefined): Diem[] | null {
+  const h = logia?.[0];
+  if (!h) return null;
+  const m = mau.mat[vt.matIdx], B = coSo(m.goc_deg, m.truc_mm), w = vt.a1 - vt.a0, d = vt.sau;
+  const [x0, x1] = vt.guong ? [1 - h[1], 1 - h[0]] : [h[0], h[1]];
+  const s0 = x0 * w, s1 = x1 * w, yb = h[2] * d;
+  const L: Diem[] = [[0, 0], [w, 0]];
+  if (s1 > w - 1) L.push([w, yb]); else L.push([w, d], [s1, d], [s1, yb]);
+  if (s0 < 1) L.push([0, yb]); else L.push([s0, yb], [s0, d], [0, d]);
+  return L.map(([x, y]) => B.pt(vt.a0 + x, y));
+}
+
+/** Đa giác co vào trong `d` mm (giao các cạnh đã tịnh tiến), như coDaGiac của app cũ — dùng vẽ vành tường quanh căn. */
+export function coDaGiac(P: Diem[], d: number): Diem[] {
+  const n = P.length;
+  let ar = 0;
+  for (let i = 0; i < n; i++) { const a = P[i], b = P[(i + 1) % n]; ar += a[0] * b[1] - b[0] * a[1]; }
+  const sg = ar > 0 ? 1 : -1;
+  const L = P.map((a, i) => {
+    const b = P[(i + 1) % n], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1;
+    return { p: [a[0] + (-dy / l) * sg * d, a[1] + (dx / l) * sg * d] as Diem, r: [dx, dy] as Diem };
+  });
+  return L.map((e, i) => {
+    const f = L[(i + n - 1) % n], den = f.r[0] * e.r[1] - f.r[1] * e.r[0];
+    if (Math.abs(den) < 1e-9) return e.p;
+    const k = ((e.p[0] - f.p[0]) * e.r[1] - (e.p[1] - f.p[1]) * e.r[0]) / den;
+    return [f.p[0] + f.r[0] * k, f.p[1] + f.r[1] * k] as Diem;
+  });
+}
+
+/**
+ * Căn có vừa khít ô module không: nét không tràn quá ±(125 mm + 300) theo bề ngang và [−320, 1360]/1000 theo chiều sâu.
+ * Vừa thì cắt nét về module ± 125 mm để tường chung (vẽ một lần, nhô một bên 0–194 mm) không bị nhân đôi hay thiếu.
+ * Căn góc / nêm (tòa Y, T, V) trải ra ngoài module nên không cắt — cắt sẽ xén mất nội thất.
+ */
+export function canVuaModule(ve: NetVe[], rongMm: number, coKhung: boolean): boolean {
+  if (coKhung) return false;
+  const hx = (125 / rongMm) * 1000;
+  let mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9;
+  for (const n of ve) for (const [x, y] of n.pts) { mnx = Math.min(mnx, x * 1000); mxx = Math.max(mxx, x * 1000); mny = Math.min(mny, y * 1000); mxy = Math.max(mxy, y * 1000); }
+  return mnx >= -(hx + 300) && mxx <= 1000 + hx + 300 && mny >= -320 && mxy <= 1360;
+}
+
+/** Vùng cắt nét căn: ô module mở ra 125 mm hai bên theo bề ngang và 2 % chiều sâu hai đầu. */
+export function vungCatCan(vt: ViTriCan, mau: ToaCoMat): Diem[] {
+  const m = mau.mat[vt.matIdx], B = coSo(m.goc_deg, m.truc_mm), e = 0.02 * vt.sau;
+  return [B.pt(vt.a0 - 125, -e), B.pt(vt.a1 + 125, -e), B.pt(vt.a1 + 125, vt.sau + e), B.pt(vt.a0 - 125, vt.sau + e)];
+}
