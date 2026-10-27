@@ -52,6 +52,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | Preset, lưu | `kho/preset.ts`, `kho/kho.ts`, `kho/luu.ts` |
 | Xuất | `xuat/xuatCad.ts`, `xuat/xuatXls.ts`, `man/HopXuatCad.tsx` |
 | So sánh PA | `man/SoSanhPA.tsx`, `tinh/diemPA.ts` |
+| Tự xếp tòa, tối ưu tầng | `tinh/xepToa.ts`, `ui/GoiYXepToa.tsx`, `tinh/toiUu.ts`, `tinh/stretch.ts`, `tinh/khe.ts` |
 | Chi phí, tài chính | `tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`, số tạm `CHI_PHI_MAC_DINH` trong `tinh/macDinh.ts` |
 
 ## Tài liệu khác
@@ -64,6 +65,6 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 ## Đang dở (cập nhật mỗi đợt)
 
 - Tab Chi phí đã gộp (`tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`) — mọi đơn giá / giá bán là số tạm trong `CHI_PHI_MAC_DINH`, chờ QS chốt; thang máy chưa đếm từ lõi.
-- Tự xếp tòa TMB (MT-05) + tối ưu MB tầng có STRETCH như app cũ, bật mặc định (agent đang làm).
-- Tự chỉnh căn / thang / dồn khít theo QT app cũ (agent đang làm cùng gói trên): XC-02…XC-08, XC-10, PC-11 — trước đợt này chỉ có trong `quy_tac.json`, chưa có mã.
+- Đơn giá dự toán = định mức app cũ (`dinh_muc_du_toan.json`), xem chú thích `CHI_PHI_MAC_DINH`. Chưa có: QLDA lũy thoái TT 38/2026, chọn nhóm 8 / 15 tầng theo tòa.
+- Đã có: gợi ý xếp tòa MT-05 (`tinh/xepToa.ts`), tối ưu tầng + STRETCH (`tinh/stretch.ts`, `tinh/toiUu.ts`), dồn khít XC-04. Chưa có: XC-03, XC-05, XC-06, XC-07, PC-11 (lõi / sảnh / hành lang cố định theo mẫu tòa — cần mô hình tầng mới), STRETCH tay, CAD / 3D căn kéo.
 - Chờ chủ nhiệm chốt: xem `hoc_architechtures_app_2026-10-27.md` mục 6.
