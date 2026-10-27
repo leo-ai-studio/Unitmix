@@ -157,22 +157,24 @@ cùng tham số. Cự ly tính bằng m. Dạng ô: **mới / cũ**.
 | tm-u2 | 13,84 / 13,78 | 14,73 / 14,73 | 14,73 / 14,73 | 10·17 / 10·17 | 0 / 0 | 3 / 3 | 7 / 6 |
 | tm-z1 | 19,37 / 19,37 | 9,93 / 9,93 | 19,37 / 19,37 | 18·6 / 18·6 | 6 / 6 | 2 / 2 | 5 / 4 |
 | xh-y1 | 15,94 / 15,94 | 16,92 / 16,92 | 16,92 / 16,92 | 15·10 / 15·10 | 2 / 2 | 3 / 3 | 4 / 4 |
-| tm-l1 | 19,29 / 19,29 | 16,27 / 18,81 | 19,29 / 19,29 | 16·9 / 8·17 | 4 / 2 | 2 / 2 | 5 / 4 |
-| tm-t1 | 15,14 / 12,12 | 19,03 / 19,03 | 19,03 / 19,03 | 17·16 / 6·27 | 1 / 0 | 3 / 3 | 6 / 5 |
+| tm-l1 | 19,29 / 19,29 | 18,81 / 18,81 | 19,29 / 19,29 | 8·17 / 8·17 | 2 / 2 | 2 / 2 | 5 / 4 |
+| tm-t1 | 12,12 / 12,12 | 19,03 / 19,03 | 19,03 / 19,03 | 6·27 / 6·27 | 0 / 0 | 3 / 3 | 6 / 5 |
 
-**Cả 33 mẫu tòa:** “căn xa nhất” khớp 31/33 (lệch: tm-v4 17,76 / 15,13 · xh-z5 20,26 / 20,41); “cụt xa nhất” khớp ±0,1 m ở 31/33
-(lệch: tm-t1, tm-t2); số căn vượt khớp 27/33 (lệch: tm-l1, tm-t1, tm-t2, tm-v2, tm-v3, xh-v1); số thang bộ khớp 33/33; tủ tự đặt phủ hết cửa căn ở 33/33, số vị trí lệch app cũ −1…+2.
+**Sau khi chủ nhiệm chốt "như app cũ tính" (27/10/2026):** app mới dùng đúng đồ thị hành lang app cũ dựng cho bố cục gốc
+(`toa.json → hanh_lang`, `cua_thang`, chép bằng `scripts/hanh_lang_cu.js` chạy headless trong repo cũ, lưu ở
+`scripts/du_lieu/hanh_lang_cu.json`): đầu trục theo vòng tròn mốc CAD (QT-54) và mép ô đặc, trục tách theo mốc (xh-u1: B1/B2),
+đoạn nối góc vẽ tay giữ làm cạnh riêng kể cả khi trùng trục (QT-51), cửa buồng thang sau khi nới ô thang thiếu (QT-60).
+Cửa căn / cửa thang chỉ gán vào trục thật song song với mặt (như `axAt`/`viTri`).
 
-Chỗ lệch và lý do:
+Kết quả: **28/33 tòa khớp hoàn toàn** (số căn cụt / đôi, căn vượt, cụt xa nhất, đôi xa nhất). 5 tòa V (tm-v1…v4, xh-v1) chỉ
+lệch đúng **2 căn góc trên mặt xiên** mỗi tòa: mặt này không song song trục nào, app cũ lấy toạ độ dọc mặt xiên đặt thẳng lên
+trục A (tm-v1 CH-08 ra 1,3 m, xh-v1 CH-01 ra 0,4 m cho căn thực tế cách thang 11–21 m). App mới gán hai căn này vào đoạn nối
+góc song song với mặt (đường đi thật, thoát hai hướng). Ngoài 10 căn đó, mọi căn của 33 tòa khớp app cũ.
 
-- **Tòa L (tm-l1/l2/l3, xh-l1/l2) và T (tm-t1/t2): app mới xếp nhiều căn vào “cụt” hơn.** Ở app cũ, nét vẽ tay MDI-HANHLANG của
-  cánh B chồng lên chính trục B nhưng được giữ làm một cạnh nối riêng (QT-51: hai đầu chạm hai trục khác nhau), đồ thị có HAI cạnh
-  song song cùng nối hai nút → vòng giả, căn ở cánh cụt “đi được hai hướng” và hưởng ngưỡng 20 m thay vì 15 m. App mới gộp các đoạn
-  thẳng hàng chồng nhau trước khi dựng đồ thị nên không có vòng giả. (Nguyên nhân suy từ mã `regenerate()` / QT-51, chưa soát từng
-  cạnh trong app cũ.) Cự ly xa nhất không đổi; chỉ phân loại cụt / đôi khác. Cần chủ nhiệm xác nhận theo bản vẽ.
-- **tm-v4, xh-z5:** app cũ nới ô thang thiếu cho đủ 3.000 mm (QT-60) và kéo đầu hành lang theo Circle CAD (QT-54, dữ liệu
-  `hanhlang_moc` chưa chép sang app mới) nên cửa buồng đệm dời vài trăm mm. App mới đọc đúng điểm chèn trong `toa.json`.
+Chỗ lệch còn lại:
+
+- **Đổi bố cục:** đồ thị app cũ chép cho bố cục GỐC. Khi đổi / kéo căn cuối dãy, app cũ dời đầu hành lang theo mép ô đặc;
+  app mới chưa làm phần này (dùng nguyên đồ thị gốc).
 - **Tủ PCCC:** app mới mới làm phủ tham lam trên tường hai bên hành lang (bước 600 mm, cách cửa ≥ ½ tủ + 600 mm). App cũ có thêm
   ưu tiên lõi / hộp KT, ràng buộc đầu cột, né cửa ngăn cháy và lời giải phủ chính xác (QT-77e/f/g) — chưa chuyển.
-- **Mạng hành lang liền (3.3.5):** app mới cộng cả đoạn nét vẽ tay thò ra ngoài trục; app cũ cộng đoạn sảnh thang máy. Hai số khác
-  nhau 0–52 m, nhưng kết luận giống nhau: tm-i2 < 60 m ở cả hai app, 32 tòa còn lại > 60 m (phải chia).
+- **Mạng hành lang liền (3.3.5):** số đo trước khi chuyển sang đồ thị app cũ: hai app khác nhau 0–52 m, nhưng kết luận giống nhau: tm-i2 < 60 m ở cả hai app, 32 tòa còn lại > 60 m (phải chia).

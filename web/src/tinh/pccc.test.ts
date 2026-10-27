@@ -39,6 +39,12 @@ describe('mẫu tòa thật — đối chiếu app cũ (26 tầng, H 90,5 m)', (
     'tm-u2': { dead: 13.78, doi: 14.73, cut: 10, soDoi: 17, vuot: 0, thang: 3 },
     'tm-z1': { dead: 19.37, doi: 9.93, cut: 18, soDoi: 6, vuot: 6, thang: 2 },
     'xh-y1': { dead: 15.94, doi: 16.92, cut: 15, soDoi: 10, vuot: 2, thang: 3 },
+    // tòa L / T: đoạn nối góc vẽ tay trùng trục giữ làm cạnh riêng (QT-51) → căn cánh đó thoát hai hướng
+    'tm-l1': { dead: 19.29, doi: 18.81, cut: 8, soDoi: 17, vuot: 2, thang: 2 },
+    'tm-t1': { dead: 12.12, doi: 19.03, cut: 6, soDoi: 27, vuot: 0, thang: 3 },
+    'tm-t2': { dead: 15.8, doi: 20.9, cut: 14, soDoi: 28, vuot: 3, thang: 3 },
+    // xh-u1: trục B tách B1/B2 theo mốc CAD, giữa hai cánh không có hành lang
+    'xh-u1': { dead: 13.06, doi: 13.04, cut: 10, soDoi: 11, vuot: 0, thang: 3 },
   } as const;
   for (const [id, o] of Object.entries(CU)) {
     it(id, () => {
@@ -48,6 +54,16 @@ describe('mẫu tòa thật — đối chiếu app cũ (26 tầng, H 90,5 m)', (
       expect([r.soCanCut, r.soCanDoi, r.soVuot, r.soThang]).toEqual([o.cut, o.soDoi, o.vuot, o.thang]);
     });
   }
+
+  it('tòa V: căn mặt xiên ở góc gán vào đoạn nối góc, thoát hai hướng (app cũ đặt nhầm lên trục A)', () => {
+    const r = thoatNan(toa.get('tm-v1')!, { cuaCan, chieuCaoPCCC: H });
+    const goc = r.can.filter((c) => c.so === 15 || c.so === 16);
+    expect(goc.map((c) => c.cut)).toEqual([false, false]);
+    gan(goc[0].cuLy!, 11.66);
+    gan(goc[1].cuLy!, 18.88);
+    // các căn còn lại khớp app cũ: 11 cụt / 9 đôi trừ 2 căn góc
+    expect([r.soCanCut, r.soCanDoi]).toEqual([9, 11]);
+  });
 
   it('tm-i1: danh sách luật và mức', () => {
     const kq = kiemTraPCCC(toa.get('tm-i1')!, { cuaCan, chieuCaoPCCC: H, tuPCCC: tuLib });

@@ -30,7 +30,11 @@ export type PhanTuMat = {
 };
 export type MatToa = { goc_deg: number; truc_mm: number; a_dau: number; a_cuoi: number; ten?: string; phan_tu: PhanTuMat[] };
 export type TrucToa = { ten: string; goc_deg: number; hanh_lang_mm: number; a_dau: number; a_cuoi: number; dai_mm: number; b_mm: number };
-export type ToaPCCC = Pick<ToaMau, 'id' | 'nhom' | 'hanh_lang_mm'> & { mat: MatToa[]; truc: TrucToa[]; hanhlang_ve: Diem[][] };
+/** Đồ thị hành lang app cũ dựng cho bố cục gốc (scripts/hanh_lang_cu.js): trục đã cắt theo mốc CAD + đoạn nối. */
+export type DoanHanhLang = { ten: string; noi: boolean; p0: Diem; p1: Diem };
+export type ToaPCCC = Pick<ToaMau, 'id' | 'nhom' | 'hanh_lang_mm'> & {
+  mat: MatToa[]; truc: TrucToa[]; hanhlang_ve: Diem[][]; hanh_lang?: DoanHanhLang[]; cua_thang?: Diem[];
+};
 
 export type MucKiem = 'ok' | 'canh_bao' | 'vuot';
 export type KetQuaLuat = { id: string; muc: MucKiem; giaTri: number; nguong: number; donVi: string; ghiChu: string };
@@ -119,54 +123,79 @@ export function tinhCuaCan(ve: { cat: string; pts: Diem[] }[], rongMm: number): 
 
 // ---------- đồ thị hành lang ----------
 type Doan = { p0: Diem; p1: Diem };
-type Canh = { i: number; j: number; L: number; p0: Diem; p1: Diem; huong: Diem };
+type Canh = { i: number; j: number; L: number; p0: Diem; p1: Diem; huong: Diem; noi: boolean };
 type ViTri = { e: number; i: number; j: number; di: number; dj: number; q: Diem; d: number };
 
-/** Gộp các đoạn thẳng hàng chồng nhau (trục `truc` và nét vẽ tay `hanhlang_ve` thường trùng nhau). */
-function gopThangHang(ds: Doan[]): Doan[] {
-  type Nhom = { u: Diem; n: Diem; o: number; kh: [number, number][] };
-  const nhoms: Nhom[] = [];
-  for (const s of ds) {
-    const v = tru(s.p1, s.p0), L = dai(v);
-    if (L < 1) continue;
-    let u = nhan(v, 1 / L);
-    if (u[0] < -1e-9 || (Math.abs(u[0]) < 1e-9 && u[1] < 0)) u = nhan(u, -1);
-    const n: Diem = [-u[1], u[0]];
-    let g = nhoms.find((z) => Math.abs(z.u[0] * u[1] - z.u[1] * u[0]) < 0.005 && Math.abs(cham(s.p0, z.n) - z.o) < 100);
-    if (!g) { g = { u, n, o: cham(s.p0, n), kh: [] }; nhoms.push(g) }
-    const a = cham(s.p0, g.u), b = cham(s.p1, g.u);
-    g.kh.push([Math.min(a, b), Math.max(a, b)]);
-  }
-  const ra: Doan[] = [];
-  for (const g of nhoms) {
-    g.kh.sort((x, y) => x[0] - y[0]);
-    const gop: [number, number][] = [];
-    for (const k of g.kh) {
-      const c = gop[gop.length - 1];
-      if (c && k[0] <= c[1] + TOL) c[1] = Math.max(c[1], k[1]); else gop.push([k[0], k[1]]);
-    }
-    for (const [a, b] of gop) ra.push({ p0: cong(nhan(g.u, a), nhan(g.n, g.o)), p1: cong(nhan(g.u, b), nhan(g.n, g.o)) });
-  }
-  return ra;
-}
-
 export function dungDoThi(toa: ToaPCCC) {
-  const ds: Doan[] = [];
-  for (const t of toa.truc) {
+  // Dựng như app cũ (regenerate + dtHanhLang): cạnh = các trục nguyên vẹn + đoạn nối (vẽ tay MDI-HANHLANG, nối góc tự sinh).
+  // Không gộp đoạn thẳng hàng, không thêm giao điểm: chỉ chẻ tại đầu mút các đoạn.
+  type Truc = Doan & { u: Diem; ang: number };
+  const truc: Truc[] = toa.truc.map((t) => {
     const B = coSo(t.goc_deg, 0);
-    ds.push({ p0: B.pt(t.a_dau, t.b_mm), p1: B.pt(t.a_cuoi, t.b_mm) });
+    return { p0: B.pt(t.a_dau, t.b_mm), p1: B.pt(t.a_cuoi, t.b_mm), u: B.u, ang: t.goc_deg };
+  });
+  const noi: Doan[] = [];
+  /** điểm rơi đúng lên một trục (chiếu ≤ 300 mm, trong đoạn trục ±2 %) → chỉ số trục */
+  const chotVeTruc = (p: Diem) =>
+    truc.findIndex((t) => {
+      const d = tru(t.p1, t.p0), L2 = cham(d, d) || 1, s = cham(tru(p, t.p0), d) / L2;
+      return s >= -0.02 && s <= 1.02 && kc(p, cong(t.p0, nhan(d, s))) <= 300;
+    });
+  // Union-Find: cặp trục nào đã được nét vẽ tay nối (QT-51).
+  const goc0 = new Map<string, string>();
+  const tim0 = (k: string): string => { if (!goc0.has(k)) goc0.set(k, k); let r = k; while (goc0.get(r) !== r) r = goc0.get(r)!; goc0.set(k, r); return r };
+  const hop0 = (x: string, y: string) => { const a = tim0(x), b = tim0(y); if (a !== b) goc0.set(a, b) };
+  const khoaDiem = (p: Diem) => `pt:${Math.round(p[0] / 10)},${Math.round(p[1] / 10)}`;
+  for (const pl of toa.hanhlang_ve || []) for (let k = 1; k < pl.length; k++) {
+    let p0 = pl[k - 1], p1 = pl[k];
+    const h0 = chotVeTruc(p0), h1 = chotVeTruc(p1);
+    if (h0 >= 0 && h0 === h1) continue; // nằm sẵn trên một trục: dư
+    if (!(h0 >= 0 && h1 >= 0)) {
+      // một đầu chạm trục: kéo đầu đó về đúng đầu mút trục gần đầu kia
+      if (h1 >= 0) p1 = kc(truc[h1].p0, p0) < kc(truc[h1].p1, p0) ? truc[h1].p0 : truc[h1].p1;
+      if (h0 >= 0) p0 = kc(truc[h0].p0, p1) < kc(truc[h0].p1, p1) ? truc[h0].p0 : truc[h0].p1;
+    }
+    // hai đầu chạm hai trục khác nhau: đoạn nối góc, giữ nguyên toạ độ vẽ tay (kể cả khi trùng một trục)
+    hop0(h0 >= 0 ? `t${h0}` : khoaDiem(p0), h1 >= 0 ? `t${h1}` : khoaDiem(p1));
+    if (kc(p0, p1) >= 1) noi.push({ p0, p1 });
   }
-  for (const pl of toa.hanhlang_ve || []) for (let k = 1; k < pl.length; k++) ds.push({ p0: pl[k - 1], p1: pl[k] });
-  const doan = gopThangHang(ds);
-
-  // điểm chẻ: đầu mút đoạn khác nằm trên đoạn này (≤ TOL) + giao điểm thật
+  const coVe = (toa.hanhlang_ve || []).length > 0;
+  // Cặp trục chưa được nét vẽ tay nối: trục lệch góc → kéo hai trục tới giao điểm (≤ 16 m); trục song song lệch đúng
+  // một bay + hành lang → đoạn vuông góc ở giữa đoạn gối (app cũ còn né ô căn / ưu tiên tâm lõi — mẫu hiện có không cần).
+  for (let a = 0; a < truc.length; a++) for (let b = a + 1; b < truc.length; b++) {
+    if (coVe && tim0(`t${a}`) === tim0(`t${b}`)) continue;
+    const A = truc[a], Bt = truc[b];
+    const da = (((A.ang - Bt.ang) % 360) + 360) % 360;
+    const song = Math.min(da, 360 - da) < 1 || Math.abs(da - 180) < 1;
+    if (!song) {
+      const det = A.u[0] * -Bt.u[1] - A.u[1] * -Bt.u[0];
+      if (Math.abs(det) < 1e-9) continue;
+      const r = tru(Bt.p0, A.p0), t = (r[0] * -Bt.u[1] - r[1] * -Bt.u[0]) / det, X = cong(A.p0, nhan(A.u, t));
+      const ea = kc(A.p0, X) < kc(A.p1, X) ? A.p0 : A.p1, eb = kc(Bt.p0, X) < kc(Bt.p1, X) ? Bt.p0 : Bt.p1;
+      if (kc(ea, X) > 16000 || kc(eb, X) > 16000) continue;
+      if (kc(ea, X) > 150) noi.push({ p0: ea, p1: X });
+      if (kc(eb, X) > 150) noi.push({ p0: eb, p1: X });
+      continue;
+    }
+    const u = A.u, n: Diem = [-u[1], u[0]];
+    const oa = cham(A.p0, n), ob = cham(Bt.p0, n);
+    if (Math.abs(Math.abs(ob - oa) - (8500 + toa.hanh_lang_mm)) > 1200) continue;
+    const [a0, a1] = [cham(A.p0, u), cham(A.p1, u)].sort((x, y) => x - y), [b0, b1] = [cham(Bt.p0, u), cham(Bt.p1, u)].sort((x, y) => x - y);
+    const lo = Math.max(a0, b0), hi = Math.min(a1, b1);
+    let at: number;
+    if (hi - lo >= 2000) at = (lo + hi) / 2;
+    else {
+      const d1 = Math.abs(a1 - b0), d2 = Math.abs(b1 - a0);
+      if (Math.min(d1, d2) > 13000) continue;
+      at = d1 < d2 ? (a1 + b0) / 2 : (b1 + a0) / 2;
+    }
+    noi.push({ p0: cong(nhan(u, at), nhan(n, oa)), p1: cong(nhan(u, at), nhan(n, ob)) });
+  }
+  // Có đồ thị app cũ (bố cục gốc) thì dùng nguyên: đầu trục theo vòng tròn mốc CAD (QT-54), trục tách theo mốc, nối góc QT-51.
+  const doan = toa.hanh_lang?.length
+    ? toa.hanh_lang.filter((s) => kc(s.p0, s.p1) > 1).map((s) => ({ p0: s.p0, p1: s.p1, noi: s.noi }))
+    : [...truc.map((t) => ({ p0: t.p0, p1: t.p1, noi: false })), ...noi.map((s) => ({ ...s, noi: true }))];
   const moc: Diem[] = doan.flatMap((s) => [s.p0, s.p1]);
-  for (let a = 0; a < doan.length; a++) for (let b = a + 1; b < doan.length; b++) {
-    const A = doan[a], Bd = doan[b], r = tru(A.p1, A.p0), s = tru(Bd.p1, Bd.p0), den = r[0] * s[1] - r[1] * s[0];
-    if (Math.abs(den) < 1e-9) continue;
-    const w = tru(Bd.p0, A.p0), t = (w[0] * s[1] - w[1] * s[0]) / den, u = (w[0] * r[1] - w[1] * r[0]) / den;
-    if (t > 0 && t < 1 && u > 0 && u < 1) moc.push(cong(A.p0, nhan(r, t)));
-  }
   const nut: Diem[] = [];
   const themNut = (p: Diem) => {
     for (let i = 0; i < nut.length; i++) if (kc(nut[i], p) < TOL) return i;
@@ -186,7 +215,7 @@ export function dungDoThi(toa: ToaPCCC) {
     for (let k = 0; k + 1 < ts.length; k++) {
       const p0 = cong(s.p0, nhan(v, ts[k])), p1 = cong(s.p0, nhan(v, ts[k + 1]));
       const i = themNut(p0), j = themNut(p1);
-      if (i !== j) canh.push({ i, j, L: (ts[k + 1] - ts[k]) * L, p0, p1, huong: nhan(v, 1 / L) });
+      if (i !== j) canh.push({ i, j, L: (ts[k + 1] - ts[k]) * L, p0, p1, huong: nhan(v, 1 / L), noi: s.noi });
     }
   }
   const ke: [number, number, number][][] = nut.map(() => []);
@@ -214,16 +243,21 @@ export function dungDoThi(toa: ToaPCCC) {
   };
 
   /** chiếu điểm lên cạnh gần nhất; `huong` cho trước thì chỉ xét cạnh song song (cửa căn / thang gán vào hành lang chạy dọc mặt) */
-  const chieu = (p: Diem, huong?: Diem): ViTri | null => {
+  const chieu = (p: Diem, huong?: Diem, choNoi = false): ViTri | null => {
     let tot: ViTri | null = null;
     canh.forEach((e, k) => {
+      // như axAt/viTri app cũ: cửa căn, cửa thang gán vào trục thật song song với mặt, không vào đoạn nối
+      if (e.noi !== choNoi) return;
       if (huong && Math.abs(e.huong[0] * huong[1] - e.huong[1] * huong[0]) > 0.02) return;
       const v = tru(e.p1, e.p0), L2 = cham(v, v) || 1;
       const t = Math.max(0, Math.min(1, cham(tru(p, e.p0), v) / L2));
       const q = cong(e.p0, nhan(v, t)), d = kc(p, q);
       if (!tot || d < tot.d) tot = { e: k, i: e.i, j: e.j, di: t * e.L, dj: (1 - t) * e.L, q, d };
     });
-    return tot ?? (huong ? chieu(p) : null);
+    if (tot || !huong) return tot;
+    // Mặt xiên ở góc tòa V (không song song trục nào): gán vào đoạn nối góc song song với mặt — đường đi thật.
+    // App cũ ở đây lấy toạ độ dọc mặt xiên đặt lên trục A (CH-07/08 tm-v1 ra 1,3 m / 8,5 m cho căn cách thang ~10–22 m), không chép.
+    return (!choNoi && chieu(p, huong, true)) || chieu(p);
   };
 
   /** quãng dọc hành lang A → B, tách theo hướng rời A (về đầu i / đầu j) — doKC của app cũ */
@@ -285,7 +319,11 @@ export type ThoatNanCan = { so: number; ma: string; cuLy: number | null; cut: bo
 
 export function thoatNan(toa: ToaPCCC, opt: Pick<TuyChonPCCC, 'cuaCan' | 'chieuCaoPCCC'>) {
   const G = dungDoThi(toa);
-  const { can, thang } = cuaTrenMat(toa, opt.cuaCan);
+  const { can, thang: thangMat } = cuaTrenMat(toa, opt.cuaCan);
+  // Cửa buồng thang app cũ (đã nới ô thang thiếu, QT-60) nếu có; hướng mặt lấy từ cửa thang gần nhất tính trên mặt.
+  const thang = toa.cua_thang?.length
+    ? toa.cua_thang.map((p) => ({ p, huong: thangMat.reduce((a, b) => (kc(b.p, p) < kc(a.p, p) ? b : a), thangMat[0])?.huong }))
+    : thangMat;
   const GH = gioiHanThoatNan(opt.chieuCaoPCCC);
   const vt = thang.map((t) => G.chieu(t.p, t.huong)).filter((x): x is ViTri => !!x);
   const ds: ThoatNanCan[] = can.map((c) => {

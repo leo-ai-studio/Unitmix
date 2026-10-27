@@ -68,6 +68,9 @@ def chep(nguon: Path, bang_ten: bool) -> None:
 
     # --- tòa ---
     dwg = {x["ma"]: x for x in d["toa_dwg.json"]}
+    # Đồ thị hành lang + cửa buồng thang app cũ dựng cho bố cục gốc (scripts/hanh_lang_cu.js chạy headless trong repo cũ).
+    hl_tep = GOC / "scripts" / "du_lieu" / "hanh_lang_cu.json"
+    hl = _doc(hl_tep)["toa"] if hl_tep.exists() else {}
     toa = []
     for t in d["towers.json"]:
         ma = t["ma"]
@@ -93,6 +96,7 @@ def chep(nguon: Path, bang_ten: bool) -> None:
             "duong_bao": w["duong_bao"], "truc": w["truc"], "mat": w["mat"], "hanhlang_ve": w["hanhlang_ve"],
             "co_cau": co_cau, "loi": [q.id_loi(b) for b in w["ten_block_loi"]],
             "thang_bo": t.get("thang_bo_vi_tri"), "file_dwg": w["file"],
+            **({"hanh_lang": hl[ma]["hanh_lang"], "cua_thang": hl[ma]["cua_thang"]} if ma in hl else {}),
         })
 
     _ghi(LIB / "pccc.json", d["tu_pccc.json"], gon=False)
