@@ -143,6 +143,9 @@ Căn cứ trích từ kho `E:\OneDrive\_QCVN-TCVN\`. QCVN 04:2021 ghi tắt là 
 | L14 xuất XLS, nhãn DXF | ✔ | 4 sheet báo cáo PA + sheet so sánh; lớp `MDI-NHAN-CAN` |
 | Hiệu ứng H1–H8, H11–H13, H15–H19 | ✔ | Xem `hieu_ung_ui.md`; H14 thay bằng mờ vào khi mount bản vẽ |
 | Khung giữa cố định | ✔ | 0 lần lệch ở 1440×900, 1200×800 qua mọi thao tác, cả màn Hầm |
+| L5, A10 dữ liệu phòng + nhãn A / Ø | ✔ | 34/34 mẫu căn có `phong` bóc từ DWG (`scripts/boc_cad/boc_phong.py`); CAD không có chữ tên phòng nên loại phòng suy theo thiết bị (`doan: true`); DC-06/07 chấm bằng dữ liệu thật. Mục tiêu DT / Ø theo loại phòng (trừ phòng ngủ 9 m²) là số tạm |
+| Xuất CAD theo tầng + công năng ô | ✔ | Chọn bố cục chung / từng tầng riêng / tất cả; ô đổi công năng vẽ trên lớp `MDI-CONG-NANG` |
+| 3D khối hầm, vẽ tay ranh hầm | ✔ | Nút "Hầm" trên thanh 3D; công cụ "Vẽ ranh" có bắt điểm, nhập độ dài cạnh, kéo đỉnh |
 
 Còn chờ chủ nhiệm chốt: cách tính ban công / lô gia vào DT sàn xây dựng; tỷ lệ đỗ xe / kỹ thuật trên sàn hầm khi chưa đo; lõi xếp vào phần "kỹ thuật" (không tính HSSDĐ) khi đo hầm; khoảng lùi ranh hầm; số chỗ đỗ M7; ngưỡng thông thủy cho tầng đế; quy ước "DT bán"; cách hiểu QCVN 04 2.2.12; bản chính thức SĐ 01:2026 (xe điện); QCVN 01:2026 nếu đã thay QCVN 01:2021.
-Chưa làm: dự toán / tài chính (chờ khung chi phí Việt Nam và đơn giá), 3D khối hầm, vẽ tay ranh hầm, xuất CAD theo bố cục từng tầng và công năng ô.
+Chưa làm: dự toán / tài chính (chờ khung chi phí Việt Nam và đơn giá). Thêm cần chốt: mục tiêu DT / Ø tối thiểu theo loại phòng (khách, bếp, WC); mẫu `xh-1pn-m3` CAD không có vách phòng ngủ.
