@@ -7,6 +7,8 @@ import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiTieuQH, type ChucNang, type HeSoDT
 import { loDangChonHoacDatO, taoLo } from '../tinh/macDinh';
 import { laCaoTang } from '../tinh/loaiDat';
 import { sucChua } from '../tinh/sucChua';
+import { apPreset, chupPreset, type DuLieuPreset, type NhomPreset, type PhamViPreset } from '../kho/preset';
+import { DongPreset } from '../ui/Preset';
 import { MucGap } from '../ui/MucGap';
 import { fmtSo } from '../ui/so';
 import { NhapChiTieu } from './NhapChiTieu';
@@ -18,9 +20,9 @@ const dtLo = (lo: Lo) => (lo.ranh.length >= 3 ? dienTich(lo.ranh) : 0);
 const doiLo = (pa: TrangThaiPA, id: string, fn: (l: Lo) => Lo): TrangThaiPA => ({ ...pa, lo: pa.lo.map((l) => (l.id === id ? fn(l) : l)) });
 
 /** Ô nhập số có nhãn và đơn vị. */
-function O({ nhan, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; gt: number; donVi?: string; onDoi: (v: number) => void; tat: boolean; buoc?: number }) {
+function O({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; tip?: string; gt: number; donVi?: string; onDoi: (v: number) => void; tat: boolean; buoc?: number }) {
   return (
-    <label class="o-so">
+    <label class="o-so" title={tip}>
       <span>{nhan}</span>
       <span class="o-so-nhap">
         <input type="number" value={gt} step={buoc} min={0} disabled={tat}
@@ -35,9 +37,9 @@ function O({ nhan, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; gt: number
 }
 
 /** Ô nhập số có thể bỏ trống (null = bảng QH không quy định). */
-function ON({ nhan, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; gt: number | null; donVi?: string; onDoi: (v: number | null) => void; tat: boolean; buoc?: number }) {
+function ON({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; tip?: string; gt: number | null; donVi?: string; onDoi: (v: number | null) => void; tat: boolean; buoc?: number }) {
   return (
-    <label class="o-so">
+    <label class="o-so" title={tip}>
       <span>{nhan}</span>
       <span class="o-so-nhap">
         <input type="number" value={gt ?? ''} placeholder="—" step={buoc} min={0} disabled={tat}
@@ -110,20 +112,20 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
   return (
     <>
       <div class="hang-nhap-tmb" role="group" aria-label={t('lo.nhapBang')}>
-        <label class={`nut-nho${chiXem ? ' tat' : ''}`} title={t('lo.dxfGiaiThich')}>
+        <label class={`nut-nho${chiXem ? ' tat' : ''}`} title={t('gt.lo.dxf')}>
           {t('lo.nutDxf')}
           <input type="file" accept=".dxf" class="sr-only" disabled={chiXem} onChange={(e) => e.currentTarget.files?.[0] && docTep(e.currentTarget.files[0])} />
         </label>
-        <button type="button" class="nut-nho" disabled={chiXem || !pa.lo.length} title={t('nct.giaiThich')} onClick={() => setHop('chiTieu')}>{t('lo.nutBangQH')}</button>
-        <button type="button" class="nut-nho" disabled={chiXem || !lo} onClick={() => setHop('deBai')}>{t('lo.nutDeBai')}</button>
-        <button type="button" class="nut-nho" aria-pressed={tay} disabled={chiXem} title={t('lo.themTay')} onClick={() => setTay(!tay)}>＋</button>
+        <button type="button" class="nut-nho" disabled={chiXem || !pa.lo.length} title={t('gt.lo.bangQH')} onClick={() => setHop('chiTieu')}>{t('lo.nutBangQH')}</button>
+        <button type="button" class="nut-nho" disabled={chiXem || !lo} title={t('gt.lo.deBai')} onClick={() => setHop('deBai')}>{t('lo.nutDeBai')}</button>
+        <button type="button" class="nut-nho" aria-pressed={tay} disabled={chiXem} title={t('gt.lo.themTay')} onClick={() => setTay(!tay)}>＋</button>
       </div>
       {loiDoc && <p class="dong vuot" role="alert">{loiDoc}</p>}
       {ban && (
         <div class="khoi-dxf">
           <span class="muted">{t('lo.daNap').replace('{n}', String(ban.lop.length)).replace('{dv}', ban.donVi)}</span>
           {(['ranh', 'chiGioi', 'tem', 'xungQuanh'] as const).map((k) => (
-            <label class="o-chon" key={k}>
+            <label class="o-chon" key={k} title={t({ ranh: 'gt.lo.lopRanh', chiGioi: 'gt.lo.lopChiGioi', tem: 'gt.lo.lopTem', xungQuanh: 'gt.lo.lopXungQuanh' }[k])}>
               <span>{t({ ranh: 'lo.lopRanh', chiGioi: 'lo.lopChiGioi', tem: 'lo.lopTem', xungQuanh: 'lo.lopXungQuanh' }[k])}</span>
               <select value={chon[k]} onChange={(e) => setChon({ ...chon, [k]: e.currentTarget.value })}>
                 <option value="">{t('lo.khongChon')}</option>
@@ -134,16 +136,16 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
           ))}
           {loiRanh && <p class="vuot dong" role="alert">{t(`lo.loi.${loiRanh}`)}</p>}
           <div class="dong" style={{ gap: '6px' }}>
-            <button type="button" class="nut-chinh" disabled={chiXem || !chon.ranh || !!loiRanh} onClick={taoTuDxf}>{t('lo.taoTuDxf')}</button>
+            <button type="button" class="nut-chinh" title={t('gt.lo.taoTuDxf')} disabled={chiXem || !chon.ranh || !!loiRanh} onClick={taoTuDxf}>{t('lo.taoTuDxf')}</button>
             <button type="button" class="nut-phu" onClick={() => setBan(null)}>{t('lo.huy')}</button>
           </div>
         </div>
       )}
       {tay && (
         <div class="dong" style={{ gap: '6px', alignItems: 'flex-end' }}>
-          <O nhan={t('lo.rong')} gt={kt.rong} donVi="m" tat={chiXem} onDoi={(v) => setKt({ ...kt, rong: v })} />
-          <O nhan={t('lo.dai')} gt={kt.dai} donVi="m" tat={chiXem} onDoi={(v) => setKt({ ...kt, dai: v })} />
-          <button type="button" class="nut-phu" disabled={chiXem || kt.rong <= 0 || kt.dai <= 0} onClick={themChuNhat}>{t('lo.them')}</button>
+          <O nhan={t('lo.rong')} tip={t('gt.lo.rong')} gt={kt.rong} donVi="m" tat={chiXem} onDoi={(v) => setKt({ ...kt, rong: v })} />
+          <O nhan={t('lo.dai')} tip={t('gt.lo.dai')} gt={kt.dai} donVi="m" tat={chiXem} onDoi={(v) => setKt({ ...kt, dai: v })} />
+          <button type="button" class="nut-phu" title={t('gt.lo.them')} disabled={chiXem || kt.rong <= 0 || kt.dai <= 0} onClick={themChuNhat}>{t('lo.them')}</button>
         </div>
       )}
       {hop === 'chiTieu' && <NhapChiTieu lo={pa.lo} dong={() => setHop(null)} ap={(ds) => sua((p) => ({ ...p, lo: ds }))} />}
@@ -160,7 +162,7 @@ export function ChonLoCaoTang({ pa, loId, chonLo }: Pick<Chung, 'pa' | 'loId' | 
   if (!ds.length) return <p class="dong muted">{t('xep.loKhongXayO')}</p>;
   return (
     <div class="chon-lo-gon">
-      <select value={lo?.id} aria-label={t('lo.kyHieu')} onChange={(e) => chonLo(e.currentTarget.value)}>
+      <select value={lo?.id} aria-label={t('lo.kyHieu')} title={t('gt.lo.chonLo')} onChange={(e) => chonLo(e.currentTarget.value)}>
         {ds.map((l) => <option value={l.id}>{`${l.temDat.kyHieu} · ${t(`cn.${l.temDat.chucNang}`)} · ${fmtSo(dtLo(l), { donVi: 'm²' })}`}</option>)}
       </select>
       <span class="muted">{t('lo.soLoCaoTang').replace('{n}', String(ds.length)).replace('{m}', String(pa.lo.length))}</span>
@@ -174,15 +176,23 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
   const datCt = (k: keyof ChiTieuQH) => (v: number | null) => lo && sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, chiTieu: { ...l.temDat.chiTieu, [k]: v } } })));
   const tongCoCau = lo ? LOAI_CAN.reduce((a, k) => a + lo.temDat.coCauMucTieu[k], 0) : 100;
   const datHeSo = (k: keyof HeSoDTSan) => (v: number) => sua((p) => ({ ...p, heSo: { ...p.heSo, [k]: v / 100 } }));
+  // Áp preset: dữ liệu đã lọc theo nhóm; chỉ-xem thì không áp.
+  const apPresetNhom = (nhom: NhomPreset) => (du: DuLieuPreset, pham: PhamViPreset) => {
+    if (!chiXem) sua((p) => apPreset(nhom, p, du, pham, lo?.id ?? null));
+  };
   return (
     <>
+      <MucGap tieuDe={t('gt.ps.mucCap')} giaiThich={t('gt.ps.giaiThichCap')}>
+        <DongPreset nhom="cap" chiXem={chiXem} chonPham chup={() => chupPreset('cap', pa, lo)} ap={apPresetNhom('cap')} />
+      </MucGap>
       {lo && ct && (
         <>
-          <MucGap tieuDe={`${t('muc.chiTieuQH')} · ${lo.temDat.kyHieu}`}>
-            <label class="o-chon"><span>{t('lo.kyHieu')}</span>
+          <MucGap tieuDe={`${t('muc.chiTieuQH')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.muc.chiTieuQH')}>
+            <DongPreset nhom="chiTieu" chiXem={chiXem} chup={() => chupPreset('chiTieu', pa, lo)} ap={apPresetNhom('chiTieu')} />
+            <label class="o-chon" title={t('gt.lo.kyHieu')}><span>{t('lo.kyHieu')}</span>
               <input value={lo.temDat.kyHieu} disabled={chiXem} onChange={(e) => { const v = e.currentTarget.value.trim(); if (v) sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, kyHieu: v } }))); }} />
             </label>
-            <label class="o-chon"><span>{t('lo.chucNang')}</span>
+            <label class="o-chon" title={t('gt.lo.chucNang')}><span>{t('lo.chucNang')}</span>
               <select value={lo.temDat.chucNang} disabled={chiXem} onChange={(e) => { const v = e.currentTarget.value as ChucNang; sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, chucNang: v } }))); }}>
                 {(['tm', 'xh', 'khac'] as const).map((c) => <option value={c}>{t(`cn.${c}`)}</option>)}
               </select>
@@ -194,26 +204,27 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
               </p>
             )}
             <div class="luoi-o">
-              <O nhan={t('ct.matDoMax')} gt={ct.matDoMax} donVi="%" tat={chiXem} onDoi={datCt('matDoMax')} />
-              <ON nhan={t('ct.matDoThapMax')} gt={ct.matDoThapMax} donVi="%" buoc={0.1} tat={chiXem} onDoi={datCt('matDoThapMax')} />
-              <O nhan={t('ct.hssddMax')} gt={ct.hssddMax} buoc={0.1} tat={chiXem} onDoi={datCt('hssddMax')} />
-              <O nhan={t('ct.tangCaoMax')} gt={ct.tangCaoMax} tat={chiXem} onDoi={datCt('tangCaoMax')} />
-              <ON nhan={t('ct.tangDe')} gt={ct.tangDe} tat={chiXem} onDoi={datCt('tangDe')} />
-              <ON nhan={t('ct.tangCanHo')} gt={ct.tangCanHo} tat={chiXem} onDoi={datCt('tangCanHo')} />
-              <ON nhan={t('ct.tangHam')} gt={ct.tangHam} tat={chiXem} onDoi={datCt('tangHam')} />
-              <ON nhan={t('ct.soCanMax')} gt={ct.soCanMax} buoc={10} tat={chiXem} onDoi={datCt('soCanMax')} />
-              <O nhan={t('ct.danSoMax')} gt={ct.danSoMax} buoc={10} tat={chiXem} onDoi={datCt('danSoMax')} />
-              <O nhan={t('ct.nguoiMoiCan')} gt={ct.nguoiMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('nguoiMoiCan')} />
-              <O nhan={t('ct.choDoOtoMoiCan')} gt={ct.choDoOtoMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('choDoOtoMoiCan')} />
-              <O nhan={t('ct.choXeMayMoiCan')} gt={ct.choXeMayMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('choXeMayMoiCan')} />
-              <O nhan={t('ct.cayXanhMin')} gt={ct.cayXanhMin} donVi="%" tat={chiXem} onDoi={datCt('cayXanhMin')} />
+              <O nhan={t('ct.matDoMax')} tip={t('gt.ct.matDoMax')} gt={ct.matDoMax} donVi="%" tat={chiXem} onDoi={datCt('matDoMax')} />
+              <ON nhan={t('ct.matDoThapMax')} tip={t('gt.ct.matDoThapMax')} gt={ct.matDoThapMax} donVi="%" buoc={0.1} tat={chiXem} onDoi={datCt('matDoThapMax')} />
+              <O nhan={t('ct.hssddMax')} tip={t('gt.ct.hssddMax')} gt={ct.hssddMax} buoc={0.1} tat={chiXem} onDoi={datCt('hssddMax')} />
+              <O nhan={t('ct.tangCaoMax')} tip={t('gt.ct.tangCaoMax')} gt={ct.tangCaoMax} tat={chiXem} onDoi={datCt('tangCaoMax')} />
+              <ON nhan={t('ct.tangDe')} tip={t('gt.ct.tangDe')} gt={ct.tangDe} tat={chiXem} onDoi={datCt('tangDe')} />
+              <ON nhan={t('ct.tangCanHo')} tip={t('gt.ct.tangCanHo')} gt={ct.tangCanHo} tat={chiXem} onDoi={datCt('tangCanHo')} />
+              <ON nhan={t('ct.tangHam')} tip={t('gt.ct.tangHam')} gt={ct.tangHam} tat={chiXem} onDoi={datCt('tangHam')} />
+              <ON nhan={t('ct.soCanMax')} tip={t('gt.ct.soCanMax')} gt={ct.soCanMax} buoc={10} tat={chiXem} onDoi={datCt('soCanMax')} />
+              <O nhan={t('ct.danSoMax')} tip={t('gt.ct.danSoMax')} gt={ct.danSoMax} buoc={10} tat={chiXem} onDoi={datCt('danSoMax')} />
+              <O nhan={t('ct.nguoiMoiCan')} tip={t('gt.ct.nguoiMoiCan')} gt={ct.nguoiMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('nguoiMoiCan')} />
+              <O nhan={t('ct.choDoOtoMoiCan')} tip={t('gt.ct.choDoOtoMoiCan')} gt={ct.choDoOtoMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('choDoOtoMoiCan')} />
+              <O nhan={t('ct.choXeMayMoiCan')} tip={t('gt.ct.choXeMayMoiCan')} gt={ct.choXeMayMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('choXeMayMoiCan')} />
+              <O nhan={t('ct.cayXanhMin')} tip={t('gt.ct.cayXanhMin')} gt={ct.cayXanhMin} donVi="%" tat={chiXem} onDoi={datCt('cayXanhMin')} />
             </div>
           </MucGap>
-          <MucGap tieuDe={t('muc.coCauMucTieu')}>
+          <MucGap tieuDe={t('muc.coCauMucTieu')} giaiThich={t('gt.muc.coCauMucTieu')}>
+            <DongPreset nhom="coCau" chiXem={chiXem} chup={() => chupPreset('coCau', pa, lo)} ap={apPresetNhom('coCau')} />
             {lo.temDat.deBai && <p class="dong muted" style={{ margin: 0 }}>{t('lo.nguonDeBai').replace('{n}', lo.temDat.deBai.nguon)}</p>}
             <div class="luoi-o">
               {LOAI_CAN.map((k) => (
-                <O key={k} nhan={lo.temDat.deBai?.dtCan[k] ? `${t(`loai.${k}`)} · ${fmtSo(lo.temDat.deBai.dtCan[k]!, { thapPhan: 1, donVi: 'm²' })}` : t(`loai.${k}`)}
+                <O key={k} tip={t('gt.coCau.o')} nhan={lo.temDat.deBai?.dtCan[k] ? `${t(`loai.${k}`)} · ${fmtSo(lo.temDat.deBai.dtCan[k]!, { thapPhan: 1, donVi: 'm²' })}` : t(`loai.${k}`)}
                   gt={lo.temDat.coCauMucTieu[k]} donVi="%" tat={chiXem}
                   onDoi={(v) => sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, coCauMucTieu: { ...l.temDat.coCauMucTieu, [k]: v } } })))} />
               ))}
@@ -247,15 +258,15 @@ export function SucChuaLo({ lo }: { lo: Lo }) {
   const sc = sucChua(lo);
   const m2 = { donVi: 'm²' };
   return (
-    <MucGap tieuDe={`${t('muc.sucChua')} · ${lo.temDat.kyHieu}`}>
-      <div class="dong"><span>{t('sc.dtLo')}</span><b>{fmtSo(sc.dtLo, m2)}</b></div>
-      <div class="dong"><span>{t('sc.dtxdMax')}</span><b>{fmtSo(sc.dtxdMax, m2)}</b></div>
-      {sc.dtxdThapMax !== null && <div class="dong"><span>{t('sc.dtxdThapMax')}</span><b>{fmtSo(sc.dtxdThapMax, m2)}</b></div>}
-      <div class="dong"><span>{t('sc.dtSanMax')}</span><b>{fmtSo(sc.dtSanMax, m2)}</b></div>
-      <div class="dong"><span>{t(lo.temDat.chiTieu.soCanMax !== null ? 'sc.soCanBang' : 'sc.soCanUoc')}</span><b>{fmtSo(sc.soCanUoc, { donVi: t('sc.can') })}</b></div>
-      <div class="dong"><span>{t('sc.choDoCan')}</span><b>{fmtSo(sc.choDoCan, { donVi: t('sc.cho') })}</b></div>
-      <div class="dong"><span>{t('sc.choXeMayCan')}</span><b>{fmtSo(sc.choXeMayCan, { donVi: t('sc.cho') })}</b></div>
-      <div class="dong"><span>{t('sc.cayXanhCan')}</span><b>{fmtSo(sc.cayXanhCan, m2)}</b></div>
+    <MucGap tieuDe={`${t('muc.sucChua')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.muc.sucChua')}>
+      <div class="dong" title={t('gt.sc.dtLo')}><span>{t('sc.dtLo')}</span><b>{fmtSo(sc.dtLo, m2)}</b></div>
+      <div class="dong" title={t('gt.sc.dtxdMax')}><span>{t('sc.dtxdMax')}</span><b>{fmtSo(sc.dtxdMax, m2)}</b></div>
+      {sc.dtxdThapMax !== null && <div class="dong" title={t('gt.sc.dtxdThapMax')}><span>{t('sc.dtxdThapMax')}</span><b>{fmtSo(sc.dtxdThapMax, m2)}</b></div>}
+      <div class="dong" title={t('gt.sc.dtSanMax')}><span>{t('sc.dtSanMax')}</span><b>{fmtSo(sc.dtSanMax, m2)}</b></div>
+      <div class="dong" title={t('gt.sc.soCan')}><span>{t(lo.temDat.chiTieu.soCanMax !== null ? 'sc.soCanBang' : 'sc.soCanUoc')}</span><b>{fmtSo(sc.soCanUoc, { donVi: t('sc.can') })}</b></div>
+      <div class="dong" title={t('gt.sc.choDo')}><span>{t('sc.choDoCan')}</span><b>{fmtSo(sc.choDoCan, { donVi: t('sc.cho') })}</b></div>
+      <div class="dong" title={t('gt.sc.choXeMay')}><span>{t('sc.choXeMayCan')}</span><b>{fmtSo(sc.choXeMayCan, { donVi: t('sc.cho') })}</b></div>
+      <div class="dong" title={t('gt.sc.cayXanh')}><span>{t('sc.cayXanhCan')}</span><b>{fmtSo(sc.cayXanhCan, m2)}</b></div>
     </MucGap>
   );
 }
@@ -265,10 +276,10 @@ export function BangChiTieuLo({ dong, mo = true }: { dong: DongChiTieu[]; mo?: b
   const m2 = { donVi: 'm²' };
   const dv: Record<string, { thapPhan?: number; donVi?: string }> = { matDo: { thapPhan: 1, donVi: '%' }, matDoThap: { thapPhan: 1, donVi: '%' }, dtSan: m2, cayXanh: m2 };
   return (
-    <MucGap tieuDe={t('muc.chiTieuLo')} mo={mo}>
+    <MucGap tieuDe={t('muc.chiTieuLo')} giaiThich={t('gt.muc.chiTieuLo')} mo={mo}>
       <div class="dong bang-ct dau"><span>{t('ct.chiTieu')}</span><span>{t('ct.dat')}</span><span>{t('ct.mucTieu')}</span></div>
       {dong.map((d) => (
-        <div class="dong bang-ct" key={d.khoa}>
+        <div class="dong bang-ct" key={d.khoa} title={t(`gt.dong.${d.khoa}`)}>
           <span>{t(`dong.${d.khoa}`)}</span>
           <span class={d.dat === null ? '' : d.muc === 'vuot' ? 'vuot' : d.muc === 'canh_bao' ? 'canh-bao' : 'ok'}>
             {fmtSo(d.dat, dv[d.khoa])}

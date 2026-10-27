@@ -62,7 +62,7 @@ export function TangTrai(p: ChungTang) {
   const sl = soLieuTang(mau, toa, tv);
   return (
     <>
-      <MucGap tieuDe={`${t('tang.toa')} · ${pa.toa.length}`} mo>
+      <MucGap tieuDe={`${t('tang.toa')} · ${pa.toa.length}`} giaiThich={t('gt.tang.toa')} mo>
         {pa.toa.map((x) => {
           const m = tv.toa.get(x.mauId), l = pa.lo.find((q) => q.id === x.loId);
           return (
@@ -79,26 +79,26 @@ export function TangTrai(p: ChungTang) {
         ))}
         {lo?.temDat.deBai && <p class="dong muted" style={{ margin: 0 }}>{t('lo.nguonDeBai').replace('{n}', lo.temDat.deBai.nguon)}</p>}
         <div class="dong" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
-          <button type="button" class="nut-chinh" disabled={chiXem}
+          <button type="button" class="nut-chinh" title={t('gt.tang.toiUu')} disabled={chiXem}
             onClick={() => {
               const kq = toiUuCoCau(mau, toa, tv, muc);
               sua((q) => doiToa(q, toa.id, (x) => apDoiViTri(x, kq.canViTri)));
               setGhiChu(kq.soDoi ? t('tang.daToiUu').replace('{n}', String(kq.soDoi)).replace('{a}', fmtSo(kq.diemTruoc, { thapPhan: 1 })).replace('{b}', fmtSo(kq.diemSau, { thapPhan: 1 })) : t('tang.khongDoiDuoc'));
             }}>{t('tang.toiUu')}</button>
-          <button type="button" class="nut-phu" disabled={chiXem || (!Object.keys(toa.canTheo).length && !toa.canViTri)}
+          <button type="button" class="nut-phu" title={t('gt.tang.veGoc')} disabled={chiXem || (!Object.keys(toa.canTheo).length && !toa.canViTri)}
             onClick={() => { sua((q) => doiToa(q, toa.id, veMauGoc)); setGhiChu(''); }}>{t('tang.veGoc')}</button>
         </div>
         {ghiChu && <p class="dong canh-bao" role="status" style={{ margin: 0 }}>{ghiChu}</p>}
         <p class="dong muted" style={{ margin: 0 }}>{t('tang.mixGhiChu')}</p>
       </MucGap>
-      <MucGap tieuDe={t('tang.hienThi')} mo>
-        <label class="o-chon"><span>{t('tang.kieu')}</span>
+      <MucGap tieuDe={t('tang.hienThi')} giaiThich={t('gt.tang.hienThi')} mo>
+        <label class="o-chon" title={t('gt.tang.kieu')}><span>{t('tang.kieu')}</span>
           <select value={cai.kieu} onChange={(e) => datCaiTang({ kieu: e.currentTarget.value as typeof cai.kieu })}>
             {DS_KIEU_MB.map((k) => <option value={k}>{t(`kieu.${k}`)}</option>)}
           </select>
         </label>
         {([['hienTem', 'tang.hienTem'], ['noiThat', 'tang.noiThat'], ['chamMau', 'tang.chamMau'], ['suaNhieu', 'tang.suaNhieu']] as const).map(([k, nhan]) => (
-          <label class="o-tg" key={k}><input type="checkbox" checked={cai[k]} onChange={(e) => datCaiTang({ [k]: e.currentTarget.checked })} /><span>{t(nhan)}</span></label>
+          <label class="o-tg" key={k} title={t(`gt.${nhan}`)}><input type="checkbox" checked={cai[k]} onChange={(e) => datCaiTang({ [k]: e.currentTarget.checked })} /><span>{t(nhan)}</span></label>
         ))}
         <p class="dong muted" style={{ margin: 0 }}>{t('tang.phamVi').replace('{n}', String(toa.soTangDH))} · {t('xep.canTang').replace('{n}', String(sl.vts.length))}</p>
       </MucGap>
@@ -185,7 +185,7 @@ export function TangPhai(p: ChungTang) {
 
   return (
     <>
-      <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}`} mo>
+      <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}`} giaiThich={t('gt.tang.canTrongToa')} mo>
         <div class="bang-co-cau" role="table">
           <div class="dong bang-cc dau" style={{ gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr' }} role="row"><span /><span>{t('tang.canTang')}</span><span>{t('xep.tyLe')}</span><span>{t('xep.mucTieu')}</span><span>{t('xep.lech')}</span></div>
           {LOAI_CAN.map((k) => {
@@ -203,7 +203,7 @@ export function TangPhai(p: ChungTang) {
         <div class="dong"><span>{t('tang.soCanToa')}</span><b>{fmtSo(tong * toa.soTangDH)} {t('sc.can')}</b></div>
       </MucGap>
 
-      <MucGap tieuDe={t('tang.loaiCanTrongTang')} mo>
+      <MucGap tieuDe={t('tang.loaiCanTrongTang')} giaiThich={t('gt.tang.loaiCanTrongTang')} mo>
         <div class="bang-nhap-nho" role="table">
           <div class="dong hang-lc hang-lc7 dau" role="row"><span>{t('tang.mauCan')}</span><span>{t('tang.soCan')}</span><span>{t('tang.thongThuy')}</span><span>{t('tang.timTuong')}</span><span>{t('tang.phanChung')}</span><span class="tieu-co-tip" title={t('tang.dtBanGhiChu')}>{t('tang.banDT')}</span><span class="tieu-co-tip" title={t('tang.dtBanGhiChu')}>{t('tang.heSoTt')}</span></div>
           {dsMau.map(({ id, n, c }) => {
@@ -228,7 +228,7 @@ export function TangPhai(p: ChungTang) {
         {tv.toa.get(toa.mauId) && <BangTuanThu pa={pa} sua={sua} chiXem={chiXem} toa={toa} mau={tv.toa.get(toa.mauId)!} tv={tv} />}
       </MucGap>
 
-      <MucGap tieuDe={chon ? `${t('tang.canDangChon')} · CH-${String(chon.no).padStart(2, '0')}` : t('tang.canDangChon')} mo>
+      <MucGap tieuDe={chon ? `${t('tang.canDangChon')} · CH-${String(chon.no).padStart(2, '0')}` : t('tang.canDangChon')} giaiThich={t('gt.tang.canDangChon')} mo>
         {!chon || !cChon ? <p class="dong muted">{t('tang.chonMotCan')}</p> : (
           <>
             <div class="dong"><span>{t('tang.mauCan')}</span><b>{cChon.ten_vi}</b></div>

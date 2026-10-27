@@ -46,17 +46,17 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
       <div>
         <h2 id="tieu-de-db">{t('db.tieuDe')}</h2>
         <p class="muted" style={{ margin: 0 }}>{t('db.giaiThich')}</p>
-        <label>{t('db.dan')}
+        <label title={t('gt.db.dan')}>{t('db.dan')}
           <textarea rows={6} value={chu} placeholder={'Loại căn\tTỷ lệ\tDT (m²)\nStudio\t5%\t30\n1PN\t20%\t45\n2PN\t45%\t65\n2PN+1\t15%\t75\n3PN\t15%\t90'}
             onInput={(e) => docChu(e.currentTarget.value)} style={{ fontFamily: 'monospace', fontSize: '12px', padding: '8px', border: '1px solid var(--line)', borderRadius: '5px' }} />
         </label>
         <div class="dong" style={{ gap: '8px', padding: 0 }}>
-          <label class="nut-phu" style={{ cursor: 'pointer', flexDirection: 'row' }}>
+          <label class="nut-phu" title={t('gt.db.chonTep')} style={{ cursor: 'pointer', flexDirection: 'row' }}>
             {t('db.chonTep')}
             <input type="file" accept=".xlsx,.xls,.xlsm" class="sr-only" onChange={(e) => e.currentTarget.files?.[0] && chonTep(e.currentTarget.files[0])} />
           </label>
           {sheets && (
-            <select aria-label={t('nct.sheet')} value={sheet} onChange={(e) => doiSheet(sheets, e.currentTarget.value)}>
+            <select aria-label={t('nct.sheet')} title={t('gt.db.sheet')} value={sheet} onChange={(e) => doiSheet(sheets, e.currentTarget.value)}>
               {sheets.map((s) => <option value={s.ten}>{s.ten}</option>)}
             </select>
           )}
@@ -78,7 +78,7 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
               })}
             </div>
             {kq.canhBao.map((c) => <p class="canh-bao" style={{ margin: 0 }} key={c}>{c}</p>)}
-            <label>{t('db.apCho')}
+            <label title={t('gt.db.apCho')}>{t('db.apCho')}
               <select value={pham} onChange={(e) => setPham(e.currentTarget.value as PhamVi)}>
                 <option value="lo">{t('db.pv.lo').replace('{l}', loChon.temDat.kyHieu)}</option>
                 <option value="cungChucNang">{t('db.pv.cungChucNang').replace('{c}', t(`cn.${loChon.temDat.chucNang}`))}</option>
