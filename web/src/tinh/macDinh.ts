@@ -1,3 +1,4 @@
+import { chuanHoaMatBang } from './loiThang';
 import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiPhiPA, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type ToaDat, type TrangThaiPA } from './kieu';
 
 /** Chỉ tiêu mặc định khi chưa nhập (giá trị tạm, ghi rõ trên giao diện là chờ chủ nhiệm chốt). */
@@ -127,9 +128,13 @@ export const loDangChonHoacDatO = (ds: Lo[], id: string | null): Lo | null =>
 
 /** Bố cục theo tầng: bỏ khoá không phải số tầng nguyên dương (PA cũ không có trường này thì giữ nguyên). */
 const chuanHoaToa = (t: ToaDat): ToaDat => {
-  if (!t.tangRieng) return { ...t, canTheo: t.canTheo ?? {} };
+  // mặt bằng tự chỉnh + nét bao riêng (tinh/loiThang.ts): sai cấu trúc thì bỏ, về theo mẫu tòa
+  const diem = (p: unknown) => Array.isArray(p) && p.length === 2 && p.every((x) => typeof x === 'number' && Number.isFinite(x));
+  const duongBao = Array.isArray(t.duongBao) && t.duongBao.length >= 3 && t.duongBao.every(diem) ? t.duongBao : undefined;
+  const mb = { matBang: chuanHoaMatBang(t.matBang), duongBao, dtxdM2: duongBao && typeof t.dtxdM2 === 'number' && Number.isFinite(t.dtxdM2) ? t.dtxdM2 : undefined };
+  if (!t.tangRieng) return { ...t, ...mb, canTheo: t.canTheo ?? {} };
   const tangRieng = Object.fromEntries(Object.entries(t.tangRieng).filter(([k, g]) => Number.isInteger(Number(k)) && Number(k) >= 1 && g && typeof g === 'object'));
-  return { ...t, canTheo: t.canTheo ?? {}, tangRieng: Object.keys(tangRieng).length ? tangRieng : undefined };
+  return { ...t, ...mb, canTheo: t.canTheo ?? {}, tangRieng: Object.keys(tangRieng).length ? tangRieng : undefined };
 };
 
 /**

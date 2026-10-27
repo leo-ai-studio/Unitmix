@@ -12,6 +12,8 @@ export const KHE_KY_THUAT_MM = 600;
 export const KHE_HL_THEM_MM = 500;
 /** XC-10: tổng ô còn trống ≤ 200 mm coi là khít. */
 export const CON_TRONG_MM = 200;
+/** XC-05 · QT-22b: chồng ≤ 200 mm giữa căn và nét bao lõi = tường chung (TUONG_CHUNG_MM app cũ). */
+export const TUONG_CHUNG_LOI_MM = 200;
 
 export type LoaiKhe = 'tuong' | 'ky_thuat' | 'trong' | 'hanh_lang';
 export type Khe = { matIdx: number; a0: number; a1: number; rong: number; loai: LoaiKhe };
@@ -29,15 +31,20 @@ export function kheTrenMat(mau: ToaCoMat, tv: ThuVien, bc?: Pick<ToaDat, 'canThe
   const vts = viTriCan(mau, tv, bc);
   const khe: Khe[] = [], de: { matIdx: number; mm: number }[] = [];
   mau.mat.forEach((m, mi) => {
-    const doan: [number, number][] = [
-      ...vts.filter((v) => v.matIdx === mi).map((v) => [v.a0, v.a1] as [number, number]),
-      ...m.phan_tu.filter((q) => q.loai !== 'can' && q.a1 - q.a0 > 1).map((q) => [q.a0, q.a1] as [number, number]),
+    // [a0, a1, là dải lõi] — dải lõi (XC-05) chồng căn kề ≤ 200 mm là tường chung, không phải đè
+    const doan: [number, number, boolean][] = [
+      ...vts.filter((v) => v.matIdx === mi).map((v) => [v.a0, v.a1, false] as [number, number, boolean]),
+      ...m.phan_tu.filter((q) => q.loai !== 'can' && q.a1 - q.a0 > 1).map((q) => [q.a0, q.a1, !!q.bang] as [number, number, boolean]),
     ].sort((a, b) => a[0] - b[0]);
     const loi = m.phan_tu.filter((q) => q.loai !== 'can' && q.a1 - q.a0 <= 1).map((q) => q.a0);
     const rongMax = Math.max(0, ...vts.filter((v) => v.matIdx === mi).map((v) => v.a1 - v.a0));
     for (let k = 1; k < doan.length; k++) {
       const a0 = doan[k - 1][1], a1 = doan[k][0], rong = a1 - a0;
-      if (rong < -KHIT_MM) { de.push({ matIdx: mi, mm: -rong }); continue; }
+      if (rong < -KHIT_MM) {
+        if ((doan[k - 1][2] || doan[k][2]) && -rong <= TUONG_CHUNG_LOI_MM) continue;
+        de.push({ matIdx: mi, mm: -rong });
+        continue;
+      }
       if (rong <= KHE_BO_MM) continue;
       if (loi.some((x) => x > a0 && x < a1)) continue; // ô chừa lõi thang máy
       khe.push({ matIdx: mi, a0, a1, rong, loai: loaiKhe(rong, rongMax) });

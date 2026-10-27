@@ -16,7 +16,7 @@
  */
 import type { BaoCaoTuChinh, Diem, DoanHanhLangMB, KetQuaTuChinh, MatBangSua, SanhMB, ThangBoMB, ThuVien, ToaDat } from './kieu';
 import { tongKhe } from './khe';
-import { canDangDung, chenhRong, matDaDon, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from './matBang';
+import { canDangDung, chenhRong, donKhit, matDaDon, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from './matBang';
 import { dtHanhLangTang } from './phanChung';
 import { chieuCaoPCCC, cuaTrenMat, dungDoThi, gioiHanThoatNan, thoatNan, TIM_CUA_THANG_MM, type MatToa, type PhanTuMat, type ToaPCCC } from './pccc';
 import { cuaBienThe } from './toiUu';
@@ -123,7 +123,11 @@ export function daiLoi(mau: ToaMB, dl: DuLieuMB | null | undefined): DaiLoi[] {
       if (c.length < 3) return;
       const b0 = Math.min(...c.map((p) => p[1])), b1 = Math.max(...c.map((p) => p[1]));
       if (b1 - b0 < 2000) return;
-      kq.push({ khoaLoi: khoa, block: q.block, matIdx: mi, t0: Math.min(...c.map((p) => p[0])), t1: Math.max(...c.map((p) => p[0])) });
+      const t0 = Math.min(...c.map((p) => p[0])), t1 = Math.max(...c.map((p) => p[0]));
+      // lõi hub chéo (T · V · Y) chiếu lên mặt có thể trùm căn vẽ đúng CAD hàng mét: không coi là dải của mặt này
+      const trum = Math.max(0, ...m.phan_tu.filter((x) => x.rong_mm > 0 && !x.bang).map((x) => Math.min(x.a1, t1) - Math.max(x.a0, t0)));
+      if (trum > LECH_DAI_LOI_MM) return;
+      kq.push({ khoaLoi: khoa, block: q.block, matIdx: mi, t0, t1 });
     });
   }
   return kq;
@@ -168,7 +172,7 @@ export function sanhCuaToa(mau: ToaMB, dl: DuLieuMB | null | undefined): SanhMB[
 }
 
 // ---------- mặt bằng hiệu dụng ----------
-const banSao = (mb: MatBangSua): MatBangSua => ({
+export const banSaoMatBang = (mb: MatBangSua): MatBangSua => ({
   ...mb,
   thangBo: mb.thangBo.map((t) => ({ ...t })),
   dich: { ...(mb.dich ?? {}) },
@@ -481,7 +485,7 @@ function thangTuDong(mau: ToaMB, mb0: MatBangSua, dl: DuLieuMB | null | undefine
       for (const p of choCat(vatThe(mau, cur, t.matIdx), dn, chenh)) {
         for (const sx of [1, -1] as const) {
           if ((Math.abs(p - t.a0) < 1 || Math.abs(p - t.a0 - t.rong) < 1) && sx === t.sx) continue;
-          const mb = banSao(cur);
+          const mb = banSaoMatBang(cur);
           if (doiThang(mau, mb, t.khoa, p, sx) && hopLe(mb, t.khoa)) thu(mb, 'doi');
         }
       }
@@ -497,7 +501,7 @@ function thangTuDong(mau: ToaMB, mb0: MatBangSua, dl: DuLieuMB | null | undefine
         for (const p of choCat(vatThe(mau, cur, mi), dn, chenh)) {
           if (Math.abs(p - (vtXau.a0 + vtXau.a1) / 2) > kcMin) continue;
           for (const sx of [1, -1] as const) {
-            const mb = banSao(cur);
+            const mb = banSaoMatBang(cur);
             if (themThang(mau, mb, dai, mi, p, sx, khoa) && hopLe(mb, khoa)) thu(mb, 'them');
           }
         }
@@ -512,7 +516,7 @@ function thangTuDong(mau: ToaMB, mb0: MatBangSua, dl: DuLieuMB | null | undefine
   if (cur.thangBo.length > THANG_MIN && dgCur.dg.vuot === 0) {
     for (const t of [...cur.thangBo].sort((a, b) => a.matIdx - b.matIdx || a.a0 - b.a0)) {
       if (cur.thangBo.length <= THANG_MIN) break;
-      const mb = banSao(cur);
+      const mb = banSaoMatBang(cur);
       if (!boThang(mau, mb, dai, t.khoa)) continue;
       const r = xet(mb);
       if (r.dg.vuot === 0 && r.dg.khongToi <= dgCur.dg.khongToi) { cur = mb; dgCur = r; soBo++; }
@@ -562,7 +566,7 @@ function capNhatDonKhit(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefi
 }
 
 // ---------- XC-06: nét hành lang qua tim sảnh ----------
-function trucQuaSanh(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined): { sua: number; lechMax: number } {
+export function trucQuaSanh(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined): { sua: number; lechMax: number } {
   let sua = 0, lechMax = 0;
   if (!dl) return { sua, lechMax };
   for (const { matIdx, q } of dsLoi(mau)) {
@@ -599,8 +603,10 @@ function trucQuaSanh(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined
 function hanhLangToiCua(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, cuaCan: Record<string, number>): number {
   const hd = dung(mau, mb, dl);
   if (!mb.hanhLang.length) return 0;
-  const { can, thang } = cuaTrenMat(hd as unknown as ToaPCCC, cuaCan);
-  const cua = [...can.map((c) => ({ p: c.p, h: c.huong })), ...thang.map((t) => ({ p: t.p, h: t.huong }))];
+  const dsCua = (x: ToaMB) => { const { can, thang } = cuaTrenMat(x as unknown as ToaPCCC, cuaCan); return [...can.map((c) => ({ p: c.p, h: c.huong })), ...thang.map((t) => ({ p: t.p, h: t.huong }))]; };
+  // chỉ cửa ĐÃ DỜI so với mẫu (thêm / dời thang, dãy dài ra): đồ thị app cũ của bản vẽ gốc giữ nguyên như CAD (QT-54)
+  const goc = dsCua(dung(mau, matBangMacDinh(mau, dl), dl));
+  const cua = dsCua(hd).filter((c) => !goc.some((g) => kc(g.p, c.p) < 1));
   const nuaHL = (mau.hanh_lang_mm || 1800) / 2;
   let sua = 0;
   for (const c of cua) {
@@ -648,12 +654,28 @@ function doanXien(mau: ToaMB, hl: DoanHanhLangMB[]): number {
 }
 
 /** Số mảng rời của đồ thị hành lang (dungDoThi, gộp nút 400 mm). */
-function soMangHL(hd: ToaMB): number {
+export function soMangHL(hd: ToaMB): number {
   const G = dungDoThi({ ...(hd as unknown as ToaPCCC), truc: hd.truc ?? [], hanhlang_ve: hd.hanhlang_ve ?? [] });
   const goc = G.nut.map((_, i) => i);
   const tim = (x: number): number => (goc[x] === x ? x : (goc[x] = tim(goc[x])));
   G.canh.forEach((e) => { goc[tim(e.i)] = tim(e.j); });
   return new Set(G.canh.map((e) => tim(e.i))).size;
+}
+
+// ---------- QT-69: dãy dài ra / ngắn lại ở đầu tự do khi STRETCH không có căn bù ----------
+/**
+ * Dồn khít (XC-04) báo đoạn có tổng bề ngang đổi (`lech`): đầu chạy là đầu MẶT tự do thì mặt dài ra / ngắn lại đúng phần
+ * chênh, nét bao nối theo (DTXD nhảy theo — QT-69 / QT-57c app cũ). Trả số đoạn đã nối.
+ */
+function noiDaiRa(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc): { so: number; mm: number } {
+  const hd = dung(mau, mb, dl);
+  let so = 0, mm = 0;
+  for (const l of donKhit(hd, viTriCan(hd, tv), bc, tv).lech) {
+    const [aD, aC] = mepMat(mau, mb, l.matIdx);
+    if (Math.abs(l.a - (l.cuoi ? aC : aD)) > 50 || !dauTuDo(mau, mb, l.matIdx, l.cuoi)) continue;
+    if (gianMat(mau, mb, l.matIdx, l.cuoi, l.mm)) { so++; mm += l.mm; }
+  }
+  return { so, mm };
 }
 
 // ---------- tổng hợp ----------
@@ -665,14 +687,16 @@ const r1 = (x: number) => Math.round(x * 10) / 10;
  */
 export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | undefined, opt: TuyChonTuChinh): { matBang: MatBangSua; baoCao: BaoCaoTuChinh } {
   const { bc } = opt, H = opt.chieuCaoPCCC;
-  const mb0 = matBangMacDinh(mau, dl);
+  // QT-69 trước: mặt bằng xuất phát đã theo dãy dài ra / ngắn lại (mặc định của mẫu không bị sửa — nhớ dùng chung)
+  const mb0 = banSaoMatBang(matBangMacDinh(mau, dl));
+  const d69 = noiDaiRa(mau, mb0, dl, tv, bc);
   const vtsGoc = viTriCan(mau, tv);
   const cuaCan = cuaCanDung(vtsGoc.map((v) => canDangDung(v, bc)), tv, dl?.cuaCan ?? {});
   const qt: KetQuaTuChinh[] = [];
 
   // PC-11
   const pc = thangTuDong(mau, mb0, dl, tv, cuaCan, H, bc);
-  let mb = banSao(pc.mb);
+  let mb = banSaoMatBang(pc.mb);
   // XC-05
   const sua05 = suaKhitLoi(mau, mb, dl, tv, bc);
   // XC-06
@@ -685,7 +709,7 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
   let boPC11 = false;
   if (kheMoi.de > kheGoc.de || kheMoi.mm > kheGoc.mm + 200) {
     boPC11 = true;
-    mb = banSao(mb0);
+    mb = banSaoMatBang(mb0);
     suaKhitLoi(mau, mb, dl, tv, bc);
     trucQuaSanh(mau, mb, dl);
     hanhLangToiCua(mau, mb, dl, cuaCan);
@@ -694,8 +718,11 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
   const cuoi = danhGia(hd, bc, tv, cuaCan, H);
   const dai = daiLoi(mau, dl);
 
+  // QT-69
+  qt.push({ ma: 'QT-69', muc: d69.so ? 'da_sua' : 'ok', sua: d69.so,
+    ghiChu: d69.so ? `${d69.so} dãy ${d69.mm > 0 ? 'dài ra' : 'ngắn lại'} ${Math.abs(Math.round(d69.mm))} mm ở đầu tự do · nét bao + DTXD theo` : 'không có dãy đổi chiều dài' });
   // XC-03
-  const thieu = mb.thangBo.filter((t) => Math.abs(t.rong - O_THANG_MM) > 20).length;
+  const thieu = mb.thangBo.filter((t) => t.rong < O_THANG_MM - 20).length;
   const noi = mb0.thangBo.filter((t) => Math.abs(t.rong - (mau.mat[t.matIdx].phan_tu[Number(t.khoa.split(':')[1])]?.rong_mm ?? t.rong)) > 1).length;
   qt.push({ ma: 'XC-03', muc: thieu ? 'canh_bao' : noi ? 'da_sua' : 'ok', sua: noi,
     ghiChu: thieu ? `${thieu} ô thang chưa đủ 3.000 mm (không có đầu tự do để nới)` : `${mb.thangBo.length} ô thang · 3.000 mm · hút khe ≤ 600 mm` });
@@ -741,7 +768,9 @@ export function tuChinhToa<T extends ToaDat>(toa: T, mau: ToaMB | undefined, tv:
   if (!mau || !Array.isArray(mau.mat) || toa.tuChinhMB === false) return toa;
   const bc: BoCuc = { canTheo: toa.canTheo, canViTri: toa.canViTri, congNang: toa.congNang };
   const { matBang } = tuChinhMatBang(mau, tv, dl, { bc, chieuCaoPCCC: chieuCaoPCCC(toa.soTangDe, toa.caoDe, toa.soTangDH, toa.caoDH) });
-  return { ...toa, matBang };
+  // nét bao + DTXD riêng của tòa (chanToa / chỉ tiêu đọc): chỉ ghi khi khác nét bao mẫu
+  const bao = matBang.duongBao;
+  return { ...toa, matBang, duongBao: bao, dtxdM2: bao ? Math.round(dtDG(bao) / 1e4) / 100 : undefined };
 }
 
 /** Chuẩn hoá `matBang` đọc từ PA cũ / tệp: sai cấu trúc thì bỏ (về mặc định của mẫu). */

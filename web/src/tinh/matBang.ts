@@ -297,7 +297,8 @@ export const chenhRong = (vt: ViTriCan, id: string, tv: ThuVien): number =>
 export type KetQuaDonKhit = {
   vts: ViTriCan[];
   /** Đoạn có tổng bề ngang đổi (mm, ≠ 0): dãy dài ra / ngắn đi ở đầu tự do — bố cục tự động không tạo trường hợp này. */
-  lech: { matIdx: number; mm: number }[];
+  lech: { matIdx: number; mm: number; cuoi: boolean; a: number }[];
+  /* cuoi: đầu dài ra / co lại là đầu cuối (a lớn) của đoạn; a: vị trí đầu đó trước khi dồn (QT-69 nối nét bao theo). */
   /** Đoạn dài ra chạm mốc kế bên (lõi / thang / đoạn khác): đè. */
   de: number[];
 };
@@ -321,7 +322,11 @@ export function donKhit(mau: ToaCoMat, vtsGoc: ViTriCan[], bc: Pick<ToaDat, 'can
       ...doan.filter((o, oi) => oi !== di && o.matIdx === d.matIdx).map((o) => [o.a0, o.a1] as const)];
     const truoc = Math.max(m.a_dau - 1e9, ...ke.filter(([, b]) => b <= d.a0 + KHIT_MM).map(([, b]) => b));
     const sau = Math.min(m.a_cuoi + 1e9, ...ke.filter(([a]) => a >= d.a1 - KHIT_MM).map(([a]) => a));
-    const neoDau = Math.abs(chenh) <= KHIT_MM || d.a0 - truoc <= sau - d.a1;
+    // dải lõi (XC-05, mặt bằng tự chỉnh) chồng căn kề đúng bề dày tường chung (≤ 200 mm): đoạn sát lõi thì neo về lõi (XC-04 · QT-56b
+    // app cũ: dồn về lõi thang máy, thang bộ không còn là mốc); không có lõi kề thì neo đầu gần mốc hơn như cũ
+    const loiKe = (dau: boolean) => m.phan_tu.some((q) => q.bang && (dau ? Math.abs(q.a1 - d.a0) <= 200 : Math.abs(q.a0 - d.a1) <= 200));
+    const loiDau = loiKe(true), loiCuoi = loiKe(false);
+    const neoDau = Math.abs(chenh) <= KHIT_MM || (loiDau !== loiCuoi ? loiDau : d.a0 - truoc <= sau - d.a1);
     let a = neoDau ? d.a0 : d.a1 - tong;
     d.ds.forEach((i, k) => {
       const v = vtsGoc[i], B = coSo(m.goc_deg, m.truc_mm), a0 = a, a1 = a + rong[k];
@@ -329,7 +334,7 @@ export function donKhit(mau: ToaCoMat, vtsGoc: ViTriCan[], bc: Pick<ToaDat, 'can
       a = a1;
     });
     if (Math.abs(chenh) > KHIT_MM) {
-      lech.push({ matIdx: d.matIdx, mm: chenh });
+      lech.push({ matIdx: d.matIdx, mm: chenh, cuoi: neoDau, a: neoDau ? d.a1 : d.a0 });
       if ((neoDau ? d.a0 + tong > sau + KHIT_MM : d.a1 - tong < truoc - KHIT_MM)) de.push(di);
     }
   });

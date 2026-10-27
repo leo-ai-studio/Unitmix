@@ -77,6 +77,13 @@ export type ToaDat = {
   matBang?: MatBangSua;
   /** false = tắt tự chỉnh mặt bằng tầng; thiếu = bật (như app cũ). */
   tuChinhMB?: boolean;
+  /**
+   * Nét bao sàn tầng điển hình RIÊNG của tòa (mm, hệ toạ độ mẫu tòa) khi dãy dài ra / ngắn lại (QT-69 STRETCH đầu cánh,
+   * PC-11 thêm / bớt thang): chanToa, chỉ tiêu, dự toán đọc nét này thay nét bao mẫu. Thiếu = nét bao mẫu.
+   */
+  duongBao?: Diem[];
+  /** DTXD (m²) theo `duongBao`; thiếu = `dtxd_m2` của mẫu. */
+  dtxdM2?: number;
 };
 
 /** Ô thang bộ trên một mặt tòa (mm, hệ mặt): ô [a0, a0 + rong], điểm chèn khối thang = (a0 + dIns, bIns), lật theo `sx`. */
@@ -87,7 +94,7 @@ export type DoanHanhLangMB = { ten: string; noi: boolean; p0: Diem; p1: Diem };
 export type SanhMB = { khoaLoi: string; block: string; rong: number | null; loai: 'tm' | 'xh' };
 export type MucTuChinh = 'ok' | 'da_sua' | 'canh_bao' | 'vuot';
 /** Kết quả một quy tắc tự chỉnh: mức, số chỗ đã sửa, ghi chú ngắn (tiếng Việt, để báo cáo / tooltip). */
-export type KetQuaTuChinh = { ma: 'XC-03' | 'XC-05' | 'XC-06' | 'XC-07' | 'PC-11'; muc: MucTuChinh; sua: number; ghiChu: string };
+export type KetQuaTuChinh = { ma: 'XC-03' | 'XC-05' | 'XC-06' | 'XC-07' | 'PC-11' | 'QT-69'; muc: MucTuChinh; sua: number; ghiChu: string };
 export type BaoCaoTuChinh = {
   quyTac: KetQuaTuChinh[];
   soThangTruoc: number;
