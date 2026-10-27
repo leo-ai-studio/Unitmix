@@ -79,6 +79,58 @@ export type ThongSoHam = {
   choDai: number;
   choRong: number;
   dtKho: number;
+  /* Các trường dưới đây thêm cho màn Hầm; PA cũ thiếu thì `hamDayDu` (tinh/ham.ts) điền mặc định. */
+  /** Lùi ranh hầm vào trong so với chỉ giới (nếu có) hoặc ranh lô, m. */
+  lui?: number;
+  /** Chiều cao tầng hầm (sàn tới sàn), m. */
+  caoTang?: number;
+  /** Chiều dày kết cấu sàn + dầm (để tính thông thủy), m. */
+  dayKetCau?: number;
+  /** Cạnh cột kế thừa từ chân tòa, m. */
+  cotRong?: number;
+  /** Số chỗ ô tô cho người khuyết tật (xe lăn, rộng 3,5 m) mỗi tầng hầm. */
+  choXeLan?: number;
+  /** Bề rộng ô kho, m; hành lang kho, m; số kho mỗi tầng. */
+  rongKho?: number;
+  lanKho?: number;
+  khoMoiTang?: number;
+  /** Tầng hầm (1 = B1) đặt khu xe máy, xe đạp; DT dành cho xe máy (m²), null = lấy đúng DT yêu cầu. */
+  tangXeMay?: number;
+  dtXeMay?: number | null;
+  /** Tỷ lệ (0–1) sàn mỗi tầng hầm dành cho phòng kỹ thuật. */
+  tyLeKyThuat?: number;
+  /** Dùng gara cơ khí (QCVN 04:2021 2.2.17.1 d). */
+  garaCoKhi?: boolean;
+  ram?: RamHam;
+  xeDien?: KhuXeDien;
+};
+
+/** Loại ram theo QCVN 13:2018 2.2.1.28 a): thẳng có mái che, cong, hở (không mái che). */
+export type LoaiRam = 'thang_mai' | 'cong' | 'ho';
+/** Ram vào hầm: tâm (x, y) và hướng (độ, theo trục dài ram); null = tự đặt dọc cạnh dài nhất của ranh hầm. */
+export type RamHam = {
+  x: number | null;
+  y: number | null;
+  gocDo: number | null;
+  dai: number; // chiều dài phần dốc theo phương ngang, m
+  rong: number;
+  loai: LoaiRam;
+  docNgang: number; // %
+  coNguoiDi: boolean;
+  viaHe: number; // m
+};
+/** Khu xe điện / sạc / đổi pin theo DỰ THẢO Sửa đổi 01:2026 QCVN 04:2021/BXD (chưa có số, chưa hiệu lực): chỉ cảnh báo. */
+export type KhuXeDien = {
+  bat: boolean;
+  tang: number; // tầng hầm đặt khu sạc (1 = B1)
+  choOto: number; // số chỗ sạc ô tô
+  choXeMay: number; // số chỗ sạc xe máy, xe đạp điện
+  vungOto: number; // số chỗ sạc ô tô mỗi phân vùng
+  vungXeMay: number;
+  dtXeMayMoiCho: number; // m²/chỗ xe máy gồm lối đi (để ước DT khu sạc xe máy)
+  khoangCach: number; // m, giữa các khu / phân vùng
+  tuongNgan: boolean; // có tường / vách ngăn không cháy cao ≥ 2 m
+  tuDoiPinTang: number | null; // tầng hầm đặt tủ đổi pin; null = không có
 };
 
 /** Góc nhìn 3D đã lưu (m, toạ độ three: X = x, Y = cao, Z = −y). `che` = cảnh toàn dự án hay một công trình. */

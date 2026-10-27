@@ -40,7 +40,8 @@ const sao = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 const CT_CHO_NULL = new Set(['matDoThapMax', 'tangDe', 'tangCanHo', 'tangHam', 'soCanMax']);
 const KHOA_NGUONG: (keyof NguongMau)[] = ['dtCanM2', 'kichThuocM', 'coCauDiem'];
-const KHOA_HAM: (keyof HamPreset)[] = ['soTang', 'nhip', 'rongLan', 'choDai', 'choRong', 'dtKho'];
+// Chỉ các thông số số của hầm; ram, khu xe điện, cờ gara cơ khí nằm ngoài preset.
+const KHOA_HAM: (keyof HamPreset)[] = ['soTang', 'nhip', 'rongLan', 'choDai', 'choRong', 'dtKho', 'lui', 'caoTang', 'dayKetCau', 'cotRong', 'choXeLan', 'rongKho', 'lanKho', 'khoMoiTang', 'tangXeMay', 'tyLeKyThuat'];
 
 /** Làm sạch dữ liệu đọc từ máy / file: trường lạ bỏ, số hỏng thì lấy giá trị mặc định. */
 function sachChiTieu(v: unknown): ChiTieuQH | null {
@@ -70,7 +71,7 @@ export function lamSachDuLieu(nhom: NhomPreset, v: unknown): DuLieuPreset | null
     if (f === 'chiTieu') { const x = sachChiTieu(v[f]); if (x) kq.chiTieu = x; }
     else if (f === 'coCau') { const x = sachCoCau(v[f]); if (x) kq.coCau = x; }
     else if (f === 'nguong') { const x = sachSoCoKhoa(v[f], KHOA_NGUONG); if (x) kq.nguong = x as NguongMau; }
-    else if (f === 'ham') { const x = sachSoCoKhoa(v[f], KHOA_HAM); if (x) kq.ham = x as HamPreset; }
+    else if (f === 'ham') { const x = sachSoCoKhoa(v[f], KHOA_HAM); if (x) kq.ham = x as unknown as HamPreset; }
     else if (laDoiTuong(v[f])) kq[f as 'heSo' | 'phanHam'] = sao(v[f]);
   }
   // Nhóm theo mục phải có đúng trường của nó; nhóm cấp cần ít nhất một trường.

@@ -2,7 +2,8 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t, useLang } from '../i18n/i18n';
 
-export type CapDo = { lo: string; coTe: 'tren' | 'duoi'; toa?: string; tang?: string; can?: string };
+/** onCoTe: đổi Trên / Dưới cốt 0 (vào màn Hầm); onTang: bấm ô tầng (vd. chuyển tầng hầm). */
+export type CapDo = { lo: string; coTe: 'tren' | 'duoi'; toa?: string; tang?: string; can?: string; onCoTe?: () => void; onTang?: () => void };
 export type CheDo = 'tu_dong' | 'chinh_tay' | 'chi_xem';
 export type CheDoXem = 'mat_bang' | 'mo_hinh' | 'chi_phi';
 export type TrangThaiLuu = 'da_luu' | 'dang_luu' | 'chua_luu_duoc';
@@ -137,9 +138,9 @@ export function ThanhTren(p: Props) {
           <button type="button" aria-label={t('cap.len')}>↑</button>
           <button type="button" title={p.capDo.lo}>{p.capDo.lo}</button>
           <span class="xam">|</span>
-          <button type="button" title={t(p.capDo.coTe === 'tren' ? 'cap.tren' : 'cap.duoi')}>{t(p.capDo.coTe === 'tren' ? 'cap.tren' : 'cap.duoi')} ▾</button>
+          <button type="button" title={t('cap.doiCoTe')} onClick={p.capDo.onCoTe}>{t(p.capDo.coTe === 'tren' ? 'cap.tren' : 'cap.duoi')} ▾</button>
           {p.capDo.toa && <button type="button" title={p.capDo.toa}>{p.capDo.toa} ▾</button>}
-          {p.capDo.tang && <button type="button" title={p.capDo.tang}>{p.capDo.tang} ▾</button>}
+          {p.capDo.tang && <button type="button" title={p.capDo.tang} onClick={p.capDo.onTang}>{p.capDo.tang} ▾</button>}
           {p.capDo.can && <button type="button" title={p.capDo.can}>{p.capDo.can} ▾</button>}
         </nav>
       )}

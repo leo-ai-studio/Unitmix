@@ -1,7 +1,10 @@
 /** Rải chỗ đỗ ô tô cho một tầng hầm: kiểu dãy đôi (chỗ – làn – chỗ), hàm thuần. Toạ độ mét. */
 import type { Diem, ThongSoHam } from './kieu';
 
-export type KetQuaRaiCho = { cho: Diem[][]; lan: Diem[][]; kho: Diem[][]; soCho: number; soKho: number };
+/** `cho` = chỗ thường; `xeLan` = chỗ người khuyết tật (gộp hai ô liền nhau); soCho = cho + xeLan. */
+export type KetQuaRaiCho = { cho: Diem[][]; lan: Diem[][]; kho: Diem[][]; soCho: number; soKho: number; xeLan: Diem[][] };
+/** Tuỳ chọn: số chỗ xe lăn cần tạo, bề rộng tối thiểu chỗ xe lăn (QCVN 13:2018 2.2.1.25: 3,5 m), góc dãy cố định (rad). */
+export type TuyChonRai = { soXeLan?: number; rongXeLan?: number; goc?: number };
 
 const EPS = 1e-6;
 
@@ -64,7 +67,7 @@ function hcnTrongDaGiac(r: Hcn, poly: Diem[]): boolean {
 }
 
 /** Góc (rad) của cạnh dài nhất. */
-function gocCanhDaiNhat(ranh: Diem[]): number {
+export function gocCanhDaiNhat(ranh: Diem[]): number {
   let dai = -1;
   let goc = 0;
   for (let i = 0; i < ranh.length; i++) {
@@ -79,10 +82,13 @@ function gocCanhDaiNhat(ranh: Diem[]): number {
   return goc;
 }
 
+/** Kích thước ô (chỗ đỗ hoặc kho) và làn giữa hai dãy. */
+export type KichThuocCho = Pick<ThongSoHam, 'choRong' | 'choDai' | 'rongLan'>;
+
 type Phuong = { cho: Hcn[]; lan: Hcn[] };
 
 /** Rải một phương án với độ lệch lưới (offU, offV) trong hệ xoay. */
-function raiMot(ranh: Diem[], vc: Diem[][], ts: ThongSoHam, offU: number, offV: number, bb: Hcn): Phuong {
+function raiMot(ranh: Diem[], vc: Diem[][], ts: KichThuocCho, offU: number, offV: number, bb: Hcn): Phuong {
   const { choRong: w, choDai: d, rongLan: lan } = ts;
   const mod = 2 * d + lan;
   const cho: Hcn[] = [];
@@ -137,11 +143,11 @@ function gopLan(o: Hcn[]): Hcn[] {
  * Rải chỗ đỗ ô tô trong ranh một tầng hầm. Dãy chạy song song cạnh dài nhất,
  * thử nhiều độ lệch lưới và giữ phương án nhiều chỗ nhất. Chưa có kho (kho = []).
  */
-export function raiChoDo(ranh: Diem[], vatCan: Diem[][], ts: ThongSoHam): KetQuaRaiCho {
-  const rong: KetQuaRaiCho = { cho: [], lan: [], kho: [], soCho: 0, soKho: 0 };
+export function raiChoDo(ranh: Diem[], vatCan: Diem[][], ts: KichThuocCho, tuyChon: TuyChonRai = {}): KetQuaRaiCho {
+  const rong: KetQuaRaiCho = { cho: [], lan: [], kho: [], soCho: 0, soKho: 0, xeLan: [] };
   if (!ranh || ranh.length < 3 || !(ts.choRong > 0) || !(ts.choDai > 0) || !(ts.rongLan >= 0)) return rong;
 
-  const goc = gocCanhDaiNhat(ranh);
+  const goc = tuyChon.goc ?? gocCanhDaiNhat(ranh);
   const c = Math.cos(goc);
   const s = Math.sin(goc);
   const xoay = (p: Diem): Diem => [p[0] * c + p[1] * s, -p[0] * s + p[1] * c];
@@ -168,6 +174,39 @@ export function raiChoDo(ranh: Diem[], vatCan: Diem[][], ts: ThongSoHam): KetQua
   if (!tot) return rong;
 
   const ve = (h: Hcn): Diem[] => [xoayNguoc(h[0], h[1]), xoayNguoc(h[2], h[1]), xoayNguoc(h[2], h[3]), xoayNguoc(h[0], h[3])];
-  const cho = tot.cho.map(ve);
-  return { cho, lan: gopLan(tot.lan).map(ve), kho: [], soCho: cho.length, soKho: 0 };
+  const { thuong, xeLan } = tachXeLan(tot.cho, tuyChon.soXeLan ?? 0, tuyChon.rongXeLan ?? 3.5);
+  const cho = thuong.map(ve);
+  return { cho, lan: gopLan(tot.lan).map(ve), kho: [], soCho: cho.length + xeLan.length, soKho: 0, xeLan: xeLan.map(ve) };
+}
+
+/**
+ * Gộp các ô liền nhau trong cùng dãy thành chỗ xe lăn (đủ bề rộng `rong`), lấy từ đầu dãy, tối đa `n` chỗ.
+ * Ô hẹp hơn `rong` thì gộp 2 (hoặc nhiều hơn) ô liền nhau.
+ */
+function tachXeLan(cho: Hcn[], n: number, rong: number): { thuong: Hcn[]; xeLan: Hcn[] } {
+  if (n <= 0 || !cho.length) return { thuong: cho, xeLan: [] };
+  const nhom = new Map<string, Hcn[]>();
+  for (const r of cho) {
+    const k = `${r[1].toFixed(4)}`;
+    const g = nhom.get(k);
+    if (g) g.push(r);
+    else nhom.set(k, [r]);
+  }
+  const dung = new Set<Hcn>();
+  const xeLan: Hcn[] = [];
+  for (const g of nhom.values()) {
+    g.sort((a, b) => a[0] - b[0]);
+    let i = 0;
+    while (i < g.length && xeLan.length < n) {
+      let j = i;
+      while (g[j][2] - g[i][0] < rong - 1e-6 && j + 1 < g.length && g[j + 1][0] - g[j][2] < 1e-6) j++;
+      if (g[j][2] - g[i][0] >= rong - 1e-6) {
+        xeLan.push([g[i][0], g[i][1], g[j][2], g[i][3]]);
+        for (let k = i; k <= j; k++) dung.add(g[k]);
+        i = j + 1;
+      } else i = j + 1;
+    }
+    if (xeLan.length >= n) break;
+  }
+  return { thuong: cho.filter((r) => !dung.has(r)), xeLan };
 }
