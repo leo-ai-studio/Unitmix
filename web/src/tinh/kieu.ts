@@ -120,6 +120,8 @@ export type BaoCaoTuChinh = {
   thangLien?: BaoCaoThangLien;
   /** Khít đoạn kẹp (dãy căn giữa hai mốc mà tổng bề ngang đổi): căn đã đổi / bỏ cho hết đè, khe; thiếu = không cần. */
   khitKep?: BaoCaoKhitKep;
+  /** QT-69 · dãy dài ra (mm > 0) / ngắn lại ở đầu hở ra sân trong, nét bao + DTXD theo; thiếu = không có. */
+  daiSan?: { so: number; mm: number };
 };
 /** Căn đổi / bỏ để dãy căn kẹp giữa hai mốc (lõi, ô thang) khít lại; `conMm` = đè + khe còn lại (mm) sau khi khít. */
 export type BaoCaoKhitKep = {
