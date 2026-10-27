@@ -43,8 +43,8 @@ export function useDuLieuMB(tv: ThuVien | null): DuLieuMB | null {
   return dl;
 }
 
-/** Mẫu tòa hiệu dụng của tòa (mặt bằng đã tự chỉnh / mặc định của mẫu). */
-export const mauCuaToa = <T extends ToaMB>(toa: ToaDat, mau: T): T => mauHieuDung(toa, mau, dl);
+/** Mẫu tòa hiệu dụng của tòa (mặt bằng đã tự chỉnh / mặc định của mẫu); `tang` = tầng có bố cục riêng thì theo mặt bằng của tầng đó. */
+export const mauCuaToa = <T extends ToaMB>(toa: ToaDat, mau: T, tang?: number | null): T => mauHieuDung(toa, mau, dl, tang);
 
 /**
  * Bọc `sua` của màn Tầng: sau phép sửa (đổi căn, STRETCH, tối ưu) chạy lại tự chỉnh mặt bằng của tòa `toaId` trong CÙNG một bước

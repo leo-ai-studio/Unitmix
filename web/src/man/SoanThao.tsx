@@ -106,7 +106,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const thongBao = (
     <>
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}
-      {moXuat && xemXuat && tv && <HopXuatCad toa={xemXuat.toa} mau={xemXuat.mau} tv={tv} ten={da.ten} dong={() => setMoXuat(false)} />}
+      {moXuat && xemXuat && tv && <HopXuatCad toa={xemXuat.toa} mau={xemXuat.mauTang(null)} mauTang={xemXuat.mauTang} tv={tv} ten={da.ten} dong={() => setMoXuat(false)} />}
       {coNhap && (
         <div class="thong-bao canh" role="status">
           {t('soan.coNhap')}

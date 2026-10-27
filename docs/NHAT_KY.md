@@ -2,6 +2,20 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-28 · tự chỉnh MB đợt 2: PC-11 chuyển mặt · thang theo tầng · 3D / CAD theo mặt bằng tự chỉnh · agent Opus
+
+**Đã làm** (nhánh agent, từ `main` @ `f37645c`):
+- PC-11 (`tinh/loiThang.ts` `thangTuDong`): còn căn vượt sau leo dốc cũ thì dò rộng như `datThangBo` app cũ (`doRong`): dời trong đoạn, thêm thang ở MỌI đoạn có đầu tự do (mọi mặt), CHUYỂN một thang sang mặt / đoạn khác (bỏ ở đoạn cũ → dãy co, đặt chỗ cắt mới → dãy dài), kẹt thì dời HAI thang cùng lúc; chạy từ hai điểm xuất phát (kết quả leo dốc + thang bản vẽ), lấy cái tốt hơn. Luật app cũ `legal`: hai thang chiếu lên cùng trục hành lang cách nhau ≥ ngưỡng cụt (`tramThang`). Đo mỗi phương án trên mặt bằng đã kéo trục hành lang (XC-07) và loại ngay phương án tạo khe / đè (`tongKhe`) thay vì để gác cuối bỏ cả PC-11. Còn vượt thì báo mức `vuot` + lý do (`lyDoVuot`: đủ 3 thang, thang kẹp giữa lõi / góc, căn đầu cụt, cần chủ nhiệm quyết như app cũ tự sinh / `giamCanThoatNan`).
+- Thang / tự chỉnh theo tầng: `BoCucTang.matBang`; `tuChinhToa` tự chỉnh từng tầng có bố cục riêng với căn của tầng đó, chỉ lưu khi khác mặt bằng chung; thang tầng riêng khác tầng chung → PC-11 `canh_bao` "thang bộ phải liền suốt chiều cao … giá trị tạm, chờ chủ nhiệm chốt". `matBangTang` / `matBangRiengTang` / `mauHieuDung(toa, mau, dl, tang)`; màn Tầng xem tầng nào thì vẽ / đếm / báo cáo theo mặt bằng tầng đó (`toaDangXem` có `mauTang`). DT sàn tháp cộng nét bao riêng từng nhóm tầng (`tinhChiTieu`). `gonTang` giữ `matBang`; `chuanHoaToa` chuẩn hoá `matBang` của tầng.
+- 3D (`ve3d/dungToa.ts`, `MoHinh3D.tsx`): dựng từng tầng theo mặt bằng tự chỉnh của tầng (`mauTang`), bỏ dải lõi `bang` (trước đây dựng thành tum sai chỗ), sàn hành lang ngoài nét bao (`sanHanhLangNgoai`), khoá dựng lại theo `chuKyMatBang`.
+- CAD (`xuat/xuatCad.ts`, `man/HopXuatCad.tsx`): điểm chèn căn theo vị trí đã dồn (giữ lệch điểm chèn CAD so với mép mô-đun), khoá vị trí đọc `q.khoa` (trước đây lệch chỉ số sau ô thang → căn sai / thiếu), bỏ dải lõi, dải sàn hành lang kéo dài trên lớp MDI-HANHLANG (.dxf + .scr), từng tầng theo mặt bằng của tầng; hộp xuất ghi "Xuất theo mặt bằng đã tự chỉnh". Cách xuất STRETCH (nhúng nét đã kéo) giữ nguyên.
+
+**Số căn vượt cự ly (24 tầng, H 81,8 m) trước → sau tự chỉnh** (trước đợt này → đợt này): tm-i1 2→2 ⇒ 2→0; xh-z4 6→1 ⇒ 6→0; tm-z3 5→0 ⇒ 5→0 (giữ); tm-l3 1→1 ⇒ 1→0; xh-z6 2→1 ⇒ 2→0; tm-t2 3→2 ⇒ 3→2 (vượt, chữ T 3 cánh, đủ 3 thang); tm-u1 3→1 ⇒ 3→1 (vượt, 1/3 thang kẹp giữa lõi / góc). Mọi mẫu khác 0. 12 tầng: mọi mẫu 0. Lâu nhất ~200 ms / mẫu.
+
+**Kiểm:** tsc 0, web 317/317 (mới `tinh/tuChinhMoRong.test.ts` 19 test trên mẫu thật), build qua. Trên app (vite 5403, API 8787, tòa tm-i1 24 tầng): Tối ưu → tự chỉnh "thang 2→3 · căn vượt 2→0 · chuyển mặt 1"; tầng 12, 25 cơ cấu riêng → tầng riêng có mặt bằng riêng (dài 1.900 mm, cảnh báo thang khác tầng chung); 3D công trình dựng, không lỗi console; hộp xuất CAD hiện phạm vi theo tầng + dòng "Xuất theo mặt bằng đã tự chỉnh"; hoàn tác một bước về mặt bằng chung. Khung giữa 270,52 · 870×848 trước / sau mọi bước.
+
+**Còn dở:** tm-t2, tm-u1 ở 24 tầng còn căn vượt — app cũ cũng chỉ gỡ được bằng tự sinh (xếp lại cả dãy căn bằng DP) hoặc `giamCanThoatNan` (cắt căn), cần chủ nhiệm cho phép; chưa làm. Thang tầng riêng khác tầng chung chỉ cảnh báo, chưa gộp thành thang liền suốt chiều cao. Hộp thoại (mở bằng rAF) không chụp được khi khung trình duyệt ẩn — kiểm bằng DOM.
+
 ## 2026-10-28 · tự chỉnh mặt bằng tầng XC-03/05/06/07 · PC-11 · QT-69 · agent Opus
 
 **Đã làm** (nhánh agent, đã gộp `nang-cap/architechtures` @ `6215025` trước khi làm QT-69):

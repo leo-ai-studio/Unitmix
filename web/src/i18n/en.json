@@ -939,5 +939,7 @@
   "st.xuatGhiChu": "{n} STRETCH unit template(s): the stretched geometry is exported (.dxf = own block, .scr = drawn lines), not an XREF of the base template.",
   "gt.st.xuat": "The CAD library only holds .dwg files of base templates. Stretched units (QT-81 · DC-04) are exported with the stretched geometry following the STRETCH command rule, without referencing the base template file.",
   "st.daiRa": "Unit {a} stretched {d} mm with no compensating unit: the run changes {d} mm at its free wing end; the tower outline and footprint follow (QT-69).",
-  "tc.tomTat": "Floor auto-adjust (XC-03/05/06/07 · PC-11 · QT-69): {n} rules fixed · {c} to review · stairs {t} · units over escape distance {v} · footprint {d} m²"
+  "tc.tomTat": "Floor auto-adjust (XC-03/05/06/07 · PC-11 · QT-69): {n} rules fixed · {c} to review · stairs {t} · units over escape distance {v} · footprint {d} m²",
+  "tc.tangRieng": "Own floor: plan auto-adjusted for this floor's units",
+  "xcad.tuChinh": "Exports the auto-adjusted floor plan: {t} stairs, shifted units, outline (footprint {d} m²) and extended corridors."
 }

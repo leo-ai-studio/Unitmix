@@ -38,7 +38,8 @@ function gonTang(tr: Record<string, BoCucTang>): Record<number, BoCucTang> | und
   for (const [k, g] of Object.entries(tr)) {
     const cv = g.canViTri && Object.keys(g.canViTri).length ? g.canViTri : undefined;
     const cn = g.congNang && Object.keys(g.congNang).length ? g.congNang : undefined;
-    if (cv || cn || g.coCauMucTieu) kq[Number(k)] = { ...(cv ? { canViTri: cv } : {}), ...(cn ? { congNang: cn } : {}), ...(g.coCauMucTieu ? { coCauMucTieu: g.coCauMucTieu } : {}) };
+    // mặt bằng tự chỉnh riêng của tầng giữ tới lần tự chỉnh sau (chỉ còn nghĩa khi tầng còn đổi căn / công năng)
+    if (cv || cn || g.coCauMucTieu) kq[Number(k)] = { ...(cv ? { canViTri: cv } : {}), ...(cn ? { congNang: cn } : {}), ...(g.coCauMucTieu ? { coCauMucTieu: g.coCauMucTieu } : {}), ...((cv || cn) && g.matBang ? { matBang: g.matBang } : {}) };
   }
   return Object.keys(kq).length ? kq : undefined;
 }
