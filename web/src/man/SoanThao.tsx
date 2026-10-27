@@ -4,7 +4,7 @@ import { t, useLang } from '../i18n/i18n';
 import { useKho } from '../kho/kho';
 import { ghiNhoDuAn, layMaSua, nhanMaTuLink } from '../kho/maSua';
 import type { TrangThaiPA } from '../tinh/kieu';
-import { chuanHoaPA, loDangChonHoacDatO, taoPAMoi } from '../tinh/macDinh';
+import { chuanHoaPA, taoPAMoi } from '../tinh/macDinh';
 import { KhungSoan } from '../ui/KhungSoan';
 import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
 import { tinhChiTieu, type KetQuaChiTieu } from '../tinh/chiTieu';
@@ -12,10 +12,9 @@ import type { ThuVien } from '../tinh/kieu';
 import { soCanChuVi, viTriCan } from '../tinh/matBang';
 import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
-import { LoGiua, LoPhai, LoTrai } from './ManLo';
 import { HopXuatCad } from './HopXuatCad';
 import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem } from './ManTang';
-import { XepGiua, XepPhai, XepTrai, loDangXep } from './ManXepToa';
+import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
 
@@ -84,7 +83,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
   const chiXem = kho.cheDo === 'chi_xem';
   const kq: KetQuaChiTieu | null = tv ? tinhChiTieu(kho.pa, tv) : null;
-  const [buoc, setBuoc] = useState<'lo' | 'xep' | 'tang'>('lo');
+  const [buoc, setBuoc] = useState<'tmb' | 'tang'>('tmb');
   const [canKhoa, setCanKhoa] = useState<string | null>(null);
   const [moXuat, setMoXuat] = useState(false);
   const [toaId, setToaId] = useState<string | null>(null);
@@ -93,18 +92,8 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };
   const xemXuat = toaDangXem(kho.pa, tv, loId, toaId);
   const xemTang = buoc === 'tang' ? toaDangXem(kho.pa, tv, loId, toaId) : null;
-  const loDangChon = buoc === 'xep' ? loDangXep(kho.pa, loId) : buoc === 'tang' ? xemTang?.lo : loDangChonHoacDatO(kho.pa.lo, loId);
-  const toaDangChon = buoc === 'xep' ? kho.pa.toa.find((x) => x.id === toaId) : xemTang?.toa;
-  const chonBuoc = (
-    <div class="chon-buoc">
-      <div class="nhom-nut" role="group" aria-label={t('buoc.nhom')}>
-        <button type="button" aria-pressed={buoc === 'lo'} onClick={() => setBuoc('lo')}>{t('buoc.lo')}</button>
-        <button type="button" aria-pressed={buoc === 'xep'} onClick={() => setBuoc('xep')}>{t('buoc.xep')}</button>
-        <button type="button" aria-pressed={buoc === 'tang'} onClick={() => setBuoc('tang')}>{t('buoc.tang')}</button>
-      </div>
-    </div>
-  );
-
+  const loDangChon = buoc === 'tmb' ? loDangXep(kho.pa, loId) : xemTang?.lo;
+  const toaDangChon = buoc === 'tmb' ? kho.pa.toa.find((x) => x.id === toaId) : xemTang?.toa;
   const thongBao = (
     <>
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}
@@ -137,9 +126,10 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       thongBao={thongBao}
       onXuatCad={xemXuat && tv ? () => setMoXuat(true) : undefined}
       moHinh={<TangMoHinh {...chungTang} />}
-      trai={<>{chonBuoc}{buoc === 'lo' ? <LoTrai {...chung} /> : buoc === 'xep' ? <XepTrai {...chungXep} /> : <TangTrai {...chungTang} />}</>}
-      giua={buoc === 'lo' ? <LoGiua {...chung} /> : buoc === 'xep' ? <XepGiua {...chungXep} /> : <TangGiua {...chungTang} />}
-      phai={buoc === 'lo' ? <LoPhai {...chung} kq={kq} /> : buoc === 'xep' ? <XepPhai {...chungXep} kq={kq} /> : <TangPhai {...chungTang} />}
+      buoc={{ ds: [['tmb', t('buoc.tmb')], ['tang', t('buoc.tang')]], chon: buoc, onChon: (k) => setBuoc(k as 'tmb' | 'tang') }}
+      trai={buoc === 'tmb' ? <TmbTrai {...chungXep} /> : <TangTrai {...chungTang} />}
+      giua={buoc === 'tmb' ? <XepGiua {...chungXep} /> : <TangGiua {...chungTang} />}
+      phai={buoc === 'tmb' ? <TmbPhai {...chungXep} kq={kq} /> : <TangPhai {...chungTang} />}
     />
   );
 }
