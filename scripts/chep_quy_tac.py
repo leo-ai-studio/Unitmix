@@ -394,7 +394,8 @@ def _sha(p: Path) -> str:
 
 
 # Luật QCVN 04:2021/BXD bổ sung thủ công (không có trong yaml app cũ). Mã DC-06… nối tiếp sau các luật đã đánh mã để không đổi mã cũ.
-_BS = dict(buoc="doi_mau_can", nhom="qcvn04", ap_dung="ca_hai", thay_the_boi=None, thay_cho=[], ham="qcvn04.ts")
+# bo_sung: luật mới không có ở app cũ nên ma_cu rỗng
+_BS = dict(buoc="doi_mau_can", nhom="qcvn04", ap_dung="ca_hai", thay_the_boi=None, thay_cho=[], ham="qcvn04.ts", bo_sung=True)
 LUAT_BO_SUNG = [
     dict(id="qcvn04_phong_ngu_9", bat_buoc=True, ten_vi="Phòng ngủ tối thiểu 9 m²", ten_en="Minimum bedroom area",
          nguon="QCVN 04:2021/BXD 2.2.4.4", nguong=[N(9, "m²", "DT mỗi phòng ngủ", ">=")], ma_kiem="phong_ngu_9",
@@ -476,6 +477,9 @@ def chep(nguon: Path) -> dict:
     for x in LUAT_BO_SUNG:
         dem[x["buoc"]] = dem.get(x["buoc"], 0) + 1
         ra.append({"ma": f"{tien_to[x['buoc']]}-{dem[x['buoc']]:02d}", **x})
+    # giữ quy ước: trong mỗi bước luật bắt buộc đứng trước luật nội bộ (sắp ổn định)
+    thu_tu = [b["ma"] for b in BUOC]
+    ra.sort(key=lambda x: (thu_tu.index(x["buoc"]), not x["bat_buoc"]))
 
     ma_moi = {x["id"]: x["ma"] for x in ra}
     qt_goc = []
