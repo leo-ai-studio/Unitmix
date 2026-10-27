@@ -12,6 +12,7 @@ import { fmtSo } from '../ui/so';
 import { SoDong } from '../ui/SoDong';
 import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
 import { BangChiTieuLo, ChonLoCaoTang, LoChiTieu, LoNhap, SucChuaLo } from './ManLo';
+import { GoiYXepToa, LopGoiY } from '../ui/GoiYXepToa';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -71,6 +72,11 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
 
   return (
     <>
+      {lo && (
+        <MucGap tieuDe={t('xep.goiYTieuDe')} giaiThich={t('gt.xep.goiY')} mo>
+          <GoiYXepToa pa={pa} lo={lo} tv={tv} sua={sua} chiXem={chiXem} chonToa={chonToa} />
+        </MucGap>
+      )}
       {lo && (
         <MucGap tieuDe={t('xep.thuVien')} giaiThich={t('xep.thuVienGiaiThich')} mo={!toaLo.length}>
           <div class="dong">
@@ -225,6 +231,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
             </g>
           );
         })}
+        <LopGoiY loId={lo?.id ?? null} tv={tv} />
         {pa.lo.map((l) => {
           if (pa.toa.some((x) => x.loId === l.id)) return null;
           const caoTang = laCaoTang(l), xs = l.ranh.map((q) => q[0]), ys = l.ranh.map((q) => q[1]);

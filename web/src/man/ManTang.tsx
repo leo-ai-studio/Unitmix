@@ -8,7 +8,8 @@ import { boCucTang, coCauRiengTang, coMat, ghiDeTang, tangCoRieng, ungVienDoi, v
 import { dtHanhLangTang, phanChungPhanBo } from '../tinh/phanChung';
 import { toiUuCoCau } from '../tinh/toiUu';
 import { BanVe, khungBao, type DieuKhienVe } from '../ve/BanVe';
-import { idLoi, useHinhHoc } from '../ve/hinhHocThuVien';
+import { idLoi, taiCuaCan, useHinhHoc } from '../ve/hinhHocThuVien';
+import { chieuCaoPCCC } from '../tinh/pccc';
 import { DS_KIEU_MB, KIEU_MB, NHAN_LOAI } from '../ve/kieuMb';
 import { MatBangTang, soLieuTang, type ToaVe } from '../ve/MatBangTang';
 import { BangTuanThu } from '../ui/BangTuanThu';
@@ -87,6 +88,8 @@ export function TangTrai(p: ChungTang) {
   const { pa, sua, chiXem, tv, chonToa, chonCan } = p;
   const cai = useCaiTang();
   const [ghiChu, setGhiChu] = useState('');
+  // Đổi khác bề ngang + STRETCH khi tối ưu (A8 · DC-04/05, như app cũ): mặc định bật
+  const [doiRong, setDoiRong] = useState(true);
   const xem = toaDangXem(pa, tv, p.loId, p.toaId);
   const co = useChonO(xem?.toa ?? null);
   if (!tv) return <p class="dong muted">{t('lo.dangTaiThuVien')}</p>;
@@ -143,12 +146,19 @@ export function TangTrai(p: ChungTang) {
         {lo?.temDat.deBai && <p class="dong muted" style={{ margin: 0 }}>{t('lo.nguonDeBai').replace('{n}', lo.temDat.deBai.nguon)}</p>}
         <div class="dong" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
           <button type="button" class="nut-chinh" title={t('gt.tang.toiUu')} disabled={chiXem}
-            onClick={() => {
-              const kq = toiUuCoCau(mau, bc, tv, muc);
+            onClick={async () => {
+              const cuaCan = await taiCuaCan(tv, mau.nhom);
+              const kq = toiUuCoCau(mau, bc, tv, muc, {
+                doiBeNgang: doiRong, cuaCan, dtDeBai: lo?.temDat.deBai?.dtCan,
+                chieuCaoPCCC: chieuCaoPCCC(toa.soTangDe, toa.caoDe, toa.soTangDH, toa.caoDH),
+              });
               const vts = viTriCan(mau, tv);
               sua((q) => doiToa(q, toa.id, (x) => (tangs ? apDoiViTriTang(x, tangs, kq.canViTri, vts) : apDoiViTri(x, kq.canViTri))));
-              setGhiChu(kq.soDoi ? t('tang.daToiUu').replace('{n}', String(kq.soDoi)).replace('{a}', fmtSo(kq.diemTruoc, { thapPhan: 1 })).replace('{b}', fmtSo(kq.diemSau, { thapPhan: 1 })) : t('tang.khongDoiDuoc'));
+              setGhiChu(kq.soDoi ? t('tang.daToiUu').replace('{n}', String(kq.soDoi)).replace('{a}', fmtSo(kq.diemTruoc, { thapPhan: 1 })).replace('{b}', fmtSo(kq.diemSau, { thapPhan: 1 }))
+                + (kq.soDoiRong ? ' ' + t('tang.doiRongKq').replace('{n}', String(kq.soDoiRong)) : '')
+                + (kq.pcccSau !== null ? ' ' + t('tang.pcccKq').replace('{a}', String(kq.pcccTruoc)).replace('{b}', String(kq.pcccSau)) : '') : t('tang.khongDoiDuoc'));
             }}>{t('tang.toiUu')}{tangs ? ` · ${nhanPhamVi(tangs, toa.soTangDe)}` : ''}</button>
+          <label class="o-tg" title={t('gt.tang.doiRong')}><input type="checkbox" disabled={chiXem} checked={doiRong} onChange={(e) => setDoiRong(e.currentTarget.checked)} /><span>{t('tang.doiRong')}</span></label>
           <button type="button" class="nut-phu" title={t('gt.tang.veGoc')} disabled={chiXem || !coDoiCan}
             onClick={() => { sua((q) => doiToa(q, toa.id, veMauGoc)); setGhiChu(''); }}>{t('tang.veGoc')}</button>
         </div>
@@ -204,7 +214,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   const bc: BoCuc = useMemo(() => boCucTang(toa, k0), [toa, k0]);
   const sl = useMemo(() => soLieuTang(mau, bc, tv), [mau, bc, tv]);
   const loiIds = useMemo(() => mau.mat.flatMap((m) => m.phan_tu.filter((q) => q.loai !== 'can').map((q) => idLoi(q.block))), [mau]);
-  const hinh = useHinhHoc(sl.can.map((c) => c.canId), loiIds);
+  const hinh = useHinhHoc(sl.can.map((c) => c.canId), loiIds, tv);
   const khung = useMemo(() => {
     const k = khungBao([mau.duong_bao.map(([x, y]): [number, number] => [x / 1000, y / 1000])]);
     return k ? ([k[0] - 6, k[1] - 6, k[2] + 6, k[3] + 6] as [number, number, number, number]) : null;

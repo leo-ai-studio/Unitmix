@@ -1,4 +1,5 @@
 import { taoThuVien, type CanMau, type ThuVien, type ToaMau } from './kieu';
+import { themBienThe } from './stretch';
 
 let dangTai: Promise<ThuVien> | null = null;
 
@@ -7,7 +8,7 @@ export function taiThuVien(): Promise<ThuVien> {
   dangTai ??= Promise.all([
     fetch('/lib/toa.json').then((r) => r.json() as Promise<ToaMau[]>),
     fetch('/lib/can.json').then((r) => r.json() as Promise<CanMau[]>),
-  ]).then(([toa, can]) => taoThuVien(toa, can));
+  ]).then(([toa, can]) => themBienThe(taoThuVien(toa, can)));
   dangTai.catch(() => (dangTai = null));
   return dangTai;
 }

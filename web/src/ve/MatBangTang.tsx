@@ -41,7 +41,7 @@ const trongTam = (P: Diem[]): Diem => [P.reduce((a, p) => a + p[0], 0) / P.lengt
 
 /** Số liệu từng căn trên tầng dùng chung cho bản vẽ, panel và tem: CH-xx, mẫu đang dùng, Loại N. */
 export function soLieuTang(mau: ToaVe, toa: BoCuc, tv: ThuVien) {
-  const vts = viTriCan(mau, tv);
+  const vts = viTriCan(mau, tv, toa);
   const so = soCanChuVi(mau.duong_bao, vts);
   const theoCH = vts.map((vt) => ({ vt, canId: canDangDung(vt, toa), no: so.get(vt.khoa)!, cn: congNangTai(vt.khoa, toa) })).sort((a, b) => a.no - b.no);
   const loai = new Map<string, number>();
