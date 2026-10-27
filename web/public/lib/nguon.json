@@ -10,6 +10,12 @@
   "unit_geometry.json": "0cc51e580ff2418c4b82dbd505103e4f74b9ea10e3ea024ae015010518a29d39",
   "can3d.json": "93b9d76bc597c6fcbbcc1eb0ca6d8004ce704577eeebaba354df9182de551d31",
   "core_geometry.json": "5b11c496588e58ef256f9297a9ea373e7f8abfac04fc089cfa567243555063e7",
-  "tu_pccc.json": "44c141c8238fe1e079c7bf8870af30242297213f5ecb6f228dda5c07e3c51eb5"
+  "tu_pccc.json": "44c141c8238fe1e079c7bf8870af30242297213f5ecb6f228dda5c07e3c51eb5",
+  "rules/01_qcvn01.yaml": "24c49d0f490e3e76a825674843e6b74ff37e507239214ab5e89ac795633eb041",
+  "rules/02_qd34.yaml": "1df536ae889ef4473a9ba307c909d0b53542a62cef56f34b9ad7056d1f44c13a",
+  "rules/03_qcvn04.yaml": "46c52e5cb34c2a0615cc3be731f574ea1e5c23b71d20bfc55e06ad2162161f56",
+  "rules/04_qcvn06.yaml": "8f4076d4275e220ca69a97d33ecd23ef2ea2cd0bb75d9a1520edd458466e6ae0",
+  "rules/05_mdi.yaml": "83ede473a42715f1dfa511ae0f6943b27ea75831dc59cb776db7b0c50cc11efb",
+  "docs/QUY_TAC_XEP_CAN.md": "73a22cb575233cf0a145ce0b18884a58ebc53f1b0a306d3702fb07e9e1dacad3"
  }
 }

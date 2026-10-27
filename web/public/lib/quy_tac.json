@@ -1,0 +1,3014 @@
+{
+ "phien_ban": 1,
+ "buoc": [
+  {
+   "ma": "lo_qh",
+   "tien_to": "LO",
+   "ten_vi": "Lô / quy hoạch",
+   "ten_en": "Lot / zoning"
+  },
+  {
+   "ma": "chon_mau_toa",
+   "tien_to": "MT",
+   "ten_vi": "Chọn mẫu tòa",
+   "ten_en": "Tower template"
+  },
+  {
+   "ma": "xep_day_can",
+   "tien_to": "XC",
+   "ten_vi": "Xếp dãy căn",
+   "ten_en": "Unit rows"
+  },
+  {
+   "ma": "doi_mau_can",
+   "tien_to": "DC",
+   "ten_vi": "Đổi mẫu căn",
+   "ten_en": "Unit swap"
+  },
+  {
+   "ma": "pccc",
+   "tien_to": "PC",
+   "ten_vi": "PCCC / thoát nạn",
+   "ten_en": "Fire safety / egress"
+  },
+  {
+   "ma": "ham",
+   "tien_to": "HA",
+   "ten_vi": "Hầm",
+   "ten_en": "Basement"
+  },
+  {
+   "ma": "chi_tieu",
+   "tien_to": "CT",
+   "ten_vi": "Chỉ tiêu",
+   "ten_en": "Planning indicators"
+  }
+ ],
+ "luat": [
+  {
+   "ma": "LO-01",
+   "id": "qcvn01_lui_bang27",
+   "buoc": "lo_qh",
+   "nhom": "qcvn01",
+   "bat_buoc": true,
+   "ten_vi": "Khoảng lùi công trình theo lộ giới × chiều cao",
+   "ten_en": "Setback by road width × height",
+   "nguon": "QCVN 01:2021/BXD §2.6.2 · Bảng 2.7",
+   "nguong": [
+    {
+     "gia_tri": 0,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H < 19 m"
+    },
+    {
+     "gia_tri": 3,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "đường < 19 m · H 19–22 m"
+    },
+    {
+     "gia_tri": 4,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "đường < 19 m · H 22–28 m"
+    },
+    {
+     "gia_tri": 6,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H ≥ 28 m (mọi bề rộng đường)"
+    },
+    {
+     "gia_tri": 3,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "đường 19–22 m · H 22–28 m"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "lui_canh_lo",
+   "cach_tinh": "cạnh giáp đường lùi max(Bảng 2.7 theo lộ giới, khoảng lùi QH của lô); cạnh giáp lô khác lùi theo lô (mặc định 0); thiếu dữ liệu cạnh thì áp mọi cạnh",
+   "ma_cu": [
+    "QT-82",
+    "QT-118"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "bang": {
+    "ten": "Bảng 2.7 (m)",
+    "cot_cao_m": [
+     "<19",
+     "19–22",
+     "22–28",
+     "≥28"
+    ],
+    "hang_duong_m": {
+     "<19": [
+      0,
+      3,
+      4,
+      6
+     ],
+     "19–22": [
+      0,
+      0,
+      3,
+      6
+     ],
+     "≥22": [
+      0,
+      0,
+      0,
+      6
+     ]
+    }
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "LO-02",
+   "id": "qcvn01_khoang_cach_261",
+   "buoc": "lo_qh",
+   "nhom": "qcvn01",
+   "bat_buoc": true,
+   "ten_vi": "Khoảng cách giữa các tòa (cả nhà hiện hữu)",
+   "ten_en": "Distance between buildings",
+   "nguon": "QCVN 01:2021/BXD §2.6.1",
+   "nguong": [
+    {
+     "gia_tri": "max(H/2, 7)",
+     "don_vi": "m",
+     "chieu": ">=",
+     "dieu_kien": "H < 46 m · cạnh dài"
+    },
+    {
+     "gia_tri": "max(H/3, 4)",
+     "don_vi": "m",
+     "chieu": ">=",
+     "dieu_kien": "H < 46 m · đầu hồi"
+    },
+    {
+     "gia_tri": 25,
+     "don_vi": "m",
+     "chieu": ">=",
+     "dieu_kien": "H ≥ 46 m · cạnh dài"
+    },
+    {
+     "gia_tri": 15,
+     "don_vi": "m",
+     "chieu": ">=",
+     "dieu_kien": "H ≥ 46 m · đầu hồi"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "kc_toa_261",
+   "cach_tinh": "lấy theo công trình cao hơn; dưới mức đầu hồi = vượt, giữa hai mức = cảnh báo; nhà hiện hữu xét trong 60 m, nhà trong lô xây chung cư (sẽ giải toả) không tính",
+   "ma_cu": [
+    "QT-82",
+    "QT-89"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "LO-03",
+   "id": "mdi_loai_dat",
+   "buoc": "lo_qh",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Loại đất theo ký hiệu lô · chỉ lô ở mới đặt chung cư",
+   "ten_en": "Land use from lot code",
+   "nguon": "MDI · QT-82",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "loai_dat_lo",
+   "cach_tinh": "NXH/NOXH → nhà ở xã hội, CT → chung cư, HH → hỗn hợp (xây căn hộ); GD, CC, CX, LK, BT, DMKT… không đặt chung cư. Ranh lô = polyline kín có DT khớp số ghi ±3 %, không khớp thì không đoán",
+   "ma_cu": [
+    "QT-82"
+   ],
+   "thay_the_boi": null,
+   "ham": "sucChua.ts · sucChua (lô không phải đất ở → không ước số căn)",
+   "thay_cho": []
+  },
+  {
+   "ma": "LO-04",
+   "id": "mdi_chi_tieu_mot_nguon",
+   "buoc": "lo_qh",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Chỉ tiêu một nguồn: dự án + lô",
+   "ten_en": "Single source of indicators",
+   "nguon": "MDI · QT-107",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "chi_tieu_hai_cap",
+   "cach_tinh": "hai cấp: DỰ ÁN (cơ cấu KD, tỉnh, trần dân số / số căn cả dự án) và LÔ (DT, MĐXD, tầng, tuỳ chọn HSSDĐ, dân số, số căn); lô ghi đè dự án",
+   "ma_cu": [
+    "QT-107"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "LO-05",
+   "id": "mdi_khoa_cgxd",
+   "buoc": "lo_qh",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Tòa không ra khỏi chỉ giới xây dựng khi dời / xoay",
+   "ten_en": "Tower kept inside building line",
+   "nguon": "MDI · QT-118 R3",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "trong_cgxd",
+   "cach_tinh": "mọi thao tác dời / xoay / lật bị trả lại nếu tòa ra khỏi CGXD, trừ khi tòa vốn đã thiếu lùi và thao tác không làm tệ hơn",
+   "ma_cu": [
+    "QT-118"
+   ],
+   "thay_the_boi": null,
+   "ham": "hopLo.ts · hopLo / vungDat (chân tòa nằm trong chỉ giới)",
+   "thay_cho": []
+  },
+  {
+   "ma": "LO-06",
+   "id": "mdi_bong_do",
+   "buoc": "lo_qh",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Bóng đổ lên lô bên cạnh / nhà hiện hữu",
+   "ten_en": "Shadow on neighbours",
+   "nguon": "MDI · QT-84 · QT-89",
+   "nguong": [
+    {
+     "gia_tri": "8–16",
+     "don_vi": "giờ",
+     "chieu": "<=",
+     "dieu_kien": "ngày đông chí"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "bong_do",
+   "cach_tinh": "giao bóng từng giờ với chân nhà: DT bóng lớn nhất, % chân nhà, số giờ bị che (chỉ đánh giá, không chặn)",
+   "ma_cu": [
+    "QT-84",
+    "QT-89"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "MT-01",
+   "id": "mdi_dong_san_pham",
+   "buoc": "chon_mau_toa",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Mẫu tòa đúng dòng sản phẩm của lô",
+   "ten_en": "Template matches product line",
+   "nguon": "MDI · QT-82 (tối ưu lô) · QT-86",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "dong_san_pham",
+   "cach_tinh": "lô NOXH chỉ dùng mẫu xh, lô thương mại chỉ mẫu tm; số tầng = trần tầng của lô",
+   "ma_cu": [
+    "QT-82",
+    "QT-86"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "MT-02",
+   "id": "mdi_hanh_lang",
+   "buoc": "chon_mau_toa",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Bề rộng hành lang mặc định theo loại hình",
+   "ten_en": "Default corridor width",
+   "nguon": "MDI · QT-16 · QT-5",
+   "nguong": [
+    {
+     "gia_tri": 1800,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "tm"
+    },
+    {
+     "gia_tri": 1600,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "xh / tái định cư"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "hanh_lang_mac_dinh",
+   "cach_tinh": "đổi được; đổi bề rộng thì DTXD đổi (bề rộng mới − bản vẽ) × tổng chiều dài trục; chiều sâu dãy căn luôn 8.500 mm tính từ mép hành lang",
+   "ma_cu": [
+    "QT-16",
+    "QT-5"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "MT-03",
+   "id": "mdi_eff",
+   "buoc": "chon_mau_toa",
+   "nhom": "mdi",
+   "bat_buoc": false,
+   "ten_vi": "Hiệu suất mặt bằng",
+   "ten_en": "Plan efficiency",
+   "nguon": "MDI target ≥75 % · 7 yếu tố slide 3 PPTX",
+   "nguong": [
+    {
+     "gia_tri": 0.75,
+     "don_vi": "tỉ lệ",
+     "chieu": ">="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "hieu_suat",
+   "cach_tinh": "Σ DT thông thủy căn một tầng / DTXD (nét bao); dưới 75 % = cảnh báo",
+   "ma_cu": [
+    "mdi_eff"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/05_mdi.yaml",
+    "nhom": "mdi",
+    "nguon": "MDI target ≥75 %",
+    "trich": "7 yếu tố slide 3 PPTX"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "MT-04",
+   "id": "mdi_thay_loi",
+   "buoc": "chon_mau_toa",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Thay lõi thang đúng loại hình, đúng mẫu",
+   "ten_en": "Core swap rules",
+   "nguon": "MDI · QT-71 · QT-72 · QT-74 · QT-90",
+   "nguong": [
+    {
+     "gia_tri": 2800,
+     "don_vi": "mm",
+     "chieu": ">=",
+     "dieu_kien": "bề rộng sảnh phân loại: ≥ 2.800 NOTM (3,0 m), < 2.800 NOXH (2,6 m)"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "thay_loi",
+   "cach_tinh": "tòa I · Z · L: lõi cùng dạng + cùng loại hình; T · U · V · Y: chỉ lõi cùng mẫu; ô chừa lõi co/giãn theo dấu chân mới, căn dồn khít; lắp không vừa thì từ chối",
+   "ma_cu": [
+    "QT-71",
+    "QT-72",
+    "QT-72b",
+    "QT-74",
+    "QT-74b",
+    "QT-90"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": [
+    "QT-23"
+   ]
+  },
+  {
+   "ma": "MT-05",
+   "id": "mdi_lap_pa",
+   "buoc": "chon_mau_toa",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Lập PA: vét mẫu tòa × cách xếp, chấm bằng chính bộ kiểm tra",
+   "ten_en": "Generate options by exhaustive search",
+   "nguon": "MDI · QT-67 · QT-68 · QT-96",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "lap_pa",
+   "cach_tinh": "giữ số tầng theo QH, không thêm thang bộ; xếp hạng theo số lỗi QCVN trước, rồi hiệu suất / cơ cấu",
+   "ma_cu": [
+    "QT-67",
+    "QT-68",
+    "QT-96"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "MT-06",
+   "id": "mdi_huong_can",
+   "buoc": "chon_mau_toa",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Chấm hướng căn, căn góc, điểm view",
+   "ten_en": "Orientation and view score",
+   "nguon": "MDI · QT-88 · QT-111",
+   "nguong": [
+    {
+     "gia_tri": 40,
+     "don_vi": "%",
+     "chieu": "=",
+     "dieu_kien": "trọng số hướng"
+    },
+    {
+     "gia_tri": 30,
+     "don_vi": "%",
+     "chieu": "=",
+     "dieu_kien": "thoáng"
+    },
+    {
+     "gia_tri": 20,
+     "don_vi": "%",
+     "chieu": "=",
+     "dieu_kien": "cảnh quan"
+    },
+    {
+     "gia_tri": 10,
+     "don_vi": "%",
+     "chieu": "=",
+     "dieu_kien": "nắng"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "huong_view",
+   "cach_tinh": "góc lệch Bắc = −góc xoay tòa; điểm 0–100 = Σ wᵢ·thành phầnᵢ / Σ wᵢ",
+   "ma_cu": [
+    "QT-88",
+    "QT-88b",
+    "QT-111"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-01",
+   "id": "mdi_diem_chen",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Vị trí căn / lõi / thang = điểm chèn XREF của bản vẽ",
+   "ten_en": "Positions follow drawing inserts",
+   "nguon": "MDI · QT-1 · QT-6 · QT-7",
+   "nguong": [
+    {
+     "gia_tri": 2,
+     "don_vi": "mm",
+     "chieu": "<=",
+     "dieu_kien": "dung sai vị trí căn"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "diem_chen",
+   "cach_tinh": "bước đặt lấy rong_mm của bản vẽ (không lấy bề rộng thư viện); sx = −1 là lật gương (điểm chèn ở a1); lõi / thang neo điểm chèn, không neo góc ô; chồng ≤ 20 mm gộp vào ô trước, chồng > 20 mm trừ vào chính ô (QT-60)",
+   "ma_cu": [
+    "QT-1",
+    "QT-6",
+    "QT-7",
+    "QT-60"
+   ],
+   "thay_the_boi": null,
+   "ham": "pccc.ts · cuaTrenMat (đọc a0/a1/sx của phan_tu)",
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-02",
+   "id": "mdi_khe",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Phân loại khe trên dãy căn",
+   "ten_en": "Gap classification",
+   "nguon": "MDI · QT-2 · QT-9 · QT-21 · QT-32",
+   "nguong": [
+    {
+     "gia_tri": 20,
+     "don_vi": "mm",
+     "chieu": ">",
+     "dieu_kien": "khe giữ lại khi > 20 mm"
+    },
+    {
+     "gia_tri": 400,
+     "don_vi": "mm",
+     "chieu": "<=",
+     "dieu_kien": "khe ≤ 400 = tường"
+    },
+    {
+     "gia_tri": 600,
+     "don_vi": "mm",
+     "chieu": "<=",
+     "dieu_kien": "400–600 = khe kỹ thuật"
+    },
+    {
+     "gia_tri": "căn rộng nhất + 500",
+     "don_vi": "mm",
+     "chieu": ">",
+     "dieu_kien": "khe rộng hơn = hành lang chạy qua"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "loai_khe",
+   "cach_tinh": "khe cách trục hành lang > 1 bay = khoảng trống giữa hai cánh (void); khe trong dấu chân lõi / thang / căn mặt khác = không phải chỗ trống; khe người dùng tạo luôn là “Còn trống”",
+   "ma_cu": [
+    "QT-2",
+    "QT-9",
+    "QT-21",
+    "QT-32"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-03",
+   "id": "mdi_o_thang_bo",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Ô thang bộ rộng 3.000 mm, căn xếp khít vào",
+   "ten_en": "Stair slot 3,000 mm",
+   "nguon": "MDI · QT-10 · QT-60",
+   "nguong": [
+    {
+     "gia_tri": 3000,
+     "don_vi": "mm",
+     "chieu": "="
+    },
+    {
+     "gia_tri": 600,
+     "don_vi": "mm",
+     "chieu": "<=",
+     "dieu_kien": "khe hai bên được hút vào ô thang"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "o_thang_3000",
+   "cach_tinh": "ô thang hút khe ≤ 600 mm hai bên; bản vẽ chừa thiếu thì nới đủ 3.000, các ô phía sau dồn theo, mặt dài ra (DTXD theo)",
+   "ma_cu": [
+    "QT-10",
+    "QT-60"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-04",
+   "id": "mdi_don_khit",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Sửa căn thì dồn khít về lõi thang máy và mốc góc",
+   "ten_en": "Compaction toward core and corners",
+   "nguon": "MDI · QT-30 · QT-49 · QT-69",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "don_khit",
+   "cach_tinh": "xoá / thêm / thay / kéo–thả / đổi chỗ đều dồn khít; mốc cứng = lõi thang máy + góc cánh (đầu mặt cách điểm nối trục hành lang ≤ 6.000 mm); thang bộ dồn như căn hộ (không còn là mốc); dồn theo từng cụm cục bộ; chỉ đầu TỰ DO được co/giãn, đầu kẹt (1,5 m ngoài đầu dãy rơi vào ô dãy khác) không bao giờ co/giãn; kéo đi kéo về phải về đúng chỗ cũ",
+   "ma_cu": [
+    "QT-30",
+    "QT-8",
+    "QT-46",
+    "QT-46b",
+    "QT-48",
+    "QT-49",
+    "QT-49b",
+    "QT-49c",
+    "QT-56b",
+    "QT-57c",
+    "QT-62",
+    "QT-69"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": [
+    "QT-8",
+    "QT-46c"
+   ]
+  },
+  {
+   "ma": "XC-05",
+   "id": "mdi_khit_loi",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Căn quanh lõi khít nét bao lõi MDI-BAO-TM như CAD",
+   "ten_en": "Units fit the core outline",
+   "nguon": "MDI · QT-22 · QT-22b · QT-47 · QT-56",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "khit_loi",
+   "cach_tinh": "dấu chân lõi lấy từ bản vẽ tòa (XREF có thể bị cắt) và khung MDI-BAO-TM là chuẩn; không tự dời căn chừa lõi; căn đè lõi thì báo, không tự xoá; lõi hub T/Y không chừa khe riêng",
+   "ma_cu": [
+    "QT-22",
+    "QT-22b",
+    "QT-47",
+    "QT-56",
+    "QT-36"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-06",
+   "id": "mdi_sanh_tm",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Sảnh thang máy: NOTM 3,0 m · NOXH 2,6 m, căn dồn khít, hành lang qua tim sảnh",
+   "ten_en": "Lift lobby width",
+   "nguon": "MDI · QT-72 (thay QT-23)",
+   "nguong": [
+    {
+     "gia_tri": 3000,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "tm"
+    },
+    {
+     "gia_tri": 2600,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "xh / tái định cư"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "sanh_tm",
+   "cach_tinh": "sảnh = dải trống xuyên hết chiều sâu khối lõi, rộng ≥ 1.000 mm rộng nhất; nét hành lang chạy qua tim sảnh, đổi lõi thì dời theo",
+   "ma_cu": [
+    "QT-72",
+    "QT-23"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-07",
+   "id": "mdi_noi_hanh_lang",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Hành lang nối liền các thanh, đi qua góc, vuông góc",
+   "ten_en": "Corridor network through corners",
+   "nguon": "MDI · QT-19 · QT-25 · QT-51 · QT-54",
+   "nguong": [
+    {
+     "gia_tri": 400,
+     "don_vi": "mm",
+     "chieu": "<=",
+     "dieu_kien": "gộp nút đồ thị"
+    },
+    {
+     "gia_tri": 16000,
+     "don_vi": "mm",
+     "chieu": "<=",
+     "dieu_kien": "giao hai trục kéo dài tối đa"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "do_thi_hanh_lang",
+   "cach_tinh": "đồ thị = trục `truc` + nét vẽ tay MDI-HANHLANG (ưu tiên tuyệt đối); không có nét tay thì nối bằng giao hai trục kéo dài (mọi góc) hoặc đoạn vuông góc giữa hai trục song song cách một bay; cửa gán vào trục gần nhất song song với mặt; đầu hành lang mặc định = Circle CAD",
+   "ma_cu": [
+    "QT-19",
+    "QT-19b",
+    "QT-25",
+    "QT-51",
+    "QT-54",
+    "QT-55"
+   ],
+   "thay_the_boi": null,
+   "ham": "pccc.ts · dungDoThi",
+   "thay_cho": [
+    "QT-39",
+    "QT-52"
+   ]
+  },
+  {
+   "ma": "XC-08",
+   "id": "mdi_danh_so",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Đánh số căn CH-xx liên tục theo chu vi, một chiều",
+   "ten_en": "Unit numbering around perimeter",
+   "nguon": "MDI · QT-20",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "danh_so_chu_vi",
+   "cach_tinh": "mọi căn mang CH-xx, chạy liên tục quanh chu vi tòa theo một chiều duy nhất",
+   "ma_cu": [
+    "QT-20"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-09",
+   "id": "mdi_net_bao_dtxd",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "DTXD = diện tích nét bao (nét bao co / giãn theo căn, cả hốc logia)",
+   "ten_en": "Footprint = outline area",
+   "nguon": "MDI · QT-65 · QT-31 · QT-33 · QT-59",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "net_bao_dtxd",
+   "cach_tinh": "nét bao = nét bao CAD − sàn mất ∪ sàn mọc thêm (hợp/trừ đa giác); mặc định khớp tuyệt đối nét bao CAD; hốc logia đi theo vị trí hiện tại của căn ở mọi thao tác; nét bao tự cắt thì về mô hình cũ",
+   "ma_cu": [
+    "QT-65",
+    "QT-31",
+    "QT-33",
+    "QT-59",
+    "QT-59b",
+    "QT-54"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-10",
+   "id": "mdi_leftover",
+   "buoc": "xep_day_can",
+   "nhom": "mdi",
+   "bat_buoc": false,
+   "ten_vi": "Khe còn trống trên dãy căn",
+   "ten_en": "Unfilled slots in unit rows",
+   "nguon": "MDI · tổng bề rộng ô Còn trống, ≤ 0,2 m là khít",
+   "nguong": [
+    {
+     "gia_tri": 200,
+     "don_vi": "mm",
+     "chieu": "<="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "khe_con_trong",
+   "cach_tinh": "Σ bề rộng ô “Còn trống” thật (đã loại void / hành lang / khe trong lõi); > 200 mm = cảnh báo",
+   "ma_cu": [
+    "mdi_leftover"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/05_mdi.yaml",
+    "nhom": "mdi",
+    "nguon": null,
+    "trich": "Đổi tên 12/9/2026 cho khớp số đo thật: đo khe trên DÃY CĂN, không đo trục hành lang"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-11",
+   "id": "mdi_tu_sinh",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Tự sinh: xếp căn theo luật, không theo lượt chèn",
+   "ten_en": "Rule-based auto layout",
+   "nguon": "MDI · QT-40…43 · QT-70",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "tu_sinh",
+   "cach_tinh": "căn góc g1/g2 ở hai mút mặt, y1 sát lõi hub (theo bản vẽ); không bỏ trống chỗ căn góc; lối hành lang không bị bịt",
+   "ma_cu": [
+    "QT-40",
+    "QT-41",
+    "QT-42",
+    "QT-43",
+    "QT-70"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-12",
+   "id": "mdi_khung_can_v",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Căn góc tòa V: ranh căn = khung CAD (polyline kín DefPoints)",
+   "ten_en": "V-corner unit boundary",
+   "nguon": "MDI · QT-58",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "khung_can_v",
+   "cach_tinh": "căn V không có khung mô-đun chữ nhật; ranh lấy polyline kín DefPoints",
+   "ma_cu": [
+    "QT-58"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "XC-13",
+   "id": "mdi_xref_du",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Mọi lượt chèn căn / lõi / thang phải có trong thư viện",
+   "ten_en": "Every insert exists in library",
+   "nguon": "MDI · QT-61",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "xref_du",
+   "cach_tinh": "thiếu tệp thư viện thì dừng và báo tên, không bỏ qua im lặng",
+   "ma_cu": [
+    "QT-61"
+   ],
+   "thay_the_boi": null,
+   "ham": "scripts/chep_thu_vien.py (_loi khi thiếu căn / lõi)",
+   "thay_cho": []
+  },
+  {
+   "ma": "DC-01",
+   "id": "qcvn04_min_area",
+   "buoc": "doi_mau_can",
+   "nhom": "qcvn04",
+   "bat_buoc": true,
+   "ten_vi": "Diện tích căn tối thiểu",
+   "ten_en": "Minimum unit area",
+   "nguon": "QCVN 04:2021 · DT căn hộ ≥ 25 m²",
+   "nguong": [
+    {
+     "gia_tri": 25,
+     "don_vi": "m²",
+     "chieu": ">=",
+     "dieu_kien": "DT thông thủy mỗi căn"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "so_can_duoi_25",
+   "cach_tinh": "số căn có DT thông thủy < 25 m² phải bằng 0",
+   "ma_cu": [
+    "qcvn04_min_area"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/03_qcvn04.yaml",
+    "nhom": "qcvn04",
+    "nguon": "QCVN 04:2021",
+    "trich": "DT căn hộ ≥25 m²"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "DC-02",
+   "id": "qcvn04_small_ratio",
+   "buoc": "doi_mau_can",
+   "nhom": "qcvn04",
+   "bat_buoc": false,
+   "ten_vi": "Tỷ lệ căn ≤45 m²",
+   "ten_en": "Share of units ≤45 m²",
+   "nguon": "MDI · QCVN 04:2021 (đề xuất MDI)",
+   "nguong": [
+    {
+     "gia_tri": 25,
+     "don_vi": "%",
+     "chieu": "<=",
+     "dieu_kien": "số căn có DT thông thủy ≤ 45 m²"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "ti_le_can_nho",
+   "cach_tinh": "vượt 25 % = cảnh báo (không phải lỗi)",
+   "ma_cu": [
+    "qcvn04_small_ratio"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/03_qcvn04.yaml",
+    "nhom": "qcvn04",
+    "nguon": "MDI · QCVN 04:2021",
+    "trich": "≤25% căn nhỏ (đề xuất MDI)"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "DC-03",
+   "id": "mdi_cung_dong_can",
+   "buoc": "doi_mau_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Tòa NOTM chỉ dùng căn NOTM (và ngược lại)",
+   "ten_en": "Unit line matches tower line",
+   "nguon": "MDI · QT-66",
+   "nguong": [],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "cung_dong_can",
+   "cach_tinh": "căn khác dòng chèn nhầm thì đổi sang mẫu cùng mã của dòng đúng",
+   "ma_cu": [
+    "QT-66"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "DC-04",
+   "id": "mdi_stretch",
+   "buoc": "doi_mau_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "STRETCH mẫu căn qua phòng khách",
+   "ten_en": "Stretch unit through living room",
+   "nguon": "MDI · QT-81",
+   "nguong": [
+    {
+     "gia_tri": 100,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "bước"
+    },
+    {
+     "gia_tri": 500,
+     "don_vi": "mm",
+     "chieu": "<=",
+     "dieu_kien": "co / giãn tối đa ±"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "stretch_can",
+   "cach_tinh": "như lệnh STRETCH của CAD, chỉ ở ô có phòng khách",
+   "ma_cu": [
+    "QT-81",
+    "QT-81b"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "DC-05",
+   "id": "mdi_toi_uu_mot_toa",
+   "buoc": "doi_mau_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Tối ưu trong một mẫu tòa: đổi mẫu căn từng ô + lõi + thang bộ",
+   "ten_en": "Optimise within one template",
+   "nguon": "MDI · QT-79 · QT-96",
+   "nguong": [
+    {
+     "gia_tri": 3,
+     "don_vi": "PA",
+     "chieu": "=",
+     "dieu_kien": "giữ top"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "toi_uu_mot_toa",
+   "cach_tinh": "không đổi số tầng (theo QH), không STRETCH, không thêm thang bộ; xếp theo số lỗi QCVN rồi mục tiêu Ưu tiên",
+   "ma_cu": [
+    "QT-79",
+    "QT-96"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-01",
+   "id": "qcvn06_travel_max",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Căn xa lối thoát nhất",
+   "ten_en": "Worst travel to exit",
+   "nguon": "QCVN 06:2022 3.3.2 · Bảng G.1 / A.2.19",
+   "nguong": [
+    {
+     "gia_tri": 25,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H ≤ 75 m · căn ở hành lang cụt"
+    },
+    {
+     "gia_tri": 40,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H ≤ 75 m · căn giữa hai buồng thang"
+    },
+    {
+     "gia_tri": 15,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H > 75 m · cụt"
+    },
+    {
+     "gia_tri": 20,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H > 75 m · giữa hai buồng thang"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "cu_ly_thoat_nan",
+   "cach_tinh": "từ TIM CỬA CĂN tới TIM CỬA BUỒNG ĐỆM thang bộ gần nhất, đo dọc tim hành lang trên đồ thị (đi qua góc), KHÔNG cộng bề rộng hành lang; mỗi căn chịu ngưỡng riêng (cụt hay đôi)",
+   "ma_cu": [
+    "qcvn06_travel_max",
+    "QT-45",
+    "QT-15",
+    "QT-25"
+   ],
+   "thay_the_boi": null,
+   "ham": "pccc.ts · thoatNan / kiemTraPCCC",
+   "yaml": {
+    "tep": "rules/04_qcvn06.yaml",
+    "nhom": "qcvn06",
+    "nguon": "QCVN 06:2022 3.3.2",
+    "trich": "Đo dọc trục đường thoát nạn từ tim cửa căn hộ tới tim cửa buồng đệm thang gần nhất, đi liên tục qua góc hành lang. Mỗi căn chịu ngưỡng của riêng nó: lối cụt hay giữa hai buồng thang."
+   },
+   "thay_cho": [
+    "QT-15"
+   ]
+  },
+  {
+   "ma": "PC-02",
+   "id": "qcvn06_deadend",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Hành lang cụt tới lối thoát",
+   "ten_en": "Dead-end travel",
+   "nguon": "QCVN 06:2022 Bảng G.1 (H ≤ 75 m) / A.3.1.7 → A.2.19 (H > 75 m)",
+   "nguong": [
+    {
+     "gia_tri": 25,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H ≤ 75 m"
+    },
+    {
+     "gia_tri": 15,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "75 < H ≤ 150 m"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "hanh_lang_cut",
+   "cach_tinh": "căn chỉ thoát được về MỘT hướng (Dijkstra bỏ đoạn của chính cửa); lấy cự ly lớn nhất trong các căn đó, không lấy chiều dài đoạn trục",
+   "ma_cu": [
+    "qcvn06_deadend",
+    "QT-24"
+   ],
+   "thay_the_boi": null,
+   "ham": "pccc.ts · thoatNan / kiemTraPCCC",
+   "yaml": {
+    "tep": "rules/04_qcvn06.yaml",
+    "nhom": "qcvn06",
+    "nguon": "QCVN 06:2022 Bảng G.1 / A.2.19",
+    "trich": "Khoảng cách từ CỬA CĂN HỘ tới lối ra thoát nạn khi chỉ thoát được về một hướng. H ≤75 m → Bảng G.1: ≤25 m; H >75 m → A.3.1.7 dẫn A.2.19: ≤15 m. Đo dọc trục đường thoát nạn, không đo đường chim bay (mục 3.3.2)."
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-03",
+   "id": "qcvn06_two_stairs_travel",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Cự ly căn giữa hai buồng thang",
+   "ten_en": "Travel from units between stairs",
+   "nguon": "QCVN 06:2022 Bảng G.1 (H ≤ 75 m) / A.3.1.7 → A.2.19 (H > 75 m)",
+   "nguong": [
+    {
+     "gia_tri": 40,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H ≤ 75 m"
+    },
+    {
+     "gia_tri": 20,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "75 < H ≤ 150 m"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "cu_ly_hai_thang",
+   "cach_tinh": "căn thoát được cả hai hướng, mỗi hướng tới một buồng thang; lấy cự ly ngắn hơn của từng căn, báo căn lớn nhất",
+   "ma_cu": [
+    "qcvn06_two_stairs_travel",
+    "QT-24"
+   ],
+   "thay_the_boi": null,
+   "ham": "pccc.ts · thoatNan / kiemTraPCCC",
+   "yaml": {
+    "tep": "rules/04_qcvn06.yaml",
+    "nhom": "qcvn06",
+    "nguon": "QCVN 06:2022 Bảng G.1 / A.2.19",
+    "trich": "Căn thoát được về CẢ HAI hướng, mỗi hướng tới một buồng thang. H ≤75 m → Bảng G.1: ≤40 m; H >75 m → A.3.1.7 dẫn A.2.19: ≤20 m."
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-04",
+   "id": "qcvn06_compartment",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Diện tích khoang cháy (F1.3)",
+   "ten_en": "Fire compartment area (F1.3)",
+   "nguon": "QCVN 06:2022 Bảng H.1 / A.3.1.3 → A.2.3",
+   "nguong": [
+    {
+     "gia_tri": 2500,
+     "don_vi": "m²",
+     "chieu": "<=",
+     "dieu_kien": "H ≤ 75 m (nhà ở kiểu căn hộ, bậc I, S0)"
+    },
+    {
+     "gia_tri": 2000,
+     "don_vi": "m²",
+     "chieu": "<=",
+     "dieu_kien": "H > 75 m"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "khoang_chay",
+   "cach_tinh": "DTXD một tầng ≤ ngưỡng; chung cư KHÔNG nhân đôi khi có chữa cháy tự động (H.2.12.2 chỉ áp Bảng H.2–H.4)",
+   "ma_cu": [
+    "qcvn06_compartment",
+    "QT-24"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/04_qcvn06.yaml",
+    "nhom": "qcvn06",
+    "nguon": "QCVN 06:2022 Bảng H.1 / A.2.3",
+    "trich": "H ≤75 m → Bảng H.1 (nhà ở kiểu căn hộ, bậc I cấp S0) 2.500 m²; H >75 m → A.3.1.3 dẫn A.2.3: F1.3 2.000 m². Chung cư KHÔNG được nhân đôi khi có chữa cháy tự động — H.2.12.2 chỉ áp cho Bảng H.2–H.4 (nhà công cộng)."
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-05",
+   "id": "qcvn06_A214_corridor",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Khoang hành lang căn hộ",
+   "ten_en": "Corridor compartment",
+   "nguon": "QCVN 06:2022 A.2.14 (qua A.3.1.7)",
+   "nguong": [
+    {
+     "gia_tri": 30,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "chỉ áp khi H > 75 m"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "khoang_hanh_lang_30",
+   "cach_tinh": "khoang = phần hành lang LIỀN NHAU giữa hai cửa / vách ngăn cháy (nhánh L/T nối nhau cộng dồn, sảnh thang máy tính chung khoang); vách ngăn cháy loại 1 + cửa loại 2 tự đóng, hoặc vách / màn ngăn khói mép dưới ≤ 2,5 m",
+   "ma_cu": [
+    "qcvn06_A214_corridor",
+    "QT-95",
+    "QT-98",
+    "QT-100",
+    "QT-104",
+    "QT-104c"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/04_qcvn06.yaml",
+    "nhom": "qcvn06",
+    "nguon": "QCVN 06:2022 A.2.14",
+    "trich": "Nhà trên 75 m (A.3.1.7 dẫn A.2.14): hành lang chia khoang bằng vách ngăn cháy loại 1 + cửa ngăn cháy loại 2 tự đóng (hoặc vách / màn ngăn khói không cháy, mép dưới cách sàn ≤ 2,5 m); khoang hành lang khối căn hộ ≤ 30 m. Khoang = phần hành lang LIỀN NHAU giữa hai cửa / vách ngăn cháy — các nhánh L/T nối nhau không có cửa ở chỗ giao tính chung một khoang (cộng dồn các đoạn liên tiếp). Từ 75 m trở xuống ngưỡng 30 m không áp, nhưng vẫn phải chia ≤ 60 m theo 3.3.5 (luật qcvn06_335_corridor)."
+   },
+   "thay_cho": [
+    "QT-95",
+    "QT-104b"
+   ]
+  },
+  {
+   "ma": "PC-06",
+   "id": "qcvn06_335_corridor",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Chia hành lang dài > 60 m",
+   "ten_en": "Corridor division > 60 m",
+   "nguon": "QCVN 06:2022 3.3.5",
+   "nguong": [
+    {
+     "gia_tri": 60,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "mọi chiều cao"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "khoang_hanh_lang_60",
+   "cach_tinh": "hành lang dài hơn 60 m phải chia bằng vách ngăn cháy loại 2 / vách, màn ngăn khói thành đoạn ≤ 60 m; đo tổng các đoạn liền nhau giữa hai vách",
+   "ma_cu": [
+    "qcvn06_335_corridor",
+    "QT-98"
+   ],
+   "thay_the_boi": null,
+   "ham": "pccc.ts · kiemTraPCCC (báo mạng hành lang liền chưa chia)",
+   "yaml": {
+    "tep": "rules/04_qcvn06.yaml",
+    "nhom": "qcvn06",
+    "nguon": "QCVN 06:2022 3.3.5",
+    "trich": "Mọi chiều cao nhà: hành lang dài hơn 60 m phải phân chia bằng vách ngăn cháy loại 2 (hoặc vách ngăn khói, màn ngăn khói có mép dưới cách sàn hành lang tối đa 2,5 m) thành các đoạn theo yêu cầu chống khói Phụ lục D, nhưng không quá 60 m; cửa đi trong các vách này theo 3.2.11. Đoạn đo theo tổng các đoạn hành lang liền nhau giữa hai vách (nhánh L/T nối nhau cộng dồn). App tự đặt vách + cửa (CNC-xx) khi mạng hành lang vượt 60 m."
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-07",
+   "id": "qcvn06_613_firelift",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Thang máy chữa cháy",
+   "ten_en": "Firefighting lift",
+   "nguon": "QCVN 06:2022 §6.13 + 1.4.9",
+   "nguong": [
+    {
+     "gia_tri": 1,
+     "don_vi": "thang",
+     "chieu": ">=",
+     "dieu_kien": "khi H PCCC > 50 m hoặc hầm sâu > 9 m"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "thang_chua_chay",
+   "cach_tinh": "H PCCC ≤ 50 m thì không đòi; trên 50 m phải ≥ 1 thang chữa cháy",
+   "ma_cu": [
+    "qcvn06_613_firelift"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/04_qcvn06.yaml",
+    "nhom": "qcvn06",
+    "nguon": "QCVN 06:2022 §6.13 + 1.4.9",
+    "trich": "H PCCC >50 m hoặc hầm sâu >9 m → ≥1 thang CC"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-08",
+   "id": "qcvn06_52_hong_nuoc",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Họng nước chữa cháy trong nhà (tủ âm tường)",
+   "ten_en": "Indoor fire hose cabinets",
+   "nguon": "QCVN 06:2022 5.2 · Bảng 11 · 5.2.4 · 5.2.7 · 5.2.11 · 5.2.14 · thẩm duyệt PC07 (R 18 m)",
+   "nguong": [
+    {
+     "gia_tri": 18,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "bán kính phục vụ ĐO THẲNG từ tủ tới mọi điểm phải bảo vệ"
+    },
+    {
+     "gia_tri": 2,
+     "don_vi": "tia",
+     "chieu": "=",
+     "dieu_kien": "mỗi điểm khi số tia tính toán ≥ 2"
+    },
+    {
+     "gia_tri": 3,
+     "don_vi": "m",
+     "chieu": ">=",
+     "dieu_kien": "hai vị trí tủ cách nhau tối thiểu"
+    },
+    {
+     "gia_tri": 800,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "tủ đôi / cụm 2 hộp × 200"
+    },
+    {
+     "gia_tri": 500,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "tủ đơn × 200"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "phu_tu_pccc",
+   "cach_tinh": "điểm phải phủ: cửa căn, 4 góc trong căn (lùi 150 / 150 / 300 mm), hành lang mỗi 3 m; KHÔNG cộng tầm tia (tia đặc 6 m H ≤ 50 m / 8 m H > 50 m chỉ là yêu cầu áp lực); Bảng 11: ≤ 16 tầng HL ≤ 10 m 1 tia, > 10 m 2 tia; 17–25 tầng 2 / 3 tia; > 25 tầng chủ nhiệm chốt 2 tia; ưu tiên tường HL trước phòng KT trong lõi, rồi hộp KT căn, cuối cùng giữa tường căn; không đặt ở cửa buồng thang không nhiễm khói; ít vị trí nhất",
+   "ma_cu": [
+    "qcvn06_52_hong_nuoc",
+    "QT-77",
+    "QT-77b",
+    "QT-77c",
+    "QT-77d",
+    "QT-77e",
+    "QT-77f"
+   ],
+   "thay_the_boi": null,
+   "ham": "pccc.ts · tuPCCC (phủ tham lam, chưa ưu tiên lõi / HKT)",
+   "yaml": {
+    "tep": "rules/04_qcvn06.yaml",
+    "nhom": "qcvn06",
+    "nguon": "QCVN 06:2022 5.2 · Bảng 11",
+    "trich": "App TỰ ĐẶT tủ (QT-77): ưu tiên tường hành lang trước phòng KT / P.RÁC trong lõi, rồi hộp KT WC căn, cuối cùng giữa tường một căn; chọn ÍT VỊ TRÍ NHẤT bằng lời giải phủ chính xác (QT-77e, cùng số thì nhiều tủ ở trục KT hơn, hai vị trí cách ≥ 3 m). Tủ kéo tay được dọc tường hành lang — luật tính trên đúng vị trí đã kéo. Bán kính phục vụ 18 m ĐO THẲNG từ vị trí tủ tới mọi điểm phải bảo vệ (cửa căn, các góc trong căn, dọc hành lang mỗi 3 m) — thực tế thẩm duyệt PC07 Hà Nội (hồ sơ PCCC Đồng Quan 11/2025, vòng tròn \"L=18m\"; chủ nhiệm chốt 20/10/2026), không phải điều khoản QCVN. KHÔNG cộng tầm tia: tia đặc 6 m (cao PCCC ≤50 m) / 8 m (nhà ở >50 m) theo 5.2.7 chỉ là yêu cầu áp lực. Số tia mỗi điểm: số tia tính toán ≥2 → 2 tia (5.2.4); 2 tia lấy từ CỤM 2 HỘP ĐƠN cạnh nhau ở cùng vị trí hoặc tủ đôi ở lõi (5.2.11 \"2 tủ chữa cháy cạnh nhau\"). Tủ ở lõi / khu KT là TỦ ĐÔI 800×200 (họng kép), dọc hành lang là CỤM 2 HỘP 1.050×200 khi cần 2 tia, TỦ ĐƠN 500×200 khi 1 tia. Không đặt ở cửa buồng thang không nhiễm khói (5.2.14). Tự kiểm nội bộ — không thay thẩm duyệt PCCC."
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-09",
+   "id": "mdi_hpccc",
+   "buoc": "pccc",
+   "nhom": "mdi",
+   "bat_buoc": true,
+   "ten_vi": "Chiều cao PCCC",
+   "ten_en": "Firefighting height",
+   "nguon": "QCVN 06:2022 1.4.9 · nhà F1.3 75–150 m thuộc sheet 4",
+   "nguong": [
+    {
+     "gia_tri": 150,
+     "don_vi": "m",
+     "chieu": "<="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "chieu_cao_pccc",
+   "cach_tinh": "H PCCC = H đế × số tầng đế + H tầng × (số tầng − 1) + 1,4 m bậu cửa",
+   "ma_cu": [
+    "mdi_hpccc"
+   ],
+   "thay_the_boi": null,
+   "ham": "pccc.ts · chieuCaoPCCC",
+   "yaml": {
+    "tep": "rules/05_mdi.yaml",
+    "nhom": "mdi",
+    "nguon": "QCVN 06:2022 1.4.9",
+    "trich": "Nhà F1.3 75-150 m thuộc sheet 4"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-10",
+   "id": "qcvn06_escape_stairs",
+   "buoc": "pccc",
+   "nhom": "mdi",
+   "bat_buoc": false,
+   "ten_vi": "Số thang thoát nạn",
+   "ten_en": "Escape stairs",
+   "nguon": "MDI slide 40 · chủ nhiệm 12/9/2026 · QT-57",
+   "nguong": [
+    {
+     "gia_tri": 2,
+     "don_vi": "thang",
+     "chieu": "=",
+     "dieu_kien": "đạt"
+    },
+    {
+     "gia_tri": 3,
+     "don_vi": "thang",
+     "chieu": "<=",
+     "dieu_kien": "tối đa (3 = cảnh báo)"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "so_thang_bo",
+   "cach_tinh": "2 = đạt, 3 = cảnh báo, khác = lỗi; đạt số lượng không thay kiểm tra cự ly",
+   "ma_cu": [
+    "qcvn06_escape_stairs",
+    "QT-57"
+   ],
+   "thay_the_boi": null,
+   "ham": "pccc.ts · kiemTraPCCC",
+   "yaml": {
+    "tep": "rules/04_qcvn06.yaml",
+    "nhom": "qcvn06",
+    "nguon": "MDI slide 40 · yêu cầu chủ nhiệm 12/9/2026",
+    "trich": "Ưu tiên 2 thang, tối đa 3 thang. Đây là giới hạn thiết kế MDI; đạt số lượng không thay thế kiểm tra cự ly và điều kiện thoát nạn."
+   },
+   "thay_cho": [
+    "QT-48"
+   ]
+  },
+  {
+   "ma": "PC-11",
+   "id": "mdi_thang_bo_tu_dong",
+   "buoc": "pccc",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Thang bộ tự động: thêm cạnh căn tệ nhất, cắt bớt giữ ≥ 2",
+   "ten_en": "Automatic stair placement",
+   "nguon": "MDI · QT-44 · QT-63",
+   "nguong": [
+    {
+     "gia_tri": 2,
+     "don_vi": "thang",
+     "chieu": ">=",
+     "dieu_kien": "tối thiểu sau khi cắt bớt"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "thang_bo_tu_dong",
+   "cach_tinh": "xuất phát từ chỗ bản vẽ đặt; mỗi lượt đo cự ly, thêm một thang cạnh căn vượt tệ nhất; rồi bỏ từng thang theo thứ tự cố định chừng nào vẫn phủ hết; loại thang N3 ↔ N2 thay được",
+   "ma_cu": [
+    "QT-44",
+    "QT-63"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-12",
+   "id": "mdi_cua_ngan_chay",
+   "buoc": "pccc",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Quy tắc đặt cửa ngăn cháy hành lang",
+   "ten_en": "Corridor fire-door placement",
+   "nguon": "MDI · QT-105 (R1–R7)",
+   "nguong": [
+    {
+     "gia_tri": 1800,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "cửa tm = bề rộng HL"
+    },
+    {
+     "gia_tri": 1600,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "cửa xh"
+    },
+    {
+     "gia_tri": 150,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "bù tường"
+    },
+    {
+     "gia_tri": 600,
+     "don_vi": "mm",
+     "chieu": ">=",
+     "dieu_kien": "mép cửa căn / thang / lõi / tủ cách tim cửa ngăn"
+    },
+    {
+     "gia_tri": 5,
+     "don_vi": "m",
+     "chieu": ">=",
+     "dieu_kien": "khoang tối thiểu"
+    },
+    {
+     "gia_tri": 5,
+     "don_vi": "°",
+     "chieu": "<=",
+     "dieu_kien": "lệch vuông góc tối đa"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "dat_cua_ngan",
+   "cach_tinh": "hai cánh mở hai chiều; không trong sảnh thang máy (cách mép sảnh ≥ một cánh + 1 m); không đứng trên ô cửa; không trong lõi trừ lối xuyên lõi; vuông góc hành lang; ít cửa nhất, không khoang vụn",
+   "ma_cu": [
+    "QT-105",
+    "QT-103",
+    "QT-99",
+    "QT-100",
+    "QT-104",
+    "QT-104c"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-13",
+   "id": "mdi_cnc_quet",
+   "buoc": "pccc",
+   "nhom": "mdi",
+   "bat_buoc": false,
+   "ten_vi": "Cánh cửa ngăn cháy HL che cửa căn / thang",
+   "ten_en": "Corridor fire-door swing blocks doors",
+   "nguon": "MDI · chủ nhiệm 19/10/2026 · QT-105 R4b",
+   "nguong": [
+    {
+     "gia_tri": 0,
+     "don_vi": "cửa",
+     "chieu": "=",
+     "dieu_kien": "cửa có cánh quét qua cửa căn / buồng đệm / lõi / tủ"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "canh_cua_ngan_quet",
+   "cach_tinh": "cánh (mỗi cánh ½ HL) khi mở áp tường không chồng cửa khác; không có chỗ sạch thì gắn cờ, chủ nhiệm quyết (dời cửa căn, hoặc dùng vách / màn ngăn khói)",
+   "ma_cu": [
+    "mdi_cnc_quet",
+    "QT-99"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/05_mdi.yaml",
+    "nhom": "mdi",
+    "nguon": null,
+    "trich": "App ưu tiên tường chung hai căn sạch → đoạn tường đặc sạch → lùi / thêm cửa. Cửa nào không có chỗ sạch trong khoảng giữ khoang ≤ giới hạn thì gắn cờ ở đây: cần chủ nhiệm quyết (dời cửa căn, hoặc dùng vách / màn ngăn khói mép dưới ≤ 2,5 m — QCVN 06:2022 A.2.14 / 3.3.5 cho phép thay cửa, không có cánh quét)."
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "PC-14",
+   "id": "mdi_tu_tru_dt",
+   "buoc": "pccc",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Tủ PCCC ở tường căn: trừ DT thông thủy, căn thành mẫu đặc biệt",
+   "ten_en": "Cabinet in unit wall reduces net area",
+   "nguon": "MDI · QT-77g",
+   "nguong": [
+    {
+     "gia_tri": 295,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "sâu tủ + tường xây sau + hoàn thiện"
+    },
+    {
+     "gia_tri": 95,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "chữ L thêm một bên"
+    },
+    {
+     "gia_tri": 190,
+     "don_vi": "mm",
+     "chieu": "=",
+     "dieu_kien": "chữ U thêm hai bên"
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "tru_dt_tu",
+   "cach_tinh": "TH1 hộp KT căn / lõi: không trừ; TH3 sát tường ngăn: chữ L, trừ (tủ + 95) × (295 − tường HL − 15); TH2 giữa tường căn: chữ U, trừ (tủ + 190) × (295 − tường HL − 15)",
+   "ma_cu": [
+    "QT-77g"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "thay_cho": []
+  },
+  {
+   "ma": "CT-01",
+   "id": "qcvn01_mdxd",
+   "buoc": "chi_tieu",
+   "nhom": "qcvn01",
+   "bat_buoc": true,
+   "ten_vi": "Mật độ xây dựng",
+   "ten_en": "Site coverage",
+   "nguon": "QCVN 01:2021 · Bảng 2.9 · MĐXD tối đa theo QH",
+   "nguong": [
+    {
+     "gia_tri": "MĐXD lô (QH)",
+     "don_vi": "%",
+     "chieu": "<="
+    },
+    {
+     "gia_tri": "Bảng 2.9 (nội suy theo DT lô × chiều cao)",
+     "don_vi": "%",
+     "chieu": "<="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "mat_do_xd",
+   "cach_tinh": "Σ DTXD / DT lô ≤ chỉ tiêu lô và ≤ Bảng 2.9 (nội suy hai chiều, ngoài biên lấy biên); lô DT 0 → 0",
+   "ma_cu": [
+    "qcvn01_mdxd",
+    "QT-82"
+   ],
+   "thay_the_boi": null,
+   "ham": "chiTieu.ts · tinhChiTieu (matDo, chưa có Bảng 2.9)",
+   "bang": {
+    "ten": "Bảng 2.9 (%) nhà chung cư",
+    "dt_lo_m2": [
+     3000,
+     10000,
+     18000,
+     35000
+    ],
+    "cao_m": [
+     16,
+     19,
+     22,
+     25,
+     28,
+     31,
+     34,
+     37,
+     40,
+     43,
+     46,
+     ">46"
+    ],
+    "gia_tri": [
+     [
+      75,
+      65,
+      63,
+      60
+     ],
+     [
+      75,
+      60,
+      58,
+      55
+     ],
+     [
+      75,
+      57,
+      55,
+      52
+     ],
+     [
+      75,
+      53,
+      51,
+      48
+     ],
+     [
+      75,
+      50,
+      48,
+      45
+     ],
+     [
+      75,
+      48,
+      46,
+      43
+     ],
+     [
+      75,
+      46,
+      44,
+      41
+     ],
+     [
+      75,
+      44,
+      42,
+      39
+     ],
+     [
+      75,
+      43,
+      41,
+      38
+     ],
+     [
+      75,
+      42,
+      40,
+      37
+     ],
+     [
+      75,
+      41,
+      39,
+      36
+     ],
+     [
+      75,
+      40,
+      38,
+      35
+     ]
+    ]
+   },
+   "yaml": {
+    "tep": "rules/01_qcvn01.yaml",
+    "nhom": "qcvn01",
+    "nguon": "QCVN 01:2021",
+    "trich": "Mật độ XD tối đa theo QH"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "CT-02",
+   "id": "qcvn01_far",
+   "buoc": "chi_tieu",
+   "nhom": "qcvn01",
+   "bat_buoc": true,
+   "ten_vi": "Hệ số sử dụng đất",
+   "ten_en": "Floor area ratio",
+   "nguon": "QCVN 01:2021 · Bảng 2.12 · HSSDĐ tối đa",
+   "nguong": [
+    {
+     "gia_tri": "HSSDĐ lô (QH)",
+     "don_vi": "lần",
+     "chieu": "<="
+    },
+    {
+     "gia_tri": "Bảng 2.12 (nội suy) — chỉ báo",
+     "don_vi": "lần",
+     "chieu": "<="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "he_so_sdd",
+   "cach_tinh": "GFA / DT lô ≤ chỉ tiêu lô; vượt Bảng 2.12 chỉ báo vàng (QH lô không ghi HSSDĐ thì không có trần riêng)",
+   "ma_cu": [
+    "qcvn01_far",
+    "QT-82"
+   ],
+   "thay_the_boi": null,
+   "ham": "chiTieu.ts · tinhChiTieu (dtSan ≤ HSSDĐ × DT lô)",
+   "bang": {
+    "ten": "Bảng 2.12 (lần)",
+    "dt_lo_m2": [
+     3000,
+     10000,
+     18000,
+     35000
+    ],
+    "cao_m": [
+     16,
+     19,
+     22,
+     25,
+     28,
+     31,
+     34,
+     37,
+     40,
+     43,
+     46,
+     ">46"
+    ],
+    "gia_tri": [
+     [
+      4,
+      3.5,
+      3.4,
+      3.25
+     ],
+     [
+      4.8,
+      3.9,
+      3.78,
+      3.6
+     ],
+     [
+      5.6,
+      4.34,
+      4.2,
+      3.99
+     ],
+     [
+      6.4,
+      4.64,
+      4.48,
+      4.24
+     ],
+     [
+      7.2,
+      4.95,
+      4.77,
+      4.5
+     ],
+     [
+      8,
+      5.3,
+      5.1,
+      4.8
+     ],
+     [
+      8.8,
+      5.61,
+      5.39,
+      5.06
+     ],
+     [
+      9.6,
+      5.88,
+      5.64,
+      5.28
+     ],
+     [
+      10.4,
+      6.24,
+      5.98,
+      5.59
+     ],
+     [
+      11.2,
+      6.58,
+      6.3,
+      5.88
+     ],
+     [
+      12,
+      6.9,
+      6.6,
+      6.15
+     ],
+     [
+      12.8,
+      7.2,
+      6.88,
+      6.4
+     ]
+    ]
+   },
+   "yaml": {
+    "tep": "rules/01_qcvn01.yaml",
+    "nhom": "qcvn01",
+    "nguon": "QCVN 01:2021",
+    "trich": "Hệ số SDĐ tối đa"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "CT-03",
+   "id": "qh_tang_cao",
+   "buoc": "chi_tieu",
+   "nhom": "qcvn01",
+   "bat_buoc": true,
+   "ten_vi": "Tầng cao ≤ chỉ tiêu lô",
+   "ten_en": "Storeys within lot limit",
+   "nguon": "Chỉ tiêu QH lô · QT-82",
+   "nguong": [
+    {
+     "gia_tri": "tầng cao lô (QH)",
+     "don_vi": "tầng",
+     "chieu": "<="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "tang_cao",
+   "cach_tinh": "tầng cao = tầng đế + tầng căn hộ (+ tum); chiều cao xây dựng H = tầng đế × cao đế + số tầng × cao tầng",
+   "ma_cu": [
+    "QT-82"
+   ],
+   "thay_the_boi": null,
+   "ham": "chiTieu.ts · tinhChiTieu (tangCao)",
+   "thay_cho": []
+  },
+  {
+   "ma": "CT-04",
+   "id": "qd34_pop",
+   "buoc": "chi_tieu",
+   "nhom": "qd34",
+   "bat_buoc": true,
+   "ten_vi": "Dân số công trình",
+   "ten_en": "Building population",
+   "nguon": "QĐ 34/2024/QĐ-UBND (Hà Nội) · TP.HCM QĐ 83/2026 hoặc QĐ 32/2025 chuyển tiếp (QT-134)",
+   "nguong": [
+    {
+     "gia_tri": "dân số tối đa lô (QH)",
+     "don_vi": "người",
+     "chieu": "<="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "dan_so",
+   "cach_tinh": "quy đổi người theo bậc DT sử dụng (bảng NOTM / NOXH) hoặc bình quân 3,6 người/căn (TP.HCM QĐ 83: 3,5); chọn theo cài đặt; T0 đang dùng bậc DT chờ chốt",
+   "ma_cu": [
+    "qd34_pop",
+    "QT-134"
+   ],
+   "thay_the_boi": null,
+   "ham": "chiTieu.ts · tinhChiTieu (danSo = số căn × người/căn)",
+   "yaml": {
+    "tep": "rules/02_qd34.yaml",
+    "nhom": "qd34",
+    "nguon": "QĐ 34/2024/QĐ-UBND",
+    "trich": "Bảng quy đổi người theo DT sử dụng (KHAO_SAT 5.4) — T0 đang dùng po, chờ chốt"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "CT-05",
+   "id": "mdi_lift_provided",
+   "buoc": "chi_tieu",
+   "nhom": "mdi",
+   "bat_buoc": false,
+   "ten_vi": "Số thang máy bố trí",
+   "ten_en": "Lifts provided",
+   "nguon": "QCVN 04:2021 · bảng chuẩn Viện · QT-76 · QT-94",
+   "nguong": [
+    {
+     "gia_tri": "min(⌈căn / 70⌉, ⌈dân / 200⌉)",
+     "don_vi": "thang",
+     "chieu": ">="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "so_thang_may",
+   "cach_tinh": "tổng thang = khách + chữa cháy + hàng (= số giếng lõi, đếm theo hình vẽ QT-64) ≥ số cần; số cần lấy cách cho ÍT thang hơn",
+   "ma_cu": [
+    "mdi_lift_provided",
+    "QT-76",
+    "QT-94",
+    "QT-64",
+    "QT-75",
+    "QT-75b"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/05_mdi.yaml",
+    "nhom": "mdi",
+    "nguon": null,
+    "trich": "QCVN 04:2021 · bảng chuẩn Viện"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "CT-06",
+   "id": "mdi_lift_unit",
+   "buoc": "chi_tieu",
+   "nhom": "mdi",
+   "bat_buoc": false,
+   "ten_vi": "Thang máy theo số căn",
+   "ten_en": "Lifts by unit count",
+   "nguon": "Bảng chuẩn Viện Thiết Kế",
+   "nguong": [
+    {
+     "gia_tri": 70,
+     "don_vi": "căn/thang",
+     "chieu": "<="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "can_moi_thang",
+   "cach_tinh": "tổng căn / tổng thang; chỉ cảnh báo khi cả hai cách đều thiếu (một cách đạt là đủ)",
+   "ma_cu": [
+    "mdi_lift_unit"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/05_mdi.yaml",
+    "nhom": "mdi",
+    "nguon": null,
+    "trich": "Bảng chuẩn Viện Thiết Kế"
+   },
+   "thay_cho": []
+  },
+  {
+   "ma": "CT-07",
+   "id": "mdi_lift_pop",
+   "buoc": "chi_tieu",
+   "nhom": "mdi",
+   "bat_buoc": false,
+   "ten_vi": "Thang máy theo dân số",
+   "ten_en": "Lifts by population",
+   "nguon": "Bảng chuẩn Viện Thiết Kế",
+   "nguong": [
+    {
+     "gia_tri": 200,
+     "don_vi": "người/thang",
+     "chieu": "<="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "dan_moi_thang",
+   "cach_tinh": "tổng dân / tổng thang; chỉ cảnh báo khi cả hai cách đều thiếu",
+   "ma_cu": [
+    "mdi_lift_pop"
+   ],
+   "thay_the_boi": null,
+   "ham": null,
+   "yaml": {
+    "tep": "rules/05_mdi.yaml",
+    "nhom": "mdi",
+    "nguon": null,
+    "trich": "Bảng chuẩn Viện Thiết Kế"
+   },
+   "thay_cho": []
+  }
+ ],
+ "qt_goc": [
+  {
+   "ma_cu": "QT-1",
+   "giu": true,
+   "luat_moi": [
+    "XC-01"
+   ]
+  },
+  {
+   "ma_cu": "QT-2",
+   "giu": true,
+   "luat_moi": [
+    "XC-02"
+   ]
+  },
+  {
+   "ma_cu": "QT-3",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "cắt nét vẽ căn về mô-đun ±125 mm (clipPath) — cách vẽ SVG"
+  },
+  {
+   "ma_cu": "QT-4",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "vành tường 125 mm do app vẽ — cách vẽ"
+  },
+  {
+   "ma_cu": "QT-5",
+   "giu": true,
+   "luat_moi": [
+    "MT-02"
+   ]
+  },
+  {
+   "ma_cu": "QT-6",
+   "giu": true,
+   "luat_moi": [
+    "XC-01"
+   ]
+  },
+  {
+   "ma_cu": "QT-7",
+   "giu": true,
+   "luat_moi": [
+    "XC-01"
+   ]
+  },
+  {
+   "ma_cu": "QT-8",
+   "giu": false,
+   "loai_bo": "thay_the",
+   "thay_the_boi": "QT-30",
+   "luat_moi": "XC-04",
+   "ly_do": "đoạn xoá căn để lại khe bỏ từ 04/9/2026; phần dồn khít gộp vào mdi_don_khit"
+  },
+  {
+   "ma_cu": "QT-9",
+   "giu": true,
+   "luat_moi": [
+    "XC-02"
+   ]
+  },
+  {
+   "ma_cu": "QT-10",
+   "giu": true,
+   "luat_moi": [
+    "XC-03"
+   ]
+  },
+  {
+   "ma_cu": "QT-11",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "bảng thông tin căn đặt ngoài căn"
+  },
+  {
+   "ma_cu": "QT-12",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "nét theo layer"
+  },
+  {
+   "ma_cu": "QT-13",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "nhãn dẹt trong bảng"
+  },
+  {
+   "ma_cu": "QT-14",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "khe ≤ 400 mm không tô màu"
+  },
+  {
+   "ma_cu": "QT-15",
+   "giu": false,
+   "loai_bo": "thay_the",
+   "thay_the_boi": "QT-45",
+   "luat_moi": "PC-01",
+   "ly_do": "công thức cũ cộng bề rộng hành lang; QT-45 bỏ phần cộng"
+  },
+  {
+   "ma_cu": "QT-16",
+   "giu": true,
+   "luat_moi": [
+    "MT-02"
+   ]
+  },
+  {
+   "ma_cu": "QT-17",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "tô màu căn theo đường bao tim tường"
+  },
+  {
+   "ma_cu": "QT-18",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "tô hành lang không vượt nét bao"
+  },
+  {
+   "ma_cu": "QT-19",
+   "giu": true,
+   "luat_moi": [
+    "XC-07"
+   ]
+  },
+  {
+   "ma_cu": "QT-19b",
+   "giu": true,
+   "luat_moi": [
+    "XC-07"
+   ]
+  },
+  {
+   "ma_cu": "QT-20",
+   "giu": true,
+   "luat_moi": [
+    "XC-08"
+   ]
+  },
+  {
+   "ma_cu": "QT-21",
+   "giu": true,
+   "luat_moi": [
+    "XC-02"
+   ]
+  },
+  {
+   "ma_cu": "QT-22",
+   "giu": true,
+   "luat_moi": [
+    "XC-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-22b",
+   "giu": true,
+   "luat_moi": [
+    "XC-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-23",
+   "giu": false,
+   "loai_bo": "thay_the",
+   "thay_the_boi": "QT-72",
+   "luat_moi": "MT-04",
+   "ly_do": "sảnh NOXH 3.000 mm; QT-72 chốt NOTM 3,0 m · NOXH 2,6 m"
+  },
+  {
+   "ma_cu": "QT-24",
+   "giu": true,
+   "luat_moi": [
+    "PC-02",
+    "PC-03",
+    "PC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-25",
+   "giu": true,
+   "luat_moi": [
+    "XC-07",
+    "PC-01"
+   ]
+  },
+  {
+   "ma_cu": "QT-26",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "định dạng tệp lưu PA của app cũ"
+  },
+  {
+   "ma_cu": "QT-27",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "bố cục dải KPI"
+  },
+  {
+   "ma_cu": "QT-28",
+   "giu": false,
+   "loai_bo": "xuat",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "phiếu .scr AutoCAD"
+  },
+  {
+   "ma_cu": "QT-29",
+   "giu": false,
+   "loai_bo": "xuat",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "XCLIP khi xuất CAD"
+  },
+  {
+   "ma_cu": "QT-30",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-31",
+   "giu": true,
+   "luat_moi": [
+    "XC-09"
+   ]
+  },
+  {
+   "ma_cu": "QT-32",
+   "giu": true,
+   "luat_moi": [
+    "XC-02"
+   ]
+  },
+  {
+   "ma_cu": "QT-33",
+   "giu": true,
+   "luat_moi": [
+    "XC-09"
+   ]
+  },
+  {
+   "ma_cu": "QT-36",
+   "giu": true,
+   "luat_moi": [
+    "XC-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-39",
+   "giu": false,
+   "loai_bo": "thay_the",
+   "thay_the_boi": "QT-54",
+   "luat_moi": "XC-07",
+   "ly_do": "lọc góc trong cho điểm kéo hành lang; thay bằng Circle CAD"
+  },
+  {
+   "ma_cu": "QT-40",
+   "giu": true,
+   "luat_moi": [
+    "XC-11"
+   ]
+  },
+  {
+   "ma_cu": "QT-41",
+   "giu": true,
+   "luat_moi": [
+    "XC-11"
+   ]
+  },
+  {
+   "ma_cu": "QT-42",
+   "giu": true,
+   "luat_moi": [
+    "XC-11"
+   ]
+  },
+  {
+   "ma_cu": "QT-43",
+   "giu": true,
+   "luat_moi": [
+    "XC-11"
+   ]
+  },
+  {
+   "ma_cu": "QT-44",
+   "giu": true,
+   "luat_moi": [
+    "PC-11"
+   ]
+  },
+  {
+   "ma_cu": "QT-45",
+   "giu": true,
+   "luat_moi": [
+    "PC-01"
+   ]
+  },
+  {
+   "ma_cu": "QT-46",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-46b",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-46c",
+   "giu": false,
+   "loai_bo": "thay_the",
+   "thay_the_boi": "QT-49",
+   "luat_moi": "XC-04",
+   "ly_do": "mốc góc so đầu mặt với đầu mặt — sai, thay bằng điểm nối trục"
+  },
+  {
+   "ma_cu": "QT-47",
+   "giu": true,
+   "luat_moi": [
+    "XC-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-48",
+   "giu": false,
+   "loai_bo": "thay_the",
+   "thay_the_boi": "QT-57",
+   "luat_moi": "PC-10",
+   "ly_do": "thang neo tại chỗ thả; QT-57 cho thang dồn như căn"
+  },
+  {
+   "ma_cu": "QT-49",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-49b",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-49c",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-50",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "viền tô lõi hub răng cưa"
+  },
+  {
+   "ma_cu": "QT-51",
+   "giu": true,
+   "luat_moi": [
+    "XC-07"
+   ]
+  },
+  {
+   "ma_cu": "QT-52",
+   "giu": false,
+   "loai_bo": "thu_bo",
+   "thay_the_boi": "QT-54",
+   "luat_moi": "XC-07",
+   "ly_do": "ghi đè a0/a1 trục bằng toạ độ MDI-HANHLANG — thử và bỏ, thay bằng Circle CAD (QT-54)"
+  },
+  {
+   "ma_cu": "QT-53",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "vá góc chéo hành lang hub khi tô"
+  },
+  {
+   "ma_cu": "QT-54",
+   "giu": true,
+   "luat_moi": [
+    "XC-07",
+    "XC-09"
+   ]
+  },
+  {
+   "ma_cu": "QT-55",
+   "giu": true,
+   "luat_moi": [
+    "XC-07"
+   ]
+  },
+  {
+   "ma_cu": "QT-56",
+   "giu": true,
+   "luat_moi": [
+    "XC-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-56b",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-57",
+   "giu": true,
+   "luat_moi": [
+    "PC-10"
+   ]
+  },
+  {
+   "ma_cu": "QT-57c",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-58",
+   "giu": true,
+   "luat_moi": [
+    "XC-12"
+   ]
+  },
+  {
+   "ma_cu": "QT-59",
+   "giu": true,
+   "luat_moi": [
+    "XC-09"
+   ]
+  },
+  {
+   "ma_cu": "QT-59b",
+   "giu": true,
+   "luat_moi": [
+    "XC-09"
+   ]
+  },
+  {
+   "ma_cu": "QT-60",
+   "giu": true,
+   "luat_moi": [
+    "XC-01",
+    "XC-03"
+   ]
+  },
+  {
+   "ma_cu": "QT-61",
+   "giu": true,
+   "luat_moi": [
+    "XC-13"
+   ]
+  },
+  {
+   "ma_cu": "QT-62",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-63",
+   "giu": true,
+   "luat_moi": [
+    "PC-11"
+   ]
+  },
+  {
+   "ma_cu": "QT-64",
+   "giu": true,
+   "luat_moi": [
+    "CT-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-65",
+   "giu": true,
+   "luat_moi": [
+    "XC-09"
+   ]
+  },
+  {
+   "ma_cu": "QT-66",
+   "giu": true,
+   "luat_moi": [
+    "DC-03"
+   ]
+  },
+  {
+   "ma_cu": "QT-67",
+   "giu": true,
+   "luat_moi": [
+    "MT-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-68",
+   "giu": false,
+   "loai_bo": "ai",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "trợ lý AI đọc đầu bài (phần tối ưu số tầng gộp vào mdi_lap_pa)"
+  },
+  {
+   "ma_cu": "QT-69",
+   "giu": true,
+   "luat_moi": [
+    "XC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-70",
+   "giu": true,
+   "luat_moi": [
+    "XC-11"
+   ]
+  },
+  {
+   "ma_cu": "QT-71",
+   "giu": true,
+   "luat_moi": [
+    "MT-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-72",
+   "giu": true,
+   "luat_moi": [
+    "MT-04",
+    "XC-06"
+   ]
+  },
+  {
+   "ma_cu": "QT-72b",
+   "giu": true,
+   "luat_moi": [
+    "MT-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-73",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "giữ lõi đã thay qua regenerate() — trạng thái app cũ"
+  },
+  {
+   "ma_cu": "QT-74",
+   "giu": true,
+   "luat_moi": [
+    "MT-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-74b",
+   "giu": true,
+   "luat_moi": [
+    "MT-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-75",
+   "giu": true,
+   "luat_moi": [
+    "CT-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-75b",
+   "giu": true,
+   "luat_moi": [
+    "CT-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-76",
+   "giu": true,
+   "luat_moi": [
+    "CT-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-77",
+   "giu": true,
+   "luat_moi": [
+    "PC-08"
+   ]
+  },
+  {
+   "ma_cu": "QT-77b",
+   "giu": true,
+   "luat_moi": [
+    "PC-08"
+   ]
+  },
+  {
+   "ma_cu": "QT-77c",
+   "giu": true,
+   "luat_moi": [
+    "PC-08"
+   ]
+  },
+  {
+   "ma_cu": "QT-77d",
+   "giu": true,
+   "luat_moi": [
+    "PC-08"
+   ]
+  },
+  {
+   "ma_cu": "QT-77e",
+   "giu": true,
+   "luat_moi": [
+    "PC-08"
+   ]
+  },
+  {
+   "ma_cu": "QT-77f",
+   "giu": true,
+   "luat_moi": [
+    "PC-08"
+   ]
+  },
+  {
+   "ma_cu": "QT-77g",
+   "giu": true,
+   "luat_moi": [
+    "PC-14"
+   ]
+  },
+  {
+   "ma_cu": "QT-78",
+   "giu": false,
+   "loai_bo": "ai",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "cầu Claude Code"
+  },
+  {
+   "ma_cu": "QT-79",
+   "giu": true,
+   "luat_moi": [
+    "DC-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-80",
+   "giu": false,
+   "loai_bo": "ai",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "AI soát số thuyết minh"
+  },
+  {
+   "ma_cu": "QT-81",
+   "giu": true,
+   "luat_moi": [
+    "DC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-81b",
+   "giu": true,
+   "luat_moi": [
+    "DC-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-82",
+   "giu": true,
+   "luat_moi": [
+    "LO-01",
+    "LO-02",
+    "LO-03",
+    "MT-01",
+    "CT-01",
+    "CT-02",
+    "CT-03"
+   ]
+  },
+  {
+   "ma_cu": "QT-83",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "nút Lưu + Cài đặt"
+  },
+  {
+   "ma_cu": "QT-84",
+   "giu": true,
+   "luat_moi": [
+    "LO-06"
+   ]
+  },
+  {
+   "ma_cu": "QT-85",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "không gian làm việc ② ③"
+  },
+  {
+   "ma_cu": "QT-86",
+   "giu": true,
+   "luat_moi": [
+    "MT-01"
+   ]
+  },
+  {
+   "ma_cu": "QT-87",
+   "giu": false,
+   "loai_bo": "tinh_nang",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "nạp dự án tự điền ① ② ③"
+  },
+  {
+   "ma_cu": "QT-88",
+   "giu": true,
+   "luat_moi": [
+    "MT-06"
+   ]
+  },
+  {
+   "ma_cu": "QT-88b",
+   "giu": true,
+   "luat_moi": [
+    "MT-06"
+   ]
+  },
+  {
+   "ma_cu": "QT-89",
+   "giu": true,
+   "luat_moi": [
+    "LO-02",
+    "LO-06"
+   ]
+  },
+  {
+   "ma_cu": "QT-90",
+   "giu": true,
+   "luat_moi": [
+    "MT-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-91",
+   "giu": false,
+   "loai_bo": "tinh_nang",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "nạp .dxf trong app"
+  },
+  {
+   "ma_cu": "QT-92",
+   "giu": false,
+   "loai_bo": "tinh_nang",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "tự đặt cho mọi lô đã tick"
+  },
+  {
+   "ma_cu": "QT-93",
+   "giu": false,
+   "loai_bo": "tinh_nang",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "chạy nền có tiến độ"
+  },
+  {
+   "ma_cu": "QT-94",
+   "giu": true,
+   "luat_moi": [
+    "CT-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-95",
+   "giu": false,
+   "loai_bo": "thay_the",
+   "thay_the_boi": "QT-98",
+   "luat_moi": "PC-05",
+   "ly_do": "đo khoang theo từng trục riêng; QT-98 đo trên đồ thị"
+  },
+  {
+   "ma_cu": "QT-96",
+   "giu": true,
+   "luat_moi": [
+    "MT-05",
+    "DC-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-97",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "chọn nhiều căn"
+  },
+  {
+   "ma_cu": "QT-98",
+   "giu": true,
+   "luat_moi": [
+    "PC-05",
+    "PC-06"
+   ]
+  },
+  {
+   "ma_cu": "QT-99",
+   "giu": true,
+   "luat_moi": [
+    "PC-12",
+    "PC-13"
+   ]
+  },
+  {
+   "ma_cu": "QT-100",
+   "giu": true,
+   "luat_moi": [
+    "PC-05",
+    "PC-12"
+   ]
+  },
+  {
+   "ma_cu": "QT-101",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "kéo tay cửa ngăn cháy (ràng buộc vị trí = mdi_cua_ngan_chay)"
+  },
+  {
+   "ma_cu": "QT-102",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "xoá / lật hàng loạt"
+  },
+  {
+   "ma_cu": "QT-103",
+   "giu": true,
+   "luat_moi": [
+    "PC-12"
+   ]
+  },
+  {
+   "ma_cu": "QT-104",
+   "giu": true,
+   "luat_moi": [
+    "PC-05",
+    "PC-12"
+   ]
+  },
+  {
+   "ma_cu": "QT-104b",
+   "giu": false,
+   "loai_bo": "thay_the",
+   "thay_the_boi": "QT-104c",
+   "luat_moi": "PC-05",
+   "ly_do": "cửa miệng sảnh TM — QT-104c bỏ hẳn"
+  },
+  {
+   "ma_cu": "QT-104c",
+   "giu": true,
+   "luat_moi": [
+    "PC-05",
+    "PC-12"
+   ]
+  },
+  {
+   "ma_cu": "QT-105",
+   "giu": true,
+   "luat_moi": [
+    "PC-12"
+   ]
+  },
+  {
+   "ma_cu": "QT-106",
+   "giu": false,
+   "loai_bo": "tinh_nang",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "kho mẫu dự án + hàng chờ"
+  },
+  {
+   "ma_cu": "QT-107",
+   "giu": true,
+   "luat_moi": [
+    "LO-04"
+   ]
+  },
+  {
+   "ma_cu": "QT-108",
+   "giu": false,
+   "loai_bo": "giao_dien",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "LOD hiển thị căn ở ③"
+  },
+  {
+   "ma_cu": "QT-109",
+   "giu": false,
+   "loai_bo": "xuat",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "khối 3D glTF"
+  },
+  {
+   "ma_cu": "QT-111",
+   "giu": true,
+   "luat_moi": [
+    "MT-06"
+   ]
+  },
+  {
+   "ma_cu": "QT-112",
+   "giu": false,
+   "loai_bo": "xuat",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "IFC4"
+  },
+  {
+   "ma_cu": "QT-113",
+   "giu": false,
+   "loai_bo": "xuat",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "phiếu lắp ghép Revit"
+  },
+  {
+   "ma_cu": "QT-118",
+   "giu": true,
+   "luat_moi": [
+    "LO-01",
+    "LO-05"
+   ]
+  },
+  {
+   "ma_cu": "QT-118b",
+   "giu": false,
+   "loai_bo": "xuat",
+   "thay_the_boi": null,
+   "luat_moi": null,
+   "ly_do": "script bóc CGXD từ CAD (đầu vào, không phải luật)"
+  }
+ ],
+ "thong_ke": {
+  "luat_yaml": 21,
+  "qt_goc": 132,
+  "qt_giu": 90,
+  "qt_bo": 42,
+  "luat_moi": 51,
+  "bo_theo_loai": {
+   "thay_the": 8,
+   "trung": 0,
+   "giao_dien": 19,
+   "xuat": 6,
+   "ai": 3,
+   "tinh_nang": 5,
+   "thu_bo": 1
+  }
+ },
+ "loai_bo": {
+  "thay_the": "bị QT sau thay",
+  "trung": "trùng luật khác",
+  "giao_dien": "chỉ dành cho giao diện / cách vẽ app cũ",
+  "xuat": "xuất / bóc CAD-BIM, không phải luật xếp",
+  "ai": "tính năng trợ lý AI",
+  "tinh_nang": "tính năng thao tác, không phải luật",
+  "thu_bo": "đã thử và bỏ"
+ }
+}

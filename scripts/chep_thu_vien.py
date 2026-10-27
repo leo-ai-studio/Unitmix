@@ -114,6 +114,9 @@ def chep(nguon: Path, bang_ten: bool) -> None:
         (GOC / "docs" / "thu_vien_ten.md").write_text("\n".join(dong) + "\n", encoding="utf-8", newline="\n")
 
     print(f"Đã chép {len(toa)} tòa, {len(can)} căn, {len(d['core_geometry.json'])} lõi từ {commit[:7]}")
+    # quy tắc xếp căn + QCVN (rules/*.yaml, QUY_TAC_XEP_CAN.md) → quy_tac.json, sha256 gộp vào nguon.json vừa ghi
+    import chep_quy_tac  # noqa: E402
+    chep_quy_tac.chep(nguon)
 
 
 if __name__ == "__main__":
