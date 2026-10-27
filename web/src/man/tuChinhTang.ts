@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
-import { mauHieuDung, tuChinhToa, type DuLieuMB, type HinhLoiMB, type ToaMB } from '../tinh/loiThang';
+import { mauHieuDung, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type HinhLoiMB, type ToaMB } from '../tinh/loiThang';
 import { coMat } from '../tinh/matBang';
 import { idLoi, tai, taiCuaCan } from '../ve/hinhHocThuVien';
 
@@ -49,9 +49,26 @@ export const mauCuaToa = <T extends ToaMB>(toa: ToaDat, mau: T, tang?: number | 
 /**
  * Bọc `sua` của màn Tầng: sau phép sửa (đổi căn, STRETCH, tối ưu) chạy lại tự chỉnh mặt bằng của tòa `toaId` trong CÙNG một bước
  * sửa — hoàn tác một lần là về trước cả phép sửa lẫn phần tự chỉnh. Chưa tải xong dữ liệu thì vẫn sửa, chưa tự chỉnh.
+ * `tay` (mặc định): phép sửa người dùng chọn tay — căn vừa chọn không bị tự đổi loại; không vừa ô thì chặn ô đó (giữ căn cũ) và
+ * gọi `baoChan`. Bộ tối ưu tự động / về mẫu gốc truyền `tay: false` (khít vẫn được đổi loại).
  */
-export const suaTuChinh = (sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void, tv: ThuVien, toaId: string) =>
-  (fn: (p: TrangThaiPA) => TrangThaiPA) => sua((q) => {
-    const p = fn(q);
-    return { ...p, toa: p.toa.map((x) => (x.id === toaId && dl ? tuChinhToa(x, tv.toa.get(x.mauId) as ToaMB | undefined, tv, dl) : x)) };
-  });
+export const suaTuChinh = (sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void, tv: ThuVien, toaId: string,
+  tuy: { tay?: boolean; baoChan?: (ds: ChanSua[]) => void } = {}) =>
+  (fn: (p: TrangThaiPA) => TrangThaiPA) => {
+    let chan: ChanSua[] = [];
+    sua((q) => {
+      const p = fn(q);
+      chan = [];
+      return { ...p, toa: p.toa.map((x) => {
+        if (x.id !== toaId || !dl) return x;
+        const mau = tv.toa.get(x.mauId) as ToaMB | undefined;
+        if (tuy.tay === false) return tuChinhToa(x, mau, tv, dl);
+        const truoc = q.toa.find((o) => o.id === toaId);
+        if (!truoc) return tuChinhToa(x, mau, tv, dl);
+        const r = tuChinhSauSua(truoc, x, mau, tv, dl);
+        chan = r.chan;
+        return r.toa;
+      }) };
+    });
+    if (chan.length) tuy.baoChan?.(chan);
+  };

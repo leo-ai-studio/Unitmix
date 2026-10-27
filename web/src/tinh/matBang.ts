@@ -176,6 +176,15 @@ export function ungVienDoi(canId: string, tv: ThuVien, cungViTri = false): CanMa
     .sort((a, b) => Number(b.vi_tri === g.vi_tri) - Number(a.vi_tri === g.vi_tri) || a.id.localeCompare(b.id));
 }
 
+/** Mẫu gốc (không biến thể STRETCH) cùng nhóm, chiều sâu, vị trí mà KHÁC bề ngang — đổi tay thì dãy tự khít (tinh/loiThang.ts). */
+export function ungVienKhacRong(canId: string, tv: ThuVien): CanMau[] {
+  const g0 = tv.can.get(canId), g = g0?.stretchGoc ? tv.can.get(g0.stretchGoc.id) ?? g0 : g0;
+  if (!g) return [];
+  return [...tv.can.values()]
+    .filter((c) => !c.stretchGoc && c.nhom === g.nhom && c.sau_mm === g.sau_mm && c.vi_tri === g.vi_tri && c.rong_mm !== g.rong_mm)
+    .sort((a, b) => a.rong_mm - b.rong_mm || a.id.localeCompare(b.id));
+}
+
 /** Nét vẽ mẫu căn (toạ độ chuẩn hoá 0..1 theo rộng × sâu) đặt vào vị trí trên mặt tòa. */
 export function veCanTaiViTri(ve: NetVe[], vt: ViTriCan, mau: ToaCoMat): NetVe[] {
   const m = mau.mat[vt.matIdx], B = coSo(m.goc_deg, m.truc_mm), w = vt.a1 - vt.a0;
