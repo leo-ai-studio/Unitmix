@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { api, type DuAnApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
+import { useDongHop } from '../ui/useDongHop';
 import { tinhChiTieu } from '../tinh/chiTieu';
 import { chenhChiSo, chiSoPA, giaTriCot, KHOA_SO, sapXepPA, type ChiSoPA, type KhoaSapXep, type KhoaSo } from '../tinh/diemPA';
 import { LOAI_CAN, type TrangThaiPA } from '../tinh/kieu';
@@ -25,6 +26,7 @@ export function fmtChenh(v: number | null, thap = 0): string {
 
 /** Hộp so sánh tối đa 6 phương án của một dự án: chọn → dải thẻ, thẻ chênh so với PA gốc, bảng chi tiết, xuất XLS. */
 export function SoSanhPA({ ma, da, dong }: { ma: string; da: DuAnApi; dong: () => void }) {
+  const { lop, dongMem } = useDongHop(dong);
   useLang();
   const [chon, setChon] = useState<string[]>(() => da.phuong_an.slice(0, 2).map((p) => p.id));
   const [ds, setDs] = useState<Muc[] | null>(null);
@@ -35,11 +37,6 @@ export function SoSanhPA({ ma, da, dong }: { ma: string; da: DuAnApi; dong: () =
   const [khoa, setKhoa] = useState<KhoaSapXep>('lech');
   const [giam, setGiam] = useState(false);
 
-  useEffect(() => {
-    const f = (e: KeyboardEvent) => e.key === 'Escape' && dong();
-    window.addEventListener('keydown', f);
-    return () => window.removeEventListener('keydown', f);
-  }, [dong]);
 
   function bat(id: string) {
     setChon((c) => (c.includes(id) ? c.filter((x) => x !== id) : c.length < TOI_DA ? [...c, id] : c));
@@ -69,11 +66,11 @@ export function SoSanhPA({ ma, da, dong }: { ma: string; da: DuAnApi; dong: () =
   const tot = ds ? sapXepPA(ds, 'lech')[0] : null;
 
   return (
-    <div class="hop-thoai" role="dialog" aria-modal="true" aria-labelledby="tieu-de-ss" onClick={(e) => { if (e.target === e.currentTarget) dong(); }}>
+    <div class={`hop-thoai${lop}`} role="dialog" aria-modal="true" aria-labelledby="tieu-de-ss" onClick={(e) => { if (e.target === e.currentTarget) dongMem(); }}>
       <div class="hop-rong so-sanh">
         <div class="ss-dau">
           <h2 id="tieu-de-ss">{t('ss.tieuDe')} · {da.ten}</h2>
-          <button type="button" class="nut-phu" onClick={dong}>{t('ss.dong')}</button>
+          <button type="button" class="nut-phu" onClick={dongMem}>{t('ss.dong')}</button>
         </div>
 
         {!ds ? (

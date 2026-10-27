@@ -9,6 +9,7 @@ import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
+import { SoDong } from '../ui/SoDong';
 import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
 import { BangChiTieuLo, ChonLoCaoTang, LoChiTieu, LoNhap, SucChuaLo } from './ManLo';
 
@@ -286,7 +287,7 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQ
       <MucGap tieuDe={`${t('xep.dtLo')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.xep.dtLo')} mo>
         <div class="dong bang-ct dau"><span /><span>{t('xep.xayDung')}</span><span>{t('xep.tinhHSSDD')}</span></div>
         <div class="dong bang-ct"><span>{t('sc.dtLo')}</span><span>{fmtSo(dtLo, m2)}</span><span>{fmtSo(dtLo, m2)}</span></div>
-        <div class="dong bang-ct"><span>{t('xep.dtDe')} / {t('xep.dtSan')}</span><span>{fmtSo(r && toaLo.length ? r.dtDe : null, m2)}</span><span>{fmtSo(r && toaLo.length ? r.dtSanTinhHSSDD : null, m2)}</span></div>
+        <div class="dong bang-ct"><span>{t('xep.dtDe')} / {t('xep.dtSan')}</span><span><SoDong value={r && toaLo.length ? r.dtDe : null} {...m2} /></span><span><SoDong value={r && toaLo.length ? r.dtSanTinhHSSDD : null} {...m2} /></span></div>
         {r && toaLo.length > 0 && (['thap', 'de', 'apMai', 'hamTinh', 'hamTru'] as const).map((k) => (
           <div class="dong bang-ct muted" key={k} title={t('heSo.canCu')}>
             <span>· {t(`dtSan.${k}`)}</span><span /><span>{k === 'hamTru' ? `(${fmtSo(r.dtSanChiTiet[k], m2)})` : fmtSo(r.dtSanChiTiet[k], m2)}</span>

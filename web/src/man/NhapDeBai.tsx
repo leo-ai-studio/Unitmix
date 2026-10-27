@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
+import { useDongHop } from '../ui/useDongHop';
 import { docDeBai, type DeBaiDoc } from '../nhap/deBaiKD';
 import { docTepExcel, luoiTuChuDan } from '../nhap/docExcel';
 import type { Sheet } from '../nhap/luoi';
@@ -10,6 +11,7 @@ type PhamVi = 'lo' | 'cungChucNang' | 'datO';
 
 /** Hộp thoại: dán bảng hoặc chọn Excel unitmix đề bài của kinh doanh → xem trước → áp cơ cấu + DT căn vào lô. */
 export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong: () => void; ap: (moi: Lo[]) => void }) {
+  const { lop, dongMem } = useDongHop(dong);
   const [chu, setChu] = useState('');
   const [sheets, setSheets] = useState<Sheet[] | null>(null);
   const [sheet, setSheet] = useState('');
@@ -42,7 +44,7 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
   const soLo = ds.filter(apDung).length;
 
   return (
-    <div class="hop-thoai" role="dialog" aria-modal="true" aria-labelledby="tieu-de-db">
+    <div class={`hop-thoai${lop}`} role="dialog" aria-modal="true" aria-labelledby="tieu-de-db">
       <div>
         <h2 id="tieu-de-db">{t('db.tieuDe')}</h2>
         <p class="muted" style={{ margin: 0 }}>{t('db.giaiThich')}</p>
@@ -88,7 +90,7 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
           </>
         )}
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-          <button type="button" class="nut-phu" onClick={dong}>{t('duAn.huy')}</button>
+          <button type="button" class="nut-phu" onClick={dongMem}>{t('duAn.huy')}</button>
           <button type="button" class="nut-chinh" disabled={!kq || !kq.dong.length || !soLo}
             onClick={() => {
               const deBai = {
@@ -97,7 +99,7 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
                 nguon: sheet ? `${nguon} · ${sheet}` : nguon,
               };
               ap(ds.map((l) => (apDung(l) ? { ...l, temDat: { ...l.temDat, coCauMucTieu: { ...kq!.coCau }, deBai } } : l)));
-              dong();
+              dongMem();
             }}>
             {t('db.ap').replace('{n}', String(soLo))}
           </button>

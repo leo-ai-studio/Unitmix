@@ -85,3 +85,19 @@ input, select, textarea { transition: border-color var(--dur-1) var(--ease-io), 
   .trang-thai-luu.dang::before { animation: none; }
   .trang-thai-luu.da { animation: none; }
 }
+
+/* H4: hộp thoại đóng ngược (useDongHop thêm class dang-dong 160 ms rồi mới gỡ). */
+@keyframes nen-ra { to { opacity: 0; } }
+@keyframes the-ra { to { opacity: 0; transform: translateY(6px) scale(.96); } }
+.hop-thoai.dang-dong, .hop-3d.dang-dong { animation: nen-ra 160ms var(--ease-io) forwards; }
+.hop-thoai.dang-dong > div, .hop-3d.dang-dong > * { animation: the-ra 160ms var(--ease-io) forwards; }
+
+/* H18: bóng mờ mép trên / dưới panel khi còn nội dung để cuộn (CSS thuần, nền "local" che bóng ở đầu / cuối). */
+.panel-trai, .panel-phai {
+  background:
+    linear-gradient(var(--panel) 30%, transparent) top / 100% 28px no-repeat local,
+    linear-gradient(transparent, var(--panel) 70%) bottom / 100% 28px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, .10), transparent) top / 100% 10px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, .10), transparent) bottom / 100% 10px no-repeat scroll,
+    var(--panel);
+}

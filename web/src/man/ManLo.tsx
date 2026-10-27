@@ -11,6 +11,7 @@ import { apPreset, chupPreset, type DuLieuPreset, type NhomPreset, type PhamViPr
 import { DongPreset } from '../ui/Preset';
 import { MucGap } from '../ui/MucGap';
 import { fmtSo } from '../ui/so';
+import { SoDong } from '../ui/SoDong';
 import { NhapChiTieu } from './NhapChiTieu';
 import { NhapDeBai } from './NhapDeBai';
 
@@ -282,7 +283,7 @@ export function BangChiTieuLo({ dong, mo = true }: { dong: DongChiTieu[]; mo?: b
         <div class="dong bang-ct" key={d.khoa} title={t(`gt.dong.${d.khoa}`)}>
           <span>{t(`dong.${d.khoa}`)}</span>
           <span class={d.dat === null ? '' : d.muc === 'vuot' ? 'vuot' : d.muc === 'canh_bao' ? 'canh-bao' : 'ok'}>
-            {fmtSo(d.dat, dv[d.khoa])}
+            <SoDong value={d.dat} {...dv[d.khoa]} />
             {d.chenh !== null && ` (${d.chenh > 0 ? '+' : ''}${fmtSo(d.chenh, { thapPhan: dv[d.khoa]?.thapPhan })})`}
           </span>
           <span>{d.mucTieu === null ? '—' : `${d.chieu === '<=' ? '≤' : '≥'} ${fmtSo(d.mucTieu, dv[d.khoa])}`}</span>

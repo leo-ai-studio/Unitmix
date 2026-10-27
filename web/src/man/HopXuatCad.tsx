@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
+import { useDongHop } from '../ui/useDongHop';
 import type { ThuVien, ToaDat } from '../tinh/kieu';
 import { tai } from '../ve/hinhHocThuVien';
 import type { NetVe } from '../tinh/matBang';
@@ -20,6 +21,7 @@ function taiVe(noiDung: string, tenTep: string, loai: string) {
 
 /** Hộp xuất CAD của tòa đang xem: `.scr` ghép XREF → .dwg, hoặc `.dxf` nhúng hình học. */
 export function HopXuatCad({ toa, mau, tv, ten, dong }: Props) {
+  const { lop, dongMem } = useDongHop(dong);
   const [tenBv, setTenBv] = useState(asciiHoa(`${ten} ${mau.ten_vi.split(' · ')[0]}`).trim().replace(/\s+/g, '_'));
   const [goc, setGoc] = useState(THU_VIEN_XREF_MAC_DINH);
   const [hinh, setHinh] = useState<Map<string, NetVe[]> | null>(null);
@@ -39,9 +41,9 @@ export function HopXuatCad({ toa, mau, tv, ten, dong }: Props) {
   const san = !!hinh && !!loi;
   const ten0 = asciiHoa(tenBv || 'MatBang');
   return (
-    <div class="hop-3d" role="dialog" aria-modal="true" aria-label={t('xcad.tieuDe')} onClick={(e) => { if (e.target === e.currentTarget) dong(); }}>
+    <div class={`hop-3d${lop}`} role="dialog" aria-modal="true" aria-label={t('xcad.tieuDe')} onClick={(e) => { if (e.target === e.currentTarget) dongMem(); }}>
       <div class="hop-xuat">
-        <button type="button" class="dong-hop" onClick={dong} aria-label={t('m3d.dong')}>×</button>
+        <button type="button" class="dong-hop" onClick={dongMem} aria-label={t('m3d.dong')}>×</button>
         <h3>{t('xcad.tieuDe')}</h3>
         <p class="muted">{t('xcad.moTa').replace('{t}', mau.ten_vi.split(' · ')[0])}</p>
         <label class="o-chon"><span>{t('xcad.tenBanVe')}</span><input type="text" value={tenBv} onInput={(e) => setTenBv(e.currentTarget.value)} /></label>
