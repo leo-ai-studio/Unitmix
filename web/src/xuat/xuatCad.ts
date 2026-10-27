@@ -141,11 +141,35 @@ function polyDxf(lop: string, pts: Diem[], dong: boolean): string {
   for (const p of pts) s += nhom([0, 'VERTEX'], [8, lop], ...diemDxf(p));
   return s + nhom([0, 'SEQEND'], [8, lop]);
 }
+/** Lớp nhãn phòng: tên mẫu căn + DT thông thủy đặt ở tâm mỗi căn. */
+export const LOP_NHAN_CAN = 'MDI-NHAN-CAN';
+export const CAO_CHU_NHAN_MM = 250;
+export type NhanCan = { x: number; y: number; ten: string; dt: string };
+
+/** Nhãn ở tâm từng căn của tầng điển hình (toạ độ thế giới, mm). Chữ ASCII: bỏ dấu, DT thông thủy làm tròn 0,1 m². */
+export function nhanCanDxf(d: DuLieuXuat): NhanCan[] {
+  const kq: NhanCan[] = [];
+  for (const it of danhSachChen(d)) {
+    const c = it.loai === 'can' && it.no ? d.tv.can.get(it.no) : undefined;
+    if (!c) continue;
+    const t = rad(it.rot), lx = it.sx * (it.rong / 2), ly = it.sau / 2;
+    kq.push({
+      x: it.x + lx * Math.cos(t) - ly * Math.sin(t),
+      y: it.y + lx * Math.sin(t) + ly * Math.cos(t),
+      ten: asciiHoa(c.ten_vi.split(' · ')[0]).trim() || asciiHoa(c.id),
+      dt: Number.isFinite(c.dt_tt_m2) ? `${c.dt_tt_m2.toFixed(1)} m2` : '-',
+    });
+  }
+  return kq;
+}
+/** Một TEXT căn giữa (R12: nhóm 72 = 1, 73 = 2 và điểm căn 11/21/31). */
+const textDxf = (lop: string, x: number, y: number, chu: string): string =>
+  nhom([0, 'TEXT'], [8, lop], ...diemDxf([x, y]), [40, CAO_CHU_NHAN_MM], [1, chu], [72, 1], [11, +x.toFixed(4)], [21, +y.toFixed(4)], [31, 0], [73, 2]);
 const khoiTen = (id: string) => 'CAN_' + id.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 
 /** Tệp DXF R12 ASCII, đơn vị mm: nét bao DTXD, hành lang, mỗi mẫu căn một BLOCK (nét đã nhân rộng × sâu) + INSERT, lõi / thang bộ là nét rời. */
 export function taoDxf(d: DuLieuXuat): string {
-  const lops = new Map<string, number>([['MDI-BAO', 1], ['MDI-HANHLANG', 30], ['MDI-NHAN', 2], ['MDI-LOI', 8]]);
+  const lops = new Map<string, number>([['MDI-BAO', 1], ['MDI-HANHLANG', 30], ['MDI-NHAN', 2], ['MDI-LOI', 8], [LOP_NHAN_CAN, 3]]);
   for (const [l, c] of Object.values(LOP_THEO_NET)) lops.set(l, c);
   let s = nhom([0, 'SECTION'], [2, 'HEADER'], [9, '$ACADVER'], [1, 'AC1009'], [9, '$INSUNITS'], [70, 4], [9, '$MEASUREMENT'], [70, 1], [0, 'ENDSEC']);
   s += nhom([0, 'SECTION'], [2, 'TABLES'], [0, 'TABLE'], [2, 'LAYER'], [70, lops.size]);
@@ -181,6 +205,10 @@ export function taoDxf(d: DuLieuXuat): string {
         s += polyDxf('MDI-LOI', n.pts.map(([x, y]): Diem => [it.x + x * it.sx * c - y * it.sy * sn, it.y + x * it.sx * sn + y * it.sy * c]), false);
       }
     }
+  }
+  for (const n of nhanCanDxf(d)) {
+    s += textDxf(LOP_NHAN_CAN, n.x, n.y + CAO_CHU_NHAN_MM * 0.7, n.ten);
+    s += textDxf(LOP_NHAN_CAN, n.x, n.y - CAO_CHU_NHAN_MM * 0.7, n.dt);
   }
   s += nhom([0, 'ENDSEC'], [0, 'EOF']);
   return s;

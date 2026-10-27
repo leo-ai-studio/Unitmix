@@ -7,6 +7,7 @@ import { taoPAMoi } from '../tinh/macDinh';
 import { LOAI_CAN } from '../tinh/kieu';
 import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
 import { fmtSo } from '../ui/so';
+import { SoSanhPA } from './SoSanhPA';
 
 type Dong = { ma: string; da: DuAnApi | null; loi: boolean };
 
@@ -89,6 +90,7 @@ export function DuAn() {
   const [suaDa, setSuaDa] = useState<{ ma: string; ten: string; diaDiem: string } | null>(null);
   const [suaPA, setSuaPA] = useState<{ ma: string; id: string; ten: string } | null>(null);
   const [loiHang, setLoiHang] = useState('');
+  const [soSanh, setSoSanh] = useState<string | null>(null);
 
   const napLai = async (ma: string) => {
     const da = await api.docDuAn(ma);
@@ -141,12 +143,9 @@ export function DuAn() {
     route(`/du-an/${r.ma}`);
   }
 
+  /** Nhân bản một phương án trong cùng dự án (cần mã sửa); lỗi thì báo, thành công thì nạp lại danh sách. */
   async function nhanBan(ma: string, id: string) {
-    const maSua = layMaSua(ma);
-    if (!maSua) return;
-    await api.nhanBan(ma, id, maSua);
-    const da = await api.docDuAn(ma);
-    setDong((ds) => ds.map((x) => (x.ma === ma ? { ...x, da } : x)));
+    await ghi(ma, (m) => api.nhanBan(ma, id, m));
   }
 
   return (
@@ -191,6 +190,7 @@ export function DuAn() {
                 )}
                 {!coMa && <span class="so">{t('duAn.chiXem')}</span>}
                 <span class="so">{t('duAn.soPA')}: <b>{da ? da.phuong_an.length : '—'}</b></span>
+                {da && da.phuong_an.length >= 2 && <button type="button" class="nut-phu" onClick={() => setSoSanh(ma)}>{t('ss.nut')}</button>}
                 <code style={{ fontSize: '12px' }}>{linkXem(ma).replace(/^https?:\/\//, '')}</code>
                 <ChepNut chu={linkXem(ma)} />
               </div>
@@ -224,6 +224,7 @@ export function DuAn() {
       </main>
       <footer class="chan-trang">{t('app.tacGia')}</footer>
       {moTao && <HopTaoDuAn dong={() => setMoTao(false)} />}
+      {soSanh && dong.find((x) => x.ma === soSanh)?.da && <SoSanhPA ma={soSanh} da={dong.find((x) => x.ma === soSanh)!.da!} dong={() => setSoSanh(null)} />}
     </div>
   );
 }

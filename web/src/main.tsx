@@ -4,6 +4,7 @@ import './styles/leo-ui.css';
 import './styles/unitmix.css';
 import './styles/chuyen-dong.css';
 import './styles/tuan-thu.css';
+import './styles/so-sanh.css';
 import { langHienTai } from './i18n/i18n';
 import { DuAn } from './man/DuAn';
 import { SoanThao } from './man/SoanThao';

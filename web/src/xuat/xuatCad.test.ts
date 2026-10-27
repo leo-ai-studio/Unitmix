@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import DxfParser from 'dxf-parser';
 import { taoThuVien, type CanMau, type Diem } from '../tinh/kieu';
 import type { NetVe, ToaCoMat } from '../tinh/matBang';
-import { danhSachChen, duongXref, khungCatCan, lenhXclip, taoDxf, taoScr, type DuLieuXuat } from './xuatCad';
+import { danhSachChen, duongXref, khungCatCan, lenhXclip, LOP_NHAN_CAN, nhanCanDxf, taoDxf, taoScr, type DuLieuXuat } from './xuatCad';
 
 const lib = new URL('../../public/lib/', import.meta.url);
 const cad = new URL('../../../cad/xref/', import.meta.url);
@@ -63,5 +63,23 @@ describe('xuất CAD', () => {
     expect(Object.keys(dxf.blocks).length).toBe(new Set(ds.map((x) => x.no)).size);
     expect(ent.some((e) => e.layer === 'MDI-BAO')).toBe(true);
     expect(/^[\x09\x0a\x0d\x20-\x7e]*$/.test(taoDxf(d))).toBe(true);
+  });
+});
+
+describe('nhãn phòng trong DXF', () => {
+  it('mỗi căn có 2 TEXT (tên mẫu + DT thông thủy) trên lớp nhãn', () => {
+    const d = du('tm-u2'), n = danhSachChen(d).filter((x) => x.loai === 'can').length;
+    const nh = nhanCanDxf(d);
+    expect(nh).toHaveLength(n);
+    for (const x of nh) {
+      expect(Number.isFinite(x.x) && Number.isFinite(x.y)).toBe(true);
+      expect(x.dt).toMatch(/^\d+\.\d m2$/);
+      expect(/^[\x20-\x7e]+$/.test(x.ten)).toBe(true);
+    }
+    const dxf = new DxfParser().parseSync(taoDxf(d))!;
+    const chu = (dxf.entities as { type: string; layer: string; text?: string }[]).filter((e) => e.type === 'TEXT' && e.layer === LOP_NHAN_CAN);
+    expect(chu).toHaveLength(2 * n);
+    expect(chu.some((e) => /m2$/.test(e.text ?? ''))).toBe(true);
+    expect(dxf.tables.layer.layers[LOP_NHAN_CAN]).toBeDefined();
   });
 });
