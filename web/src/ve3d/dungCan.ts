@@ -42,24 +42,33 @@ export type VatLieu3D = Record<'tuong' | 'san' | 'dam' | 'top' | 'khung' | 'go' 
   mol: THREE.LineBasicMaterial;
 };
 
-/** Bảng vật liệu như app cũ; `mat` gắn mặt phẳng cắt ngang chung. */
-export function taoVatLieu(T: T3, cat: THREE.Plane[]): VatLieu3D {
+/** Kiểu vẽ 3D: theo brand LEO (kem, xanh rêu) hoặc mô hình trắng (nền cho render AI). */
+export type KieuVe3D = 'brand' | 'trang';
+
+const BANG_MAU: Record<KieuVe3D, Record<'tuong' | 'san' | 'khung' | 'go' | 'khung2' | 'de' | 'tum' | 'kinh' | 'lc' | 'lov' | 'line' | 'mol', number>> = {
+  brand: { tuong: 0xfbfaf4, san: 0xdfe3dc, khung: 0x174f52, go: 0xa7835a, khung2: 0xe9ece5, de: 0xd5e2da, tum: 0xe5eeea, kinh: 0x7fa9a3, lc: 0x174f52, lov: 0x3e6f70, line: 0x174f52, mol: 0xc7aa76 },
+  trang: { tuong: 0xffffff, san: 0xf2f2f0, khung: 0xd9dcda, go: 0xe8e6e1, khung2: 0xf7f7f5, de: 0xf4f4f2, tum: 0xf7f7f5, kinh: 0xcfd8d6, lc: 0xc5cac7, lov: 0xd0d4d2, line: 0x8f9894, mol: 0xb8b0a3 },
+};
+
+/** Bảng vật liệu (dùng chung căn / tầng / tòa / dự án); `cat` gắn mặt phẳng cắt ngang chung. */
+export function taoVatLieu(T: T3, cat: THREE.Plane[], kieu: KieuVe3D = 'brand'): VatLieu3D {
+  const B = BANG_MAU[kieu];
   const mt = (c: number, o: THREE.MeshStandardMaterialParameters = {}) => new T.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, clippingPlanes: cat, ...o });
-  const tuong = mt(0xe6e2da, { side: T.DoubleSide });
+  const tuong = mt(B.tuong, { side: T.DoubleSide });
   return {
     tuong, dam: tuong,
-    san: mt(0xb9bcc1, { side: T.DoubleSide }),
-    top: mt(0xb9bcc1, { transparent: true, opacity: 0.28, depthWrite: false }),
-    khung: mt(0x2d2f33, { roughness: 0.5, metalness: 0.3 }),
-    go: mt(0x9b6b3c, { roughness: 0.7 }),
-    khung2: mt(0xcfc9bd, { side: T.DoubleSide }),
-    de: mt(0xc9b99a, { roughness: 0.8, side: T.DoubleSide }),
-    tum: mt(0xd9d4c8, { roughness: 0.8, side: T.DoubleSide }),
-    kinh: mt(0x7fb4d4, { transparent: true, opacity: 0.35, roughness: 0.1, metalness: 0.1, depthWrite: false, side: T.DoubleSide }),
-    lc: mt(0x333639, { roughness: 0.5, metalness: 0.4 }),
-    lov: mt(0x4a4d52, { roughness: 0.6, metalness: 0.3 }),
-    line: new T.LineBasicMaterial({ color: 0x3a3f46, clippingPlanes: cat }),
-    mol: new T.LineBasicMaterial({ color: 0x2fb6e8, clippingPlanes: cat }),
+    san: mt(B.san, { side: T.DoubleSide }),
+    top: mt(B.san, { transparent: true, opacity: 0.28, depthWrite: false }),
+    khung: mt(B.khung, { roughness: 0.5, metalness: 0.2 }),
+    go: mt(B.go, { roughness: 0.7 }),
+    khung2: mt(B.khung2, { side: T.DoubleSide }),
+    de: mt(B.de, { roughness: 0.8, side: T.DoubleSide }),
+    tum: mt(B.tum, { roughness: 0.8, side: T.DoubleSide }),
+    kinh: mt(B.kinh, { transparent: true, opacity: kieu === 'trang' ? 0.5 : 0.42, roughness: 0.1, metalness: 0.1, depthWrite: false, side: T.DoubleSide }),
+    lc: mt(B.lc, { roughness: 0.5, metalness: 0.3 }),
+    lov: mt(B.lov, { roughness: 0.6, metalness: 0.2 }),
+    line: new T.LineBasicMaterial({ color: B.line, clippingPlanes: cat, transparent: true, opacity: kieu === 'trang' ? 0.55 : 0.4 }),
+    mol: new T.LineBasicMaterial({ color: B.mol, clippingPlanes: cat }),
   };
 }
 

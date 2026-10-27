@@ -219,3 +219,19 @@ body { font-size: 13px; line-height: 1.45; }
   .khung-soan .thanh-tren .cap-do button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
 }
 .thanh-tren .nhan-che-do { display: none; }
+
+/* ===== 3D theo brand ===== */
+.vung-3d { background: var(--bg); }
+.vung-3d .giua-man { color: var(--muted-text); }
+.thanh-3d { background: var(--panel); }
+.thanh-3d .gian { flex: 1; }
+.thanh-3d-phu { background: var(--band); padding: 4px 12px; font-size: 12px; }
+.thanh-3d .nhom-3d { gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.thanh-3d .nhom-3d button { border: 0; border-right: 1px solid var(--line); background: var(--panel); padding: 4px 10px; font-size: 12px; color: var(--ink); white-space: nowrap; }
+.thanh-3d .nhom-3d button:last-child { border-right: 0; }
+.thanh-3d .nhom-3d button[aria-pressed="true"] { background: var(--soft); color: var(--green); font-weight: 700; }
+.thanh-3d .chon-che button[aria-pressed="true"] { background: var(--green); color: #fff; }
+.chip-goc { display: inline-flex; border: 1px solid var(--green); border-radius: 12px; overflow: hidden; background: var(--panel); }
+.chip-goc button { border: 0; background: transparent; padding: 2px 9px; font-size: 12px; color: var(--green); }
+.chip-goc .xoa { padding: 2px 7px; color: var(--muted-text); border-left: 1px solid var(--line); }
+.thanh-3d .nut-phu, .thanh-3d .nut-chinh { padding: 4px 10px; font-size: 12px; }

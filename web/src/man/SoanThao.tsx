@@ -125,7 +125,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onLamLai={kho.lamLai}
       thongBao={thongBao}
       onXuatCad={xemXuat && tv ? () => setMoXuat(true) : undefined}
-      moHinh={<TangMoHinh {...chungTang} />}
+      moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} />}
       buoc={{ ds: [['tmb', t('buoc.tmb')], ['tang', t('buoc.tang')]], chon: buoc, onChon: (k) => setBuoc(k as 'tmb' | 'tang') }}
       trai={buoc === 'tmb' ? <TmbTrai {...chungXep} /> : <TangTrai {...chungTang} />}
       giua={buoc === 'tmb' ? <XepGiua {...chungXep} /> : <TangGiua {...chungTang} />}
