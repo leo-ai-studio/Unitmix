@@ -1,3 +1,4 @@
+import { nhanPhamVi } from '../ui/ChonTang';
 import { useEffect, useState } from 'preact/hooks';
 import { api, LoiApi, type DuAnApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
@@ -16,7 +17,7 @@ import { diemLechPA } from '../tinh/diemPA';
 import { baoCaoPA, tenTepXls, xuatXls } from '../xuat/xuatXls';
 import { HamGiua, HamPhai, HamTrai } from './ManHam';
 import { HopXuatCad } from './HopXuatCad';
-import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem } from './ManTang';
+import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
@@ -100,6 +101,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const xemTang = buoc === 'tang' ? toaDangXem(kho.pa, tv, loId, toaId) : null;
   const loDangChon = buoc !== 'tang' ? loDangXep(kho.pa, loId) : xemTang?.lo;
   const toaDangChon = buoc === 'tmb' ? kho.pa.toa.find((x) => x.id === toaId) : xemTang?.toa;
+  const chonO = useChonO(buoc === 'tang' ? toaDangChon ?? null : null);
   const thongBao = (
     <>
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}
@@ -121,7 +123,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
         coTe: buoc === 'ham' ? 'duoi' : 'tren',
         onCoTe: () => setBuoc(buoc === 'ham' ? 'tmb' : 'ham'),
         toa: buoc !== 'ham' && toaDangChon ? tv?.toa.get(toaDangChon.mauId)?.ten_vi ?? toaDangChon.mauId : undefined,
-        tang: buoc === 'ham' ? `B${Math.min(tangHam, soTangHam)}` : buoc === 'tang' && toaDangChon ? t('tang.dienHinh') : undefined,
+        tang: buoc === 'ham' ? `B${Math.min(tangHam, soTangHam)}` : buoc === 'tang' && toaDangChon ? (chonO.tangs ? nhanPhamVi(chonO.tangs, toaDangChon.soTangDe) : t('tang.dienHinh')) : undefined,
         onTang: buoc === 'ham' ? () => setTangHam((Math.min(tangHam, soTangHam) % soTangHam) + 1) : undefined,
         can: buoc === 'tang' && canKhoa && xemTang ? tenCanChon(xemTang, tv, canKhoa) : undefined,
       }}

@@ -3,6 +3,7 @@
  * và các phép kiểm theo QCVN 13:2018/BXD, QCVN 04:2021/BXD (khu xe điện theo DỰ THẢO SĐ 01:2026 — chỉ cảnh báo).
  * Hàm thuần, toạ độ mét.
  */
+import { thongTinLoi } from './doiCan';
 import ClipperLib from 'clipper-lib';
 import type { MucDo } from './chiTieu';
 import { demCan } from './coCau';
@@ -85,13 +86,16 @@ export function loiCotTuToa(pa: TrangThaiPA, tv: ThuVien, loId: string, cotRong:
     const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
     const dat = (pts: Diem[]) => xoayTinhTien(pts.map(([x, y]): Diem => [(x - cx) / 1000, (y - cy) / 1000]), t.x, t.y, t.gocDo);
     if (coMat(mau)) {
-      for (const m of mau.mat) {
-        for (const q of m.phan_tu as (PhanTuMat & { bb_ve_mm?: number[] })[]) {
+      mau.mat.forEach((m, mi) => {
+        (m.phan_tu as (PhanTuMat & { bb_ve_mm?: number[] })[]).forEach((q, qi) => {
           const b = q.bb_ve_mm;
-          if (q.loai === 'can' || !b || b.length < 4) continue;
+          if (q.loai === 'can' || !b || b.length < 4) return;
+          // Lõi đã khai không có thang bộ / thang máy / hộp kỹ thuật nào xuống hầm (menu lõi ở màn Tầng) thì không đặt trong hầm.
+          const tt = thongTinLoi(t, `${mi}:${qi}`);
+          if (!tt.thangBo.ham && !tt.thangMay.ham && !tt.hopKT.ham) return;
           loi.push(dat([[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]]));
-        }
-      }
+        });
+      });
     }
     if (cotRong > 0 && nhip > 0) {
       const chan = chanToa(mau, t);

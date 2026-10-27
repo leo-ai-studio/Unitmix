@@ -52,7 +52,8 @@ type ChonO = { toaId: string | null; tangs: number[] | null; ds: string[]; menu:
 let chonO: ChonO = { toaId: null, tangs: null, ds: [], menu: null };
 const ngheO = new Set<() => void>();
 const datChonO = (p: Partial<ChonO>) => { chonO = { ...chonO, ...p }; ngheO.forEach((f) => f()); };
-function useChonO(toa: ToaDat | null): ChonO {
+/** Tầng / ô đang chọn ở màn Tầng (store cấp module); SoanThao đọc để ghi breadcrumb. */
+export function useChonO(toa: ToaDat | null): ChonO {
   const [, ve] = useState(0);
   useEffect(() => {
     const f = () => ve((n) => n + 1);
