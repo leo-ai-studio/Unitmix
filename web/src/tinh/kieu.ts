@@ -118,6 +118,14 @@ export type BaoCaoTuChinh = {
   giamCan?: BaoCaoGiamCan;
   /** Thang bộ liền suốt chiều cao (tòa có tầng riêng): kết quả hợp / ép thang. */
   thangLien?: BaoCaoThangLien;
+  /** Khít đoạn kẹp (dãy căn giữa hai mốc mà tổng bề ngang đổi): căn đã đổi / bỏ cho hết đè, khe; thiếu = không cần. */
+  khitKep?: BaoCaoKhitKep;
+};
+/** Căn đổi / bỏ để dãy căn kẹp giữa hai mốc (lõi, ô thang) khít lại; `conMm` = đè + khe còn lại (mm) sau khi khít. */
+export type BaoCaoKhitKep = {
+  doi: { khoa: string; tu: string; den: string }[];
+  bo: { khoa: string; id: string }[];
+  conMm: number;
 };
 /** Một thay đổi tự chỉnh tự ghi vào bố cục: `tang` null = bố cục chung; `cu` = giá trị trước (thiếu = không có ghi đè). */
 export type ThayDoiTuDong = { tang: number | null; truong: 'canViTri' | 'congNang'; khoa: string; cu?: string; moi: string };
