@@ -1,3 +1,4 @@
+import { nhanPhienBan } from '../phienBan';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t, useLang } from '../i18n/i18n';
@@ -27,7 +28,7 @@ type Props = {
 
 export function ThuongHieu({ dangXuLy = false }: { dangXuLy?: boolean }) {
   return (
-    <a class="thuong-hieu" href="/" aria-label={t('app.ten')}>
+    <a class="thuong-hieu" href="/" aria-label={t('app.ten')} title={`${t('app.ten')} ${nhanPhienBan()}`}>
       <span class="mark">
         <img src="/brand/leo_ai_mark_base.png" alt="" />
         <img class={`brand-o${dangXuLy ? ' spinning' : ''}`} src="/brand/leo_ai_o.png" alt="" />

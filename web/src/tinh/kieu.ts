@@ -161,6 +161,40 @@ export type TrangThaiPA = {
   phanHam?: PhanHam;
   gocNhin?: GocNhin[];
   cauTao?: CauTao;
+  /** Đơn giá dự toán và giá bán (số tạm, chờ chủ nhiệm / QS chốt). Thiếu = PA cũ; `chuanHoaPA` điền mặc định. */
+  chiPhi?: ChiPhiPA;
+};
+
+/* ---------- Chi phí (dự toán sơ bộ + hiệu quả tài chính). Mọi số mặc định là SỐ TẠM, chờ chủ nhiệm / QS chốt. ---------- */
+
+/** Dòng dự toán tính khối lượng tự động từ mô hình. */
+/** Dòng dự toán theo nhóm gói thầu của định mức suất đầu tư app cũ (MDI_Unitmix_v4 `dinh_muc_du_toan.json`). */
+export type KhoaDongDuToan = 'ngam' | 'coc' | 'ketCau' | 'hoanThien' | 'cua' | 'haTang' | 'thangMay' | 'pccc' | 'me';
+/** Nhóm chi phí: xây dựng, thiết bị. */
+export type NhomChiPhi = 'xd' | 'tb';
+/** Các lớp tỷ lệ (%) tính trên chi phí xây dựng + thiết bị (QLDA, tư vấn, khác) và dự phòng (trên tổng trước dự phòng). */
+export type TyLeChiPhi = { qlda: number; tuVan: number; khac: number; duPhongKL: number; duPhongTruotGia: number };
+/** Giá bán và chi phí bán hàng. Giá căn: đ/m² thông thủy; % theo tầng; chỗ đỗ: đ/chỗ; thương mại đế: đ/m² sàn khả bán. */
+export type GiaBan = {
+  can: Record<LoaiCan, number>;
+  tangMoiTang: number; // % tăng mỗi tầng điển hình lên trên
+  soTangThap: number; // số tầng điển hình tính là "tầng thấp"
+  tangThap: number; // % riêng tầng thấp (thường âm)
+  tangTren: number; // % riêng tầng trên cùng / áp mái
+  oTo: number;
+  xeMay: number;
+  thuongMai: number;
+  tyLeBanDe: number; // % sàn đế bán / cho thuê được
+  phatLech: number; // % doanh thu trừ trên mỗi điểm lệch cơ cấu
+  chiPhiDat: number; // đ, nhập tay
+  banHang: number; // % doanh thu
+};
+export type ChiPhiPA = {
+  donGia: Record<KhoaDongDuToan, number>; // đ / đơn vị
+  dieuChinh: Record<NhomChiPhi, number>; // % điều chỉnh giá (trượt giá) theo nhóm, −75…+200
+  khac: Record<NhomChiPhi, number>; // đ, dòng "Khác" nhập tay
+  tyLe: TyLeChiPhi;
+  ban: GiaBan;
 };
 
 /** Một mẫu tòa trong web/public/lib/toa.json (toạ độ mm như CAD). */
@@ -201,6 +235,11 @@ export type CanMau = {
   phong?: Phong[];
   /** Căn có cửa sổ tường ngoài lỗ thông thủy ≥ 600×600 mm làm cửa cứu nạn (tuỳ chọn). */
   cua_cuu_nan?: boolean;
+  /** Đường cắt STRETCH qua phòng khách (DC-04 · QT-81, scripts/boc_stretch.py app cũ): x cắt (mm), chiều sâu cắt qua
+   * thông thủy / tim tường, nét thuộc block [chỉ số nét, 1 dời / 0 đứng]. Thiếu = không kéo được. */
+  stretch?: { x_mm: number; sau_tt_mm: number; sau_tim_mm: number; cung: [number, number][] };
+  /** Có ở mẫu biến thể STRETCH (tinh/stretch.ts): id mẫu gốc + mức kéo (mm). */
+  stretchGoc?: { id: string; st: number };
 };
 
 export type LoaiPhong = 'ngu' | 'khach' | 'bep' | 'wc' | 'khac';

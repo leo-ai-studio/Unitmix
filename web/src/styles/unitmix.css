@@ -259,3 +259,6 @@ body { font-size: 13px; line-height: 1.45; }
 .khung-soan .cap-do button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 /* Panel hai bên giữ chỗ thanh cuộn, nội dung không nhảy khi thanh cuộn hiện / ẩn. */
 .panel-trai, .panel-phai { scrollbar-gutter: stable; }
+
+/* Phiên bản app ở chân trang Dự án (và title của logo trên thanh trên). */
+.phien-ban { font-variant-numeric: tabular-nums; color: var(--muted-text); }

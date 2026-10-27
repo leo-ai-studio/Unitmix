@@ -1,0 +1,32 @@
+/* Tab Chi phí: cuộn trong panel giữa, không đổi kích thước khung (quy tắc "khung giữa cố định"). */
+.chi-phi { flex: 1 1 0; min-height: 0; overflow: auto; padding: 16px 20px 32px; display: flex; flex-direction: column; gap: 18px; font-size: 13px; }
+.chi-phi > * { flex-shrink: 0; } /* cột flex cuộn: không cho mục co lại chồng lên nhau */
+.chi-phi h2 { margin: 0; font-size: 17px; }
+.chi-phi h3 { margin: 0 0 8px; font-size: 14px; color: var(--green); }
+.chi-phi h4 { margin: 12px 0 6px; font-size: 13px; }
+.chi-phi .cp-dau { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; }
+.chi-phi .cp-ghi { margin: 0; font-size: 11.5px; }
+.cp-canh-bao { margin: 0; padding: 6px 10px; border-radius: 6px; background: #fdf0d9; color: var(--canh-bao); font-weight: 600; font-size: 12px; }
+.cp-canh-bao.nho { margin: 4px 12px 6px; font-size: 11px; font-weight: 500; }
+
+.cp-bao { overflow-x: auto; }
+.cp-bang { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+.cp-bang th, .cp-bang td { border-bottom: 1px solid var(--line); padding: 4px 8px; text-align: left; font-weight: 400; white-space: nowrap; }
+.cp-bang thead th { position: sticky; top: 0; background: color-mix(in srgb, var(--green) 8%, var(--panel)); font-weight: 600; z-index: 1; }
+.cp-bang thead th:nth-child(n+3) { text-align: right; }
+.cp-bang .so { text-align: right; font-variant-numeric: tabular-nums; }
+.cp-bang th small { color: var(--muted-text); font-size: 11px; }
+.cp-bang .cp-nhom th, .cp-bang .cp-nhom td { background: var(--soft); font-weight: 700; }
+.cp-bang .cp-cong th, .cp-bang .cp-cong td { font-weight: 600; border-top: 1px solid var(--muted); }
+.cp-bang .cp-tong th, .cp-bang .cp-tong td { font-weight: 700; color: var(--green); border-top: 2px solid var(--green); }
+.cp-bang .cp-tong.am th, .cp-bang .cp-tong.am td { color: var(--vuot); border-top-color: var(--vuot); }
+.cp-bang .cp-toa { padding-left: 20px; }
+.cp-bang.cp-ket { max-width: 560px; }
+.cp-bang.cp-kl th:not(:first-child) { text-align: right; }
+
+.chi-phi .cp-o { width: 120px; padding: 2px 6px; text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.chi-phi .cp-dc { display: inline-flex; flex-direction: row; align-items: center; justify-content: flex-end; gap: 6px; width: 100%; font-weight: 500; }
+.chi-phi .cp-dc .cp-o { width: 72px; }
+.chi-phi .cp-luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 16px; margin-bottom: 12px; }
+.chi-phi .cp-luoi label { display: flex; flex-direction: row; text-align: left; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.chi-phi .cp-luoi .cp-o { width: 130px; }

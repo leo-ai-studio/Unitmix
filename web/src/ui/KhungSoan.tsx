@@ -9,6 +9,9 @@ type Props = {
   giua: ComponentChildren;
   /** Nội dung tab MÔ HÌNH (3D); không có thì dùng bản vẽ giữa. */
   moHinh?: ComponentChildren;
+  /** Nội dung tab CHI PHÍ (dự toán + tài chính) và panel phải tóm tắt khi đang ở tab đó. */
+  chiPhi?: ComponentChildren;
+  chiPhiPhai?: ComponentChildren;
   phai: ComponentChildren;
   cheDo?: CheDo;
   onCheDo?: (x: CheDo) => void;
@@ -35,11 +38,11 @@ export function KhungSoan(p: Props) {
       <div class="khung-than">
         <aside class="panel-trai" aria-label={t('panel.nhap')}>{p.trai}</aside>
         <main class="panel-giua" aria-label={t('panel.banVe')}>
-          {xem === 'chi_phi' ? <p style={{ padding: '24px' }}>{t('chiPhi.dangLam')}</p> : xem === 'mo_hinh' && p.moHinh ? p.moHinh : p.giua}
+          {xem === 'chi_phi' ? p.chiPhi ?? <p style={{ padding: '24px' }}>{t('chiPhi.dangLam')}</p> : xem === 'mo_hinh' && p.moHinh ? p.moHinh : p.giua}
           {/* Thông báo nổi trên bản vẽ, không đẩy khung làm việc. */}
           {p.thongBao && <div class="lop-thong-bao">{p.thongBao}</div>}
         </main>
-        <aside class="panel-phai" aria-label={t('panel.soLieu')}>{p.phai}</aside>
+        <aside class="panel-phai" aria-label={t('panel.soLieu')}>{xem === 'chi_phi' && p.chiPhiPhai ? p.chiPhiPhai : p.phai}</aside>
       </div>
     </div>
   );

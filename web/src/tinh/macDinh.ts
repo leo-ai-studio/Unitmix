@@ -1,4 +1,4 @@
-import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type ToaDat, type TrangThaiPA } from './kieu';
+import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiPhiPA, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type ToaDat, type TrangThaiPA } from './kieu';
 
 /** Chỉ tiêu mặc định khi chưa nhập (giá trị tạm, ghi rõ trên giao diện là chờ chủ nhiệm chốt). */
 export const CHI_TIEU_MAC_DINH: ChiTieuQH = {
@@ -32,6 +32,65 @@ export const HAM_MAC_DINH: Required<Omit<ThongSoHam, 'dtXeMay'>> & Pick<ThongSoH
   ram: RAM_MAC_DINH, xeDien: XE_DIEN_MAC_DINH,
 };
 
+/**
+ * Đơn giá, tỷ lệ, giá bán mặc định — TOÀN BỘ LÀ SỐ TẠM (VND), chờ chủ nhiệm / QS chốt. Không lấy từ văn bản nào.
+ * Cơ cấu nhóm tham khảo tổng mức đầu tư theo Nghị định 10/2021/NĐ-CP (QS kiểm lại).
+ */
+/**
+ * Đơn giá (đ/m² sàn) lấy từ định mức suất đầu tư của app cũ: `MDI_Unitmix_v4/data/master/dinh_muc_du_toan.json`,
+ * bóc từ hồ sơ "240508_SĐT NOXH cao tầng" (Q2/2024, Hà Nội, trước VAT). Lấy bình quân mẫu I15 / Z15 (nhóm > 8 tầng),
+ * quy về mặt bằng 2026 bằng trượt giá từng nhóm A–E của hồ sơ (8,8–9,6 %), cộng gói thầu theo nhóm dòng:
+ *   cọc = cọc + TN cọc · kết cấu = TT kết cấu + cung ứng thép + KCT / inox · hoàn thiện = TT hoàn thiện + thạch cao, sơn bả
+ *   + đá + sàn gỗ + gạch + TBVS + VSCN + chống mối + biển bảng · cửa = cửa thép / chống cháy + nhôm kính + cửa gỗ + khoá ·
+ *   thang máy · PCCC = TB báo cháy + chữa cháy · ME = thi công M&E, điện nhẹ, trung thế và các gói cung ứng còn lại.
+ * Tổng 9,12 tr/m² sàn nổi. Lưu ý từ hồ sơ: SĐT ĐÃ GỒM dự phòng khối lượng 10 % → dự phòng KL mặc định 0.
+ * Hầm 6,31 tr/m² sàn hầm: số đối chứng duy nhất có hầm (sheet "SĐT Saphire", hầm 2 tầng), chưa quy đổi trượt giá.
+ * Hạ tầng ngoài nhà: hồ sơ không có — vẫn là số tạm. Tất cả chờ QS chốt.
+ */
+export const CHI_PHI_MAC_DINH: ChiPhiPA = {
+  donGia: {
+    ngam: 6_310_000, coc: 354_559, ketCau: 2_438_253, hoanThien: 2_802_057, cua: 760_900,
+    haTang: 1_000_000, thangMay: 215_501, pccc: 132_253, me: 2_421_212,
+  },
+  dieuChinh: { xd: 0, tb: 0 },
+  khac: { xd: 0, tb: 0 },
+  tyLe: { qlda: 1.5, tuVan: 3.5, khac: 2, duPhongKL: 0, duPhongTruotGia: 3 },
+  ban: {
+    can: { stu: 45_000_000, '1pn': 45_000_000, '2pn': 42_000_000, '2pnp': 42_000_000, '3pn': 40_000_000 },
+    tangMoiTang: 0.3, soTangThap: 3, tangThap: -3, tangTren: 5,
+    oTo: 300_000_000, xeMay: 10_000_000, thuongMai: 60_000_000, tyLeBanDe: 60,
+    phatLech: 0.1, chiPhiDat: 0, banHang: 2,
+  },
+};
+/** Khoảng "% điều chỉnh giá" mỗi nhóm (học từ Architechtures). */
+export const DIEU_CHINH_MIN = -75;
+export const DIEU_CHINH_MAX = 200;
+
+const soHuuHan = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+/** Lấy các trường số của `mau` từ `v`; thiếu / hỏng thì giữ mặc định. */
+function tronSo<T extends Record<string, number>>(mau: T, v: unknown): T {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(mau).map(([k, m]) => [k, soHuuHan(o[k]) ? o[k] : m])) as T;
+}
+const kep = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
+
+/** Chi phí đủ trường từ dữ liệu bất kỳ (PA cũ, preset, file): thiếu / hỏng thì lấy mặc định; % điều chỉnh kẹp −75…+200. */
+export function chuanHoaChiPhi(v: unknown): ChiPhiPA {
+  const o = (v && typeof v === 'object' ? v : {}) as Partial<Record<keyof ChiPhiPA, unknown>>;
+  const m = CHI_PHI_MAC_DINH;
+  const dc = tronSo(m.dieuChinh, o.dieuChinh);
+  const banVao = (o.ban && typeof o.ban === 'object' ? o.ban : {}) as Record<string, unknown>;
+  const { can: canMac, ...banSo } = m.ban;
+  return {
+    // Đơn giá kiểu cũ (dòng tháp / đế / mặt ngoài, trước khi lấy định mức app cũ) không đổi được sang gói thầu → dùng mặc định.
+    donGia: tronSo(m.donGia, o.donGia && typeof o.donGia === 'object' && 'ketCau' in o.donGia ? o.donGia : null),
+    dieuChinh: { xd: kep(dc.xd, DIEU_CHINH_MIN, DIEU_CHINH_MAX), tb: kep(dc.tb, DIEU_CHINH_MIN, DIEU_CHINH_MAX) },
+    khac: tronSo(m.khac, o.khac),
+    tyLe: tronSo(m.tyLe, o.tyLe),
+    ban: { ...tronSo(banSo, banVao), can: tronSo(canMac, banVao.can) as Record<LoaiCan, number> },
+  };
+}
+
 /** Thông số hầm đủ trường: PA cũ thiếu trường mới thì lấy mặc định. */
 export const chuanHoaHam = (h: ThongSoHam): typeof HAM_MAC_DINH => ({
   ...HAM_MAC_DINH,
@@ -57,6 +116,7 @@ export const taoPAMoi = (): TrangThaiPA => ({
   toa: [],
   ham: chuanHoaHam({ soTang: 2, ranh: null, nhip: 8.4, rongLan: 6, choDai: 5, choRong: 2.5, dtKho: 6 }),
   phanHam: { ...PHAN_HAM_MAC_DINH },
+  chiPhi: chuanHoaChiPhi(null),
 });
 
 /** Lô đang làm: lô đã chọn; chưa chọn thì lô đất ở đầu tiên, không có đất ở thì lô đầu. */
@@ -81,4 +141,5 @@ export const chuanHoaPA = (pa: TrangThaiPA): TrangThaiPA => ({
   ham: chuanHoaHam(pa.ham ?? HAM_MAC_DINH),
   lo: pa.lo.map((l) => ({ ...l, temDat: { ...l.temDat, chiTieu: { ...CHI_TIEU_MAC_DINH, ...l.temDat.chiTieu } } })),
   toa: (pa.toa ?? []).map(chuanHoaToa),
+  chiPhi: chuanHoaChiPhi(pa.chiPhi),
 });

@@ -110,8 +110,8 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
     const l = du.loi.get(du.idLoi(q.block));
     if (l?.bao_tuong_mm) tums.push(ranhLoi(l.bao_tuong_mm, q));
   }
-  const vts = viTriCan(mau, tv);
   const dungMau = (bc: BoCuc) => {
+    const vts = viTriCan(mau, tv, bc); // dồn khít theo bề ngang căn đang dùng (XC-04)
     const tmp = new T.Group(), Gt = nhomMoi();
     goc.add(tmp);
     khoi(foot, P.san, M.san, -P.san, false, tmp);
@@ -139,7 +139,8 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
     tmp.traverse((o) => { (o as THREE.Mesh).geometry?.dispose?.(); });
     return { ds, so };
   };
-  const chuKy = (bc: BoCuc) => vts.map((vt) => `${congNangTai(vt.khoa, bc)}:${canDangDung(vt, bc)}`).join('|');
+  const vts0 = viTriCan(mau, tv);
+  const chuKy = (bc: BoCuc) => vts0.map((vt) => `${congNangTai(vt.khoa, bc)}:${canDangDung(vt, bc)}`).join('|');
   const theoChuKy = new Map<string, ReturnType<typeof dungMau>>();
   const mauCua = (tang: number | null) => {
     const bc = boCucTang(toa, tang), k = chuKy(bc);

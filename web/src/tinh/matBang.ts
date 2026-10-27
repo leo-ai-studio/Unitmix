@@ -31,8 +31,16 @@ const idTheoMa = (tv: ThuVien, ma: string): string | undefined => {
   return nho.theoMa.get(ma);
 };
 
-/** Các vị trí căn trên một tầng của mẫu tòa, theo thứ tự mặt rồi phần tử. */
-export function viTriCan(mau: ToaCoMat, tv: ThuVien): ViTriCan[] {
+/**
+ * Các vị trí căn trên một tầng của mẫu tòa, theo thứ tự mặt rồi phần tử. Có bố cục `bc` thì dồn khít (XC-04) theo bề ngang
+ * mẫu căn đang dùng (đổi mẫu khác bề ngang / STRETCH): xem `donKhit`. Không có thì đúng vị trí bản vẽ.
+ */
+export function viTriCan(mau: ToaCoMat, tv: ThuVien, bc?: Pick<ToaDat, 'canTheo' | 'canViTri'>): ViTriCan[] {
+  const kq = viTriGoc(mau, tv);
+  return bc ? donKhit(mau, kq, bc, tv).vts : kq;
+}
+
+function viTriGoc(mau: ToaCoMat, tv: ThuVien): ViTriCan[] {
   const kq: ViTriCan[] = [];
   mau.mat.forEach((m, matIdx) => {
     const B = coSo(m.goc_deg, m.truc_mm);
@@ -164,7 +172,7 @@ export function ungVienDoi(canId: string, tv: ThuVien, cungViTri = false): CanMa
   const g = tv.can.get(canId);
   if (!g) return [];
   return [...tv.can.values()]
-    .filter((c) => c.id !== canId && c.nhom === g.nhom && c.rong_mm === g.rong_mm && c.sau_mm === g.sau_mm && (!cungViTri || c.vi_tri === g.vi_tri))
+    .filter((c) => c.id !== canId && !c.stretchGoc && c.nhom === g.nhom && c.rong_mm === g.rong_mm && c.sau_mm === g.sau_mm && (!cungViTri || c.vi_tri === g.vi_tri))
     .sort((a, b) => Number(b.vi_tri === g.vi_tri) - Number(a.vi_tri === g.vi_tri) || a.id.localeCompare(b.id));
 }
 
@@ -254,4 +262,90 @@ export function canVuaModule(ve: NetVe[], rongMm: number, coKhung: boolean): boo
 export function vungCatCan(vt: ViTriCan, mau: ToaCoMat): Diem[] {
   const m = mau.mat[vt.matIdx], B = coSo(m.goc_deg, m.truc_mm), e = 0.02 * vt.sau;
   return [B.pt(vt.a0 - 125, -e), B.pt(vt.a1 + 125, -e), B.pt(vt.a1 + 125, vt.sau + e), B.pt(vt.a0 - 125, vt.sau + e)];
+}
+
+// ---- Dồn khít dãy căn (XC-04 · QT-30/QT-69 app cũ) ----
+
+/** Dung sai vị trí căn (XC-01: 2 mm). */
+export const KHIT_MM = 2;
+
+/** Một đoạn dãy căn: các vị trí liền nhau (khe ≤ KHIT_MM) trên cùng một mặt, giữa hai mốc (lõi / thang bộ / khe / đầu mặt). */
+export type DoanCan = { matIdx: number; ds: number[]; a0: number; a1: number };
+
+/** Chia vị trí căn thành đoạn liền khít; `ds` là chỉ số trong mảng `vts`, sắp theo a0. */
+export function doanCan(vts: ViTriCan[]): DoanCan[] {
+  const theoMat = new Map<number, number[]>();
+  vts.forEach((v, i) => (theoMat.get(v.matIdx) ?? theoMat.set(v.matIdx, []).get(v.matIdx)!).push(i));
+  const kq: DoanCan[] = [];
+  for (const [matIdx, ds] of theoMat) {
+    ds.sort((i, j) => vts[i].a0 - vts[j].a0);
+    let cur: DoanCan | null = null;
+    for (const i of ds) {
+      const v = vts[i];
+      if (cur && Math.abs(v.a0 - cur.a1) <= KHIT_MM) { cur.ds.push(i); cur.a1 = v.a1; continue; }
+      cur = { matIdx, ds: [i], a0: v.a0, a1: v.a1 };
+      kq.push(cur);
+    }
+  }
+  return kq;
+}
+
+/** Chênh bề ngang (mm) của căn đang dùng so với căn gốc tại vị trí. */
+export const chenhRong = (vt: ViTriCan, id: string, tv: ThuVien): number =>
+  (tv.can.get(id)?.rong_mm ?? 0) - (tv.can.get(vt.canGocId)?.rong_mm ?? 0);
+
+export type KetQuaDonKhit = {
+  vts: ViTriCan[];
+  /** Đoạn có tổng bề ngang đổi (mm, ≠ 0): dãy dài ra / ngắn đi ở đầu tự do — bố cục tự động không tạo trường hợp này. */
+  lech: { matIdx: number; mm: number }[];
+  /** Đoạn dài ra chạm mốc kế bên (lõi / thang / đoạn khác): đè. */
+  de: number[];
+};
+
+/**
+ * Dồn khít: mỗi đoạn giữ nguyên mốc, căn xếp liền nhau theo bề ngang mới (bề ngang ô bản vẽ + chênh bề ngang mẫu).
+ * Tổng bề ngang đoạn không đổi → hai đầu đoạn đứng yên (không khe, không đè). Tổng đổi → giữ đầu sát mốc gần hơn (lõi /
+ * thang, như app cũ dồn về lõi), đầu kia dài ra / co lại và báo `lech`; dài ra chạm mốc kế bên thì báo `de`.
+ */
+export function donKhit(mau: ToaCoMat, vtsGoc: ViTriCan[], bc: Pick<ToaDat, 'canTheo' | 'canViTri'>, tv: ThuVien): KetQuaDonKhit {
+  const vts = vtsGoc.slice();
+  const lech: KetQuaDonKhit['lech'] = [], de: number[] = [];
+  const doan = doanCan(vtsGoc);
+  doan.forEach((d, di) => {
+    const rong = d.ds.map((i) => vtsGoc[i].a1 - vtsGoc[i].a0 + chenhRong(vtsGoc[i], canDangDung(vtsGoc[i], bc), tv));
+    const tong = rong.reduce((a, b) => a + b, 0), chenh = tong - (d.a1 - d.a0);
+    if (d.ds.every((i, k) => Math.abs(rong[k] - (vtsGoc[i].a1 - vtsGoc[i].a0)) < 1e-6)) return;
+    // mốc kề hai đầu: phần tử không phải căn hoặc đoạn khác trên cùng mặt
+    const m = mau.mat[d.matIdx];
+    const ke = [...m.phan_tu.filter((q) => q.loai !== 'can').map((q) => [q.a0, q.a1] as const),
+      ...doan.filter((o, oi) => oi !== di && o.matIdx === d.matIdx).map((o) => [o.a0, o.a1] as const)];
+    const truoc = Math.max(m.a_dau - 1e9, ...ke.filter(([, b]) => b <= d.a0 + KHIT_MM).map(([, b]) => b));
+    const sau = Math.min(m.a_cuoi + 1e9, ...ke.filter(([a]) => a >= d.a1 - KHIT_MM).map(([a]) => a));
+    const neoDau = Math.abs(chenh) <= KHIT_MM || d.a0 - truoc <= sau - d.a1;
+    let a = neoDau ? d.a0 : d.a1 - tong;
+    d.ds.forEach((i, k) => {
+      const v = vtsGoc[i], B = coSo(m.goc_deg, m.truc_mm), a0 = a, a1 = a + rong[k];
+      vts[i] = { ...v, a0, a1, goc: [B.pt(a0, 0), B.pt(a1, 0), B.pt(a1, v.sau), B.pt(a0, v.sau)] };
+      a = a1;
+    });
+    if (Math.abs(chenh) > KHIT_MM) {
+      lech.push({ matIdx: d.matIdx, mm: chenh });
+      if ((neoDau ? d.a0 + tong > sau + KHIT_MM : d.a1 - tong < truoc - KHIT_MM)) de.push(di);
+    }
+  });
+  return { vts, lech, de };
+}
+
+/** Mặt tòa sau khi dồn khít: phần tử căn mang vị trí, bề ngang và mã thư viện của căn đang dùng (cho pccc.ts). */
+export function matDaDon(mau: ToaCoMat, bc: Pick<ToaDat, 'canTheo' | 'canViTri'>, tv: ThuVien): MatToa[] {
+  const vts = new Map(viTriCan(mau, tv, bc).map((v) => [v.khoa, v]));
+  return mau.mat.map((m, mi) => ({
+    ...m,
+    phan_tu: m.phan_tu.map((q, i) => {
+      const v = vts.get(`${mi}:${i}`);
+      if (!v) return q;
+      const c = tv.can.get(canDangDung(v, bc));
+      return { ...q, a0: v.a0, a1: v.a1, rong_mm: v.a1 - v.a0, ma_thu_vien: c?.ma_goc ?? q.ma_thu_vien };
+    }),
+  }));
 }
