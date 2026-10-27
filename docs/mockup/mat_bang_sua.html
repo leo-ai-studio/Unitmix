@@ -25,105 +25,78 @@
 .kho-doc { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
 .kho-doc .dong { display: flex; justify-content: space-between; }
 .ghi-chu-mock { position: fixed; right: 14px; bottom: 14px; background: var(--green); color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 12px; z-index: 9; }
+
+.hang-cu { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:6px 10px; background:var(--panel); border-bottom:1px solid var(--line); position:relative; z-index:4; }
+.hang-cu .nhom { display:inline-flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--panel); }
+.hang-cu .nhom button { border:0; border-right:1px solid var(--line); background:var(--panel); padding:6px 10px; font-size:12px; color:var(--ink); display:flex; gap:6px; align-items:center; }
+.hang-cu .nhom button:last-child { border-right:0; }
+.hang-cu button[aria-pressed="true"] { background:var(--soft); color:var(--green); font-weight:700; }
+.hang-cu button.nguy { color:#b42318; }
+.hang-cu kbd { font:10px var(--font); color:var(--muted); border:1px solid var(--line); padding:0 4px; border-radius:3px; background:var(--bg); }
+.hang-cu .gap { flex:1; }
+.hang-cu input.so { width:70px; padding:4px 6px; border:1px solid var(--line); border-radius:5px; font-size:12px; }
+.hang-cu label.nho { font-size:12px; color:var(--muted); display:flex; gap:4px; align-items:center; }
+.bat-diem { position:absolute; left:455px; top:44px; width:230px; background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:0 6px 22px rgba(2,43,30,.16); padding:8px 10px; font-size:12px; z-index:6; }
+.bat-diem b { display:block; color:var(--green); margin:2px 0 4px; font-size:11px; letter-spacing:.06em; }
+.bat-diem label { display:flex; flex-direction:row; justify-content:flex-start; text-align:left; gap:6px; align-items:center; padding:2px 0; width:auto; margin:0; }
+.bat-diem input { width:auto; margin:0; }
+.thanh-duoi { display:flex; gap:0; align-items:center; border-top:1px solid var(--line); background:var(--panel); font-size:12px; }
+.thanh-duoi span { padding:7px 12px; border-right:1px solid var(--line); }
+.thanh-duoi span.bat { font-weight:700; color:var(--green); background:var(--soft); }
+.man { border:1px solid var(--line); margin:0 0 28px; background:var(--bg); }
+.tieu-man { padding:8px 14px; font-weight:700; color:var(--green); background:var(--soft); border-bottom:1px solid var(--line); }
+.can-le { stroke:#C7AA76; stroke-width:2.5; stroke-dasharray:5 3; }
 </style></head>
-<body>
-<div class="khung khung-soan">
-  <div class="thanh-tren">
-    <a class="thuong-hieu" href="#" aria-label="Unitmix"><span class="mark"><img src="../../web/public/brand/leo_ai_mark_base.png" alt=""><img class="brand-o" src="../../web/public/brand/leo_ai_o.png" alt=""></span><strong>UNITMIX</strong></a>
-    <button class="nut-chu" type="button" aria-label="Hoàn tác">↶</button><button class="nut-chu" type="button" aria-label="Làm lại">↷</button>
-    <div class="tab-xem"><button aria-pressed="true">MẶT BẰNG</button><button aria-pressed="false">MÔ HÌNH</button><button aria-pressed="false">CHI PHÍ</button></div>
-    <div class="cap-do"><button>M7 ĐAN PHƯỢNG · CT-1</button><span class="xam">›</span><button>Y1 · Chữ Y</button><span class="xam">›</span><button>Tầng điển hình</button><span class="xam">›</span><button>CH-03</button></div>
-    <span class="gian"></span>
-    <div class="nhom-nut"><button aria-pressed="false">TỰ ĐỘNG</button><button aria-pressed="true">CHỈNH TAY</button><button aria-pressed="false">CHỈ XEM</button></div>
-    <button class="nut-chu" type="button">XLS ⤓</button><button class="nut-chu" type="button">CAD ⤓</button>
-  </div>
-  <div class="khung-than">
-    <aside class="panel-trai">
-      <div class="muc"><div class="cong-cu">
-        <b style="font-size:12px;color:var(--muted);letter-spacing:.06em">CÔNG CỤ</b>
-        <button aria-pressed="true"><i class="i">⌖</i> Chọn <kbd>V</kbd></button>
-        <button aria-pressed="false"><i class="i">⇄</i> Đổi mẫu căn <kbd>E</kbd></button>
-        <button aria-pressed="false"><i class="i">⇋</i> Lật gương <kbd>F</kbd></button>
-        <button aria-pressed="false"><i class="i">⇅</i> Hoán đổi hai căn <kbd>S</kbd></button>
-        <button aria-pressed="false"><i class="i">＋</i> Thêm căn vào ô trống <kbd>A</kbd></button>
-        <button aria-pressed="false" class="nguy-hiem"><i class="i" style="color:#b42318">✕</i> Xóa căn → ô trống <kbd>Del</kbd></button>
-        <button aria-pressed="false"><i class="i">⟷</i> Đo khoảng cách <kbd>M</kbd></button>
-      </div></div>
-      <div class="muc" style="padding:10px 12px;border-top:1px solid var(--line)">
-        <b style="font-size:12px;color:var(--muted);letter-spacing:.06em">PHẠM VI ÁP DỤNG</b>
-        <label class="o-tg"><input type="checkbox" checked><span>Sửa nhiều tầng (11 tầng điển hình)</span></label>
-        <label class="o-tg"><input type="checkbox" checked><span>Sửa nhiều căn cùng mẫu</span></label>
-        <label class="o-tg"><input type="checkbox"><span>Giữ cơ cấu mục tiêu (cảnh báo khi lệch)</span></label>
-      </div>
-      <div class="muc" style="padding:10px 12px;border-top:1px solid var(--line)">
-        <b style="font-size:12px;color:var(--muted);letter-spacing:.06em">HIỂN THỊ</b>
-        <label class="o-chon"><span>Kiểu</span><select><option>Salekit · Rivea</option></select></label>
-        <label class="o-tg"><input type="checkbox" checked><span>Tem căn</span></label>
-        <label class="o-tg"><input type="checkbox" checked><span>Lớp PCCC (cự ly thoát nạn)</span></label>
-        <label class="o-tg"><input type="checkbox"><span>Chấm màu DT so đề bài</span></label>
-      </div>
-    </aside>
-    <main class="panel-giua">
-      <div class="the-tang">Y1 · Tầng điển hình · áp cho 11 tầng · 24 căn + 1 ô trống</div>
-      <div class="ban-mo">
-        <div class="the-lenh">Chọn căn rồi bấm phím tắt hoặc chuột phải · Ctrl+Z hoàn tác</div>
-        <svg viewBox="0 0 900 520" role="img" aria-label="Mặt bằng tầng điển hình tòa Y1 (mockup)">
-          <g stroke="#174f52" stroke-width="1.5">
-            <path d="M120 360 L330 190 L450 190 L450 250 L360 330 L240 440 L120 440 Z" fill="none" stroke-dasharray="6 4" stroke="#B8B0A3"/>
-            <rect x="110" y="330" width="86" height="56" fill="#c9dcd3"/><rect x="196" y="330" width="86" height="56" fill="#9cc0b4"/>
-            <rect x="282" y="330" width="86" height="56" fill="#9cc0b4"/><rect x="368" y="330" width="86" height="56" fill="#6c9c92"/>
-            <rect x="454" y="330" width="86" height="56" fill="#9cc0b4"/><rect x="540" y="330" width="86" height="56" fill="#3e6f70"/>
-            <rect x="626" y="330" width="86" height="56" fill="#efe9da"/><rect x="712" y="330" width="86" height="56" fill="#c9dcd3"/>
-            <rect x="110" y="446" width="86" height="56" fill="#9cc0b4"/><rect x="196" y="446" width="86" height="56" fill="#c9dcd3"/>
-            <rect x="282" y="446" width="86" height="56" fill="none" stroke-dasharray="5 4" stroke="#737d78"/>
-            <rect x="368" y="446" width="86" height="56" fill="#6c9c92"/><rect x="454" y="446" width="86" height="56" fill="#9cc0b4"/>
-            <rect x="540" y="446" width="86" height="56" fill="#3e6f70"/><rect x="626" y="446" width="86" height="56" fill="#c9dcd3"/><rect x="712" y="446" width="86" height="56" fill="#9cc0b4"/>
-            <rect x="110" y="386" width="688" height="60" fill="#e9ece5" stroke="#B8B0A3" stroke-width="1"/>
-            <rect x="454" y="330" width="86" height="56" fill="none" stroke="#C7AA76" stroke-width="3.5"/>
-            <rect x="196" y="446" width="86" height="56" fill="none" stroke="#b42318" stroke-width="2.5" stroke-dasharray="4 3"/>
-          </g>
-          <g font-family="Segoe UI" font-size="12" fill="#022b1e" text-anchor="middle">
-            <text x="497" y="362">CH-03 · 2PN</text><text x="239" y="478" fill="#b42318">CH-11 · &gt;25 m</text>
-            <text x="325" y="478" fill="#737d78">ô trống (hiên)</text><text x="453" y="421" fill="#737d78">hành lang</text>
-          </g>
-          <g stroke="#C7AA76" stroke-width="2" fill="#C7AA76"><circle cx="497" cy="330" r="4"/><circle cx="540" cy="330" r="4"/><circle cx="497" cy="386" r="4"/><circle cx="540" cy="386" r="4"/></g>
-          <path d="M583 296 q 30 -28 62 0" fill="none" stroke="#174f52" stroke-width="1.6" marker-end="url(#m)"/>
-          <defs><marker id="m" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#174f52"/></marker></defs>
-          <text x="660" y="292" font-size="12" fill="#174f52" font-family="Segoe UI">kéo sang ô khác để hoán đổi</text>
-        </svg>
-        <div class="menu-can" role="menu">
-          <b>CH-03 · 2PN M1 · giữa · 7,5 m</b>
-          <div><i class="i">⇄</i> Đổi mẫu căn…</div>
-          <div class="sau">2PN G1 · 2PN M2 · 2PN+ M1 (cùng bề ngang)</div>
-          <div><i class="i">⇋</i> Lật gương</div>
-          <div><i class="i">⇅</i> Hoán đổi với căn…</div>
-          <div><i class="i">▦</i> Đổi công năng ▸ kỹ thuật · SHCĐ · thương mại · ô trống</div>
-          <div><i class="i">◫</i> Xem 3D căn</div>
-          <div class="xoa"><i class="i" style="color:#b42318">✕</i> Xóa căn</div>
-        </div>
-        <div class="thanh-chu-thich"><span><i style="background:#c9dcd3"></i>1PN</span><span><i style="background:#9cc0b4"></i>2PN</span><span><i style="background:#6c9c92"></i>2PN+</span><span><i style="background:#3e6f70"></i>3PN</span><span><i style="background:#fff;border:1px dashed #b42318"></i>vượt thoát nạn</span></div>
-      </div>
-    </main>
-    <aside class="panel-phai">
-      <div class="kho-doc">
-        <b style="font-size:12px;color:var(--muted);letter-spacing:.06em">SỐ LIỆU THEO THAO TÁC</b>
-        <div class="dong"><span>Căn / tầng</span><b>24 <small class="canh">(−1)</small></b></div>
-        <div class="dong"><span>Cả tòa</span><b>264 căn</b></div>
-        <div class="dong"><span>DT sàn</span><b>1.980 m²</b></div>
-        <div class="dong"><span>Lệch cơ cấu</span><b class="canh">60,0</b></div>
-        <div class="dong"><span>2PN</span><b>40,0 % <small class="vuot">(−10,0)</small></b></div>
-        <div class="dong"><span>Thoát nạn PCCC</span><b class="vuot">1 căn vượt</b></div>
-        <div class="dong"><span>Tuân thủ</span><b class="ok">49 / 51 luật</b></div>
-      </div>
-      <div class="kho-doc" style="border-top:1px solid var(--line)">
-        <b style="font-size:12px;color:var(--muted);letter-spacing:.06em">LỊCH SỬ SỬA</b>
-        <div class="dong"><span>3. Lật gương CH-05</span><span class="ok">✓</span></div>
-        <div class="dong"><span>2. Hoán đổi CH-02 ↔ CH-09</span><span class="ok">✓</span></div>
-        <div class="dong"><span>1. Xóa CH-11 → ô trống</span><span class="canh">⚠ −1 căn</span></div>
-        <button type="button" class="nut-phu">Về mẫu căn gốc</button>
-      </div>
-    </aside>
-  </div>
+<body style="padding:0">
+<div class="man"><div class="tieu-man">MÀN 1 · BƯỚC 2 «XẾP TÒA» (TMB): chọn tòa, kéo, xoay, align cạnh, bắt điểm, sao chép như app cũ</div>
+<div class="khung khung-soan" style="height:auto;min-height:0"><div class="thanh-tren"><a class="thuong-hieu" href="#"><span class="mark"><img src="../../web/public/brand/leo_ai_mark_base.png" alt=""><img class="brand-o" src="../../web/public/brand/leo_ai_o.png" alt=""></span><strong>UNITMIX</strong></a><button class="nut-chu" type="button">↶</button><button class="nut-chu" type="button">↷</button><div class="tab-xem"><button aria-pressed="true">MẶT BẰNG</button><button aria-pressed="false">MÔ HÌNH</button><button aria-pressed="false">CHI PHÍ</button></div><div class="cap-do"><button>M7 ĐAN PHƯỢNG · CT-1</button><span class="xam">›</span><button>Xếp tòa</button><span class="xam">›</span><button>Z5-1</button></div><span class="gian"></span><div class="nhom-nut"><button aria-pressed="false">TỰ ĐỘNG</button><button aria-pressed="true">CHỈNH TAY</button><button aria-pressed="false">CHỈ XEM</button></div><button class="nut-chu" type="button">XLS ⤓</button><button class="nut-chu" type="button">CAD ⤓</button></div>
+<div class="hang-cu">
+  <div class="nhom"><button aria-pressed="true">⌖ Chọn / kéo <kbd>V</kbd></button><button>＋ Đặt tòa <kbd>P</kbd></button><button>✋ Di bản đồ <kbd>Space</kbd></button></div>
+  <div class="nhom"><button>⟲ −5° <kbd>Q</kbd></button><button>⟳ +5° <kbd>E</kbd></button><button>↻ 90° <kbd>R</kbd></button><button aria-pressed="true">⇋ Lật <kbd>F</kbd></button></div>
+  <div class="nhom"><button>⧉ Sao chép <kbd>Ctrl+C/V</kbd></button><button>⧉ Ctrl+kéo = nhân tòa</button></div>
+  <div class="nhom"><button aria-pressed="true">⊢ Align cạnh <kbd>L</kbd></button><button aria-pressed="true">◎ Bắt điểm ▾ <kbd>S</kbd></button><button>🔒 Khóa tòa</button></div>
+  <button class="nguy" style="border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:6px 10px">✕ Xóa <kbd>Del</kbd></button>
+  <span class="gap"></span>
+  <label class="nho">X <input class="so" value="412,35"></label><label class="nho">Y <input class="so" value="-96,10"></label><label class="nho">Góc <input class="so" value="12,5°"></label>
+  <div class="bat-diem"><b>BẮT ĐIỂM</b>
+    <label><input type="checkbox" checked> Đỉnh tòa</label><label><input type="checkbox" checked> Trung điểm cạnh</label><label><input type="checkbox" checked> Đỉnh ranh lô / chỉ giới xây dựng</label><label><input type="checkbox" checked> Điểm gần nhất trên cạnh</label><label><input type="checkbox"> Giao điểm</label>
+    <b style="margin-top:6px">CĂN THẲNG (ALIGN)</b>
+    <label><input type="checkbox" checked> Song song cạnh tòa kế</label><label><input type="checkbox" checked> Thẳng hàng cạnh với tòa kế</label><label><input type="checkbox" checked> Vuông góc</label><label><input type="checkbox"> Cách đều 30 m</label></div>
 </div>
-<div class="ghi-chu-mock">MOCKUP · bản vẽ minh họa, chưa nối dữ liệu</div>
+<div class="khung-than" style="min-height:430px">
+<main class="panel-giua" style="flex:1"><div class="ban-mo" style="min-height:430px">
+<svg viewBox="0 0 900 430" role="img" aria-label="TMB">
+<path d="M150 70 L520 40 L700 300 L690 380 L230 380 L120 150 Z" fill="#e5eeea" stroke="#174f52" stroke-width="3"/>
+<path d="M165 85 L510 58 L680 296 L672 362 L242 362 L138 156 Z" fill="none" stroke="#b42318" stroke-dasharray="6 4"/>
+<g stroke="#174f52" stroke-width="1.6" fill="#9cc0b4"><rect x="250" y="130" width="150" height="22" transform="rotate(12 325 141)"/><rect x="250" y="190" width="150" height="22" transform="rotate(12 325 201)"/><rect x="440" y="150" width="150" height="22" transform="rotate(12 515 161)" fill="#6c9c92"/><rect x="440" y="215" width="150" height="22" transform="rotate(12 515 226)"/><rect x="300" y="280" width="160" height="22"/></g>
+<rect x="440" y="150" width="150" height="22" transform="rotate(12 515 161)" fill="none" stroke="#C7AA76" stroke-width="2.5"/>
+<g fill="#C7AA76"><rect x="437" y="147" width="7" height="7"/><rect x="586" y="147" width="7" height="7"/><rect x="437" y="170" width="7" height="7"/><rect x="586" y="170" width="7" height="7"/></g>
+<path d="M515 140 v-34" stroke="#174f52" stroke-width="1.4"/><circle cx="515" cy="104" r="6" fill="#fff" stroke="#174f52" stroke-width="1.6"/>
+<text x="528" y="100" font-size="12" fill="#174f52" font-family="Segoe UI">kéo vòng để xoay · 12,5°</text>
+<path d="M180 291 L690 291" stroke="#C7AA76" stroke-dasharray="3 4" stroke-width="1.2"/>
+<text x="304" y="332" font-size="11" fill="#8b6528" font-family="Segoe UI">⊢ thẳng hàng cạnh với Z5-3 · cách 30,0 m</text>
+<circle cx="440" cy="154" r="5" fill="none" stroke="#b42318" stroke-width="2"/><text x="448" y="198" font-size="11" fill="#b42318" font-family="Segoe UI">bắt đỉnh</text>
+<text x="640" y="120" font-size="12" fill="#174f52" font-family="Segoe UI">Z5-1 · 25T · 552 căn</text>
+</svg>
+<div class="the-lenh">Kéo tòa để dời · Ctrl+kéo = nhân tòa · Ctrl+C/V · Q/E ±5° · R 90° · F lật · mũi tên 1 m (Shift 5 m)</div>
+</div><div class="thanh-duoi"><span>Phóng +</span><span>Thu −</span><span>Vừa khung</span><span class="bat">Bắt điểm</span><span class="bat">Align</span><span>Đo</span><span>Lưới 10 m</span></div></main>
+<aside class="panel-phai"><div class="kho-doc"><b style="font-size:12px;color:var(--muted)">KIỂM TRA TỨC THÌ</b>
+<div class="dong"><span>Chồng lấn</span><b class="ok">không</b></div><div class="dong"><span>Chỉ giới xây dựng</span><b class="ok">nằm trong</b></div><div class="dong"><span>MĐXD lô</span><b class="ok">38,2 % ≤ 40</b></div><div class="dong"><span>Khoảng cách tòa kế</span><b class="canh">22 m &lt; 30</b></div><div class="dong"><span>Số tòa / căn</span><b>6 · 3.200</b></div></div></aside>
+</div></div></div>
+
+<div class="man"><div class="tieu-man">MÀN 2 · BƯỚC 3 «TẦNG / CĂN»: công cụ nằm ngay trên đầu bản vẽ, không còn panel Công cụ bên trái</div>
+<div class="khung khung-soan" style="height:auto;min-height:0"><div class="thanh-tren"><a class="thuong-hieu" href="#"><span class="mark"><img src="../../web/public/brand/leo_ai_mark_base.png" alt=""><img class="brand-o" src="../../web/public/brand/leo_ai_o.png" alt=""></span><strong>UNITMIX</strong></a><button class="nut-chu" type="button">↶</button><button class="nut-chu" type="button">↷</button><div class="tab-xem"><button aria-pressed="true">MẶT BẰNG</button><button aria-pressed="false">MÔ HÌNH</button><button aria-pressed="false">CHI PHÍ</button></div><div class="cap-do"><button>M7 ĐAN PHƯỢNG · CT-1</button><span class="xam">›</span><button>Y1 · Chữ Y</button><span class="xam">›</span><button>Tầng điển hình</button><span class="xam">›</span><button>CH-03</button></div><span class="gian"></span><div class="nhom-nut"><button aria-pressed="false">TỰ ĐỘNG</button><button aria-pressed="true">CHỈNH TAY</button><button aria-pressed="false">CHỈ XEM</button></div><button class="nut-chu" type="button">XLS ⤓</button><button class="nut-chu" type="button">CAD ⤓</button></div>
+<div class="hang-cu">
+  <div class="nhom"><button aria-pressed="true">⌖ Chọn <kbd>V</kbd></button><button>⇄ Đổi mẫu <kbd>E</kbd></button><button>⇋ Lật <kbd>F</kbd></button><button>⇅ Hoán đổi <kbd>S</kbd></button></div>
+  <div class="nhom"><button>＋ Thêm căn <kbd>A</kbd></button><button>▦ Đổi công năng ▾</button><button>◫ 3D căn</button></div>
+  <button class="nguy" style="border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:6px 10px">✕ Xóa → ô trống <kbd>Del</kbd></button>
+  <span class="gap"></span>
+  <label class="nho"><input type="checkbox" checked> Sửa nhiều tầng</label><label class="nho"><input type="checkbox" checked> Sửa nhiều căn</label>
+</div>
+<div class="khung-than" style="min-height:430px">
+<main class="panel-giua" style="flex:1"><div class="ban-mo" style="min-height:400px">
+<svg viewBox="0 0 900 400"><g stroke="#174f52" stroke-width="1.5"><rect x="110" y="140" width="86" height="56" fill="#c9dcd3"/><rect x="196" y="140" width="86" height="56" fill="#9cc0b4"/><rect x="282" y="140" width="86" height="56" fill="#9cc0b4"/><rect x="368" y="140" width="86" height="56" fill="#6c9c92"/><rect x="454" y="140" width="86" height="56" fill="#9cc0b4"/><rect x="540" y="140" width="86" height="56" fill="#3e6f70"/><rect x="626" y="140" width="86" height="56" fill="#efe9da"/><rect x="712" y="140" width="86" height="56" fill="#c9dcd3"/><rect x="110" y="196" width="688" height="56" fill="#e9ece5" stroke="#B8B0A3"/><rect x="110" y="252" width="86" height="56" fill="#9cc0b4"/><rect x="196" y="252" width="86" height="56" fill="none" stroke-dasharray="5 4" stroke="#b42318"/><rect x="282" y="252" width="86" height="56" fill="#6c9c92"/><rect x="368" y="252" width="86" height="56" fill="#9cc0b4"/><rect x="454" y="252" width="86" height="56" fill="#3e6f70"/><rect x="540" y="252" width="86" height="56" fill="#c9dcd3"/><rect x="626" y="252" width="86" height="56" fill="#9cc0b4"/><rect x="712" y="252" width="86" height="56" fill="#9cc0b4"/></g><rect x="454" y="140" width="86" height="56" fill="none" stroke="#C7AA76" stroke-width="3.5"/><text x="497" y="172" font-size="12" text-anchor="middle" fill="#022b1e" font-family="Segoe UI">CH-03</text></svg>
+</div><div class="thanh-duoi"><span>Tham chiếu: vị trí căn ▾</span><span class="bat">Bắt điểm ▾</span><span>Đo</span><span class="bat">Kích thước</span><span class="bat">Diện tích</span><span>Phóng +</span><span>Thu −</span></div></main>
+<aside class="panel-phai"><div class="kho-doc"><b style="font-size:12px;color:var(--muted)">SỐ LIỆU THEO THAO TÁC</b><div class="dong"><span>Căn / tầng</span><b>24 <small class="canh">(−1)</small></b></div><div class="dong"><span>Lệch cơ cấu</span><b class="canh">60,0</b></div><div class="dong"><span>Thoát nạn</span><b class="vuot">1 căn vượt</b></div></div></aside>
+</div></div></div>
 </body></html>
