@@ -2,6 +2,12 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-28 · gộp đợt 3 + kiểm trên app · Claude Code
+
+- `6e6ddd0` gộp nhánh gỡ căn / thang liền; sửa danh sách tòa ở panel trái màn Tầng: số căn/tầng theo mặt bằng đã tự chỉnh (tm-t2 42 → 40), không theo mẫu thư viện.
+- Kiểm: tsc 0, web 327/327, worker 9/9, pytest 12/12, build qua; trên 5180 dự án `plevadne`: tm-t2 "vượt 2 → 0 · bỏ căn 2 · 42 → 40", không NaN. Dự án `4wcy55hp`: tự chỉnh thang 2→3, căn vượt 2→0, 3D dựng được, hoàn tác về như cũ, khung giữa giữ nguyên. Hộp xuất CAD mở được (.scr / .dxf, ghi chú STRETCH).
+- Chờ chủ nhiệm: đoạn kẹp giữa hai thang ở tầng riêng đổi căn rộng hơn có thể còn lệch 200–1.200 mm (báo cảnh báo); số tạm 8 lượt gỡ / 6 lượt xếp lại; phòng KT không đo cự ly.
+
 ## 2026-10-28 · tự chỉnh MB đợt 3: gỡ căn vượt cự ly (giamCanThoatNan) · thang liền suốt chiều cao · agent Opus
 
 **Đã làm** (nhánh agent, từ `main` @ `c6a86f1`):
