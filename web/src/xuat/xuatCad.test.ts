@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import DxfParser from 'dxf-parser';
 import { taoThuVien, type CanMau, type Diem } from '../tinh/kieu';
-import type { NetVe, ToaCoMat } from '../tinh/matBang';
-import { danhSachChen, duongXref, khungCatCan, lenhXclip, LOP_NHAN_CAN, nhanCanDxf, taoDxf, taoScr, type DuLieuXuat } from './xuatCad';
+import { boCucTang, ungVienDoi, viTriCan, type NetVe, type ToaCoMat } from '../tinh/matBang';
+import { danhSachChen, duongXref, khungCatCan, lenhXclip, LOP_CONG_NANG, LOP_NHAN_CAN, nhanCanDxf, oCongNang, taoDxf, taoScr, type DuLieuXuat } from './xuatCad';
 
 const lib = new URL('../../public/lib/', import.meta.url);
 const cad = new URL('../../../cad/xref/', import.meta.url);
@@ -81,5 +81,54 @@ describe('nhãn phòng trong DXF', () => {
     expect(chu).toHaveLength(2 * n);
     expect(chu.some((e) => /m2$/.test(e.text ?? ''))).toBe(true);
     expect(dxf.tables.layer.layers[LOP_NHAN_CAN]).toBeDefined();
+  });
+});
+
+describe('xuất CAD theo tầng và công năng ô', () => {
+  const d0 = du('tm-u2'), vts = viTriCan(d0.mau, tv);
+  const toa = { canTheo: {} as Record<string, string>, soTangDH: 5 };
+  const ttViTri = (v: (typeof vts)[number]) => ungVienDoi(v.canGocId, tv, true).find((c) => c.id !== v.canGocId)?.id;
+
+  it('bố cục riêng tầng thay đúng mẫu căn trong danh sách chèn', () => {
+    const vt = vts.find((v) => ttViTri(v))!, moi = ttViTri(vt)!;
+    const t = { ...toa, tangRieng: { 3: { canViTri: { [vt.khoa]: moi } } } };
+    const chung = danhSachChen({ ...d0, toa: boCucTang(t, null) }), rieng = danhSachChen({ ...d0, toa: boCucTang(t, 3) });
+    const i = chung.findIndex((x) => x.no === vt.canGocId);
+    expect(chung).toHaveLength(rieng.length);
+    expect(rieng.filter((x) => x.no === moi).length).toBe(chung.filter((x) => x.no === moi).length + 1);
+    expect(rieng.some((x, k) => x.no !== chung[k].no)).toBe(true);
+    expect(i).toBeGreaterThan(-1);
+    expect(taoScr({ ...d0, toa: boCucTang(t, 3) })).not.toBe(taoScr({ ...d0, toa: boCucTang(t, null) }));
+  });
+
+  it('ô SHCĐ / kỹ thuật: không chèn XREF căn, có khung + TEXT trên lớp công năng', () => {
+    const [a, b] = vts, bc = { canTheo: {}, congNang: { [a.khoa]: 'shcd', [b.khoa]: 'ky_thuat' } as const };
+    const d = { ...d0, toa: { ...bc, congNang: { ...bc.congNang } } };
+    const ds = danhSachChen(d), can0 = danhSachChen(d0).filter((x) => x.loai === 'can').length;
+    expect(ds.filter((x) => x.loai === 'can')).toHaveLength(can0 - 2);
+    expect(oCongNang(d).map((o) => o.ten)).toEqual(['SHCD', 'KY THUAT']);
+    const scr = taoScr(d);
+    expect(scr.match(/_-XREF/g)!.length).toBe(ds.length);
+    expect(scr).toContain(LOP_CONG_NANG);
+    expect(scr).toMatch(/_\.TEXT\r\n_J\r\n_MC\r\n[^\r]+\r\n250\r\n0\r\nSHCD/);
+    expect(/^[\x09\x0a\x0d\x20-\x7e]*$/.test(scr)).toBe(true);
+    const dxf = new DxfParser().parseSync(taoDxf(d))!;
+    const ent = dxf.entities as { type: string; layer: string; text?: string }[];
+    expect(ent.filter((e) => e.type === 'INSERT')).toHaveLength(can0 - 2);
+    const chu = ent.filter((e) => e.type === 'TEXT' && e.layer === LOP_CONG_NANG);
+    expect(chu.map((e) => e.text)).toContain('KY THUAT');
+    expect(chu.some((e) => /m2$/.test(e.text ?? ''))).toBe(true);
+    expect(ent.filter((e) => e.type === 'TEXT' && e.layer === LOP_NHAN_CAN)).toHaveLength(2 * (can0 - 2));
+    expect(ent.some((e) => e.layer === LOP_CONG_NANG && e.type !== 'TEXT')).toBe(true);
+  });
+
+  it('PA cũ (không tangRieng / congNang) xuất như trước, không có lớp công năng', () => {
+    const d = { ...d0, toa: boCucTang({ canTheo: {}, soTangDH: 5 }, null) };
+    expect(oCongNang(d)).toEqual([]);
+    expect(taoScr(d)).toBe(taoScr(d0));
+    expect(taoScr(d0)).not.toContain('TEXT');
+    expect(danhSachChen(d)).toEqual(danhSachChen(d0));
+    const dxf = taoDxf(d0);
+    expect((new DxfParser().parseSync(dxf)!.entities as { layer: string }[]).some((e) => e.layer === LOP_CONG_NANG)).toBe(false);
   });
 });
