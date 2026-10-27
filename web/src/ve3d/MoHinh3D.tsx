@@ -9,11 +9,12 @@ import { dungCan, type Khoi3d } from './dungCan';
 import { dungToa, type LoiHinh } from './dungToa';
 import { dungDuAn } from './dungDuAn';
 import { Khung3D } from './Khung3D';
+import { khoi3dTheoId } from './stretch3d';
 
 type Nap = { khoi3d: Map<string, Khoi3d | null>; loi: Map<string, LoiHinh>; xong: boolean };
 
 /** Tải làm biếng khối 3D các mẫu căn và hình học lõi đang cần. */
-export function useNap3d(canIds: string[], loiIds: string[]): Nap {
+export function useNap3d(canIds: string[], loiIds: string[], tv?: ThuVien | null): Nap {
   const khoa = [...new Set(canIds)].sort().join() + '|' + [...new Set(loiIds)].sort().join();
   const [kq, setKq] = useState<Nap>({ khoi3d: new Map(), loi: new Map(), xong: false });
   useEffect(() => {
@@ -21,11 +22,11 @@ export function useNap3d(canIds: string[], loiIds: string[]): Nap {
     const [c, l] = khoa.split('|').map((x) => (x ? x.split(',') : []));
     setKq((o) => ({ ...o, xong: false }));
     Promise.all([
-      Promise.all(c.map((id) => tai<{ khoi3d: Khoi3d | null }>(`/lib/can/${idTepCan(id)}.json`).then((j) => [id, j?.khoi3d ?? null] as const))),
+      Promise.all(c.map((id) => tai<{ khoi3d: Khoi3d | null }>(`/lib/can/${idTepCan(id)}.json`).then((j) => [id, khoi3dTheoId(id, j?.khoi3d ?? null, tv)] as const))),
       Promise.all(l.map((id) => tai<HinhLoi>(`/lib/loi/${id}.json`).then((j) => [id, { bao_tuong_mm: j?.bao_tuong_mm }] as const))),
     ]).then(([a, b]) => { if (!huy) setKq({ khoi3d: new Map(a), loi: new Map(b), xong: true }); });
     return () => { huy = true; };
-  }, [khoa]);
+  }, [khoa, tv]);
   return kq;
 }
 
@@ -37,7 +38,7 @@ export function MoHinhToa({ toa, mau, tv, dauThanh, ...luu }: PropsToa) {
   // căn của mọi bố cục tầng (chung + tầng riêng); chữ ký bố cục vào khoá để dựng lại khi đổi theo tầng / công năng ô
   const canIds = useMemo(() => [...new Set(nhomTang(toa).flatMap(({ tang }) => { const bc = boCucTang(toa, tang); return viTriCan(mau, tv).map((vt) => canDangDung(vt, bc)); }))], [mau, toa.canTheo, toa.canViTri, toa.tangRieng, tv]);
   const loiIds = useMemo(() => mau.mat.flatMap((m) => m.phan_tu.filter((q) => q.loai !== 'can').map((q) => idLoi(q.block))), [mau]);
-  const nap = useNap3d(canIds, loiIds);
+  const nap = useNap3d(canIds, loiIds, tv);
   if (!nap.xong) return <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('m3d.dangDung')}</span></div>;
   const khoa = ['toa', mau.id, toa.soTangDe, toa.soTangDH, canIds.join(), JSON.stringify([toa.canTheo, toa.canViTri, toa.congNang, toa.tangRieng])].join('|');
   return (
@@ -48,8 +49,8 @@ export function MoHinhToa({ toa, mau, tv, dauThanh, ...luu }: PropsToa) {
 }
 
 /** 3D một căn hộ theo mẫu căn trong thư viện. */
-export function MoHinhCan({ canId, ten }: { canId: string; ten: string }) {
-  const nap = useNap3d([canId], []);
+export function MoHinhCan({ canId, ten, tv }: { canId: string; ten: string; tv?: ThuVien | null }) {
+  const nap = useNap3d([canId], [], tv);
   if (!nap.xong) return <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('m3d.dangDung')}</span></div>;
   const d = nap.khoi3d.get(canId);
   if (!d) return <div class="giua-man"><span>{t('m3d.chuaCoDuLieu')}</span></div>;

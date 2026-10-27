@@ -2,6 +2,25 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-28 · QLDA TT 38 + gộp STRETCH tay · Claude Code
+
+- `0eaba60`: QLDA tự tra Bảng 1.1 TT 38/2026 (`tinh/duToan.ts` `tyLeQldaTT38`, nội suy, ×0,8 khi TB ≥ 50 %), ô tích trên tab Chi phí, `ChiPhiPA.qldaTT38` mặc định true. Dự án thử 789 tỷ → 1,355 %.
+- `fb35e7c`: ghi chú tối ưu tầng khớp chế độ đổi khác bề ngang + STRETCH. Chạy lại tối ưu trên app: 8 căn đổi, lệch 102 → 70, khung giữa giữ nguyên.
+- `01a4cf5`: gộp STRETCH tay (mục dưới). Trên app 5180: CH-02 +100 → CH-03 bù −100, hoàn tác về 0, khung giữa giữ nguyên. Kiểm: tsc 0, web 273/273, worker 9/9, pytest 12/12, build qua.
+- Bẫy: bấm chuột thật lên bản vẽ qua công cụ trình duyệt dễ lệch toạ độ; chọn căn bằng phát `pointerdown/up/click` lên `path` có `cursor: pointer`. Hoàn tác mất khi tải lại trang.
+
+## 2026-10-28 · STRETCH tay + 3D + xuất CAD căn kéo · agent Sonnet
+
+**Đã làm:**
+- `tinh/stretch.ts` `stretchTay(mau, bc, tv, khoa, d)`: kéo căn ±100 (tổng ≤ ±500) bằng cách đổi sang biến thể `id~s+300`; căn kề cùng đoạn dồn khít (`doanCan`, gần nhất trước) kéo ngược `-d` để tổng bề ngang đoạn không đổi; kiểm lại bằng `donKhit` (không `lech`, không `de`). Trả cặp [khoá, id mới]; UI (`man/ManTang.tsx`, panel phải "Căn đang chọn", nút −100 / +100 / 0) áp qua `sua` → `doiCanTaiViTri` / `doiCanTheoTang` nên hoàn tác một bước, DT / số căn / thoát nạn tính lại từ bố cục như mọi đổi căn. Chọn nhiều tầng: kiểm từng tầng, tầng nào chặn thì chặn cả lượt.
+- **Chặn (không làm):** căn không có căn kề STRETCH được để bù (đoạn chỉ một căn, kề không có đường cắt / đã ±500 / là ô công năng khác) = trường hợp dãy dài ra / ngắn lại ở đầu tự do của QT-69 app cũ. App cũ dời nét bao + DTXD theo; ở đây nét bao nằm trong mẫu tòa (`duong_bao`, `dtxd_m2`) và `MatBangTang` / `matBang` / `chiTieu` không thuộc phạm vi đợt này nên chặn và báo lý do bằng lớp phủ (`man/baoStretch.ts`, `.lop-st-bao`, `styles/stretch.css`; `position: absolute` trong panel giữa, đo khung giữa không đổi 270,52,870×848). Làm tiếp: cho `ToaDat` nét bao / DTXD riêng.
+- 3D: `ve3d/stretch3d.ts` kéo `khoi3d` theo cùng luật 2D (đỉnh x > x_cắt dời st; cửa đi / lan can / lover dời nguyên khối theo tâm; cửa sổ, cửa trượt vắt đường cắt giãn theo hai đầu). `useNap3d(…, tv)` dùng cho 3D tòa và 3D căn (`MoHinhCan tv`). Hạn chế: khối 3D không có `cung` (nét thuộc block) như nét 2D nên cửa vắt đường cắt có thể lệch vài chục mm.
+- CAD: cách đã chọn là NHÚNG nét đã kéo, không XREF (thư viện CAD chỉ có `.dwg` mẫu gốc, app này không có AutoCAD sinh `x-canho-stretch/<id>.dwg` như app cũ). `.dxf`: mỗi mức kéo một BLOCK riêng, tên `CAN_<ID>_SP300` / `_SM300` (sửa `khoiTen`: trước đây `+` và `-` cùng ra `_`, trùng tên); `.scr`: không attach XREF cho căn kéo mà vẽ `_.PLINE` nét đã kéo lên lớp A-WALL…; `HopXuatCad` nạp nét qua `idTepCan` + `veTheoId` (trước: gọi tệp `can/<id~s+300>.json` không tồn tại → khối rỗng) và ghi chú trong hộp xuất. Chưa làm: sinh tệp tham chiếu `x-canho-stretch/*.dxf` (không cần khi đã nhúng).
+
+**Kiểm:** tsc 0; web 272/272 (mới: `tinh/stretchTay.test.ts` 8 ca — bù căn kề, DT / số căn, chặn ±500, hoàn tác, chặn khi không bù được, quét 33 tòa: 1298 lượt ±100 kéo được đều không khe / không đè, 246 lượt bị chặn; `ve3d/stretch3d.test.ts` 4 ca; `xuat/xuatCadStretch.test.ts` 4 ca); trên app (vite 5402): tòa i1 chọn CH-06 bấm +100 ×5 → CH-07 bù, lần 6 báo vượt ±500, hoàn tác 5 lần về 0; 3D căn +300 và 3D tòa dựng được; hộp xuất CAD hiện ghi chú "2 mẫu căn STRETCH"; khung giữa 270,52,870×848 không đổi qua mọi bước.
+
+**Còn dở:** dãy dài ra / ngắn lại (QT-69) với nét bao + DTXD; STRETCH hàng loạt (QT-97) / "Sửa nhiều căn" chưa áp cho nút STRETCH; kiểm thoát nạn chỉ tính lại trong tối ưu / panel Tuân thủ, chưa đo riêng sau mỗi lần kéo tay.
+
 ## 2026-10-28 · đơn giá app cũ + tự xếp / STRETCH / dồn khít · Claude Code + agent Opus
 
 **Đã làm** (`nang-cap/architechtures`: `03a9fef` đơn giá, `e0bb3be` gộp tự xếp):

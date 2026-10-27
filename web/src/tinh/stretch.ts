@@ -5,7 +5,7 @@
  * (1 = dời, 0 = đứng). DT TT += st·sau_tt, DT tim += st·sau_tim. Đường cắt do scripts/boc_stretch.py (app cũ) dò từ CAD.
  */
 import type { CanMau, Diem, Phong, ThuVien } from './kieu';
-import type { NetVe } from './matBang';
+import { canDangDung, congNangTai, doanCan, donKhit, viTriCan, type BoCuc, type NetVe, type ToaCoMat } from './matBang';
 
 /** Bước và giới hạn kéo (mm) — DC-04 trong quy_tac.json (bước 100 · tối đa ±500). */
 export const ST_BUOC = 100;
@@ -76,4 +76,54 @@ export function veTheoId(id: string, veGoc: NetVe[], tv: ThuVien): NetVe[] {
   const { goc, st } = tachMa(id);
   const g = tv.can.get(goc);
   return st && g ? veBienThe(veGoc, g, st) : veGoc;
+}
+
+// ---- STRETCH tay từng căn (DC-04 · QT-81): kéo một căn ±100 mm, căn kề co / giãn bù để dãy khít ----
+
+/** Lý do không kéo được (khoá i18n `st.loi.<lyDo>`). */
+export type LyDoStretch = 'khongPhaiCan' | 'khongKeoDuoc' | 'vuotGioiHan' | 'daiRa' | 'khongBu' | 'khongKhit';
+export type KetQuaStretchTay =
+  | { ok: true; doi: [string, string][]; mm: number }
+  | { ok: false; lyDo: LyDoStretch; chiTiet?: string };
+
+/**
+ * Kéo căn tại vị trí `khoa` thêm `d` mm (±ST_BUOC, tổng ≤ ±ST_MAX). Luật "dồn khít" XC-04: tổng bề ngang của đoạn (giữa hai mốc
+ * lõi / thang / khe) không đổi, nên căn kề trong cùng đoạn STRETCH được bù ngược `-d` (gần nhất trước). Không có căn bù thì chặn:
+ * dãy dài ra / ngắn lại ở đầu tự do (QT-69 app cũ) cần dời nét bao và DTXD của mẫu tòa — app này giữ nét bao cố định theo mẫu tòa.
+ * Trả danh sách [khoá vị trí, id căn mới] cho `doiCanTaiViTri` / `doiCanTheoTang`; không đụng vào bố cục.
+ */
+export function stretchTay(mau: ToaCoMat, bc: BoCuc, tv: ThuVien, khoa: string, d: number): KetQuaStretchTay {
+  const vts = viTriCan(mau, tv);
+  const i0 = vts.findIndex((v) => v.khoa === khoa);
+  if (i0 < 0 || congNangTai(khoa, bc) !== 'can') return { ok: false, lyDo: 'khongPhaiCan' };
+  if (!d || d % ST_BUOC) return { ok: false, lyDo: 'khongKeoDuoc' };
+  const hien = vts.map((v) => canDangDung(v, bc));
+  const keo = (i: number, dd: number): { id: string; st: number } | 'khongKeoDuoc' | 'vuot' => {
+    const { goc, st } = tachMa(hien[i]), g = tv.can.get(goc);
+    if (!g?.stretch) return 'khongKeoDuoc';
+    const st2 = st + dd;
+    if (Math.abs(st2) > ST_MAX) return 'vuot';
+    const id = maBienThe(goc, st2);
+    return tv.can.has(id) ? { id, st: st2 } : 'khongKeoDuoc';
+  };
+  const a = keo(i0, d);
+  if (a === 'khongKeoDuoc') return { ok: false, lyDo: 'khongKeoDuoc' };
+  if (a === 'vuot') return { ok: false, lyDo: 'vuotGioiHan', chiTiet: `±${ST_MAX}` };
+  // căn bù: cùng đoạn dồn khít, ô căn hộ, kéo ngược được; gần nhất trước (trái rồi phải khi bằng nhau)
+  const dn = doanCan(vts).find((o) => o.ds.includes(i0));
+  const thuTu = dn ? dn.ds.slice().sort((x, y) => Math.abs(dn.ds.indexOf(x) - dn.ds.indexOf(i0)) - Math.abs(dn.ds.indexOf(y) - dn.ds.indexOf(i0)) || x - y).filter((i) => i !== i0) : [];
+  if (!thuTu.length) return { ok: false, lyDo: 'daiRa' };
+  let khongBu = true;
+  for (const j of thuTu) {
+    if (congNangTai(vts[j].khoa, bc) !== 'can') continue;
+    const b = keo(j, -d);
+    if (typeof b === 'string') continue;
+    khongBu = false;
+    const canViTri = { ...(bc.canViTri ?? {}), [vts[i0].khoa]: a.id, [vts[j].khoa]: b.id };
+    const kq = donKhit(mau, vts, { canTheo: bc.canTheo, canViTri }, tv);
+    const truoc = donKhit(mau, vts, bc, tv);
+    if (kq.lech.length > truoc.lech.length || kq.de.length > truoc.de.length) continue;
+    return { ok: true, doi: [[vts[i0].khoa, a.id], [vts[j].khoa, b.id]], mm: d };
+  }
+  return { ok: false, lyDo: khongBu ? 'khongBu' : 'khongKhit' };
 }

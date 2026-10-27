@@ -3,10 +3,13 @@
  *  · `.scr`  — phiếu lệnh AutoCAD: SAVEAS, INSUNITS mm, attach XREF mẫu căn / lõi từ thư viện `cad/xref` theo đường dẫn TƯƠNG ĐỐI,
  *              cắt XCLIP theo mô-đun căn, vẽ nét bao DTXD. Chạy trong AutoCAD (lệnh SCRIPT) → ra `.dwg` ghép XREF.
  *  · `.dxf`  — một tệp đứng một mình: mỗi mẫu căn là một BLOCK (hình học nhúng, mm), mỗi vị trí là một INSERT (xoay / lật gương).
+ * Căn STRETCH (`id~s+300`): hình đã kéo được NHÚNG, không XREF (thư viện CAD chỉ có tệp mẫu gốc) — `.dxf` mỗi mức kéo một BLOCK riêng
+ * (`..._SP300` / `..._SM300`) từ nét đã kéo theo luật lệnh STRETCH (`veBienThe`); `.scr` vẽ PLINE nét đã kéo lên lớp A-*.
  * Hàm thuần, toàn bộ chữ trong tệp là ASCII (tệp .scr / .dxf đọc theo bảng mã hệ thống).
  */
 import type { CongNangO, Diem, ThuVien } from '../tinh/kieu';
 import { canDangDung, congNangTai, viTriCan, type BoCuc, type NetVe, type ToaCoMat } from '../tinh/matBang';
+import { laBienThe } from '../tinh/stretch';
 
 export const LE_CLIP_MM = 1200;
 /** Thư mục thư viện XREF mặc định, tương đối so với thư mục đặt bản vẽ ghép. */
@@ -41,6 +44,22 @@ export function duongXref(loai: string, ten: string, goc: string): string | null
 
 /** Một lượt chèn XREF trên mặt bằng. */
 export type LuotChen = { loai: string; ten: string; x: number; y: number; rot: number; sx: number; sy: number; sau: number; rong: number; khung?: [number, number, number, number] | null; no?: string };
+
+/** Điểm cục bộ của căn (mm, trước lật) đưa lên thế giới theo điểm chèn, góc xoay và lật gương của lượt chèn. */
+export function diemThe(it: Pick<LuotChen, 'x' | 'y' | 'rot' | 'sx'>, lx: number, ly: number): Diem {
+  const t = rad(it.rot), c = Math.cos(t), s = Math.sin(t);
+  return [it.x + it.sx * lx * c - ly * s, it.y + it.sx * lx * s + ly * c];
+}
+
+/** Nét của một căn gom theo lớp CAD (nét không có lớp hoặc dưới 2 điểm bỏ). */
+function nhomNetKeo(ve: NetVe[]): Map<string, NetVe[]> {
+  const m = new Map<string, NetVe[]>();
+  for (const n of ve) {
+    const lop = LOP_THEO_NET[n.cat]?.[0];
+    if (lop && n.pts.length >= 2) (m.get(lop) ?? m.set(lop, []).get(lop)!).push(n);
+  }
+  return m;
+}
 
 /** Khung cắt cục bộ của căn có nét `khung` (căn góc tòa V): ô module HỢP khung bao của nét khung. */
 export function khungCatCan(ve: NetVe[] | undefined, rong: number, sau: number): [number, number, number, number] | null {
@@ -132,7 +151,21 @@ export function taoScr(d: DuLieuXuat): string {
   L.push('_-LAYER', '_S', 'MDI-XREF', '');
   const thieu: string[] = [];
   let ncat = 0;
+  // Căn STRETCH: thư viện CAD không có tệp .dwg đã kéo để XREF → vẽ thẳng nét đã kéo (cùng luật `veBienThe`) lên lớp A-*.
+  const keo = ds.filter((x) => x.loai === 'can' && x.no && laBienThe(x.no));
+  if (keo.length) for (const [ten, mau] of new Map(Object.values(LOP_THEO_NET))) L.push('_-LAYER', '_M', ten, '_C', String(mau), ten, '');
+  let nKeo = 0;
   for (const it of ds) {
+    if (it.loai === 'can' && it.no && laBienThe(it.no)) {
+      say(`can STRETCH ${it.no}: ve net da keo (khong XREF, thu vien CAD khong co tep da keo)`);
+      for (const [lop, nets] of nhomNetKeo(d.hinh.get(it.no) ?? [])) {
+        L.push('_-LAYER', '_S', lop, '');
+        for (const n of nets) L.push('_.PLINE', ...n.pts.map((q) => { const w = diemThe(it, q[0] * it.rong, q[1] * it.sau); return `${f4(w[0])},${f4(w[1])}`; }), '');
+      }
+      L.push('_-LAYER', '_S', 'MDI-XREF', ''); // XREF kế tiếp lại nằm trên lớp MDI-XREF
+      nKeo++;
+      continue;
+    }
     const p = duongXref(it.loai, it.ten, d.goc);
     if (!p) { thieu.push(it.ten); continue; }
     say(`${it.loai} - ${it.ten}`);
@@ -140,7 +173,7 @@ export function taoScr(d: DuLieuXuat): string {
     const c = lenhXclip(it);
     if (c) { L.push(c); ncat++; }
   }
-  say(`da XCLIP ${ncat} luot chen theo mo-dun + le ${LE_CLIP_MM} mm`);
+  say(`da XCLIP ${ncat} luot chen theo mo-dun + le ${LE_CLIP_MM} mm` + (nKeo ? `; ${nKeo} can STRETCH ve net da keo` : ''));
   if (thieu.length) say('!! THIEU DUONG DAN: ' + [...new Set(thieu)].join(' '));
   if (d.mau.duong_bao.length > 2) {
     say('net bao dien tich san');
@@ -201,7 +234,8 @@ export function nhanCanDxf(d: DuLieuXuat): NhanCan[] {
 /** Một TEXT căn giữa (R12: nhóm 72 = 1, 73 = 2 và điểm căn 11/21/31). */
 const textDxf = (lop: string, x: number, y: number, chu: string): string =>
   nhom([0, 'TEXT'], [8, lop], ...diemDxf([x, y]), [40, CAO_CHU_NHAN_MM], [1, chu], [72, 1], [11, +x.toFixed(4)], [21, +y.toFixed(4)], [31, 0], [73, 2]);
-const khoiTen = (id: string) => 'CAN_' + id.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+/** Tên BLOCK: mẫu STRETCH `id~s+300` / `id~s-300` thành `ID_SP300` / `ID_SM300` (không để "+" và "-" cùng ra "_" làm trùng tên). */
+const khoiTen = (id: string) => 'CAN_' + id.replace(/~s\+(\d+)$/, '_SP$1').replace(/~s-(\d+)$/, '_SM$1').toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 
 /** Tệp DXF R12 ASCII, đơn vị mm: nét bao DTXD, hành lang, mỗi mẫu căn một BLOCK (nét đã nhân rộng × sâu) + INSERT, lõi / thang bộ là nét rời. */
 export function taoDxf(d: DuLieuXuat): string {

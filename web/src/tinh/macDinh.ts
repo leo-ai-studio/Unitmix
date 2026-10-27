@@ -55,6 +55,7 @@ export const CHI_PHI_MAC_DINH: ChiPhiPA = {
   dieuChinh: { xd: 0, tb: 0 },
   khac: { xd: 0, tb: 0 },
   tyLe: { qlda: 1.5, tuVan: 3.5, khac: 2, duPhongKL: 0, duPhongTruotGia: 3 },
+  qldaTT38: true,
   ban: {
     can: { stu: 45_000_000, '1pn': 45_000_000, '2pn': 42_000_000, '2pnp': 42_000_000, '3pn': 40_000_000 },
     tangMoiTang: 0.3, soTangThap: 3, tangThap: -3, tangTren: 5,
@@ -87,6 +88,7 @@ export function chuanHoaChiPhi(v: unknown): ChiPhiPA {
     dieuChinh: { xd: kep(dc.xd, DIEU_CHINH_MIN, DIEU_CHINH_MAX), tb: kep(dc.tb, DIEU_CHINH_MIN, DIEU_CHINH_MAX) },
     khac: tronSo(m.khac, o.khac),
     tyLe: tronSo(m.tyLe, o.tyLe),
+    qldaTT38: typeof o.qldaTT38 === 'boolean' ? o.qldaTT38 : m.qldaTT38,
     ban: { ...tronSo(banSo, banVao), can: tronSo(canMac, banVao.can) as Record<LoaiCan, number> },
   };
 }

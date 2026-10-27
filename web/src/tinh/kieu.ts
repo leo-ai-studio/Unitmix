@@ -237,6 +237,8 @@ export type ChiPhiPA = {
   dieuChinh: Record<NhomChiPhi, number>; // % điều chỉnh giá (trượt giá) theo nhóm, −75…+200
   khac: Record<NhomChiPhi, number>; // đ, dòng "Khác" nhập tay
   tyLe: TyLeChiPhi;
+  /** true = tỷ lệ QLDA tự tra Bảng 1.1 TT 38/2026/TT-BXD theo quy mô (bỏ qua `tyLe.qlda`). */
+  qldaTT38: boolean;
   ban: GiaBan;
 };
 

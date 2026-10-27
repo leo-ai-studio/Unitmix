@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAN_MOI_THANG, chuVi, DONG_DU_TOAN, soThangTheoCan, tinhDuToan, tinhKhoiLuong } from './duToan';
+import { CAN_MOI_THANG, chuVi, DONG_DU_TOAN, soThangTheoCan, tinhDuToan, tinhKhoiLuong, tyLeQldaTT38 } from './duToan';
 import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, taoThuVien, type CanMau, type ChiTieuQH, type Diem, type Lo, type ToaDat, type ToaMau, type TrangThaiPA } from './kieu';
 import { CHI_PHI_MAC_DINH, chuanHoaChiPhi, chuanHoaPA } from './macDinh';
 
@@ -89,11 +89,24 @@ describe('dự toán', () => {
     expect(kc.thanhTien).toBeCloseTo(kl.tong.dtTrenCot0 * CHI_PHI_MAC_DINH.donGia.ketCau);
     const coSo = dt.xd + dt.tb;
     const tl = CHI_PHI_MAC_DINH.tyLe;
-    const truoc = coSo * (1 + (tl.qlda + tl.tuVan + tl.khac) / 100);
+    expect(dt.tlQlda).toBeCloseTo(tyLeQldaTT38(coSo / 1e9, dt.tb / coSo));
+    const truoc = coSo * (1 + (dt.tlQlda + tl.tuVan + tl.khac) / 100);
     expect(dt.truocDuPhong).toBeCloseTo(truoc);
     expect(dt.tongMuc).toBeCloseTo(truoc * (1 + (tl.duPhongKL + tl.duPhongTruotGia) / 100));
     expect(dt.suatM2).toBeCloseTo(dt.tongMuc / kl.tong.dtSanTong);
     expect(dt.suatCan).toBeCloseTo(dt.tongMuc / 30);
+  });
+
+  it('QLDA theo TT 38/2026 Bảng 1.1: nội suy, mốc biên, ×0,8 khi thiết bị ≥ 50 %; tắt thì dùng % nhập tay', () => {
+    expect(tyLeQldaTT38(5)).toBeCloseTo(3.446);
+    expect(tyLeQldaTT38(10)).toBeCloseTo(3.446);
+    expect(tyLeQldaTT38(15)).toBeCloseTo((3.446 + 2.923) / 2);
+    expect(tyLeQldaTT38(1000)).toBeCloseTo(1.239);
+    expect(tyLeQldaTT38(40000)).toBeCloseTo(0.305);
+    expect(tyLeQldaTT38(1000, 0.6)).toBeCloseTo(1.239 * 0.8);
+    const tay = tinhDuToan(kl, { ...CHI_PHI_MAC_DINH, qldaTT38: false });
+    expect(tay.tlQlda).toBe(CHI_PHI_MAC_DINH.tyLe.qlda);
+    expect(tay.qlda).toBeCloseTo(((tay.xd + tay.tb) * CHI_PHI_MAC_DINH.tyLe.qlda) / 100);
   });
 
   it('% điều chỉnh giá nhóm và dòng Khác', () => {
