@@ -2,6 +2,25 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-28 · gộp đợt 3 + kiểm trên app · Claude Code
+
+- `6e6ddd0` gộp nhánh gỡ căn / thang liền; sửa danh sách tòa ở panel trái màn Tầng: số căn/tầng theo mặt bằng đã tự chỉnh (tm-t2 42 → 40), không theo mẫu thư viện.
+- Kiểm: tsc 0, web 327/327, worker 9/9, pytest 12/12, build qua; trên 5180 dự án `plevadne`: tm-t2 "vượt 2 → 0 · bỏ căn 2 · 42 → 40", không NaN. Dự án `4wcy55hp`: tự chỉnh thang 2→3, căn vượt 2→0, 3D dựng được, hoàn tác về như cũ, khung giữa giữ nguyên. Hộp xuất CAD mở được (.scr / .dxf, ghi chú STRETCH).
+- Chờ chủ nhiệm: đoạn kẹp giữa hai thang ở tầng riêng đổi căn rộng hơn có thể còn lệch 200–1.200 mm (báo cảnh báo); số tạm 8 lượt gỡ / 6 lượt xếp lại; phòng KT không đo cự ly.
+
+## 2026-10-28 · tự chỉnh MB đợt 3: gỡ căn vượt cự ly (giamCanThoatNan) · thang liền suốt chiều cao · agent Opus
+
+**Đã làm** (nhánh agent, từ `main` @ `c6a86f1`):
+- Việc 1 · `tinh/loiThang.ts` `tuChinhGiam` (bật mặc định, như app cũ `datThangBo` → `giamCanThoatNan`): sau PC-11 còn căn vượt thì (1) tự sinh rút gọn giữ cơ cấu `xepLaiGiuCoCau` — co căn giữa bằng mẫu cùng loại hẹp hơn / STRETCH −500, đổi chỗ hai căn giữa trong đoạn có đầu tự do, nhận nếu chạy lại đủ bước thật sự bớt vượt; (2) mỗi lượt một căn: BỎ căn giữa gần đầu tự do (căn góc trượt vào, mặt co lại, nét bao + DTXD theo — `boCanTren`, công năng ô mới `'bo'`, `MatBangSua.boCan`) hoặc ĐỔI ô căn vượt thành phòng kỹ thuật; chọn phép bớt nhiều căn vượt nhất, bằng nhau thì ưu tiên bỏ (app cũ), rồi DT mất ít hơn. Thang giữ đúng chỗ khi chạy lại (`thangEp` + `thangMau`). Ô phòng KT / trống / bỏ không đo cự ly (`KHONG_KIEM_TN`, QCVN 06 đo từ cửa căn hộ — giá trị tạm, chờ chủ nhiệm chốt). Thay đổi tự ghi vào bố cục và `ToaDat.tuDong`; `goTuDong` gỡ ra trước mỗi lần tự chỉnh (giá trị người dùng sửa khác thì giữ). Tắt: `ToaDat.giamCanTN = false` (giữ nguyên căn, chỉ báo "vượt"). Báo cáo `BaoCaoTuChinh.giamCan` (vượt, xếp lại / đổi / bỏ, căn và cơ cấu trước → sau). Đổi công năng ô ở màn Tầng giờ cũng chạy tự chỉnh.
+- Việc 2 · thang liền: tầng riêng có thang khác tầng chung → `hopThang` chèn thang riêng của các tầng vào MẶT BẰNG CHUNG như PC-11 thêm thang (một mặt bằng nhất quán, không bỏ thang nào), rồi `epThang` ép tập đó lên mọi tầng: căn chia vào khe giữa mốc theo mặt bằng chung, dồn khít về lõi / thang, đầu tự do dài ra / ngắn lại, đoạn kẹp lệch bề ngang thì căn giữa co / giãn STRETCH (≤ ±500) hoặc đổi mẫu cùng loại để khít; hở ≤ 400 mm coi là tường (khe.ts). Thang mẫu kẹp không bỏ được → thêm vào tập chung, ép lại. Kiểm lại thoát nạn + gỡ căn từng tầng. Chế độ `ToaDat.thangLien` 'hop' (mặc định) | 'chung'. Cảnh báo "thang khác tầng chung" thay bằng dòng báo `BaoCaoTuChinh.thangLien`.
+- Panel phải màn Tầng (`KhoiGiamCan`): dòng gỡ căn (vượt a → b, xếp lại / đổi KT / bỏ, căn / tầng, cơ cấu trước → sau), ô tích "Tự gỡ căn vượt cự ly", dòng thang liền + chọn chế độ (khi có tầng riêng). i18n vi + en.
+
+**Số căn vượt cự ly 24 tầng (H 81,8 m) trước → sau PC-11 → sau gỡ căn:** tm-t2 3 → 2 → 0 (bỏ 2 studio, 42 → 40 căn/tầng, STU 10 → 8); tm-u1 3 → 1 → 0 (bỏ 1 studio, 33 → 32). Mọi mẫu khác về 0 ở PC-11, không đổi căn nào. Lâu nhất ~0,6 s / mẫu (tm-t2).
+
+**Kiểm:** tsc 0, web 330/330 (mới `tinh/giamCanThangLien.test.ts` 10 test: tm-t2, tm-u1 24 tầng, mọi mẫu, tắt / bật, thuần + ổn định, phòng KT; tm-i1 / tm-l1 có tầng riêng: hợp / ép theo tầng chung, cùng điểm chèn thang mọi tầng, không khe / đè, số căn), build qua. Trên app (vite 5404, API 8787, dự án `plevadne`): tm-t2 tắt → "còn 2 căn vượt", bật → "vượt 2 → 0 · bỏ căn 2 · căn/tầng 42 → 40", hoàn tác / làm lại đúng; tm-i1 tầng 6 (bố cục riêng, đổi 1PN 5.800 → 6.000) → "4 thang chung cả tòa · 1 tầng riêng · 2 căn nhường chỗ", chế độ ép theo tầng chung → 3 thang; 3D dựng, không lỗi console. Khung giữa 910×652 tại (0, 52) trước / sau mọi bước (cửa sổ 925 px).
+
+**Còn dở:** tầng riêng đổi sang căn rộng hơn nằm trong đoạn kẹp hai thang có khi co không đủ (vd tm-i1 1PN → 2PN: co 1.500 / 1.700 mm) → còn đè, báo "còn lệch 200 mm — cần chủ nhiệm xem"; tự sinh rút gọn chưa phải DP cả dãy như app cũ (trên mẫu thật chưa gỡ được căn nào, đều phải bỏ căn); ô tòa ở panel trái vẫn ghi số căn/tầng của mẫu.
+
 ## 2026-10-28 · tự chỉnh MB đợt 2: PC-11 chuyển mặt · thang theo tầng · 3D / CAD theo mặt bằng tự chỉnh · agent Opus
 
 **Đã làm** (nhánh agent, từ `main` @ `f37645c`):

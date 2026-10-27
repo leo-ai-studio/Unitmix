@@ -3,7 +3,7 @@ import { t } from '../i18n/i18n';
 import { demCan, diemLechCoCau, phanTram } from '../tinh/coCau';
 import { dtCongNangToa, kiemShcd } from '../tinh/congNang';
 import { apDoiViTri, apDoiViTriTang, boTangRieng, datCoCauTang, datLoi, doiCanTaiViTri, doiCanTheoTang, doiCongNang, thongTinLoi, veMauGoc } from '../tinh/doiCan';
-import { LOAI_CAN, type CongNangO, type Lo, type LoaiCan, type ThuVien, type ToaDat, type TrangThaiPA } from '../tinh/kieu';
+import { LOAI_CAN, type BaoCaoTuChinh, type CongNangO, type Lo, type LoaiCan, type ThuVien, type ToaDat, type TrangThaiPA } from '../tinh/kieu';
 import { boCucTang, coCauRiengTang, coMat, ghiDeTang, tangCoRieng, ungVienDoi, viTriCan, type BoCuc } from '../tinh/matBang';
 import { dtHanhLangTang, phanChungPhanBo } from '../tinh/phanChung';
 import { toiUuCoCau } from '../tinh/toiUu';
@@ -124,7 +124,8 @@ export function TangTrai(p: ChungTang) {
           return (
             <button type="button" key={x.id} class={`muc-lo${x.id === toa.id ? ' chon' : ''}`} aria-pressed={x.id === toa.id} onClick={() => { chonToa(x.id); chonCan(null); setGhiChu(''); }}>
               <b>{tenNgan(m?.ten_vi)} · {l?.temDat.kyHieu ?? '—'}</b>
-              <span>{x.soTangDe} + {x.soTangDH} T · {t('xep.canTang').replace('{n}', String(m?.so_can_tang ?? 0))}</span>
+              {/* Số căn/tầng theo mặt bằng đã tự chỉnh (căn bị gỡ vì thoát nạn không còn tính), không theo mẫu thư viện. */}
+              <span>{x.soTangDe} + {x.soTangDH} T · {t('xep.canTang').replace('{n}', String(m && coMat(m) ? soLieuTang(mauCuaToa(x, m as ToaVe), boCucTang(x, null), tv).can.filter((c) => c.cn === 'can').length : 0))}</span>
             </button>
           );
         })}
@@ -207,8 +208,8 @@ export function TangMoHinh(p: ChungTang & { tenDuAn: string }) {
 }
 
 /** Đổi công năng các ô trên phạm vi đang chọn (chung hoặc các tầng). */
-const suaCongNang = (p: Pick<ChungTang, 'sua'>, toa: ToaDat, tangs: number[] | null, khoas: string[], cn: CongNangO) =>
-  p.sua((q) => doiToa(q, toa.id, (x) => doiCongNang(x, tangs, khoas, cn)));
+const suaCongNang = (p: Pick<ChungTang, 'sua' | 'tv'>, toa: ToaDat, tangs: number[] | null, khoas: string[], cn: CongNangO) =>
+  (p.tv ? suaTuChinh(p.sua, p.tv, toa.id) : p.sua)((q) => doiToa(q, toa.id, (x) => doiCongNang(x, tangs, khoas, cn)));
 
 type KhungChon = { x0: number; y0: number; x1: number; y1: number };
 
@@ -334,6 +335,53 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         ]} />
       </div>
     </>
+  );
+}
+
+/**
+ * Panel phải · gỡ căn vượt cự ly (app cũ giamCanThoatNan) + thang liền suốt chiều cao: dòng báo kết quả (số căn đổi / bỏ, căn và
+ * cơ cấu trước → sau), nút tắt tự gỡ (giữ nguyên căn, chỉ báo vượt), chọn cách giữ thang liền khi tòa có tầng riêng.
+ */
+function KhoiGiamCan({ bcTc, toa, coRieng, chiXem, datToa }: {
+  bcTc: BaoCaoTuChinh | undefined; toa: ToaDat; coRieng: boolean; chiXem: boolean; datToa: (fn: (x: ToaDat) => ToaDat) => void;
+}) {
+  const g = bcTc?.giamCan, l = bcTc?.thangLien;
+  const bat = toa.giamCanTN !== false;
+  const coCau = g ? LOAI_CAN.filter((k) => g.coCauTruoc[k] || g.coCauSau[k]).map((k) => `${NHAN_LOAI[k]} ${g.coCauTruoc[k]}→${g.coCauSau[k]}`).join(' · ') : '';
+  return (
+    <div class="khoi-giam-can">
+      {g && (g.bat ? (
+        <>
+          <p class={`dong ${g.vuotSau ? 'vuot' : 'muted'}`} role="status" style={{ margin: 0 }} title={t('tc.giam.gt')}>
+            {t('tc.giam.tomTat').replace('{a}', String(g.vuotTruoc)).replace('{b}', String(g.vuotSau)).replace('{x}', String(g.xepLai))
+              .replace('{d}', String(g.doi)).replace('{o}', String(g.bo)).replace('{c1}', String(g.soCanTruoc)).replace('{c2}', String(g.soCanSau))}
+          </p>
+          {(g.doi || g.bo || g.xepLai) ? <p class="dong muted" style={{ margin: 0 }}>{t('tc.giam.coCau').replace('{v}', coCau)}</p> : null}
+        </>
+      ) : <p class="dong vuot" role="status" style={{ margin: 0 }}>{t('tc.giam.tat').replace('{v}', String(g.vuotSau))}</p>)}
+      <label class="o-tg" title={t('tc.giam.gt')}>
+        <input type="checkbox" id="giam-can-tn" disabled={chiXem} checked={bat}
+          onChange={(e) => { const on = e.currentTarget.checked; datToa((x) => ({ ...x, giamCanTN: on ? undefined : false })); }} />
+        <span>{t('tc.giam.nut')}</span>
+      </label>
+      {l && (
+        <p class={`dong ${l.conLech || l.khongDat ? 'canh-bao' : 'muted'}`} role="status" style={{ margin: 0 }} title={t('tc.lien.gt')}>
+          {t('tc.lien.tomTat').replace('{m}', t(`tc.lien.${l.cheDo}`)).replace('{n}', String(l.soThang)).replace('{k}', String(l.soTang))}
+          {l.nhuong ? t('tc.lien.nhuong').replace('{n}', String(l.nhuong)) : ''}
+          {l.conLech ? t('tc.lien.lech').replace('{n}', fmtSo(l.conLech)) : ''}
+          {l.khongDat ? t('tc.lien.khongDat').replace('{n}', String(l.khongDat)) : ''}
+        </p>
+      )}
+      {coRieng && (
+        <label class="o-chon" title={t('tc.lien.gt')}><span>{t('tc.lien.cheDo')}</span>
+          <select id="thang-lien" disabled={chiXem} value={toa.thangLien ?? 'hop'}
+            onChange={(e) => { const v = e.currentTarget.value as 'hop' | 'chung'; datToa((x) => ({ ...x, thangLien: v === 'hop' ? undefined : v })); }}>
+            <option value="hop">{t('tc.lien.hop')}</option>
+            <option value="chung">{t('tc.lien.chung')}</option>
+          </select>
+        </label>
+      )}
+    </div>
   );
 }
 
@@ -465,6 +513,8 @@ export function TangPhai(p: ChungTang) {
             .replace('{t}', `${bcTc.soThangTruoc}→${bcTc.soThangSau}`).replace('{v}', `${bcTc.vuotTruoc ?? '—'}→${bcTc.vuotSau ?? '—'}`).replace('{d}', fmtSo(bcTc.dtxdM2, { thapPhan: 1 }))}
         </p>
       )}
+      <KhoiGiamCan bcTc={bcTc} toa={toa} coRieng={tangCoRieng(toa).length > 0} chiXem={chiXem}
+        datToa={(fn) => suaTuChinh(sua, tv, toa.id)((q) => doiToa(q, toa.id, fn))} />
       <MucGap tieuDe={t('tt.tieuDe')} mo>
         {tv.toa.get(toa.mauId) && <BangTuanThu pa={pa} sua={sua} chiXem={chiXem} toa={toa} mau={tv.toa.get(toa.mauId)!} tv={tv} />}
       </MucGap>
