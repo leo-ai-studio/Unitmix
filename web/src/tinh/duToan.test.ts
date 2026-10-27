@@ -85,8 +85,8 @@ describe('dự toán', () => {
   it('thành tiền = KL × đơn giá; tổng mức cộng đủ các lớp', () => {
     const dt = tinhDuToan(kl);
     expect(dt.dong).toHaveLength(DONG_DU_TOAN.length);
-    const than = dt.dong.find((d) => d.khoa === 'thanThap')!;
-    expect(than.thanhTien).toBeCloseTo(4000 * CHI_PHI_MAC_DINH.donGia.thanThap);
+    const kc = dt.dong.find((d) => d.khoa === 'ketCau')!;
+    expect(kc.thanhTien).toBeCloseTo(kl.tong.dtTrenCot0 * CHI_PHI_MAC_DINH.donGia.ketCau);
     const coSo = dt.xd + dt.tb;
     const tl = CHI_PHI_MAC_DINH.tyLe;
     const truoc = coSo * (1 + (tl.qlda + tl.tuVan + tl.khac) / 100);
@@ -107,10 +107,12 @@ describe('dự toán', () => {
 
   it('chuẩn hoá: PA cũ thiếu chi phí lấy mặc định; điều chỉnh kẹp −75…+200; số hỏng bỏ', () => {
     expect(chuanHoaChiPhi(undefined)).toEqual(CHI_PHI_MAC_DINH);
-    const cp = chuanHoaChiPhi({ dieuChinh: { xd: 500, tb: -90 }, donGia: { ngam: 'x', me: 5 }, ban: { can: { '2pn': 1 } } });
+    const cp = chuanHoaChiPhi({ dieuChinh: { xd: 500, tb: -90 }, donGia: { ngam: 'x', ketCau: 1, me: 5 }, ban: { can: { '2pn': 1 } } });
     expect(cp.dieuChinh).toEqual({ xd: 200, tb: -75 });
     expect(cp.donGia.ngam).toBe(CHI_PHI_MAC_DINH.donGia.ngam);
     expect(cp.donGia.me).toBe(5);
+    // Đơn giá kiểu cũ (dòng tháp / đế, chưa có 'ketCau') bỏ hẳn, lấy định mức app cũ.
+    expect(chuanHoaChiPhi({ donGia: { ngam: 11e6, thanThap: 6.5e6, me: 1.2e6 } }).donGia).toEqual(CHI_PHI_MAC_DINH.donGia);
     expect(cp.ban.can['2pn']).toBe(1);
     expect(cp.ban.can['3pn']).toBe(CHI_PHI_MAC_DINH.ban.can['3pn']);
     expect(paGia([]).chiPhi).toEqual(CHI_PHI_MAC_DINH);

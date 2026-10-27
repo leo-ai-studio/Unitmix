@@ -170,17 +170,16 @@ export function tinhKhoiLuong(pa: TrangThaiPA, tv: ThuVien, coRaiHam = true): Kh
 /** Một dòng dự toán: nhóm, đơn vị, khối lượng lấy từ tổng khối lượng. */
 export type MauDong = { khoa: KhoaDongDuToan; nhom: NhomChiPhi; donVi: string; kl: (t: TongKhoiLuong) => number };
 export const DONG_DU_TOAN: MauDong[] = [
+  // Định mức app cũ tính mọi gói theo m² sàn nổi (tháp + đế + áp mái); hầm một dòng riêng theo m² sàn hầm.
   { khoa: 'ngam', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtHam },
-  { khoa: 'thanThap', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtThap },
-  { khoa: 'thanDe', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtDe },
-  { khoa: 'thanApMai', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtApMai },
-  { khoa: 'htCan', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtTT },
-  { khoa: 'htChung', nhom: 'xd', donVi: 'm²', kl: (t) => Math.max(0, t.dtTrenCot0 - t.dtTT) },
-  { khoa: 'matNgoai', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtMatNgoai },
+  { khoa: 'coc', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtTrenCot0 },
+  { khoa: 'ketCau', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtTrenCot0 },
+  { khoa: 'hoanThien', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtTrenCot0 },
+  { khoa: 'cua', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtTrenCot0 },
   { khoa: 'haTang', nhom: 'xd', donVi: 'm²', kl: (t) => t.dtSanVuon },
-  { khoa: 'thangMay', nhom: 'tb', donVi: 'thang', kl: (t) => t.soThang },
-  { khoa: 'pccc', nhom: 'tb', donVi: 'm²', kl: (t) => t.dtSanTong },
-  { khoa: 'me', nhom: 'tb', donVi: 'm²', kl: (t) => t.dtSanTong },
+  { khoa: 'thangMay', nhom: 'tb', donVi: 'm²', kl: (t) => t.dtTrenCot0 },
+  { khoa: 'pccc', nhom: 'tb', donVi: 'm²', kl: (t) => t.dtTrenCot0 },
+  { khoa: 'me', nhom: 'tb', donVi: 'm²', kl: (t) => t.dtTrenCot0 },
 ];
 export const NHOM_CHI_PHI: NhomChiPhi[] = ['xd', 'tb'];
 

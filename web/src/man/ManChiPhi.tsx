@@ -68,6 +68,7 @@ export function ChiPhiGiua({ pa, tv, kq, sua, chiXem }: Props) {
         <h2>{t('chiPhi.tieuDe')}</h2>
         <p class="cp-canh-bao" role="note">{t('chiPhi.canhBao')}</p>
         <p class="muted cp-ghi">{t('chiPhi.ghiChuND')}</p>
+        <p class="muted cp-ghi">{t('chiPhi.nguonDonGia')}</p>
         <DongPreset nhom="chiPhi" chiXem={chiXem} chup={() => chupPreset('chiPhi', pa, null)} ap={(du) => sua((p) => apPreset('chiPhi', p, du, 'pa', null))} />
       </header>
 

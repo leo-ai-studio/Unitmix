@@ -168,7 +168,8 @@ export type TrangThaiPA = {
 /* ---------- Chi phí (dự toán sơ bộ + hiệu quả tài chính). Mọi số mặc định là SỐ TẠM, chờ chủ nhiệm / QS chốt. ---------- */
 
 /** Dòng dự toán tính khối lượng tự động từ mô hình. */
-export type KhoaDongDuToan = 'ngam' | 'thanThap' | 'thanDe' | 'thanApMai' | 'htCan' | 'htChung' | 'matNgoai' | 'haTang' | 'thangMay' | 'pccc' | 'me';
+/** Dòng dự toán theo nhóm gói thầu của định mức suất đầu tư app cũ (MDI_Unitmix_v4 `dinh_muc_du_toan.json`). */
+export type KhoaDongDuToan = 'ngam' | 'coc' | 'ketCau' | 'hoanThien' | 'cua' | 'haTang' | 'thangMay' | 'pccc' | 'me';
 /** Nhóm chi phí: xây dựng, thiết bị. */
 export type NhomChiPhi = 'xd' | 'tb';
 /** Các lớp tỷ lệ (%) tính trên chi phí xây dựng + thiết bị (QLDA, tư vấn, khác) và dự phòng (trên tổng trước dự phòng). */

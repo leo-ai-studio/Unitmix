@@ -36,15 +36,25 @@ export const HAM_MAC_DINH: Required<Omit<ThongSoHam, 'dtXeMay'>> & Pick<ThongSoH
  * Đơn giá, tỷ lệ, giá bán mặc định — TOÀN BỘ LÀ SỐ TẠM (VND), chờ chủ nhiệm / QS chốt. Không lấy từ văn bản nào.
  * Cơ cấu nhóm tham khảo tổng mức đầu tư theo Nghị định 10/2021/NĐ-CP (QS kiểm lại).
  */
+/**
+ * Đơn giá (đ/m² sàn) lấy từ định mức suất đầu tư của app cũ: `MDI_Unitmix_v4/data/master/dinh_muc_du_toan.json`,
+ * bóc từ hồ sơ "240508_SĐT NOXH cao tầng" (Q2/2024, Hà Nội, trước VAT). Lấy bình quân mẫu I15 / Z15 (nhóm > 8 tầng),
+ * quy về mặt bằng 2026 bằng trượt giá từng nhóm A–E của hồ sơ (8,8–9,6 %), cộng gói thầu theo nhóm dòng:
+ *   cọc = cọc + TN cọc · kết cấu = TT kết cấu + cung ứng thép + KCT / inox · hoàn thiện = TT hoàn thiện + thạch cao, sơn bả
+ *   + đá + sàn gỗ + gạch + TBVS + VSCN + chống mối + biển bảng · cửa = cửa thép / chống cháy + nhôm kính + cửa gỗ + khoá ·
+ *   thang máy · PCCC = TB báo cháy + chữa cháy · ME = thi công M&E, điện nhẹ, trung thế và các gói cung ứng còn lại.
+ * Tổng 9,12 tr/m² sàn nổi. Lưu ý từ hồ sơ: SĐT ĐÃ GỒM dự phòng khối lượng 10 % → dự phòng KL mặc định 0.
+ * Hầm 6,31 tr/m² sàn hầm: số đối chứng duy nhất có hầm (sheet "SĐT Saphire", hầm 2 tầng), chưa quy đổi trượt giá.
+ * Hạ tầng ngoài nhà: hồ sơ không có — vẫn là số tạm. Tất cả chờ QS chốt.
+ */
 export const CHI_PHI_MAC_DINH: ChiPhiPA = {
   donGia: {
-    ngam: 11_000_000, thanThap: 6_500_000, thanDe: 7_000_000, thanApMai: 6_500_000,
-    htCan: 3_000_000, htChung: 1_800_000, matNgoai: 3_500_000, haTang: 1_000_000,
-    thangMay: 2_000_000_000, pccc: 400_000, me: 1_200_000,
+    ngam: 6_310_000, coc: 354_559, ketCau: 2_438_253, hoanThien: 2_802_057, cua: 760_900,
+    haTang: 1_000_000, thangMay: 215_501, pccc: 132_253, me: 2_421_212,
   },
   dieuChinh: { xd: 0, tb: 0 },
   khac: { xd: 0, tb: 0 },
-  tyLe: { qlda: 1.5, tuVan: 3.5, khac: 2, duPhongKL: 5, duPhongTruotGia: 3 },
+  tyLe: { qlda: 1.5, tuVan: 3.5, khac: 2, duPhongKL: 0, duPhongTruotGia: 3 },
   ban: {
     can: { stu: 45_000_000, '1pn': 45_000_000, '2pn': 42_000_000, '2pnp': 42_000_000, '3pn': 40_000_000 },
     tangMoiTang: 0.3, soTangThap: 3, tangThap: -3, tangTren: 5,
@@ -72,7 +82,8 @@ export function chuanHoaChiPhi(v: unknown): ChiPhiPA {
   const banVao = (o.ban && typeof o.ban === 'object' ? o.ban : {}) as Record<string, unknown>;
   const { can: canMac, ...banSo } = m.ban;
   return {
-    donGia: tronSo(m.donGia, o.donGia),
+    // Đơn giá kiểu cũ (dòng tháp / đế / mặt ngoài, trước khi lấy định mức app cũ) không đổi được sang gói thầu → dùng mặc định.
+    donGia: tronSo(m.donGia, o.donGia && typeof o.donGia === 'object' && 'ketCau' in o.donGia ? o.donGia : null),
     dieuChinh: { xd: kep(dc.xd, DIEU_CHINH_MIN, DIEU_CHINH_MAX), tb: kep(dc.tb, DIEU_CHINH_MIN, DIEU_CHINH_MAX) },
     khac: tronSo(m.khac, o.khac),
     tyLe: tronSo(m.tyLe, o.tyLe),
