@@ -1,0 +1,13 @@
+/* STRETCH tay từng căn (DC-04 · QT-81): nút ở panel phải + thông báo nổi trên bản vẽ tầng. Lớp phủ, không chiếm chỗ khung giữa. */
+.khoi-st { flex-wrap: wrap; gap: 6px; }
+.khoi-st .st-muc { font-variant-numeric: tabular-nums; }
+.nhom-nut-st { display: inline-flex; gap: 4px; }
+.nut-st { min-width: 44px; padding: 3px 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.lop-st-bao { position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); z-index: 5; display: flex; align-items: flex-start; gap: 8px; width: max-content; max-width: min(560px, calc(100% - 24px)); box-sizing: border-box; padding: 8px 10px 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 12px; line-height: 1.45; box-shadow: 0 4px 14px rgba(0, 0, 0, .12); animation: st-bao-vao .18s ease-out; }
+.lop-st-bao.loi { border-color: #c0392b; border-left-width: 4px; }
+.lop-st-bao.ok { border-left: 4px solid var(--green); }
+.lop-st-bao span { flex: 1 1 auto; min-width: 0; }
+.lop-st-bao button { flex: 0 0 auto; border: 0; background: transparent; color: inherit; font-size: 16px; line-height: 1; cursor: pointer; padding: 0 2px; }
+@keyframes st-bao-vao { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (prefers-reduced-motion: reduce) { .lop-st-bao { animation: none; } }
