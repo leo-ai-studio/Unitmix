@@ -67,6 +67,9 @@ export type ThongSoHam = {
   dtKho: number;
 };
 
+/** Góc nhìn 3D đã lưu (m, toạ độ three: X = x, Y = cao, Z = −y). `che` = cảnh toàn dự án hay một công trình. */
+export type GocNhin = { id: string; ten: string; che: 'du_an' | 'toa'; toaId?: string; vt: [number, number, number]; dich: [number, number, number]; gio?: number };
+
 export type TrangThaiPA = {
   phienBan: 1;
   lo: Lo[];
@@ -74,6 +77,7 @@ export type TrangThaiPA = {
   nguong: NguongMau;
   toa: ToaDat[];
   ham: ThongSoHam;
+  gocNhin?: GocNhin[];
 };
 
 /** Một mẫu tòa trong web/public/lib/toa.json (toạ độ mm như CAD). */

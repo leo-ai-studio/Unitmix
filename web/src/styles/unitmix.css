@@ -182,3 +182,56 @@ body { font-size: 13px; line-height: 1.45; }
 .hop-xuat h3 { margin: 0; }
 .khoi-xuat { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
 .khoi-xuat button { align-self: flex-start; }
+
+/* ===== Thanh trên: tab bước chính cố định + tab xem gọn ===== */
+.tab-buoc { display: inline-flex; gap: 2px; padding: 3px; background: var(--band); border: 1px solid var(--line); border-radius: 8px; }
+.tab-buoc button { border: 0; background: transparent; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.tab-buoc button[aria-pressed="true"] { background: var(--green); color: #fff; }
+.tab-xem button { padding: 6px 12px; font-size: 12px; }
+.chon-buoc { display: none; }
+
+/* ===== Panel trái gọn ===== */
+.panel-trai .muc-dau { padding: 7px 12px; font-size: 12px; }
+.panel-trai .muc-than { padding: 2px 0 8px; }
+.hang-nhap-tmb { display: flex; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--band); position: sticky; top: 0; z-index: 2; }
+.nut-nho { flex: 1 1 0; min-width: 0; width: auto; overflow: hidden; text-overflow: ellipsis; text-align: center; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px; padding: 5px 8px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.nut-nho:last-child { flex: 0 0 32px; }
+.nut-nho[aria-pressed="true"] { background: var(--soft); border-color: var(--green); color: var(--green); }
+.nut-nho.tat, .nut-nho:disabled { opacity: .45; cursor: default; }
+.khoi-dxf { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-bottom: 1px solid var(--line); background: var(--soft); }
+.khoi-dxf > .muted { padding: 0 12px; }
+.chon-lo-gon { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.chon-lo-gon select { width: 100%; font-weight: 700; color: var(--green); padding: 5px 6px; border: 1px solid var(--green); border-radius: 6px; background: var(--panel); }
+.chon-lo-gon .muted { font-size: 11px; }
+.luoi-o { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.luoi-o .o-so { flex-direction: column; align-items: stretch; gap: 1px; padding: 3px 10px; }
+.luoi-o .o-so input { width: 100%; }
+.panel-trai .the-mau { padding: 6px 12px; }
+
+/* ===== Chú giải loại đất trên TMB ===== */
+.chu-giai-dat { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: center; padding: 4px 12px; font-size: 11px; color: var(--muted-text); }
+.chu-giai-dat i { display: inline-block; width: 11px; height: 11px; border: 1px solid; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+
+/* Thanh trên một dòng: đường dẫn co lại, cắt bằng dấu …; nhãn "Chế độ" ẩn cho gọn */
+@media (min-width: 1100px) {
+  .khung-soan .thanh-tren { flex-wrap: nowrap; }
+  .khung-soan .thanh-tren .cap-do { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
+  .khung-soan .thanh-tren .cap-do button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+}
+.thanh-tren .nhan-che-do { display: none; }
+
+/* ===== 3D theo brand ===== */
+.vung-3d { background: var(--bg); }
+.vung-3d .giua-man { color: var(--muted-text); }
+.thanh-3d { background: var(--panel); }
+.thanh-3d .gian { flex: 1; }
+.thanh-3d-phu { background: var(--band); padding: 4px 12px; font-size: 12px; }
+.thanh-3d .nhom-3d { gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.thanh-3d .nhom-3d button { border: 0; border-right: 1px solid var(--line); background: var(--panel); padding: 4px 10px; font-size: 12px; color: var(--ink); white-space: nowrap; }
+.thanh-3d .nhom-3d button:last-child { border-right: 0; }
+.thanh-3d .nhom-3d button[aria-pressed="true"] { background: var(--soft); color: var(--green); font-weight: 700; }
+.thanh-3d .chon-che button[aria-pressed="true"] { background: var(--green); color: #fff; }
+.chip-goc { display: inline-flex; border: 1px solid var(--green); border-radius: 12px; overflow: hidden; background: var(--panel); }
+.chip-goc button { border: 0; background: transparent; padding: 2px 9px; font-size: 12px; color: var(--green); }
+.chip-goc .xoa { padding: 2px 7px; color: var(--muted-text); border-left: 1px solid var(--line); }
+.thanh-3d .nut-phu, .thanh-3d .nut-chinh { padding: 4px 10px; font-size: 12px; }

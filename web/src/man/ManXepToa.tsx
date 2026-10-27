@@ -9,7 +9,8 @@ import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
-import { BangChiTieuLo } from './ManLo';
+import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
+import { BangChiTieuLo, ChonLoCaoTang, LoChiTieu, LoNhap, SucChuaLo } from './ManLo';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -22,7 +23,7 @@ type Chung = {
   chonToa: (id: string | null) => void;
 };
 
-const xayO = (lo: Lo) => lo.temDat.chucNang !== 'khac';
+const xayO = laCaoTang;
 /** Lô đang xếp: lô đã chọn nếu xây nhà ở, không thì lô nhà ở đầu tiên. */
 export const loDangXep = (pa: TrangThaiPA, loId: string | null): Lo | undefined =>
   pa.lo.find((l) => l.id === loId && xayO(l)) ?? pa.lo.find(xayO);
@@ -47,7 +48,7 @@ function O({ nhan, gt, donVi, onDoi, tat, buoc = 1, am = false }: { nhan: string
 }
 
 /** Panel trái màn Xếp tòa: chọn lô, thư viện mẫu tòa (hợp lô trước), tòa trên lô và thông số tòa đang chọn. */
-export function XepTrai({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: Chung) {
+export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
   const lo = loDangXep(pa, loId);
   const [nhom, setNhom] = useState<'tm' | 'xh' | null>(null);
   const nhomXem = nhom ?? (lo?.temDat.chucNang === 'xh' ? 'xh' : 'tm');
@@ -62,7 +63,6 @@ export function XepTrai({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
   }, [tv, nhomXem, khoaVung]);
 
   if (!pa.lo.length) return <p class="dong muted">{t('xep.chuaCoLo')}</p>;
-  const loXayO = pa.lo.filter(xayO);
   const toaLo = lo ? pa.toa.filter((x) => x.loId === lo.id) : [];
   const toa = toaLo.find((x) => x.id === toaId);
   const tat = chiXem || !!toa?.khoa;
@@ -70,18 +70,8 @@ export function XepTrai({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
 
   return (
     <>
-      <MucGap tieuDe={t('xep.chonLo')} mo>
-        {loXayO.length ? (
-          <label class="o-chon"><span>{t('lo.kyHieu')}</span>
-            <select value={lo?.id} onChange={(e) => { chonLo(e.currentTarget.value); chonToa(null); }}>
-              {loXayO.map((l) => <option value={l.id}>{`${l.temDat.kyHieu} · ${t(`cn.${l.temDat.chucNang}`)}`}</option>)}
-            </select>
-          </label>
-        ) : <p class="dong muted">{t('xep.loKhongXayO')}</p>}
-      </MucGap>
-
       {lo && (
-        <MucGap tieuDe={t('xep.thuVien')} giaiThich={t('xep.thuVienGiaiThich')} mo>
+        <MucGap tieuDe={t('xep.thuVien')} giaiThich={t('xep.thuVienGiaiThich')} mo={!toaLo.length}>
           <div class="dong">
             <div class="nhom-nut" role="group" aria-label={t('xep.thuVien')}>
               {(['tm', 'xh'] as const).map((k) => (
@@ -163,9 +153,9 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
   const [keo, setKeo] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const batDau = useRef<{ id: string; cx: number; cy: number; k: number } | null>(null);
   const lo = loDangXep(pa, loId);
-  if (!lo) return <div class="giua-man"><span>{t(pa.lo.length ? 'xep.loKhongXayO' : 'xep.chuaCoLo')}</span></div>;
-  const khung = khungBao([lo.ranh]);
-  const coChu = Math.max(1.2, khung ? (khung[2] - khung[0]) / 40 : 2);
+  if (!pa.lo.length) return <div class="giua-man"><span>{t('xep.chuaCoLo')}</span></div>;
+  const khung = khungBao(pa.lo.map((l) => l.ranh));
+  const coChu = Math.max(1.2, khung ? (khung[2] - khung[0]) / 70 : 2);
   const viTri = (x: ToaDat): ToaDat => (keo?.id === x.id ? { ...x, x: x.x + keo.dx, y: x.y + keo.dy } : x);
   const toaCoMau = tv ? pa.toa.filter((x) => tv.toa.has(x.mauId)).map(viTri) : [];
   const dem = tv ? demCan(pa, tv) : {};
@@ -176,12 +166,17 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
         {pa.lo.flatMap((l) => l.xungQuanh).map((d, i) => (
           <polyline key={`xq${i}`} points={sPoly(d)} fill="none" stroke="var(--muted)" stroke-width="1" vector-effect="non-scaling-stroke" />
         ))}
-        {pa.lo.map((l) => (
-          <g key={l.id} onClick={() => xayO(l) && l.id !== lo.id && (chonLo(l.id), chonToa(null))} style={{ cursor: xayO(l) ? 'pointer' : 'default' }}>
-            <polygon points={sPoly(l.ranh)} fill={l.id === lo.id ? 'var(--soft)' : 'var(--panel)'} stroke={l.id === lo.id ? 'var(--green)' : 'var(--line)'} stroke-width={l.id === lo.id ? 2.5 : 1.5} vector-effect="non-scaling-stroke" />
-            {l.chiGioi && <polygon points={sPoly(l.chiGioi)} fill="none" stroke="#b42318" stroke-width="1.2" stroke-dasharray="8 5" vector-effect="non-scaling-stroke" />}
-          </g>
-        ))}
+        {pa.lo.map((l) => {
+          const loai = loaiDat(l), caoTang = loai === 'o_cao_tang', chon = l.id === lo?.id;
+          const [nen, vien] = MAU_DAT[loai];
+          return (
+            <g key={l.id} onClick={() => caoTang && !chon && (chonLo(l.id), chonToa(null))} style={{ cursor: caoTang ? 'pointer' : 'default' }}>
+              <polygon points={sPoly(l.ranh)} fill={chon ? 'var(--soft)' : caoTang ? 'var(--panel)' : nen} stroke={chon ? 'var(--green)' : vien}
+                stroke-width={chon ? 2.5 : caoTang ? 1.6 : 1} vector-effect="non-scaling-stroke" />
+              {caoTang && l.chiGioi && <polygon points={sPoly(l.chiGioi)} fill="none" stroke="#b42318" stroke-width="1.2" stroke-dasharray="8 5" vector-effect="non-scaling-stroke" />}
+            </g>
+          );
+        })}
         {tv && pa.lo.map((l) => {
           const ts = toaCoMau.filter((x) => x.loId === l.id);
           const de = khoiDe(ts.map((x) => chanToa(tv.toa.get(x.mauId)!, x)), ts.map((x) => x.deOffset));
@@ -199,7 +194,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
               onPointerDown={(e) => {
                 e.stopPropagation();
                 chonToa(x.id);
-                if (x.loId !== lo.id) chonLo(x.loId);
+                if (x.loId !== lo?.id) chonLo(x.loId);
                 if (chiXem || x.khoa) return;
                 const svg = (e.currentTarget as SVGGElement).ownerSVGElement!;
                 (e.currentTarget as Element).setPointerCapture(e.pointerId);
@@ -229,7 +224,17 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
             </g>
           );
         })}
+        {pa.lo.map((l) => {
+          if (pa.toa.some((x) => x.loId === l.id)) return null;
+          const caoTang = laCaoTang(l), xs = l.ranh.map((q) => q[0]), ys = l.ranh.map((q) => q[1]);
+          const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+          return (
+            <text key={`n${l.id}`} x={cx} y={-cy} text-anchor="middle" font-size={coChu * (caoTang ? 1.25 : 0.85)} font-weight={caoTang ? 700 : 500}
+              fill={caoTang ? 'var(--green)' : MAU_DAT[loaiDat(l)][1]} style={{ pointerEvents: 'none' }}>{l.temDat.kyHieu}</text>
+          );
+        })}
       </BanVe>
+      <ChuGiaiDat />
       <p class="dong muted" style={{ justifyContent: 'center' }}>{t('xep.keoGoiY')}</p>
       <ThanhHienThi nhan={t('ht.nhom')} nut={[
         { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
@@ -335,6 +340,41 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQ
         </div>
         <div class="dong"><span>{t('xep.diemLech')}</span><b>{r?.soCan ? fmtSo(diemLechCoCau(pct, mucTieu), { thapPhan: 1 }) : '—'}</b></div>
       </MucGap>
+    </>
+  );
+}
+
+/** Chú giải màu loại đất trên TMB. */
+function ChuGiaiDat() {
+  const ds = ['o_cao_tang', 'cay_xanh', 'mat_nuoc', 'giao_duc', 'cong_cong', 'hon_hop', 'ha_tang'] as const;
+  return (
+    <div class="chu-giai-dat" aria-label={t('dat.chuGiai')}>
+      {ds.map((k) => <span key={k}><i style={{ background: MAU_DAT[k][0], borderColor: MAU_DAT[k][1] }} />{t(`dat.${k}`)}</span>)}
+    </div>
+  );
+}
+
+/** Panel trái bước Tổng mặt bằng: nhập liệu một hàng, chọn lô cao tầng, tòa trên lô; chỉ tiêu lô gập dưới cùng. */
+export function TmbTrai(p: Chung) {
+  const lo = loDangXep(p.pa, p.loId);
+  return (
+    <>
+      <LoNhap {...p} />
+      <ChonLoCaoTang pa={p.pa} loId={lo?.id ?? null} chonLo={(id) => { p.chonLo(id); p.chonToa(null); }} />
+      {lo && <XepTrai {...p} loId={lo.id} />}
+      <LoChiTieu pa={p.pa} sua={p.sua} chiXem={p.chiXem} lo={lo} />
+    </>
+  );
+}
+
+/** Panel phải bước Tổng mặt bằng: chỉ tiêu lô đạt / mục tiêu, cơ cấu theo tòa; sức chứa gập. */
+export function TmbPhai(p: Chung & { kq: KetQuaChiTieu | null }) {
+  const lo = loDangXep(p.pa, p.loId);
+  if (!lo) return null;
+  return (
+    <>
+      <XepPhai {...p} />
+      <SucChuaLo lo={lo} />
     </>
   );
 }
