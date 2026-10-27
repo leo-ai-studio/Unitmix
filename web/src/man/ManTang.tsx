@@ -10,6 +10,7 @@ import { BanVe, khungBao, type DieuKhienVe } from '../ve/BanVe';
 import { idLoi, useHinhHoc } from '../ve/hinhHocThuVien';
 import { DS_KIEU_MB, KIEU_MB, NHAN_LOAI } from '../ve/kieuMb';
 import { MatBangTang, soLieuTang, type ToaVe } from '../ve/MatBangTang';
+import { nutLopPhong } from '../ve/LopPhong';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
@@ -146,6 +147,7 @@ function TangVe({ tv, toa, mau, lo, canKhoa, chonCan, pa }: ChungTang & { tv: Th
         { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
         { khoa: 'tem', nhan: t('tang.hienTem'), bat: cai.hienTem, onClick: () => datCaiTang({ hienTem: !cai.hienTem }) },
         { khoa: 'noi', nhan: t('tang.noiThat'), bat: cai.noiThat, onClick: () => datCaiTang({ noiThat: !cai.noiThat }) },
+        ...nutLopPhong(pa.nguong),
       ]} />
     </>
   );

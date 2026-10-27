@@ -114,6 +114,22 @@ export type CanMau = {
   dt_tim_m2: number;
   /** Hốc logia lùi vào [x0, x1, y] chuẩn hoá theo rộng × sâu: phần x0..x1 từ độ sâu y tới mặt ngoài không thuộc căn. */
   logia_lui?: number[][] | null;
+  /** Phòng bóc từ CAD (scripts/boc_cad/boc_phong.py); thiếu khi bản vẽ không bóc được. */
+  phong?: Phong[];
+};
+
+export type LoaiPhong = 'ngu' | 'khach' | 'bep' | 'wc' | 'khac';
+/** Một phòng của mẫu căn. `ranh` tính bằng mm trong hệ của mẫu căn: x = u × rong_mm, y = v × sau_mm (y = 0 phía hành lang). */
+export type Phong = {
+  ten: string;
+  loai: LoaiPhong;
+  ranh: Diem[];
+  dt_m2: number;
+  /** Đường kính đường tròn nội tiếp lớn nhất (m). */
+  d_min_m: number;
+  ke_mat_ngoai: boolean;
+  /** true = loại phòng suy theo quy tắc (CAD không có nhãn tên phòng). */
+  doan?: boolean;
 };
 
 export type ThuVien = { toa: Map<string, ToaMau>; can: Map<string, CanMau> };

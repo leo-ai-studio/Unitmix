@@ -385,5 +385,15 @@
   "m3d.xuatAnh": "Export PNG",
   "m3d.che": "3D scope",
   "m3d.duAn": "Whole project",
-  "m3d.congTrinh": "Building"
+  "m3d.congTrinh": "Building",
+  "phong.kichThuoc": "Minimum size",
+  "phong.dienTich": "Area",
+  "phong.ten.ngu": "Bedroom",
+  "phong.ten.wc": "WC",
+  "phong.ten.khachBep": "Living + kitchen",
+  "phong.ten.khach": "Living room",
+  "phong.ten.bep": "Kitchen",
+  "phong.ten.logia": "Loggia",
+  "phong.ten.chung": "Studio room",
+  "phong.ten.sanh": "Hall"
 }
