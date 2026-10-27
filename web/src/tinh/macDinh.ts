@@ -1,4 +1,4 @@
-import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type TrangThaiPA } from './kieu';
+import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type ToaDat, type TrangThaiPA } from './kieu';
 
 /** Chỉ tiêu mặc định khi chưa nhập (giá trị tạm, ghi rõ trên giao diện là chờ chủ nhiệm chốt). */
 export const CHI_TIEU_MAC_DINH: ChiTieuQH = {
@@ -63,6 +63,13 @@ export const taoPAMoi = (): TrangThaiPA => ({
 export const loDangChonHoacDatO = (ds: Lo[], id: string | null): Lo | null =>
   ds.find((l) => l.id === id) ?? ds.find((l) => l.temDat.chucNang !== 'khac') ?? ds[0] ?? null;
 
+/** Bố cục theo tầng: bỏ khoá không phải số tầng nguyên dương (PA cũ không có trường này thì giữ nguyên). */
+const chuanHoaToa = (t: ToaDat): ToaDat => {
+  if (!t.tangRieng) return { ...t, canTheo: t.canTheo ?? {} };
+  const tangRieng = Object.fromEntries(Object.entries(t.tangRieng).filter(([k, g]) => Number.isInteger(Number(k)) && Number(k) >= 1 && g && typeof g === 'object'));
+  return { ...t, canTheo: t.canTheo ?? {}, tangRieng: Object.keys(tangRieng).length ? tangRieng : undefined };
+};
+
 /**
  * PA lưu từ bản cũ thiếu trường chỉ tiêu mới: điền giá trị mặc định (null = chưa quy định).
  * PA chưa có `phanHam` lưu từ khi hệ số hầm chưa dùng tới: chuyển sang tính hầm vào HSSDĐ theo QCVN 01 1.4.21.
@@ -73,4 +80,5 @@ export const chuanHoaPA = (pa: TrangThaiPA): TrangThaiPA => ({
   phanHam: pa.phanHam ?? { ...PHAN_HAM_MAC_DINH },
   ham: chuanHoaHam(pa.ham ?? HAM_MAC_DINH),
   lo: pa.lo.map((l) => ({ ...l, temDat: { ...l.temDat, chiTieu: { ...CHI_TIEU_MAC_DINH, ...l.temDat.chiTieu } } })),
+  toa: (pa.toa ?? []).map(chuanHoaToa),
 });

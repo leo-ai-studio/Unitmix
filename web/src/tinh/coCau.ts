@@ -1,21 +1,21 @@
 import { LOAI_CAN, type LoaiCan, type ThuVien, type TrangThaiPA } from './kieu';
-import { canCuaToa } from './matBang';
+import { canCaToa } from './matBang';
 
 export const coCauRong = (): Record<LoaiCan, number> => ({ stu: 0, '1pn': 0, '2pn': 0, '2pnp': 0, '3pn': 0 });
 
 /** Id căn thực dùng ở một vị trí: id gốc của mẫu tòa, hoặc căn thay nếu đã đổi. */
 export const canThucTe = (canGoc: string, canTheo: Record<string, string>): string => canTheo[canGoc] ?? canGoc;
 
-/** Số căn theo loại của từng tòa (cả tòa = cơ cấu một tầng điển hình × số tầng điển hình). */
+/** Số căn theo loại của từng tòa: cộng từng tầng điển hình theo bố cục của tầng đó (chung hoặc riêng); ô đổi công năng không tính. */
 export function demCan(pa: TrangThaiPA, tv: ThuVien): Record<string, Record<LoaiCan, number>> {
   const kq: Record<string, Record<LoaiCan, number>> = {};
   for (const t of pa.toa) {
     const dem = coCauRong();
     const mau = tv.toa.get(t.mauId);
     if (mau) {
-      for (const [id, n] of canCuaToa(mau, t, tv)) {
+      for (const [id, n] of canCaToa(mau, t, tv)) {
         const can = tv.can.get(id);
-        if (can) dem[can.loai] += n * t.soTangDH;
+        if (can) dem[can.loai] += n;
       }
     }
     kq[t.id] = dem;
@@ -58,11 +58,11 @@ export function dtTbTheoLoai(pa: TrangThaiPA, tv: ThuVien, loId: string): Record
   for (const t of pa.toa) {
     const mau = t.loId === loId ? tv.toa.get(t.mauId) : undefined;
     if (!mau) continue;
-    for (const [id, n] of canCuaToa(mau, t, tv)) {
+    for (const [id, n] of canCaToa(mau, t, tv)) {
       const can = tv.can.get(id);
       if (!can) continue;
-      tong[can.loai] += n * t.soTangDH * can.dt_tt_m2;
-      dem[can.loai] += n * t.soTangDH;
+      tong[can.loai] += n * can.dt_tt_m2;
+      dem[can.loai] += n;
     }
   }
   return Object.fromEntries(LOAI_CAN.map((k) => [k, dem[k] ? tong[k] / dem[k] : null])) as Record<LoaiCan, number | null>;
