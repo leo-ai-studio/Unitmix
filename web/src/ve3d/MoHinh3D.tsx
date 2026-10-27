@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { GocNhin, ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
-import { canDangDung, viTriCan } from '../tinh/matBang';
+import { boCucTang, canDangDung, nhomTang, viTriCan } from '../tinh/matBang';
 import { idLoi, tai, type HinhLoi } from '../ve/hinhHocThuVien';
 import type { ToaVe } from '../ve/MatBangTang';
 import { dungCan, type Khoi3d } from './dungCan';
@@ -33,11 +33,12 @@ type PropsToa = { toa: ToaDat; mau: ToaVe; tv: ThuVien; pa: TrangThaiPA; dauThan
 
 /** Tab Mô hình: 3D cả tòa đang xem (khối đế + tầng điển hình + mái + tum). */
 export function MoHinhToa({ toa, mau, tv, dauThanh, ...luu }: PropsToa) {
-  const canIds = useMemo(() => viTriCan(mau, tv).map((vt) => canDangDung(vt, toa)), [mau, toa.canTheo, toa.canViTri, tv]);
+  // căn của mọi bố cục tầng (chung + tầng riêng); chữ ký bố cục vào khoá để dựng lại khi đổi theo tầng / công năng ô
+  const canIds = useMemo(() => [...new Set(nhomTang(toa).flatMap(({ tang }) => { const bc = boCucTang(toa, tang); return viTriCan(mau, tv).map((vt) => canDangDung(vt, bc)); }))], [mau, toa.canTheo, toa.canViTri, toa.tangRieng, tv]);
   const loiIds = useMemo(() => mau.mat.flatMap((m) => m.phan_tu.filter((q) => q.loai !== 'can').map((q) => idLoi(q.block))), [mau]);
   const nap = useNap3d(canIds, loiIds);
   if (!nap.xong) return <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('m3d.dangDung')}</span></div>;
-  const khoa = ['toa', mau.id, toa.soTangDe, toa.soTangDH, canIds.join()].join('|');
+  const khoa = ['toa', mau.id, toa.soTangDe, toa.soTangDH, canIds.join(), JSON.stringify([toa.canTheo, toa.canViTri, toa.congNang, toa.tangRieng])].join('|');
   return (
     <Khung3D khoa={khoa} gocBac={toa.gocDo} chinhThamSo toaNguyen dauThanh={dauThanh} {...luu} tenAnh={`Unitmix-${mau.id}`}
       tieuDe={`${mau.ten_vi.split(' · ')[0]} · ${toa.soTangDe ? toa.soTangDe + ' + ' : ''}${toa.soTangDH} ${t('m3d.tang')}`}

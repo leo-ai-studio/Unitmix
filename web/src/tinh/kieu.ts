@@ -55,7 +55,21 @@ export type ToaDat = {
   canTheo: Record<string, string>; // id căn gốc -> id căn thay
   canViTri?: Record<string, string>; // khoá vị trí trên tầng ("mặt:phần tử") -> id căn thay; thắng canTheo
   khoa?: boolean; // khoá: không kéo, không sửa thông số
+  congNang?: Record<string, CongNangO>; // khoá vị trí -> công năng ô của bố cục chung (thiếu = căn hộ)
+  /** Bố cục riêng theo tầng: số thứ tự tầng điển hình (1..soTangDH) -> ghi đè lên bố cục chung. Thiếu = mọi tầng như nhau. */
+  tangRieng?: Record<number, BoCucTang>;
+  /** Lõi thang: khoá "mặt:phần tử" của lõi -> cửa vào, đi xuống hầm / lên mái. Chỉ lưu, màn hầm đọc sau. */
+  loi?: Record<string, ThongTinLoi>;
 };
+
+/** Công năng một ô căn trên tầng. Ô khác 'can' không tính là căn (số căn, cơ cấu, dân số); DT cộng vào hạng mục tương ứng. */
+export type CongNangO = 'can' | 'shcd' | 'ky_thuat' | 'thuong_mai' | 'trong';
+export const CONG_NANG_O: CongNangO[] = ['can', 'shcd', 'ky_thuat', 'thuong_mai', 'trong'];
+/** Ghi đè một tầng: chỉ các vị trí khác bố cục chung; `coCauMucTieu` = mục tiêu cơ cấu riêng của tầng (vd. tầng áp mái). */
+export type BoCucTang = { canViTri?: Record<string, string>; congNang?: Record<string, CongNangO>; coCauMucTieu?: Record<LoaiCan, number> };
+/** Thang trong lõi có đi xuống hầm / lên mái không. */
+export type DiXuyen = { ham: boolean; mai: boolean };
+export type ThongTinLoi = { cua: 'trai' | 'phai'; thangBo: DiXuyen; thangMay: DiXuyen; hopKT: DiXuyen };
 
 export type ThongSoHam = {
   soTang: number;

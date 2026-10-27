@@ -4,7 +4,7 @@
  */
 import type * as THREE from 'three';
 import type { Diem, ThuVien, ToaDat } from '../tinh/kieu';
-import { canDangDung, veLoiTaiViTri, viTriCan, type ToaCoMat } from '../tinh/matBang';
+import { boCucTang, canDangDung, congNangTai, tangCoRieng, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from '../tinh/matBang';
 import { dungCan, nhomMoi, type Khoi3d, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
 
 const K = 0.001;
@@ -14,7 +14,7 @@ export const CAO_TUM_MM = 3000;
 export type LoiHinh = { bao_tuong_mm?: [number, number, number, number] };
 export type DuLieuToa = {
   mau: ToaCoMat & { duong_bao: Diem[] };
-  toa: Pick<ToaDat, 'canTheo' | 'canViTri' | 'soTangDe' | 'soTangDH'>;
+  toa: Pick<ToaDat, 'canTheo' | 'canViTri' | 'congNang' | 'tangRieng' | 'soTangDe' | 'soTangDH'>;
   tv: ThuVien;
   khoi3d: Map<string, Khoi3d | null>;
   loi: Map<string, LoiHinh>;
@@ -103,41 +103,51 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
   const soDe = toa.soTangDe, nDH = Math.max(0, toa.soTangDH);
   const hDe = soDe * CAO_TANG_DE_MM, hThan = nDH * P.tang, H = hDe + hThan;
 
-  // --- tầng điển hình dựng một lần trong nhóm tạm ---
-  const tmp = new T.Group(), Gt = nhomMoi();
-  goc.add(tmp);
-  khoi(foot, P.san, M.san, -P.san, false, tmp);
-  Gt.top.push(khoi(foot, P.san, M.top, Hc, false, tmp));
+  // --- tầng điển hình: mỗi bố cục khác nhau (chung + tầng riêng) dựng một lần trong nhóm tạm, gộp theo vật liệu ---
   const tums: Diem[][] = [];
-  for (const m of mau.mat) {
-    for (const q of m.phan_tu) {
-      if (q.loai === 'can') continue;
-      const l = du.loi.get(du.idLoi(q.block));
-      if (!l?.bao_tuong_mm) continue;
-      const r = ranhLoi(l.bao_tuong_mm, q);
-      tums.push(r);
-      khoi(r, Hc, M.khung2, 0, true, tmp);
+  for (const m of mau.mat) for (const q of m.phan_tu) {
+    if (q.loai === 'can') continue;
+    const l = du.loi.get(du.idLoi(q.block));
+    if (l?.bao_tuong_mm) tums.push(ranhLoi(l.bao_tuong_mm, q));
+  }
+  const vts = viTriCan(mau, tv);
+  const dungMau = (bc: BoCuc) => {
+    const tmp = new T.Group(), Gt = nhomMoi();
+    goc.add(tmp);
+    khoi(foot, P.san, M.san, -P.san, false, tmp);
+    Gt.top.push(khoi(foot, P.san, M.top, Hc, false, tmp));
+    tums.forEach((r) => khoi(r, Hc, M.khung2, 0, true, tmp));
+    let so = 0;
+    for (const vt of vts) {
+      if (congNangTai(vt.khoa, bc) !== 'can') continue; // ô đổi công năng: để trống sàn
+      const d = du.khoi3d.get(canDangDung(vt, bc));
+      if (!d) continue;
+      const m = mau.mat[vt.matIdx], gr = rad(m.goc_deg), ux = Math.cos(gr), uy = Math.sin(gr), nx = -uy, ny = ux;
+      const w = vt.a1 - vt.a0, s = vt.guong ? -1 : 1, off = vt.a0 + (vt.guong ? w : 0);
+      const ox = ux * off + nx * m.truc_mm, oy = uy * off + ny * m.truc_mm;
+      const sub = new T.Group();
+      sub.matrixAutoUpdate = false;
+      sub.matrix.set(ux * s, 0, -nx, ox * K, 0, 1, 0, 0, -uy * s, 0, ny, -oy * K, 0, 0, 0, 1);
+      tmp.add(sub);
+      dungCan(T, d, P, M, sub, Gt, true);
+      so++;
     }
-  }
-  let soCan = 0;
-  for (const vt of viTriCan(mau, tv)) {
-    const d = du.khoi3d.get(canDangDung(vt, toa));
-    if (!d) continue;
-    const m = mau.mat[vt.matIdx], gr = rad(m.goc_deg), ux = Math.cos(gr), uy = Math.sin(gr), nx = -uy, ny = ux;
-    const w = vt.a1 - vt.a0, s = vt.guong ? -1 : 1, off = vt.a0 + (vt.guong ? w : 0);
-    const ox = ux * off + nx * m.truc_mm, oy = uy * off + ny * m.truc_mm;
-    const sub = new T.Group();
-    sub.matrixAutoUpdate = false;
-    sub.matrix.set(ux * s, 0, -nx, ox * K, 0, 1, 0, 0, -uy * s, 0, ny, -oy * K, 0, 0, 0, 1);
-    tmp.add(sub);
-    dungCan(T, d, P, M, sub, Gt, true);
-    soCan++;
-  }
-  Gt.top.forEach((o) => { o.visible = false; });
-  const mauTang: THREE.Object3D[] = [];
-  gop(T, tmp, mauTang);
-  goc.remove(tmp);
-  tmp.traverse((o) => { (o as THREE.Mesh).geometry?.dispose?.(); });
+    Gt.top.forEach((o) => { o.visible = false; });
+    const ds: THREE.Object3D[] = [];
+    gop(T, tmp, ds);
+    goc.remove(tmp);
+    tmp.traverse((o) => { (o as THREE.Mesh).geometry?.dispose?.(); });
+    return { ds, so };
+  };
+  const chuKy = (bc: BoCuc) => vts.map((vt) => `${congNangTai(vt.khoa, bc)}:${canDangDung(vt, bc)}`).join('|');
+  const theoChuKy = new Map<string, ReturnType<typeof dungMau>>();
+  const mauCua = (tang: number | null) => {
+    const bc = boCucTang(toa, tang), k = chuKy(bc);
+    if (!theoChuKy.has(k)) theoChuKy.set(k, dungMau(bc));
+    return theoChuKy.get(k)!;
+  };
+  const chung = mauCua(null), rieng = new Set(tangCoRieng(toa));
+  const soCan = chung.so;
 
   // --- khối đế, thân, mái, tum ---
   if (hDe > 0) {
@@ -149,7 +159,7 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
   for (let j = 0; j < nDH; j++) {
     const g = new T.Group();
     g.position.y = (hDe + j * P.tang) * K;
-    mauTang.forEach((o) => g.add(o.clone()));
+    (rieng.has(j + 1) ? mauCua(j + 1) : chung).ds.forEach((o) => g.add(o.clone()));
     goc.add(g);
   }
   khoi(foot, P.san, M.san, H);

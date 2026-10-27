@@ -1,0 +1,57 @@
+/* Màn Tầng · Căn: công năng ô (L8), chọn nhiều ô, menu lõi (L9), ô chọn tầng (L10). Mọi phần nổi đều là lớp phủ, không đẩy bản vẽ. */
+:root {
+  --o-shcd: #f2c879;       /* sinh hoạt cộng đồng */
+  --o-ky_thuat: #b9c2cc;   /* phòng kỹ thuật */
+  --o-thuong_mai: #e8a38f; /* thương mại */
+  --o-trong: #ffffff;      /* ô trống */
+  --o-gach: rgba(41, 45, 45, .28);
+}
+
+/* bọc bản vẽ để bắt Shift + kéo: không tạo hộp bố cục */
+.boc-ve { display: contents; }
+.khung-chon { position: fixed; z-index: 20; border: 1.5px dashed var(--green); background: rgba(23, 79, 82, .08); pointer-events: none; }
+
+.nhan-o { font-weight: 700; fill: #292d2d; paint-order: stroke; stroke: #fff; stroke-width: 120px; letter-spacing: 20px; }
+.nhan-loi { font-weight: 700; fill: var(--green); paint-order: stroke; stroke: #fff; stroke-width: 100px; }
+
+/* thanh nhỏ khi đã chọn ô: nổi giữa phía trên bản vẽ */
+.thanh-o-chon {
+  position: absolute; top: 44px; left: 50%; transform: translateX(-50%); z-index: 3;
+  display: flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; font-size: 12px; white-space: nowrap;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 4px 14px rgba(0, 0, 0, .08);
+}
+.thanh-o-chon .nut-phu { padding: 3px 8px; font-size: 12px; }
+
+/* menu ngữ cảnh ô / lõi */
+.menu-o {
+  position: fixed; z-index: 30; min-width: 200px; max-width: 260px; padding: 4px 0;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .14); font-size: 12px; color: var(--ink);
+}
+.menu-o-dau { padding: 6px 12px 4px; font-weight: 700; color: var(--muted-text); }
+.menu-o > button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 12px; border: 0; background: transparent; text-align: left; font-size: 12px; color: var(--ink); cursor: pointer; }
+.menu-o > button:hover:not(:disabled), .menu-o > button:focus-visible { background: var(--selected); }
+.menu-o > button.chon { font-weight: 700; color: var(--green); }
+.menu-o > button:disabled { opacity: .5; cursor: default; }
+.menu-o-hang { display: flex; align-items: center; gap: 8px; padding: 4px 12px; flex-wrap: wrap; }
+.menu-o-hang > span { flex: 1 0 90px; }
+.menu-o-hang label { display: flex; flex-direction: row; align-items: center; gap: 4px; font-size: 12px; color: var(--ink); }
+.menu-o-hang input { min-width: 0; width: auto; padding: 0; margin: 0; flex: none; accent-color: var(--green); }
+.menu-o-chu { padding: 6px 12px 4px; color: var(--muted-text); border-top: 1px solid var(--line); margin-top: 4px; font-size: 11px; }
+
+.o-mau-cn { display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--line); vertical-align: -2px; flex: none;
+  background-image: repeating-linear-gradient(45deg, var(--o-gach) 0 2px, transparent 2px 5px); }
+.o-mau-can { background: var(--u-2pn); }
+.o-mau-shcd { background-color: var(--o-shcd); }
+.o-mau-ky_thuat { background-color: var(--o-ky_thuat); }
+.o-mau-thuong_mai { background-color: var(--o-thuong_mai); }
+.o-mau-trong { background: var(--o-trong); }
+.nut-cn { padding: 4px 8px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px; }
+
+/* ô chọn tầng */
+.chon-tang .o-tg { padding-top: 2px; padding-bottom: 2px; }
+.luoi-tang { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 3px; padding: 4px 12px; }
+.luoi-tang button { position: relative; padding: 4px 0; font-size: 11px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--ink); cursor: pointer; }
+.luoi-tang button[aria-pressed='true'] { background: var(--green); border-color: var(--green); color: #fff; }
+.luoi-tang button.rieng { text-decoration: underline; text-decoration-thickness: 2px; font-weight: 700; }
+.luoi-tang button.cc-rieng::after { content: ''; position: absolute; top: 2px; right: 2px; width: 5px; height: 5px; border-radius: 50%; background: var(--o-thuong_mai); }
+.o-so-nho { min-width: 0; width: 64px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; text-align: right; background: var(--panel); }
