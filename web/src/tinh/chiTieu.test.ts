@@ -2,6 +2,7 @@ import type { ChiTieuQH } from './kieu';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { tinhChiTieu } from './chiTieu';
+import { chuanHoaPA } from './macDinh';
 import { diemLechCoCau, demCan, doiMauCungBeNgang } from './coCau';
 import { chanToa, dienTich, dtVung, hopDienTich, khoiDe, soKhoi } from './hinhHoc';
 import {
@@ -96,6 +97,35 @@ describe('chỉ tiêu lô', () => {
     expect(du).toBeCloseTo(4000, 0); // 400 m2 x 10 tầng
     const chiChung = tinhChiTieu({ ...p, heSo: { ...p.heSo, can: 0 } }, tvGia).theoLo.A.dtSanTinhHSSDD;
     expect(chiChung).toBeCloseTo(4000 - 10 * (2 * 59.51 + 44), 0);
+  });
+  it('QCVN 01 1.4.21: hầm tính vào DT sàn, trừ phần đỗ xe + kỹ thuật', () => {
+    const p = { ...pa(lo(hcn(100, 100)), [toa('T1', 20, 20, 10)]), ham: { ...pa(lo([]), []).ham, soTang: 2 }, phanHam: { doXe: 0.75, kyThuat: 0.1 } };
+    const kq = tinhChiTieu(p, tvGia).theoLo.A;
+    // 2 tầng hầm x 10.000 m2 lô = 20.000 m2; trừ 85 % -> tính 3.000 m2.
+    expect(kq.dtSanChiTiet.hamTru).toBeCloseTo(17000, 0);
+    expect(kq.dtSanChiTiet.hamTinh).toBeCloseTo(3000, 0);
+    expect(kq.dtSanTinhHSSDD).toBeCloseTo(4000 + 3000, 0);
+    // Chỉ tiêu QH ghi số tầng hầm thì dùng số đó.
+    const l1 = { ...p.lo[0], temDat: { ...p.lo[0].temDat, chiTieu: { ...chiTieu, tangHam: 1 } } };
+    expect(tinhChiTieu({ ...p, lo: [l1] }, tvGia).theoLo.A.dtSanChiTiet.hamTinh).toBeCloseTo(1500, 0);
+    // Lô chưa có tòa: không tính hầm.
+    expect(tinhChiTieu({ ...p, toa: [] }, tvGia).theoLo.A.dtSanChiTiet.hamTinh).toBe(0);
+  });
+  it('tầng áp mái cộng thêm một sàn chân tháp', () => {
+    const p = pa(lo(hcn(100, 100)), [{ ...toa('T1', 20, 20, 10), coApMai: true }]);
+    const kq = tinhChiTieu(p, tvGia).theoLo.A;
+    expect(kq.dtSanChiTiet.apMai).toBeCloseTo(400, 0);
+    expect(kq.dtSanTinhHSSDD).toBeCloseTo(4400, 0);
+  });
+  it('PA cũ chưa có phanHam: chuẩn hoá sang tính hầm theo QCVN 01', () => {
+    const cu = { ...pa(lo(hcn(10, 10)), []), heSo: { can: 1, chung: 1, thuongMai: 1, ham: 0 } };
+    const moi = chuanHoaPA(cu);
+    expect(moi.heSo.ham).toBe(1);
+    expect(moi.heSo.apMai).toBe(1);
+    expect(moi.phanHam).toEqual({ doXe: 0.75, kyThuat: 0.1 });
+    // PA đã có phanHam thì giữ nguyên hệ số người dùng đặt.
+    const daCo = { ...cu, heSo: { ...cu.heSo, ham: 0.5 }, phanHam: { doXe: 0.6, kyThuat: 0.2 } };
+    expect(chuanHoaPA(daCo).heSo.ham).toBe(0.5);
   });
   it('lô DT 0 hoặc chưa có tòa: mọi giá trị đạt là null, không ném lỗi', () => {
     const kq = tinhChiTieu(pa(lo([]), []), tvGia);

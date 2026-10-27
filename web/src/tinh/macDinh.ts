@@ -1,4 +1,4 @@
-import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, type ChiTieuQH, type ChucNang, type Diem, type LoaiCan, type Lo, type TrangThaiPA } from './kieu';
+import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiTieuQH, type ChucNang, type Diem, type LoaiCan, type Lo, type TrangThaiPA } from './kieu';
 
 /** Chỉ tiêu mặc định khi chưa nhập (giá trị tạm, ghi rõ trên giao diện là chờ chủ nhiệm chốt). */
 export const CHI_TIEU_MAC_DINH: ChiTieuQH = {
@@ -34,14 +34,20 @@ export const taoPAMoi = (): TrangThaiPA => ({
   nguong: { ...NGUONG_MAC_DINH },
   toa: [],
   ham: { soTang: 2, ranh: null, nhip: 8.4, rongLan: 6, choDai: 5, choRong: 2.5, dtKho: 6 },
+  phanHam: { ...PHAN_HAM_MAC_DINH },
 });
 
 /** Lô đang làm: lô đã chọn; chưa chọn thì lô đất ở đầu tiên, không có đất ở thì lô đầu. */
 export const loDangChonHoacDatO = (ds: Lo[], id: string | null): Lo | null =>
   ds.find((l) => l.id === id) ?? ds.find((l) => l.temDat.chucNang !== 'khac') ?? ds[0] ?? null;
 
-/** PA lưu từ bản cũ thiếu trường chỉ tiêu mới: điền giá trị mặc định (null = chưa quy định). */
+/**
+ * PA lưu từ bản cũ thiếu trường chỉ tiêu mới: điền giá trị mặc định (null = chưa quy định).
+ * PA chưa có `phanHam` lưu từ khi hệ số hầm chưa dùng tới: chuyển sang tính hầm vào HSSDĐ theo QCVN 01 1.4.21.
+ */
 export const chuanHoaPA = (pa: TrangThaiPA): TrangThaiPA => ({
   ...pa,
+  heSo: pa.phanHam ? pa.heSo : { ...pa.heSo, ham: HE_SO_MAC_DINH.ham, apMai: pa.heSo.apMai ?? HE_SO_MAC_DINH.apMai },
+  phanHam: pa.phanHam ?? { ...PHAN_HAM_MAC_DINH },
   lo: pa.lo.map((l) => ({ ...l, temDat: { ...l.temDat, chiTieu: { ...CHI_TIEU_MAC_DINH, ...l.temDat.chiTieu } } })),
 });

@@ -35,8 +35,14 @@ export type TemDat = {
 };
 export type Lo = { id: string; temDat: TemDat; ranh: Diem[]; chiGioi: Diem[] | null; xungQuanh: Diem[][] };
 
-/** Tỷ lệ (0–1) DT từng hạng mục được tính vào DT sàn chỉ tiêu. Giá trị mặc định chờ chủ nhiệm chốt. */
-export type HeSoDTSan = { can: number; chung: number; thuongMai: number; ham: number };
+/**
+ * Tỷ lệ (0–1) DT từng hạng mục được tính vào DT sàn tính HSSDĐ (QCVN 01:2021/BXD 1.4.21: tổng DT sàn gồm cả tầng hầm,
+ * trừ DT phục vụ kỹ thuật, PCCC, lánh nạn và đỗ xe). `ham` = phần hầm còn lại sau khi trừ đỗ xe / kỹ thuật (`PhanHam`).
+ * `apMai` thiếu thì coi là 1.
+ */
+export type HeSoDTSan = { can: number; chung: number; thuongMai: number; ham: number; apMai?: number };
+/** Tỷ lệ (0–1) sàn hầm dùng cho đỗ xe và kỹ thuật / PCCC — phần này không tính HSSDĐ. Giá trị tạm khi chưa đo từ màn Hầm. */
+export type PhanHam = { doXe: number; kyThuat: number };
 export type NguongMau = { dtCanM2: number; kichThuocM: number; coCauDiem: number };
 
 export type ToaDat = {
@@ -77,6 +83,8 @@ export type TrangThaiPA = {
   nguong: NguongMau;
   toa: ToaDat[];
   ham: ThongSoHam;
+  /** Thiếu = PA lưu trước khi tính hầm vào HSSDĐ; `chuanHoaPA` điền mặc định. */
+  phanHam?: PhanHam;
   gocNhin?: GocNhin[];
 };
 
@@ -123,5 +131,6 @@ export const taoThuVien = (toa: ToaMau[], can: CanMau[]): ThuVien => ({
   can: new Map(can.map((c) => [c.id, c])),
 });
 
-export const HE_SO_MAC_DINH: HeSoDTSan = { can: 1, chung: 1, thuongMai: 1, ham: 0 };
+export const HE_SO_MAC_DINH: HeSoDTSan = { can: 1, chung: 1, thuongMai: 1, ham: 1, apMai: 1 };
+export const PHAN_HAM_MAC_DINH: PhanHam = { doXe: 0.75, kyThuat: 0.1 };
 export const NGUONG_MAC_DINH: NguongMau = { dtCanM2: 2, kichThuocM: 0.2, coCauDiem: 5 };

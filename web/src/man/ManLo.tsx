@@ -3,7 +3,7 @@ import { RANH_HATCH, napDxf, taoLoTuDxf, type BanDxf } from '../dxf/napDxf';
 import { t } from '../i18n/i18n';
 import type { DongChiTieu } from '../tinh/chiTieu';
 import { dienTich } from '../tinh/hinhHoc';
-import { LOAI_CAN, type ChiTieuQH, type ChucNang, type HeSoDTSan, type Lo, type TrangThaiPA } from '../tinh/kieu';
+import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiTieuQH, type ChucNang, type HeSoDTSan, type Lo, type TrangThaiPA } from '../tinh/kieu';
 import { loDangChonHoacDatO, taoLo } from '../tinh/macDinh';
 import { laCaoTang } from '../tinh/loaiDat';
 import { sucChua } from '../tinh/sucChua';
@@ -223,10 +223,15 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
           </MucGap>
         </>
       )}
-      <MucGap tieuDe={t('muc.heSoNguong')} giaiThich={t('heSo.ghiChu')}>
+      <MucGap tieuDe={t('muc.heSoNguong')} giaiThich={t('heSo.canCu')}>
+        <p class="dong muted">{t('heSo.canCu')}</p>
         <div class="luoi-o">
-          {(['can', 'chung', 'thuongMai', 'ham'] as const).map((k) => (
-            <O key={k} nhan={t(`heSo.${k}`)} gt={Math.round(pa.heSo[k] * 100)} donVi="%" tat={chiXem} onDoi={datHeSo(k)} />
+          {(['can', 'chung', 'thuongMai', 'apMai', 'ham'] as const).map((k) => (
+            <O key={k} nhan={t(`heSo.${k}`)} gt={Math.round((pa.heSo[k] ?? 1) * 100)} donVi="%" tat={chiXem} onDoi={datHeSo(k)} />
+          ))}
+          {(['doXe', 'kyThuat'] as const).map((k) => (
+            <O key={k} nhan={t(`phanHam.${k}`)} gt={Math.round((pa.phanHam ?? PHAN_HAM_MAC_DINH)[k] * 100)} donVi="%" tat={chiXem}
+              onDoi={(v) => sua((p) => ({ ...p, phanHam: { ...(p.phanHam ?? PHAN_HAM_MAC_DINH), [k]: Math.min(v, 100) / 100 } }))} />
           ))}
           <O nhan={t('ng.dtCan')} gt={pa.nguong.dtCanM2} donVi="m²" buoc={0.5} tat={chiXem} onDoi={(v) => sua((p) => ({ ...p, nguong: { ...p.nguong, dtCanM2: v } }))} />
           <O nhan={t('ng.kichThuoc')} gt={pa.nguong.kichThuocM} donVi="m" buoc={0.05} tat={chiXem} onDoi={(v) => sua((p) => ({ ...p, nguong: { ...p.nguong, kichThuocM: v } }))} />
