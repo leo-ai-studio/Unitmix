@@ -1,5 +1,5 @@
 /**
- * Xuất Excel (.xlsx) bằng SheetJS: báo cáo một phương án (4 sheet) và bảng so sánh nhiều phương án.
+ * Xuất Excel (.xlsx) bằng SheetJS: báo cáo một phương án (6 sheet, gồm dự toán + tài chính số tạm) và bảng so sánh nhiều phương án.
  * Phần dựng bảng là hàm thuần (chữ lấy theo ngôn ngữ đang chọn); SheetJS chỉ tải khi bấm xuất.
  * Ô trống luôn là "—", không bao giờ undefined / NaN.
  */
@@ -7,7 +7,10 @@ import { t } from '../i18n/i18n';
 import type { KetQuaChiTieu } from '../tinh/chiTieu';
 import { demCan } from '../tinh/coCau';
 import { chenhChiSo, giaTriCot, KHOA_SO, type ChiSoPA, type KhoaSo } from '../tinh/diemPA';
-import { LOAI_CAN, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
+import { tinhDuToan, tinhKhoiLuong, type DuToan } from '../tinh/duToan';
+import { CHI_PHI_MAC_DINH } from '../tinh/macDinh';
+import { tinhTaiChinh, type TaiChinh } from '../tinh/taiChinh';
+import { LOAI_CAN, type ChiPhiPA, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
 import { canCuaToa } from '../tinh/matBang';
 
 export type OXls = string | number;
@@ -89,15 +92,68 @@ export function baoCaoPA(pa: TrangThaiPA, tv: ThuVien, kq: KetQuaChiTieu, tenDuA
   }
   if (!coVuot) s4.push([t('xls.khongVuot')]);
 
+  // 5–6. Dự toán và tài chính (số tạm, chờ chủ nhiệm / QS chốt)
+  const kl = tinhKhoiLuong(pa, tv);
+  const dt = tinhDuToan(kl, pa.chiPhi ?? CHI_PHI_MAC_DINH);
+  const tc = tinhTaiChinh(pa, tv, kl, dt, lech);
+
   return [
     { ten: tenSheet(t('xls.sheetTongHop')), hang: s1 },
     { ten: tenSheet(t('xls.sheetCoCau')), hang: s2 },
     { ten: tenSheet(t('xls.sheetCan')), hang: s3 },
     { ten: tenSheet(t('xls.sheetVuot')), hang: s4 },
+    { ten: tenSheet(t('xls.sheetDuToan')), hang: [...dau(t('xls.sheetDuToan')), ...bangDuToan(dt, pa.chiPhi ?? CHI_PHI_MAC_DINH)] },
+    { ten: tenSheet(t('xls.sheetTaiChinh')), hang: [...dau(t('xls.sheetTaiChinh')), ...bangTaiChinh(tc, lech)] },
   ];
 }
 
-export type PASoSanh = { ten: string; chiSo: ChiSoPA };
+/** Bảng dự toán: dòng theo nhóm, dòng "Khác", cộng nhóm, các lớp tỷ lệ, tổng mức, suất đầu tư. Tiền tính bằng đồng. */
+export function bangDuToan(dt: DuToan, cp: ChiPhiPA): OXls[][] {
+  const h: OXls[][] = [[t('chiPhi.canhBao')], [t('chiPhi.ghiChuND')], []];
+  h.push([t('chiPhi.hangMuc'), t('xls.nhom'), t('chiPhi.donVi'), t('chiPhi.khoiLuong'), t('chiPhi.donGia'), t('xls.dieuChinh'), t('xls.thanhTienD')]);
+  for (const n of ['xd', 'tb'] as const) {
+    const nhan = t(`chiPhi.nhom.${n}`), g = dt.nhom[n];
+    for (const d of dt.dong.filter((x) => x.nhom === n)) {
+      h.push([t(`chiPhi.dong.${d.khoa}`), nhan, d.donVi === 'thang' ? t('chiPhi.dv.thang') : d.donVi, oSo(d.kl), oSo(d.donGia), oSo(g.dieuChinh), oSo(d.thanhTien)]);
+    }
+    h.push([t('chiPhi.khac'), nhan, TRONG, TRONG, TRONG, TRONG, oSo(g.khac)]);
+    h.push([`${t('chiPhi.congNhom')}: ${nhan}`, nhan, TRONG, TRONG, TRONG, TRONG, oSo(g.tong)]);
+  }
+  h.push([]);
+  h.push([t('chiPhi.coSo'), TRONG, TRONG, TRONG, TRONG, TRONG, oSo(dt.xd + dt.tb)]);
+  const lop: [string, number, number][] = [
+    ['qlda', cp.tyLe.qlda, dt.qlda], ['tuVan', cp.tyLe.tuVan, dt.tuVan], ['khac', cp.tyLe.khac, dt.khac],
+  ];
+  for (const [k, pct, v] of lop) h.push([t(`chiPhi.lop.${k}`), TRONG, '%', oSo(pct), TRONG, TRONG, oSo(v)]);
+  h.push([t('chiPhi.truocDuPhong'), TRONG, TRONG, TRONG, TRONG, TRONG, oSo(dt.truocDuPhong)]);
+  h.push([t('chiPhi.lop.duPhongKL'), TRONG, '%', oSo(cp.tyLe.duPhongKL), TRONG, TRONG, oSo(dt.duPhongKL)]);
+  h.push([t('chiPhi.lop.duPhongTruotGia'), TRONG, '%', oSo(cp.tyLe.duPhongTruotGia), TRONG, TRONG, oSo(dt.duPhongTruotGia)]);
+  h.push([t('chiPhi.tongMuc'), TRONG, TRONG, TRONG, TRONG, TRONG, oSo(dt.tongMuc)]);
+  h.push([t('chiPhi.suatM2'), TRONG, 'đ/m²', TRONG, TRONG, TRONG, oSo(dt.suatM2)]);
+  h.push([t('chiPhi.suatCan'), TRONG, 'đ', TRONG, TRONG, TRONG, oSo(dt.suatCan)]);
+  return h;
+}
+
+/** Bảng tài chính: doanh thu theo loại căn và nguồn, chi phí, lợi nhuận, hoà vốn. Tiền tính bằng đồng. */
+export function bangTaiChinh(tc: TaiChinh, lech: number | null): OXls[][] {
+  const h: OXls[][] = [[t('chiPhi.canhBao')], []];
+  h.push([t('chiPhi.loaiCan'), t('chiPhi.soCan'), t('chiPhi.dtTT'), t('xls.thanhTienD')]);
+  for (const l of LOAI_CAN) { const x = tc.theoLoai[l]; h.push([t(`loai.${l}`), oSo(x.soCan), oSo(x.dtTT), oSo(x.doanhThu)]); }
+  h.push([]);
+  h.push([t('chiPhi.hangMuc'), t('xls.giaTri')]);
+  const dong: [string, number | null][] = [
+    [t('chiPhi.dtCan'), tc.doanhThuCan], [t('chiPhi.dtOto'), tc.doanhThuOto], [t('chiPhi.dtXeMay'), tc.doanhThuXeMay], [t('chiPhi.dtTM'), tc.doanhThuTM],
+    [t('chiPhi.diemLech'), lech], [`${t('chiPhi.phat')} (%)`, tc.tyLePhat * 100], [t('chiPhi.phat'), tc.phatLech ? -tc.phatLech : 0],
+    [t('chiPhi.doanhThuRong'), tc.doanhThu], [t('chiPhi.tongMuc'), tc.tongMuc], [t('chiPhi.chiPhiDat'), tc.chiPhiDat], [t('chiPhi.chiPhiBan'), tc.chiPhiBan],
+    [t('chiPhi.tongChiPhi'), tc.tongChiPhi], [t('chiPhi.loiNhuan'), tc.loiNhuan], [`${t('chiPhi.bienLN')} (%)`, tc.bienLN],
+    [t('chiPhi.giaBQ'), tc.giaBQ], [t('chiPhi.giaHoaVon'), tc.giaHoaVon],
+  ];
+  for (const [nhan, v] of dong) h.push([nhan, oSo(v)]);
+  return h;
+}
+
+/** `tien` (tuỳ chọn): tổng mức đầu tư và lợi nhuận (đ, số tạm) để thêm hàng vào bảng so sánh. */
+export type PASoSanh = { ten: string; chiSo: ChiSoPA; tien?: { tongMuc: number | null; loiNhuan: number | null } };
 export const nhanKhoa = (k: KhoaSo): string => {
   switch (k) {
     case 'lech': return t('xls.diemLech');
@@ -118,6 +174,10 @@ export function baoCaoSoSanh(ds: PASoSanh[], goc: number, tenDuAn: string): Shee
   for (const k of KHOA_SO) hang.push([nhanKhoa(k), ...ds.map((x) => oSo(giaTriCot(x.chiSo, k)))]);
   for (const l of ['stu', '1pn', '2pn', '2pnp', '3pn'] as const) hang.push([`${t('xls.soCan')} ${t(`loai.${l}`)}`, ...ds.map((x) => oSo(x.chiSo.coCau[l]))]);
   hang.push([t('dong.danSo'), ...ds.map((x) => oSo(x.chiSo.danSo))]);
+  if (ds.some((x) => x.tien)) {
+    hang.push([t('xls.tongMuc'), ...ds.map((x) => oSo(x.tien?.tongMuc))]);
+    hang.push([t('xls.loiNhuan'), ...ds.map((x) => oSo(x.tien?.loiNhuan))]);
+  }
   if (g) {
     hang.push([], [t('xls.chenhGoc')]);
     hang.push([t('xls.chiSo'), ...ds.map((x) => oChu(x.ten))]);
