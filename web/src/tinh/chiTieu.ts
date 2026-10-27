@@ -1,6 +1,6 @@
 import { congCoCau, demCan, phanTram } from './coCau';
 import { dtCongNangToa } from './congNang';
-import { canCaToa } from './matBang';
+import { canCaToa, ghiDeTang, nhomTang } from './matBang';
 import { chanToa, dienTich, dtVung, hopDienTich, khoiDe } from './hinhHoc';
 import { PHAN_HAM_MAC_DINH, type LoaiCan, type ThuVien, type TrangThaiPA } from './kieu';
 
@@ -64,7 +64,12 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
       const dtKyThuat = dtCongNangToa(t, tv).ky_thuat;
       const dtChanThap = dienTich(chan[i]);
       ct0.oKyThuat += dtKyThuat;
-      ct0.thap += pa.heSo.can * dtCan + pa.heSo.chung * Math.max(0, t.soTangDH * dtChanThap - dtCan - dtKyThuat);
+      // sàn tháp theo từng nhóm tầng: tầng có mặt bằng tự chỉnh riêng (dãy dài ra / ngắn lại theo căn của tầng) đo nét bao của tầng đó
+      const dtThap = nhomTang(t).reduce((a, g) => {
+        const mbT = g.tang !== null ? ghiDeTang(t, g.tang)?.matBang : undefined;
+        return a + g.so * (mbT ? dienTich(chanToa(mau, { ...t, duongBao: mbT.duongBao })) : dtChanThap);
+      }, 0);
+      ct0.thap += pa.heSo.can * dtCan + pa.heSo.chung * Math.max(0, dtThap - dtCan - dtKyThuat);
       // Tầng áp mái tính như một tầng trên chân tháp (gần đúng: chưa trừ phần lùi mái).
       if (t.coApMai) ct0.apMai += (pa.heSo.apMai ?? 1) * dtChanThap;
     }

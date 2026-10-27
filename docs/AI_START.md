@@ -53,7 +53,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | Xuất | `xuat/xuatCad.ts`, `xuat/xuatXls.ts`, `man/HopXuatCad.tsx` |
 | So sánh PA | `man/SoSanhPA.tsx`, `tinh/diemPA.ts` |
 | Tự xếp tòa, tối ưu tầng | `tinh/xepToa.ts`, `ui/GoiYXepToa.tsx`, `tinh/toiUu.ts`, `tinh/stretch.ts`, `tinh/khe.ts` |
-| Tự chỉnh MB tầng (thang, lõi, sảnh, hành lang, QT-69) | `tinh/loiThang.ts`, `man/tuChinhTang.ts` |
+| Tự chỉnh MB tầng (thang, lõi, sảnh, hành lang, QT-69) | `tinh/loiThang.ts`, `man/tuChinhTang.ts`; 3D / CAD theo mặt bằng tự chỉnh: `ve3d/dungToa.ts`, `xuat/xuatCad.ts` |
 | Chi phí, tài chính | `tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`, số tạm `CHI_PHI_MAC_DINH` trong `tinh/macDinh.ts` |
 
 ## Tài liệu khác
@@ -67,5 +67,5 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 
 - Tab Chi phí đã gộp (`tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`) — mọi đơn giá / giá bán là số tạm trong `CHI_PHI_MAC_DINH`, chờ QS chốt; thang máy chưa đếm từ lõi.
 - Đơn giá dự toán = định mức app cũ (`dinh_muc_du_toan.json`), xem chú thích `CHI_PHI_MAC_DINH`. QLDA tự tra Bảng 1.1 TT 38/2026 (`tyLeQldaTT38`, bật mặc định). Chưa có: chọn nhóm 8 / 15 tầng theo tòa.
-- Đã có: gợi ý xếp tòa MT-05 (`tinh/xepToa.ts`), tối ưu tầng + STRETCH (`tinh/stretch.ts`, `tinh/toiUu.ts`), dồn khít XC-04. Đã có tự chỉnh mặt bằng tầng XC-03/05/06/07 · PC-11 · QT-69 (`tinh/loiThang.ts`, lưu `ToaDat.matBang` + nét bao / DTXD riêng `ToaDat.duongBao` / `dtxdM2`, chạy trong `sua` qua `man/tuChinhTang.ts`). Chưa có: PC-11 chuyển thang sang mặt khác, thang riêng theo tầng; 3D / CAD vẽ theo mặt bằng đã tự chỉnh. Đã có STRETCH tay từng căn (`stretchTay`, nút ở panel phải màn Tầng), 3D căn kéo (`ve3d/stretch3d.ts`), CAD căn kéo nhúng nét đã kéo (xem NHAT_KY).
+- Đã có: gợi ý xếp tòa MT-05 (`tinh/xepToa.ts`), tối ưu tầng + STRETCH (`tinh/stretch.ts`, `tinh/toiUu.ts`), dồn khít XC-04. Đã có tự chỉnh mặt bằng tầng XC-03/05/06/07 · PC-11 · QT-69 (`tinh/loiThang.ts`, lưu `ToaDat.matBang` + nét bao / DTXD riêng `ToaDat.duongBao` / `dtxdM2`, chạy trong `sua` qua `man/tuChinhTang.ts`). Đã có (đợt 2): PC-11 chuyển thang sang mặt / đoạn khác (`doRong`), tự chỉnh riêng từng tầng có bố cục riêng (`BoCucTang.matBang`), 3D + CAD theo mặt bằng tự chỉnh từng tầng. Chưa có: gỡ căn vượt ở tm-t2 / tm-u1 24 tầng (cần tự sinh lại dãy căn hoặc cắt căn — chờ chủ nhiệm cho), gộp thang tầng riêng thành thang liền suốt chiều cao (đang chỉ cảnh báo). Đã có STRETCH tay từng căn (`stretchTay`, nút ở panel phải màn Tầng), 3D căn kéo (`ve3d/stretch3d.ts`), CAD căn kéo nhúng nét đã kéo (xem NHAT_KY).
 - Chờ chủ nhiệm chốt: xem `hoc_architechtures_app_2026-10-27.md` mục 6.

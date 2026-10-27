@@ -8,11 +8,13 @@ import { idTepCan, laBienThe, veTheoId } from '../tinh/stretch';
 import { tenTang } from '../ui/ChonTang';
 import type { ToaVe } from '../ve/MatBangTang';
 import { asciiHoa, danhSachChen, taoDxf, taoScr, THU_VIEN_XREF_MAC_DINH } from '../xuat/xuatCad';
+import { chuKyMatBang } from '../tinh/loiThang';
+import { fmtSo } from '../ui/so';
 
 /** Phạm vi xuất: bố cục chung, một tầng có bố cục riêng, hoặc mỗi nhóm tầng một tệp. */
 type PhamVi = 'chung' | 'tat' | number;
 
-type Props = { toa: ToaDat; mau: ToaVe; tv: ThuVien; ten: string; dong: () => void };
+type Props = { toa: ToaDat; mau: ToaVe; mauTang?: (tang: number | null) => ToaVe; tv: ThuVien; ten: string; dong: () => void };
 
 function taiVe(noiDung: string, tenTep: string, loai: string) {
   const a = document.createElement('a');
@@ -25,7 +27,10 @@ function taiVe(noiDung: string, tenTep: string, loai: string) {
 }
 
 /** Hộp xuất CAD của tòa đang xem: `.scr` ghép XREF → .dwg, hoặc `.dxf` nhúng hình học. */
-export function HopXuatCad({ toa, mau, tv, ten, dong }: Props) {
+export function HopXuatCad({ toa, mau, mauTang, tv, ten, dong }: Props) {
+  /** Mặt bằng đã tự chỉnh của tầng (thang, căn dồn, nét bao, hành lang); bố cục chung = `mau`. */
+  const mauCua = (tang: number | null) => mauTang?.(tang) ?? mau;
+  const kyMB = chuKyMatBang(toa);
   const { lop, dongMem } = useDongHop(dong);
   const [tenBv, setTenBv] = useState(asciiHoa(`${ten} ${mau.ten_vi.split(' · ')[0]}`).trim().replace(/\s+/g, '_'));
   const [goc, setGoc] = useState(THU_VIEN_XREF_MAC_DINH);
@@ -37,7 +42,7 @@ export function HopXuatCad({ toa, mau, tv, ten, dong }: Props) {
   useEffect(() => {
     let huy = false;
     // Căn của MỌI bố cục tầng (chung + từng tầng riêng) để chọn phạm vi nào cũng đủ hình.
-    const ds = nhomTang(toa).flatMap(({ tang }) => danhSachChen({ mau, toa: boCucTang(toa, tang), tv, ten: '', goc: '', hinh: new Map() }));
+    const ds = nhomTang(toa).flatMap(({ tang }) => danhSachChen({ mau: mauCua(tang), toa: boCucTang(toa, tang), tv, ten: '', goc: '', hinh: new Map() }));
     const canIds = [...new Set(ds.filter((x) => x.loai === 'can' && x.no).map((x) => x.no!))];
     const blocks = [...new Set(ds.filter((x) => x.loai !== 'can').map((x) => x.ten))];
     Promise.all([
@@ -45,8 +50,9 @@ export function HopXuatCad({ toa, mau, tv, ten, dong }: Props) {
       Promise.all(blocks.map((b) => tai<{ paths: NetVe[] }>(`/lib/loi/loi-${b.replace(/^x_/, '').replace(/_/g, '-')}.json`).then((j) => [b, j ?? { paths: [] }] as const))),
     ]).then(([a, b]) => { if (!huy) { setHinh(new Map(a)); setLoi(new Map(b)); setSoKeo(canIds.filter(laBienThe).length); } });
     return () => { huy = true; };
-  }, [mau, toa.canTheo, toa.canViTri, toa.congNang, toa.tangRieng, toa.soTangDH, tv]);
-  const du = (tang: number | null) => ({ mau, toa: boCucTang(toa, tang), tv, ten: tenBv || 'MatBang', goc: goc || THU_VIEN_XREF_MAC_DINH, hinh: hinh!, loi: loi! });
+  }, [mau, toa.canTheo, toa.canViTri, toa.congNang, toa.tangRieng, toa.soTangDH, tv, kyMB]);
+  const du = (tang: number | null) => ({ mau: mauCua(tang), toa: boCucTang(toa, tang), tv, ten: tenBv || 'MatBang', goc: goc || THU_VIEN_XREF_MAC_DINH, hinh: hinh!, loi: loi! });
+  const bcTc = toa.matBang?.baoCao;
   const san = !!hinh && !!loi;
   const ten0 = asciiHoa(tenBv || 'MatBang');
   /** Tên tệp / bản vẽ kèm tên tầng (bố cục chung: "DH"). */
@@ -86,6 +92,7 @@ export function HopXuatCad({ toa, mau, tv, ten, dong }: Props) {
           <button type="button" class="nut-chinh" disabled={!san} onClick={() => xuat('dxf')}>{t('xcad.taiDxf')}</button>
         </div>
         {soKeo > 0 && <p class="muted" title={t('gt.st.xuat')}>{t('st.xuatGhiChu').replace('{n}', String(soKeo))}</p>}
+        {bcTc && <p class="muted" title={bcTc.quyTac.map((q) => `${q.ma}: ${q.ghiChu}`).join('\n')}>{t('xcad.tuChinh').replace('{t}', String(bcTc.soThangSau)).replace('{d}', fmtSo(bcTc.dtxdM2, { thapPhan: 1 }))}</p>}
         {!san && <p class="muted">{t('m3d.dangDung')}</p>}
       </div>
     </div>

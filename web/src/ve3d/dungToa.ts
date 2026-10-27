@@ -1,6 +1,8 @@
 /**
  * Dựng 3D cả tòa từ mẫu tòa + mẫu căn đã chọn: khối đế đặc + N tầng điển hình (từng căn ghép theo đúng vị trí / hướng / lật gương
  * trên mặt tòa) + mái + tum lõi. Tầng điển hình dựng MỘT lần, gộp theo vật liệu rồi nhân bản để tòa 30–40 tầng vẫn quay mượt.
+ * `mau` là mặt bằng ĐÃ TỰ CHỈNH (tinh/loiThang.ts · apMatBang): ô thang mới / đã dời, căn đã dồn, nét bao dài ra (QT-69), hành
+ * lang kéo dài; `mauTang` cho tầng có mặt bằng riêng. Dải lõi chiếu lên mặt (`bang`, XC-05) chỉ là mốc, không dựng.
  */
 import type * as THREE from 'three';
 import type { Diem, ThuVien, ToaDat } from '../tinh/kieu';
@@ -19,7 +21,46 @@ export type DuLieuToa = {
   khoi3d: Map<string, Khoi3d | null>;
   loi: Map<string, LoiHinh>;
   idLoi: (block: string) => string;
+  /** Mặt bằng hiệu dụng của tầng (null = bố cục chung); thiếu = mọi tầng dùng `mau`. */
+  mauTang?: (tang: number | null) => DuLieuToa['mau'];
 };
+type MauToa3D = DuLieuToa['mau'] & { hanhlang_ve?: Diem[][]; hanh_lang_mm?: number };
+
+/** Dải sàn hành lang (mm) quanh tim p→q, rộng w. */
+const daiHL = (p: Diem, q: Diem, w: number): Diem[] | null => {
+  const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy);
+  if (L < 1) return null;
+  const nx = (-dy / L) * (w / 2), ny = (dx / L) * (w / 2);
+  return [[p[0] + nx, p[1] + ny], [q[0] + nx, q[1] + ny], [q[0] - nx, q[1] - ny], [p[0] - nx, p[1] - ny]];
+};
+const trongDG = (p: Diem, P: Diem[]) => {
+  let c = false;
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const a = P[i], b = P[j];
+    if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < ((b[0] - a[0]) * (p[1] - a[1])) / (b[1] - a[1]) + a[0]) c = !c;
+  }
+  return c;
+};
+/** Sàn hành lang nằm NGOÀI nét bao (trục kéo dài tới cửa xa nhất khi nét bao không nối được — XC-07): dải cần đổ thêm. */
+export function sanHanhLangNgoai(mau: MauToa3D): Diem[][] {
+  const w = mau.hanh_lang_mm || 1800, kq: Diem[][] = [];
+  for (const pl of mau.hanhlang_ve ?? []) for (let k = 1; k < pl.length; k++) {
+    const d = daiHL(pl[k - 1], pl[k], w);
+    if (d && !trongDG([(pl[k - 1][0] + pl[k][0]) / 2, (pl[k - 1][1] + pl[k][1]) / 2], mau.duong_bao)) kq.push(d);
+  }
+  return kq;
+}
+
+/** Ranh tum lõi / buồng thang của một mặt bằng (bỏ dải lõi `bang` — chỉ là mốc dồn khít, không phải khối thật). */
+export function ranhTum(mau: DuLieuToa['mau'], loi: Map<string, LoiHinh>, idLoi: (b: string) => string): Diem[][] {
+  const kq: Diem[][] = [];
+  for (const m of mau.mat) for (const q of m.phan_tu) {
+    if (q.loai === 'can' || q.bang) continue;
+    const l = loi.get(idLoi(q.block));
+    if (l?.bao_tuong_mm) kq.push(ranhLoi(l.bao_tuong_mm, q));
+  }
+  return kq;
+}
 
 const rad = (d: number) => (d * Math.PI) / 180;
 
@@ -104,25 +145,22 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
   const hDe = soDe * CAO_TANG_DE_MM, hThan = nDH * P.tang, H = hDe + hThan;
 
   // --- tầng điển hình: mỗi bố cục khác nhau (chung + tầng riêng) dựng một lần trong nhóm tạm, gộp theo vật liệu ---
-  const tums: Diem[][] = [];
-  for (const m of mau.mat) for (const q of m.phan_tu) {
-    if (q.loai === 'can') continue;
-    const l = du.loi.get(du.idLoi(q.block));
-    if (l?.bao_tuong_mm) tums.push(ranhLoi(l.bao_tuong_mm, q));
-  }
-  const dungMau = (bc: BoCuc) => {
-    const vts = viTriCan(mau, tv, bc); // dồn khít theo bề ngang căn đang dùng (XC-04)
+  const tums = ranhTum(mau, du.loi, du.idLoi);
+  const dungMau = (bc: BoCuc, mauT: MauToa3D) => {
+    const vts = viTriCan(mauT, tv, bc); // dồn khít theo bề ngang căn đang dùng (XC-04), trên mặt đã tự chỉnh
     const tmp = new T.Group(), Gt = nhomMoi();
     goc.add(tmp);
-    khoi(foot, P.san, M.san, -P.san, false, tmp);
-    Gt.top.push(khoi(foot, P.san, M.top, Hc, false, tmp));
-    tums.forEach((r) => khoi(r, Hc, M.khung2, 0, true, tmp));
+    const footT = mauT.duong_bao;
+    khoi(footT, P.san, M.san, -P.san, false, tmp);
+    Gt.top.push(khoi(footT, P.san, M.top, Hc, false, tmp));
+    for (const d of sanHanhLangNgoai(mauT)) { khoi(d, P.san, M.san, -P.san, false, tmp); Gt.top.push(khoi(d, P.san, M.top, Hc, false, tmp)); }
+    ranhTum(mauT, du.loi, du.idLoi).forEach((r) => khoi(r, Hc, M.khung2, 0, true, tmp));
     let so = 0;
     for (const vt of vts) {
       if (congNangTai(vt.khoa, bc) !== 'can') continue; // ô đổi công năng: để trống sàn
       const d = du.khoi3d.get(canDangDung(vt, bc));
       if (!d) continue;
-      const m = mau.mat[vt.matIdx], gr = rad(m.goc_deg), ux = Math.cos(gr), uy = Math.sin(gr), nx = -uy, ny = ux;
+      const m = mauT.mat[vt.matIdx], gr = rad(m.goc_deg), ux = Math.cos(gr), uy = Math.sin(gr), nx = -uy, ny = ux;
       const w = vt.a1 - vt.a0, s = vt.guong ? -1 : 1, off = vt.a0 + (vt.guong ? w : 0);
       const ox = ux * off + nx * m.truc_mm, oy = uy * off + ny * m.truc_mm;
       const sub = new T.Group();
@@ -142,9 +180,12 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
   const vts0 = viTriCan(mau, tv);
   const chuKy = (bc: BoCuc) => vts0.map((vt) => `${congNangTai(vt.khoa, bc)}:${canDangDung(vt, bc)}`).join('|');
   const theoChuKy = new Map<string, ReturnType<typeof dungMau>>();
+  const soMau = new Map<object, number>();
   const mauCua = (tang: number | null) => {
-    const bc = boCucTang(toa, tang), k = chuKy(bc);
-    if (!theoChuKy.has(k)) theoChuKy.set(k, dungMau(bc));
+    const bc = boCucTang(toa, tang), mauT = (du.mauTang?.(tang) ?? mau) as MauToa3D;
+    if (!soMau.has(mauT)) soMau.set(mauT, soMau.size);
+    const k = soMau.get(mauT) + '#' + chuKy(bc);
+    if (!theoChuKy.has(k)) theoChuKy.set(k, dungMau(bc, mauT));
     return theoChuKy.get(k)!;
   };
   const chung = mauCua(null), rieng = new Set(tangCoRieng(toa));
