@@ -1,6 +1,7 @@
 import { t, useLang } from '../i18n/i18n';
 
-export type CapDo = { lo: string; coTe: 'tren' | 'duoi'; toa?: string; tang?: string; can?: string };
+/** onCoTe: đổi Trên / Dưới cốt 0 (vào màn Hầm); onTang: bấm ô tầng (vd. chuyển tầng hầm). */
+export type CapDo = { lo: string; coTe: 'tren' | 'duoi'; toa?: string; tang?: string; can?: string; onCoTe?: () => void; onTang?: () => void };
 export type CheDo = 'tu_dong' | 'chinh_tay' | 'chi_xem';
 export type CheDoXem = 'mat_bang' | 'mo_hinh' | 'chi_phi';
 export type TrangThaiLuu = 'da_luu' | 'dang_luu' | 'chua_luu_duoc';
@@ -71,9 +72,9 @@ export function ThanhTren(p: Props) {
           <button type="button" aria-label={t('cap.len')}>↑</button>
           <button type="button">{p.capDo.lo}</button>
           <span class="xam">|</span>
-          <button type="button">{t(p.capDo.coTe === 'tren' ? 'cap.tren' : 'cap.duoi')} ▾</button>
+          <button type="button" title={t('cap.doiCoTe')} onClick={p.capDo.onCoTe}>{t(p.capDo.coTe === 'tren' ? 'cap.tren' : 'cap.duoi')} ▾</button>
           {p.capDo.toa && <button type="button">{p.capDo.toa} ▾</button>}
-          {p.capDo.tang && <button type="button">{p.capDo.tang} ▾</button>}
+          {p.capDo.tang && <button type="button" onClick={p.capDo.onTang}>{p.capDo.tang} ▾</button>}
           {p.capDo.can && <button type="button">{p.capDo.can} ▾</button>}
         </nav>
       )}
