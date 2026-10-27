@@ -69,8 +69,8 @@ Trạng thái tính theo bản chạy ở main `87e0396`. ✔ có · ◐ có m�
 |---|---|---|
 | So sánh tối đa 6 PA: dải thẻ, sắp xếp, thẻ "PA chọn so với PA gốc", bảng | ✘ | Danh sách dự án đã có tóm tắt từng PA |
 | Giá bán theo tầng, phạt lệch mix, biên lợi nhuận | ⊘ | Chờ đơn giá thật; có thể chấm điểm PA bằng điểm lệch cơ cấu |
-| Xuất XLS / CAD / BIM từng PA | ✘ | Nút XLS, CAD có trên thanh trên nhưng chưa nối |
-| 3D: khối tòa, camera lưu, nắng, bóng đổ, mặt cắt | ✘ | Có hàm vị trí mặt trời và khối đế |
+| Xuất XLS / CAD / BIM từng PA | ◐ | CAD đã nối (28/10): `.scr` ghép XREF ra DWG + `.dxf` nhúng hình học, theo tòa đang xem; XLS, BIM, xuất cả PA còn ✘ |
+| 3D: khối tòa, camera lưu, nắng, bóng đổ, mặt cắt | ◐ | Có (28/10): tab Mô hình dựng cả tòa (đế + tầng + mái + tum), 3D từng căn, cắt ngang, mặt trời + bóng theo giờ, chỉnh kích thước đứng. Chưa có: lưu camera, đường mặt trời năm (solar path), nhiều tòa cùng cảnh |
 | Gợi ý xếp tòa tự động | ✘ | |
 
 ## Phần Unitmix có mà Architechtures không có
@@ -99,3 +99,7 @@ Mỗi mục ghi **ai làm được**: *Repo* = cần sửa mã trong repo `E:\Pr
 | B3 | Soạn nội dung bong bóng giải thích cho A11 (VI + EN) | §1 | S | Chat | |
 
 Cần chủ nhiệm quyết: bảng % hệ số (A3), số chỗ đỗ M7 (A6), cách nới bề ngang để tối ưu cơ cấu (A8), có làm phần tài chính trong so sánh PA không.
+
+## Thư viện CAD gốc (28/10/2026)
+
+`cad/` chứa 31 MB DWG/DXF XREF kéo từ app cũ (căn, mẫu tòa, lõi thang), `scripts/boc_cad/` là các script bóc CAD, `cad/tai_lieu/` là quy trình xuất CAD. Xem `cad/README.md`.

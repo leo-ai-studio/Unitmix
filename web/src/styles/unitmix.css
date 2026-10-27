@@ -177,3 +177,8 @@ body { font-size: 13px; line-height: 1.45; }
 .hop-3d-trong { position: relative; background: var(--panel); width: min(1100px, 100%); height: min(760px, 100%); display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; }
 .dong-hop { position: absolute; top: 4px; right: 8px; z-index: 2; font-size: 22px; line-height: 1; background: transparent; border: 0; cursor: pointer; color: var(--ink); }
 .panel-giua > .khung-3d { height: 100%; }
+
+.hop-xuat { position: relative; background: var(--panel); width: min(560px, 100%); max-height: 100%; overflow: auto; border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.hop-xuat h3 { margin: 0; }
+.khoi-xuat { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+.khoi-xuat button { align-self: flex-start; }

@@ -337,5 +337,15 @@
   "m3d.thep": "Thép",
   "m3d.kinh": "Kính",
   "m3d.macDinh": "Về mặc định",
-  "m3d.goiY": "Chuột trái: xoay · chuột phải hoặc Shift: di · lăn: phóng. Cảm ứng: 1 ngón xoay, 2 ngón phóng / di. Chiều cao tầng 3300 mm và tầng đế 4000 mm là giả định."
+  "m3d.goiY": "Chuột trái: xoay · chuột phải hoặc Shift: di · lăn: phóng. Cảm ứng: 1 ngón xoay, 2 ngón phóng / di. Chiều cao tầng 3300 mm và tầng đế 4000 mm là giả định.",
+  "xcad.tieuDe": "Xuất CAD",
+  "xcad.moTa": "Mặt bằng tầng điển hình tòa {t}, theo các mẫu căn đang dùng.",
+  "xcad.tenBanVe": "Tên bản vẽ",
+  "xcad.thuMuc": "Thư mục thư viện XREF (đường dẫn tương đối)",
+  "xcad.scr": "Phiếu .scr — ghép XREF ra .dwg",
+  "xcad.scrMoTa": "Đặt tệp cạnh thư mục thư viện (cad/xref), mở AutoCAD, gõ SCRIPT và chọn tệp. Bản vẽ trỏ tới thư viện nên sửa mẫu căn là mặt bằng cập nhật theo.",
+  "xcad.taiScr": "Tải .scr",
+  "xcad.dxf": "Tệp .dxf — nhúng hình học",
+  "xcad.dxfMoTa": "Một tệp đứng một mình, mm: mỗi mẫu căn một BLOCK, mỗi vị trí một INSERT, kèm nét bao DTXD và hành lang.",
+  "xcad.taiDxf": "Tải .dxf"
 }

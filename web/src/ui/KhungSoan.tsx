@@ -17,6 +17,7 @@ type Props = {
   duocSua?: boolean;
   onHoanTac?: () => void;
   onLamLai?: () => void;
+  onXuatCad?: () => void;
   thongBao?: ComponentChildren;
 };
 
@@ -28,7 +29,7 @@ export function KhungSoan(p: Props) {
     <div class="khung khung-soan">
       <ThanhTren capDo={p.capDo} cheDoXem={xem} onCheDoXem={setXem} cheDo={p.cheDo} onCheDo={p.onCheDo}
         trangThaiLuu={p.trangThaiLuu} dangXuLy={p.dangXuLy} duocSua={p.duocSua}
-        onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} />
+        onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} onXuatCad={p.onXuatCad} />
       {p.thongBao}
       <div class="khung-than">
         <aside class="panel-trai" aria-label={t('panel.nhap')}>{p.trai}</aside>

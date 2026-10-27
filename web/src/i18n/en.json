@@ -337,5 +337,15 @@
   "m3d.thep": "Steel",
   "m3d.kinh": "Glass",
   "m3d.macDinh": "Reset",
-  "m3d.goiY": "Left drag: orbit · right drag or Shift: pan · wheel: zoom. Touch: 1 finger orbits, 2 fingers zoom / pan. Storey height 3300 mm and podium floor 4000 mm are assumptions."
+  "m3d.goiY": "Left drag: orbit · right drag or Shift: pan · wheel: zoom. Touch: 1 finger orbits, 2 fingers zoom / pan. Storey height 3300 mm and podium floor 4000 mm are assumptions.",
+  "xcad.tieuDe": "Export CAD",
+  "xcad.moTa": "Typical floor plan of tower {t}, using the current unit templates.",
+  "xcad.tenBanVe": "Drawing name",
+  "xcad.thuMuc": "XREF library folder (relative path)",
+  "xcad.scr": "Script .scr — assemble XREFs into .dwg",
+  "xcad.scrMoTa": "Put the file next to the library folder (cad/xref), open AutoCAD, run SCRIPT and pick it. The drawing references the library, so editing a unit template updates the plan.",
+  "xcad.taiScr": "Download .scr",
+  "xcad.dxf": "File .dxf — embedded geometry",
+  "xcad.dxfMoTa": "Stand-alone file in mm: one BLOCK per unit template, one INSERT per position, plus the floor-area outline and corridors.",
+  "xcad.taiDxf": "Download .dxf"
 }

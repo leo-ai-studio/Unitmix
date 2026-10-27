@@ -16,6 +16,7 @@ type Props = {
   duocSua?: boolean;
   onHoanTac?: () => void;
   onLamLai?: () => void;
+  onXuatCad?: () => void;
 };
 
 export function ThuongHieu({ dangXuLy = false }: { dangXuLy?: boolean }) {
@@ -84,7 +85,7 @@ export function ThanhTren(p: Props) {
         </>
       )}
       <button class="nut-chu" type="button">{t('xuat.xls')}</button>
-      <button class="nut-chu" type="button">{t('xuat.cad')}</button>
+      <button class="nut-chu" type="button" disabled={!p.onXuatCad} onClick={p.onXuatCad}>{t('xuat.cad')}</button>
       <ChonLang />
     </header>
   );

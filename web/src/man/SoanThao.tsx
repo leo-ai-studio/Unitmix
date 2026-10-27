@@ -13,6 +13,7 @@ import { soCanChuVi, viTriCan } from '../tinh/matBang';
 import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
 import { LoGiua, LoPhai, LoTrai } from './ManLo';
+import { HopXuatCad } from './HopXuatCad';
 import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem } from './ManTang';
 import { XepGiua, XepPhai, XepTrai, loDangXep } from './ManXepToa';
 
@@ -85,10 +86,12 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const kq: KetQuaChiTieu | null = tv ? tinhChiTieu(kho.pa, tv) : null;
   const [buoc, setBuoc] = useState<'lo' | 'xep' | 'tang'>('lo');
   const [canKhoa, setCanKhoa] = useState<string | null>(null);
+  const [moXuat, setMoXuat] = useState(false);
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
   const chungXep = { ...chung, tv, toaId, chonToa: setToaId };
   const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };
+  const xemXuat = toaDangXem(kho.pa, tv, loId, toaId);
   const xemTang = buoc === 'tang' ? toaDangXem(kho.pa, tv, loId, toaId) : null;
   const loDangChon = buoc === 'xep' ? loDangXep(kho.pa, loId) : buoc === 'tang' ? xemTang?.lo : loDangChonHoacDatO(kho.pa.lo, loId);
   const toaDangChon = buoc === 'xep' ? kho.pa.toa.find((x) => x.id === toaId) : xemTang?.toa;
@@ -105,6 +108,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const thongBao = (
     <>
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}
+      {moXuat && xemXuat && tv && <HopXuatCad toa={xemXuat.toa} mau={xemXuat.mau} tv={tv} ten={da.ten} dong={() => setMoXuat(false)} />}
       {coNhap && (
         <div class="thong-bao canh" role="status">
           {t('soan.coNhap')}
@@ -131,6 +135,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onHoanTac={kho.hoanTac}
       onLamLai={kho.lamLai}
       thongBao={thongBao}
+      onXuatCad={xemXuat && tv ? () => setMoXuat(true) : undefined}
       moHinh={<TangMoHinh {...chungTang} />}
       trai={<>{chonBuoc}{buoc === 'lo' ? <LoTrai {...chung} /> : buoc === 'xep' ? <XepTrai {...chungXep} /> : <TangTrai {...chungTang} />}</>}
       giua={buoc === 'lo' ? <LoGiua {...chung} /> : buoc === 'xep' ? <XepGiua {...chungXep} /> : <TangGiua {...chungTang} />}
