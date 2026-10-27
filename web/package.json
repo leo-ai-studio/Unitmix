@@ -15,12 +15,14 @@
     "dxf-parser": "^1.1.2",
     "preact": "^10.24.3",
     "preact-iso": "^2.8.1",
+    "three": "^0.170.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.9.1",
     "@types/clipper-lib": "^6.4.0",
     "@types/node": "^24.19.2",
+    "@types/three": "^0.170.0",
     "typescript": "^5.6.3",
     "vite": "^6.0.3",
     "vitest": "^4.1.12"

@@ -1,0 +1,171 @@
+/**
+ * Dựng 3D cả tòa từ mẫu tòa + mẫu căn đã chọn: khối đế đặc + N tầng điển hình (từng căn ghép theo đúng vị trí / hướng / lật gương
+ * trên mặt tòa) + mái + tum lõi. Tầng điển hình dựng MỘT lần, gộp theo vật liệu rồi nhân bản để tòa 30–40 tầng vẫn quay mượt.
+ */
+import type * as THREE from 'three';
+import type { Diem, ThuVien, ToaDat } from '../tinh/kieu';
+import { canDangDung, veLoiTaiViTri, viTriCan, type ToaCoMat } from '../tinh/matBang';
+import { dungCan, nhomMoi, type Khoi3d, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
+
+const K = 0.001;
+export const CAO_TANG_DE_MM = 4000;
+export const CAO_TUM_MM = 3000;
+
+export type LoiHinh = { bao_tuong_mm?: [number, number, number, number] };
+export type DuLieuToa = {
+  mau: ToaCoMat & { duong_bao: Diem[] };
+  toa: Pick<ToaDat, 'canTheo' | 'canViTri' | 'soTangDe' | 'soTangDH'>;
+  tv: ThuVien;
+  khoi3d: Map<string, Khoi3d | null>;
+  loi: Map<string, LoiHinh>;
+  idLoi: (block: string) => string;
+};
+
+const rad = (d: number) => (d * Math.PI) / 180;
+
+/** Gộp mọi mesh (đang hiện) của `src` thành vài mesh theo vật liệu, đưa vào `dich`. */
+function gop(T: T3, src: THREE.Object3D, dich: THREE.Object3D[]): void {
+  src.updateMatrixWorld(true);
+  const tm = new Map<THREE.Material, { P: Float32Array[]; N: (Float32Array | null)[]; c: boolean }>();
+  const tl = new Map<THREE.Material, Float32Array[]>();
+  src.traverse((o) => {
+    for (let v: THREE.Object3D | null = o; v && v !== src; v = v.parent) if (!v.visible) return;
+    const m = o as THREE.Mesh & { isInstancedMesh?: boolean; isLineSegments?: boolean; isLine?: boolean };
+    if (m.isInstancedMesh) {
+      const c = m.clone();
+      c.applyMatrix4(m.matrixWorld);
+      dich.push(c);
+    } else if (m.isMesh) {
+      const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+      g.applyMatrix4(m.matrixWorld);
+      const pos = g.getAttribute('position').array as Float32Array, nor = g.getAttribute('normal')?.array as Float32Array | undefined;
+      const mat = m.material as THREE.Material;
+      let r = tm.get(mat);
+      if (!r) { r = { P: [], N: [], c: m.castShadow }; tm.set(mat, r); }
+      r.P.push(pos); r.N.push(nor ?? null);
+      g.dispose();
+    } else if (m.isLineSegments) {
+      const g = m.geometry.clone();
+      g.applyMatrix4(m.matrixWorld);
+      const mat = m.material as THREE.Material;
+      (tl.get(mat) ?? tl.set(mat, []).get(mat)!).push(g.getAttribute('position').array as Float32Array);
+      g.dispose();
+    } else if (m.isLine) {
+      const g = m.geometry.clone();
+      g.applyMatrix4(m.matrixWorld);
+      dich.push(new T.Line(g, m.material as THREE.Material));
+    }
+  });
+  const cat = (L: Float32Array[]) => { let n = 0; L.forEach((a) => { n += a.length; }); const o = new Float32Array(n); let p = 0; L.forEach((a) => { o.set(a, p); p += a.length; }); return o; };
+  tm.forEach((r, mat) => {
+    const g = new T.BufferGeometry();
+    g.setAttribute('position', new T.BufferAttribute(cat(r.P), 3));
+    if (r.N.every(Boolean)) g.setAttribute('normal', new T.BufferAttribute(cat(r.N as Float32Array[]), 3)); else g.computeVertexNormals();
+    const me = new T.Mesh(g, mat);
+    me.castShadow = r.c; me.receiveShadow = true;
+    dich.push(me);
+  });
+  tl.forEach((P, mat) => {
+    const g = new T.BufferGeometry();
+    g.setAttribute('position', new T.BufferAttribute(cat(P), 3));
+    dich.push(new T.LineSegments(g, mat));
+  });
+}
+
+const trongTam = (P: Diem[]): Diem => {
+  let A = 0, cx = 0, cy = 0;
+  for (let i = 0; i < P.length; i++) { const p = P[i], q = P[(i + 1) % P.length], c = p[0] * q[1] - q[0] * p[1]; A += c; cx += (p[0] + q[0]) * c; cy += (p[1] + q[1]) * c; }
+  if (Math.abs(A) < 1e-6) return [P.reduce((s, p) => s + p[0], 0) / P.length, P.reduce((s, p) => s + p[1], 0) / P.length];
+  return [cx / (3 * A), cy / (3 * A)];
+};
+
+/** Danh sách đỉnh ngoài của hình chữ nhật cục bộ lõi, đưa lên thế giới theo điểm chèn. */
+function ranhLoi(bt: [number, number, number, number], q: { x: number; y: number; rot: number; sx: number; sy: number }): Diem[] {
+  const [x0, y0, x1, y1] = bt;
+  return veLoiTaiViTri([{ cat: 'bao', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] }], q)[0].pts;
+}
+
+export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: ThamSo3D, du: DuLieuToa) {
+  const { mau, toa, tv } = du;
+  const Hc = P.tang - P.san;
+  const khoi = (pts: Diem[], h: number, m: THREE.Material, z0: number, vien = false, dich: THREE.Object3D = goc) => {
+    const s = new T.Shape();
+    pts.forEach((p, i) => (i ? s.lineTo(p[0] * K, p[1] * K) : s.moveTo(p[0] * K, p[1] * K)));
+    const g = new T.ExtrudeGeometry(s, { depth: h * K, bevelEnabled: false });
+    g.rotateX(-Math.PI / 2);
+    const me = new T.Mesh(g, m);
+    me.position.y = z0 * K; me.castShadow = true; me.receiveShadow = true;
+    dich.add(me);
+    if (vien) { const l = new T.LineSegments(new T.EdgesGeometry(g, 25), M.line); l.position.copy(me.position); dich.add(l); }
+    return me;
+  };
+  const foot = mau.duong_bao;
+  const soDe = toa.soTangDe, nDH = Math.max(0, toa.soTangDH);
+  const hDe = soDe * CAO_TANG_DE_MM, hThan = nDH * P.tang, H = hDe + hThan;
+
+  // --- tầng điển hình dựng một lần trong nhóm tạm ---
+  const tmp = new T.Group(), Gt = nhomMoi();
+  goc.add(tmp);
+  khoi(foot, P.san, M.san, -P.san, false, tmp);
+  Gt.top.push(khoi(foot, P.san, M.top, Hc, false, tmp));
+  const tums: Diem[][] = [];
+  for (const m of mau.mat) {
+    for (const q of m.phan_tu) {
+      if (q.loai === 'can') continue;
+      const l = du.loi.get(du.idLoi(q.block));
+      if (!l?.bao_tuong_mm) continue;
+      const r = ranhLoi(l.bao_tuong_mm, q);
+      tums.push(r);
+      khoi(r, Hc, M.khung2, 0, true, tmp);
+    }
+  }
+  let soCan = 0;
+  for (const vt of viTriCan(mau, tv)) {
+    const d = du.khoi3d.get(canDangDung(vt, toa));
+    if (!d) continue;
+    const m = mau.mat[vt.matIdx], gr = rad(m.goc_deg), ux = Math.cos(gr), uy = Math.sin(gr), nx = -uy, ny = ux;
+    const w = vt.a1 - vt.a0, s = vt.guong ? -1 : 1, off = vt.a0 + (vt.guong ? w : 0);
+    const ox = ux * off + nx * m.truc_mm, oy = uy * off + ny * m.truc_mm;
+    const sub = new T.Group();
+    sub.matrixAutoUpdate = false;
+    sub.matrix.set(ux * s, 0, -nx, ox * K, 0, 1, 0, 0, -uy * s, 0, ny, -oy * K, 0, 0, 0, 1);
+    tmp.add(sub);
+    dungCan(T, d, P, M, sub, Gt, true);
+    soCan++;
+  }
+  Gt.top.forEach((o) => { o.visible = false; });
+  const mauTang: THREE.Object3D[] = [];
+  gop(T, tmp, mauTang);
+  goc.remove(tmp);
+  tmp.traverse((o) => { (o as THREE.Mesh).geometry?.dispose?.(); });
+
+  // --- khối đế, thân, mái, tum ---
+  if (hDe > 0) {
+    khoi(foot, hDe, M.de, 0, true);
+    const ln: number[] = [];
+    for (let k = 1; k < soDe; k++) foot.forEach((p, i) => { const q = foot[(i + 1) % foot.length]; ln.push(p[0] * K, k * CAO_TANG_DE_MM * K, -p[1] * K, q[0] * K, k * CAO_TANG_DE_MM * K, -q[1] * K); });
+    if (ln.length) { const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(new Float32Array(ln), 3)); goc.add(new T.LineSegments(g, M.line)); }
+  }
+  for (let j = 0; j < nDH; j++) {
+    const g = new T.Group();
+    g.position.y = (hDe + j * P.tang) * K;
+    mauTang.forEach((o) => g.add(o.clone()));
+    goc.add(g);
+  }
+  khoi(foot, P.san, M.san, H);
+  tums.forEach((r) => { khoi(r, CAO_TUM_MM, M.tum, H + P.san, true); khoi(r, P.san, M.san, H + P.san + CAO_TUM_MM); });
+  foot.forEach((p, i) => { // thành chắn mái
+    const q = foot[(i + 1) % foot.length], L = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (L < 50) return;
+    const me = new T.Mesh(new T.BoxGeometry(L * K, 1100 * K, 120 * K), M.tuong);
+    me.position.set(((p[0] + q[0]) / 2) * K, (H + P.san + 550) * K, -((p[1] + q[1]) / 2) * K);
+    me.rotation.y = Math.atan2(q[1] - p[1], q[0] - p[0]);
+    goc.add(me);
+  });
+
+  const [cx, cy] = trongTam(foot);
+  const xs = foot.map((p) => p[0]), ys = foot.map((p) => p[1]);
+  const bk = 2 * Math.max(cx - Math.min(...xs), Math.max(...xs) - cx, cy - Math.min(...ys), Math.max(...ys) - cy) * K;
+  const cao = (H + CAO_TUM_MM + P.san) * K;
+  return { canh: { tam: [cx * K, cao * 0.45, -cy * K] as [number, number, number], coCanh: Math.max(bk, cao * 0.8), cao }, soCan };
+}

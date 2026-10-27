@@ -158,3 +158,22 @@ body { font-size: 13px; line-height: 1.45; }
 .thuoc-ty-le { position: absolute; left: 14px; bottom: 12px; height: 8px; border: 1.5px solid var(--ink); border-top: 0; min-width: 4px; }
 .thuoc-ty-le span { position: absolute; left: 0; bottom: 10px; font-size: 11px; font-weight: 600; color: var(--ink); background: var(--panel); padding: 0 3px; border-radius: 3px; white-space: nowrap; }
 .hoa-gio { position: absolute; right: 14px; top: 12px; }
+
+/* ===== 3D (tab Mô hình, xem 3D căn) ===== */
+.khung-3d { display: flex; flex-direction: column; height: 100%; min-height: 0; flex: 1; }
+.thanh-3d { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.thanh-3d .tieu-de-3d { margin-right: 6px; }
+.nhom-3d { display: inline-flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.thanh-3d button { padding: 3px 10px; }
+.thanh-3d input[type="range"] { width: 90px; vertical-align: middle; }
+.tham-so-3d { padding: 4px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.luoi-tham-so { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 12px; padding: 6px 0; }
+.luoi-tham-so label { display: flex; flex-direction: column; gap: 2px; }
+.vung-3d { position: relative; flex: 1 1 0; min-height: 260px; background: #0e1c2d; }
+.vung-3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.vung-3d .giua-man { position: absolute; inset: 0; color: #cfe0f2; }
+.goi-y-3d { margin: 0; padding: 4px 12px; font-size: 12px; color: var(--muted-text); }
+.hop-3d { position: fixed; inset: 0; z-index: 50; background: rgba(8, 16, 28, .6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.hop-3d-trong { position: relative; background: var(--panel); width: min(1100px, 100%); height: min(760px, 100%); display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; }
+.dong-hop { position: absolute; top: 4px; right: 8px; z-index: 2; font-size: 22px; line-height: 1; background: transparent; border: 0; cursor: pointer; color: var(--ink); }
+.panel-giua > .khung-3d { height: 100%; }

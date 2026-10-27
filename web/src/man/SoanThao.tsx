@@ -13,7 +13,7 @@ import { soCanChuVi, viTriCan } from '../tinh/matBang';
 import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
 import { LoGiua, LoPhai, LoTrai } from './ManLo';
-import { TangGiua, TangPhai, TangTrai, toaDangXem } from './ManTang';
+import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem } from './ManTang';
 import { XepGiua, XepPhai, XepTrai, loDangXep } from './ManXepToa';
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
@@ -131,6 +131,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onHoanTac={kho.hoanTac}
       onLamLai={kho.lamLai}
       thongBao={thongBao}
+      moHinh={<TangMoHinh {...chungTang} />}
       trai={<>{chonBuoc}{buoc === 'lo' ? <LoTrai {...chung} /> : buoc === 'xep' ? <XepTrai {...chungXep} /> : <TangTrai {...chungTang} />}</>}
       giua={buoc === 'lo' ? <LoGiua {...chung} /> : buoc === 'xep' ? <XepGiua {...chungXep} /> : <TangGiua {...chungTang} />}
       phai={buoc === 'lo' ? <LoPhai {...chung} kq={kq} /> : buoc === 'xep' ? <XepPhai {...chungXep} kq={kq} /> : <TangPhai {...chungTang} />}

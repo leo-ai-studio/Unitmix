@@ -13,6 +13,7 @@ import { MatBangTang, soLieuTang, type ToaVe } from '../ve/MatBangTang';
 import { MucGap } from '../ui/MucGap';
 import { ThanhHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
+import { MoHinhCan, MoHinhToa } from '../ve3d/MoHinh3D';
 import { datCaiTang, useCaiTang } from './caiTang';
 
 export type ChungTang = {
@@ -112,6 +113,14 @@ export function TangGiua(p: ChungTang) {
   return <TangVe {...p} tv={p.tv} toa={xem.toa} mau={xem.mau} lo={xem.lo} />;
 }
 
+/** Tab Mô hình: 3D cả tòa đang xem. */
+export function TangMoHinh(p: ChungTang) {
+  const xem = toaDangXem(p.pa, p.tv, p.loId, p.toaId);
+  if (!p.tv) return <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('lo.dangTaiThuVien')}</span></div>;
+  if (!xem) return <div class="giua-man"><span>{t('tang.chuaCoToa')}</span></div>;
+  return <MoHinhToa pa={p.pa} tv={p.tv} toa={xem.toa} mau={xem.mau} />;
+}
+
 function TangVe({ tv, toa, mau, lo, canKhoa, chonCan, pa }: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | undefined }) {
   const cai = useCaiTang();
   const [dk, setDk] = useState<DieuKhienVe | null>(null);
@@ -147,6 +156,7 @@ function TangVe({ tv, toa, mau, lo, canKhoa, chonCan, pa }: ChungTang & { tv: Th
 export function TangPhai(p: ChungTang) {
   const { pa, sua, chiXem, tv, canKhoa, chonCan } = p;
   const cai = useCaiTang();
+  const [mo3d, setMo3d] = useState(false);
   const xem = toaDangXem(pa, tv, p.loId, p.toaId);
   const sl = useMemo(() => (xem && tv ? soLieuTang(xem.mau, xem.toa, tv) : null), [xem?.mau, xem?.toa.canTheo, xem?.toa.canViTri, tv]);
   const hl = useMemo(() => (xem ? dtHanhLangTang(xem.mau) : null), [xem?.mau]);
@@ -237,7 +247,15 @@ export function TangPhai(p: ChungTang) {
                 </>
               );
             })()}
-            <div class="dong"><button type="button" class="nut-phu" onClick={() => chonCan(null)}>{t('tang.boChon')}</button></div>
+            <div class="dong"><button type="button" class="nut-chinh" onClick={() => setMo3d(true)}>{t('m3d.xemCan')}</button><button type="button" class="nut-phu" onClick={() => chonCan(null)}>{t('tang.boChon')}</button></div>
+            {mo3d && (
+              <div class="hop-3d" role="dialog" aria-modal="true" aria-label={t('m3d.xemCan')} onClick={(e) => { if (e.target === e.currentTarget) setMo3d(false); }}>
+                <div class="hop-3d-trong">
+                  <button type="button" class="dong-hop" onClick={() => setMo3d(false)} aria-label={t('m3d.dong')}>×</button>
+                  <MoHinhCan canId={chon.canId} ten={`CH-${String(chon.no).padStart(2, '0')} · ${cChon.ten_vi}`} />
+                </div>
+              </div>
+            )}
           </>
         )}
       </MucGap>
