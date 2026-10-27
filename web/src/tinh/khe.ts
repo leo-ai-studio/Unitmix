@@ -46,6 +46,12 @@ export function kheTrenMat(mau: ToaCoMat, tv: ThuVien, bc?: Pick<ToaDat, 'canThe
   return { khe, de };
 }
 
+/** Tổng bề rộng khe (trừ khe tường ≤ 400 mm) và số chỗ đè trên mọi mặt — để so hai mặt bằng khác vị trí (tinh/loiThang.ts). */
+export function tongKhe(mau: ToaCoMat, tv: ThuVien, bc?: Pick<ToaDat, 'canTheo' | 'canViTri'>): { mm: number; de: number } {
+  const k = kheTrenMat(mau, tv, bc);
+  return { mm: k.khe.filter((x) => x.loai !== 'tuong').reduce((a, x) => a + x.rong, 0), de: k.de.length };
+}
+
 /** Khe mới / đè mới của bố cục so với mặt bằng gốc của mẫu tòa (bất biến "không khe, không đè" sau khi dồn khít). */
 export function kiemKhit(mau: ToaCoMat, tv: ThuVien, bc: Pick<ToaDat, 'canTheo' | 'canViTri'>): { kheMoi: Khe[]; de: number } {
   const goc = kheTrenMat(mau, tv), moi = kheTrenMat(mau, tv, bc);

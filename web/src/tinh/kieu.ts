@@ -70,6 +70,49 @@ export type ToaDat = {
   tangRieng?: Record<number, BoCucTang>;
   /** Lõi thang: khoá "mặt:phần tử" của lõi -> cửa vào, đi xuống hầm / lên mái. Chỉ lưu, màn hầm đọc sau. */
   loi?: Record<string, ThongTinLoi>;
+  /**
+   * Mặt bằng tầng đã tự chỉnh (XC-03 · XC-05 · XC-06 · XC-07 · PC-11, tinh/loiThang.ts): ô thang bộ, độ dời căn, nét bao,
+   * hành lang. Thiếu = theo mẫu tòa (đã chuẩn hoá ô thang 3.000 mm). Ghi lại sau mỗi lần đổi căn / STRETCH / tối ưu.
+   */
+  matBang?: MatBangSua;
+  /** false = tắt tự chỉnh mặt bằng tầng; thiếu = bật (như app cũ). */
+  tuChinhMB?: boolean;
+};
+
+/** Ô thang bộ trên một mặt tòa (mm, hệ mặt): ô [a0, a0 + rong], điểm chèn khối thang = (a0 + dIns, bIns), lật theo `sx`. */
+export type ThangBoMB = { khoa: string; matIdx: number; a0: number; rong: number; sx: 1 | -1; dIns: number; bIns: number; block: string; nguon: 'mau' | 'them' };
+/** Đoạn hành lang (tim, mm thế giới); `noi` = đoạn nối giữa các trục / qua sảnh. */
+export type DoanHanhLangMB = { ten: string; noi: boolean; p0: Diem; p1: Diem };
+/** Sảnh thang máy đo trên lõi (XC-06): bề rộng (mm, null = không đo thẳng được), loại hình theo ngưỡng 2.800 mm. */
+export type SanhMB = { khoaLoi: string; block: string; rong: number | null; loai: 'tm' | 'xh' };
+export type MucTuChinh = 'ok' | 'da_sua' | 'canh_bao' | 'vuot';
+/** Kết quả một quy tắc tự chỉnh: mức, số chỗ đã sửa, ghi chú ngắn (tiếng Việt, để báo cáo / tooltip). */
+export type KetQuaTuChinh = { ma: 'XC-03' | 'XC-05' | 'XC-06' | 'XC-07' | 'PC-11'; muc: MucTuChinh; sua: number; ghiChu: string };
+export type BaoCaoTuChinh = {
+  quyTac: KetQuaTuChinh[];
+  soThangTruoc: number;
+  soThangSau: number;
+  /** Số căn vượt cự ly thoát nạn trước / sau tự chỉnh (tinh/pccc.ts); null = không kiểm được. */
+  vuotTruoc: number | null;
+  vuotSau: number | null;
+  soCan: number;
+  dtxdM2: number;
+  dtHanhLangM2: number;
+};
+export type MatBangSua = {
+  phienBan: 1;
+  thangBo: ThangBoMB[];
+  /** Độ dời dọc mặt (mm) của căn theo khoá vị trí do thêm / bớt / dời thang. */
+  dich?: Record<string, number>;
+  /** Mép đầu / cuối mặt sau khi dài ra, ngắn đi (mm, hệ mặt) theo chỉ số mặt. */
+  mep?: Record<number, [number, number]>;
+  /** Nét bao sàn sau khi mặt dài ra / ngắn đi; thiếu = nét bao mẫu. */
+  duongBao?: Diem[];
+  hanhLang: DoanHanhLangMB[];
+  /** Nét hành lang vẽ thêm (để tính DT hành lang) khi trục kéo dài tới cửa căn xa nhất. */
+  hanhLangThem?: Diem[][];
+  sanh?: SanhMB[];
+  baoCao?: BaoCaoTuChinh;
 };
 
 /** Công năng một ô căn trên tầng. Ô khác 'can' không tính là căn (số căn, cơ cấu, dân số); DT cộng vào hạng mục tương ứng. */

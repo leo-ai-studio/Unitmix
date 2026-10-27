@@ -29,7 +29,7 @@ export type TuyChonToiUu = {
 };
 
 /** Tim cửa của căn biến thể STRETCH: điểm cửa bên phải đường cắt dời theo mức kéo. */
-function cuaBienThe(c: CanMau, cuaCan: Record<string, number>, tv: ThuVien): number | undefined {
+export function cuaBienThe(c: CanMau, cuaCan: Record<string, number>, tv: ThuVien): number | undefined {
   if (!c.stretchGoc) return cuaCan[c.ma_goc];
   const g = tv.can.get(c.stretchGoc.id), dx = g && cuaCan[g.ma_goc];
   if (!g || dx === undefined || !g.stretch) return undefined;

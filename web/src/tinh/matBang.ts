@@ -50,7 +50,7 @@ function viTriGoc(mau: ToaCoMat, tv: ThuVien): ViTriCan[] {
       if (!id) return;
       const sau = q.sau_mm || 8500;
       kq.push({
-        khoa: `${matIdx}:${i}`, matIdx, canGocId: id, a0: q.a0, a1: q.a1, sau, guong: q.sx < 0,
+        khoa: q.khoa ?? `${matIdx}:${i}`, matIdx, canGocId: id, a0: q.a0, a1: q.a1, sau, guong: q.sx < 0,
         goc: [B.pt(q.a0, 0), B.pt(q.a1, 0), B.pt(q.a1, sau), B.pt(q.a0, sau)],
       });
     });
@@ -342,7 +342,7 @@ export function matDaDon(mau: ToaCoMat, bc: Pick<ToaDat, 'canTheo' | 'canViTri'>
   return mau.mat.map((m, mi) => ({
     ...m,
     phan_tu: m.phan_tu.map((q, i) => {
-      const v = vts.get(`${mi}:${i}`);
+      const v = vts.get(q.khoa ?? `${mi}:${i}`);
       if (!v) return q;
       const c = tv.can.get(canDangDung(v, bc));
       return { ...q, a0: v.a0, a1: v.a1, rong_mm: v.a1 - v.a0, ma_thu_vien: c?.ma_goc ?? q.ma_thu_vien };
