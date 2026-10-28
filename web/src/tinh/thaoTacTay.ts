@@ -7,11 +7,11 @@
  *     (app cũ: "Không đủ chỗ … Đã hoàn tác").
  * Hàm thuần; màn Tầng gọi trong một `kho.sua` nên cả lượt (kể cả hàng loạt) là MỘT bước hoàn tác.
  */
-import { moRong, khoaCanThem, mauToa } from './canThem';
-import { doiChoO, doiCongNang, latO } from './doiCan';
-import type { CanThem, ThangTay, ThuVien, ToaDat } from './kieu';
+import { chiSoCanThem, moRong, khoaCanThem, mauToa, rutCanThem } from './canThem';
+import { doiCanTaiViTri, doiCanTheoTang, doiChoO, doiCongNang, latO } from './doiCan';
+import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type ToaDat } from './kieu';
 import { chupThangTay, doDeKhe, matBangCua, matBangTang, THANG_MIN, tuChinhSauSua, type ChanSua, type DuLieuMB, type ToaMB } from './loiThang';
-import { boCucTang, type ViTriCan } from './matBang';
+import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
 
 export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'it_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan';
 export type KetQuaTay = { ok: true; toa: ToaDat; chan: ChanSua[]; canhBao?: 'nhieu_thang' | 'it_thang' } | { ok: false; lyDo: LyDoTay; chiTiet?: string };
@@ -57,25 +57,32 @@ export function latTay(toa: ToaDat, tangs: number[] | null, khoas: string[], c: 
  */
 export function xoaCanTay(toa: ToaDat, tangs: number[] | null, khoas: string[], c: Ctx): KetQuaTay {
   if (!khoas.length) return { ok: false, lyDo: 'khong_doi' };
-  const r = chotSua(toa, doiCongNang(toa, tangs, khoas, 'bo'), tangs ?? [null], c);
+  let sua = doiCongNang(toa, tangs, khoas, 'bo');
+  // căn thêm tay không còn là căn ở tầng nào (chung + mọi tầng riêng) → rút hẳn khỏi `canThem` (không để ô 'bo')
+  const goc = c.tv.toa.get(toa.mauId);
+  const rut = goc ? khoas.map((k) => ({ k, i: chiSoCanThem(goc, sua.canThem, k) })).filter(({ k, i }) => i >= 0
+    && [null, ...tangCoRieng(sua)].every((t) => congNangTai(k, boCucTang(sua, t)) === 'bo')).sort((a, b) => b.i - a.i) : [];
+  for (const { k } of rut) sua = rutCanThem(sua, goc!, k) ?? sua;
+  const conBo = khoas.filter((k) => !rut.some((x) => x.k === k));
+  const r = chotSua(toa, sua, tangs ?? [null], c);
   if (!r.ok) return r;
   const mau = mauToa(c.tv, r.toa) as ToaMB;
   for (const k of tangs ?? [null]) {
     const mb = matBangTang(r.toa, mau, c.dl, k);
-    const sot = khoas.filter((x) => !mb.boCan?.includes(x));
+    const sot = conBo.filter((x) => !mb.boCan?.includes(x));
     if (sot.length) return { ok: false, lyDo: 'khong_bo', chiTiet: sot.join(', ') };
   }
   return r;
 }
 
 /**
- * Thêm căn (app cũ tAdd): mẫu `id` chèn ngay sau ô `sau`, dãy dài ra ở đầu tự do (QT-69). Căn thêm có ở mọi tầng; đang chọn tầng
- * riêng thì ô mới là 'bo' ở bố cục chung và là căn ở các tầng đang chọn.
+ * Thêm căn (app cũ tAdd): mẫu `id` chèn ngay sau ô `neo` — `truoc` = chèn ngay TRƯỚC ô đó (đầu dãy) — dãy dài ra ở đầu tự do
+ * (QT-69). Căn thêm có ở mọi tầng; đang chọn tầng riêng thì ô mới là 'bo' ở bố cục chung và là căn ở các tầng đang chọn.
  */
-export function themCanTay(toa: ToaDat, tangs: number[] | null, sau: ViTriCan, id: string, c: Ctx): KetQuaTay {
+export function themCanTay(toa: ToaDat, tangs: number[] | null, neo: ViTriCan, id: string, c: Ctx, truoc = false): KetQuaTay {
   const goc = c.tv.toa.get(toa.mauId);
   if (!goc) return { ok: false, lyDo: 'khong_doi' };
-  const ds: CanThem[] = [...(toa.canThem ?? []), { mat: sau.matIdx, sau: sau.khoa, id }];
+  const ds: CanThem[] = [...(toa.canThem ?? []), truoc ? { mat: neo.matIdx, truoc: neo.khoa, id } : { mat: neo.matIdx, sau: neo.khoa, id }];
   const { hong } = moRong(goc, ds, c.tv);
   if (hong.includes(ds.length - 1)) return { ok: false, lyDo: 'khong_dau_tu_do' };
   const khoa = khoaCanThem(goc, ds, ds.length - 1)!;
@@ -91,6 +98,42 @@ export function themCanTay(toa: ToaDat, tangs: number[] | null, sau: ViTriCan, i
   if (soCan(r.toa) <= soCan(toa)) return { ok: false, lyDo: 'thoat_nan' };
   return r;
 }
+
+/**
+ * Đặt lại căn vào ô trống / ô đã xoá `khoa` (công năng 'trong' / 'bo' → căn, mẫu `id` vừa ô) trên phạm vi tầng. Ô 'bo' trả lại thì
+ * dãy giãn lại đúng chỗ cũ (QT-69); số căn phải tăng, không thì trả lý do.
+ */
+export function themVaoO(toa: ToaDat, tangs: number[] | null, vt: ViTriCan, id: string, c: Ctx): KetQuaTay {
+  let sua = doiCongNang(toa, tangs, [vt.khoa], 'can');
+  const k0 = tangs?.[0] ?? null;
+  if (id !== canDangDung(vt, boCucTang(sua, k0))) {
+    const vts = viTriCan(mauToa(c.tv, sua) as ToaMB, c.tv);
+    const v = vts.find((x) => x.khoa === vt.khoa) ?? vt;
+    sua = tangs ? doiCanTheoTang(sua, tangs, v, id, vts, false) : doiCanTaiViTri(sua, v, id, vts, false);
+  }
+  const r = chotSua(toa, sua, tangs ?? [null], c);
+  if (!r.ok) return r;
+  const soCan = (x: ToaDat) => { const m = mauToa(c.tv, x) as ToaMB; return matBangTang(x, m, c.dl, k0).baoCao?.soCan ?? 0; };
+  if (soCan(r.toa) <= soCan(toa)) return { ok: false, lyDo: 'thoat_nan' };
+  return r;
+}
+
+/**
+ * Mẫu căn chọn được khi thêm căn cạnh căn `id` (menu Thêm căn): căn GIỮA cùng nhóm (NOTM / NOXH) và cùng chiều sâu, không gồm biến
+ * thể STRETCH. `rong` (mm, chỗ trống cần lấp) thì chỉ mẫu rộng ≤ chỗ + STRETCH co tối đa (QT-81 ±500), vừa nhất trước; không thì theo
+ * loại rồi bề ngang.
+ */
+export function dsMauThem(tv: ThuVien, id: string, rong?: number): CanMau[] {
+  const c0 = tv.can.get(id), c = c0?.stretchGoc ? tv.can.get(c0.stretchGoc.id) ?? c0 : c0;
+  if (!c) return [];
+  const ds = [...tv.can.values()].filter((x) => !x.stretchGoc && !x.id.includes('~') && x.vi_tri === 'giua' && x.nhom === c.nhom && x.sau_mm === c.sau_mm
+    && (rong === undefined || x.rong_mm <= rong + CO_TOI_DA_MM));
+  return rong === undefined
+    ? ds.sort((a, b) => LOAI_CAN.indexOf(a.loai) - LOAI_CAN.indexOf(b.loai) || a.rong_mm - b.rong_mm || a.id.localeCompare(b.id))
+    : ds.sort((a, b) => Math.abs(rong - a.rong_mm) - Math.abs(rong - b.rong_mm) || a.id.localeCompare(b.id));
+}
+/** STRETCH co tối đa một căn (QT-81: bước 100 mm, ±500 mm). */
+const CO_TOI_DA_MM = 500;
 
 /** Mẫu căn chèn khi "Thêm căn" sau ô có căn `id`: cùng mẫu gốc (bỏ biến thể STRETCH); căn góc thì lấy căn giữa cùng loại, nhóm, chiều sâu. */
 export function mauThem(tv: ThuVien, id: string): string {

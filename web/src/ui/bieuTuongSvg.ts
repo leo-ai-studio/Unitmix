@@ -23,7 +23,9 @@ export const SVG_BT: Record<string, string> = {
   // màn Tầng
   sapXep: '<path d="M12 3v18M3 12h18"/><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',
   themCan: '<rect x="3" y="6" width="12" height="12" rx="1.5"/><path d="M19 9v6M16 12h6"/>',
-  themThang: '<path d="M4 20h4v-4h4v-4h4V8h4"/><path d="M18 2v4M16 4h4"/>',
+  themTruoc: '<rect x="9" y="6" width="12" height="12" rx="1.5"/><path d="M5 9v6M2 12h6"/>',
+  themCho: '<rect x="3" y="6" width="18" height="12" rx="1.5" stroke-dasharray="3 2.5"/><path d="M12 9v6M9 12h6"/>',
+  themThang:'<path d="M4 20h4v-4h4v-4h4V8h4"/><path d="M18 2v4M16 4h4"/>',
   hanhLang: '<path d="M3 9h18M3 15h18"/><path d="M7 12h2M11 12h2M15 12h2"/>',
   toiUu: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/>',
   keoDan: '<rect x="7" y="6" width="10" height="12" rx="1"/><path d="M3 12h4M17 12h4M5 10l-2 2 2 2M19 10l2 2-2 2"/>',
