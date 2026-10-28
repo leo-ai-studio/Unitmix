@@ -25,6 +25,17 @@ export type DeBaiKD = { dtCan: Partial<Record<LoaiCan, number>>; soCan: Partial<
 /** Dòng bảng chỉ tiêu Excel đã áp cho lô (để lần sau đối chiếu lại). */
 export type NguonChiTieu = { tep: string; sheet: string; dong: number; ten: string; dtBang: number | null; soLo: number };
 
+/** Loại hình nhà ở để tra bảng dân số: thương mại / xã hội / tái định cư. */
+export type LoaiHinh = 'notm' | 'noxh' | 'tdc';
+/** Giai đoạn hồ sơ: `qh` lập quy hoạch chi tiết / TMB (chủ trương đầu tư); `cp` thẩm định BCNCKT và cấp GPXD. */
+export type GiaiDoan = 'qh' | 'cp';
+/**
+ * Khai báo cách tính dân số theo QĐ tỉnh (`tinh/quyTacDanSo.ts`). Thiếu = PA cũ / chưa khai: dân số = số căn × `nguoiMoiCan`
+ * (hệ số chung). `tinh` theo địa giới CŨ trước 1/7/2025. `loaiHinh` thiếu = lấy theo chức năng lô / nhóm mẫu căn.
+ * `cach` 'bq' = bình quân người / căn mà QĐ cho phép thay bảng.
+ */
+export type KhaiDanSo = { tinh: string; giaiDoan: GiaiDoan; loaiHinh?: LoaiHinh; cach?: 'bang' | 'bq' };
+
 export type TemDat = {
   kyHieu: string;
   chucNang: ChucNang;
@@ -32,6 +43,8 @@ export type TemDat = {
   coCauMucTieu: Record<LoaiCan, number>;
   deBai?: DeBaiKD;
   nguonChiTieu?: NguonChiTieu;
+  /** Tuỳ chọn: tính dân số theo QĐ tỉnh, từng căn. */
+  danSo?: KhaiDanSo;
 };
 /**
  * Lô đất. `canhDuong` (tuỳ chọn, theo thứ tự cạnh của `ranh`: cạnh i = ranh[i] → ranh[i+1]): số = cạnh giáp đường, bề rộng lộ giới
