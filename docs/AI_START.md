@@ -13,8 +13,9 @@ Tệp này để AI (Claude Code, C2, agent) bắt đầu nhanh. Đọc xong t�
 Một lệnh, chạy song song (học app cũ: nhớ lần đạt theo dấu vân tay + lấy mẫu bài quét nặng):
 
 ```bash
-npm run kiem:nhanh      # trong lúc làm: bài quét nặng lấy mẫu 1/k (web/src/thu/layMau.ts), bỏ test xuất CAD / .dxf và build; mã không đổi so với lần ĐẠT → 0 s
+npm run kiem:nhanh      # trong lúc làm: bài quét nặng lấy mẫu 1/k (web/src/thu/layMau.ts), bỏ build; mã không đổi so với lần ĐẠT → 0 s
 npm run kiem            # trước khi gộp main / push: đủ ca + vite build (~50 s); node scripts/kiem.mjs --nho = bỏ qua nếu đã ĐẠT
+npm run kiem:cad        # test xuất CAD / .dxf — KHÔNG nằm trong hai cổng trên (người dùng thấy phiền); chỉ chạy khi sửa xuat/xuatCad.ts. Kiểm trên app không tải / so .dxf.
 ```
 
 Bài quét mới nặng (quét mọi mẫu / mọi ô) thì bọc vòng lặp bằng `layMau(ds, k)`. Từng lệnh lẻ nếu cần:
