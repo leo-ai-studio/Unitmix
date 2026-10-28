@@ -2,6 +2,20 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · 3D: chọn lô kiểm trên app, chọn căn / tầng ở Công trình, nhớ hình tầng, FPS · agent Opus
+
+- Yêu cầu: (1) kiểm bấm chọn lô trên app thật (phần lô trống ngoài chân tòa); (2) chế độ Công trình bấm chọn căn / tầng, rê thì tô nhấn, bấm đúp căn mở màn Tầng đúng tầng + căn; (3) dựng lại tòa không đổi hình < 20 ms, giảm lần đầu; (4) đo FPS khi xoay camera.
+- Đã làm:
+  - Chọn lô: raycast đúng (chỉ dò mesh có `userData.chon`, không trúng đất / hầm). Lỗi thật: khi bật Hầm lô bán trong suốt nên pha màu chọn gần như không thấy → lớp phủ xanh mỏng + viền trên mặt lô (`CanhDung.hinhNhan` / `doiTuongChon` trong `ve3d/dungDuAn.ts`, vẽ ở `Khung3D`).
+  - Công trình: `ve3d/chon3d.ts` thêm đối tượng `tang` / `can` + dò tia thuần `chonTiaToa` (lăng trụ thân tháp, khối đế che, bỏ phần trên mặt cắt ngang, căn chứa điểm chạm theo mặt bằng / bố cục của chính tầng đó), `hinhNhanToa`, `doiTuongDangChonToa`, `chonSauBamToa`. `dungToa` trả `chon` (bản đồ chọn). `Khung3D`: `CanhDung.chonTia` (dò tia thay raycast lưới 1,8 triệu tam giác), lớp phủ tô nhấn bán trong suốt + viền (chọn đậm, rê nhạt, kiểu tia X xuyên mặt che), `chuThich` (chip thông tin căn trong khung, không chiếm chỗ — `styles/chon-3d.css`). `MoHinh3D`: `thongTinChonToa` (Tầng · CH-xx · loại · DT thông thủy). `SoanThao`: `onChonToa` → `canKhoa` + tầng (`chonTangToa` mới ở `man/ManTang.tsx`, đặt thẳng store chọn tầng, chạy cả khi ô ChonTang chưa gắn), `onMoToa` → màn Tầng 2D đúng tầng + căn. Bấm nền → về bố cục chung, bỏ căn.
+  - Dựng nhanh: `dungToa` dựng mỗi mẫu căn một lần rồi biến đổi mảng đỉnh vào từng ô; nhớ tầng đã gộp (LRU 48), khối đế / mái (LRU 16), nét nhân tầng; khoá theo tên vật liệu nên đổi kiểu vẽ dùng lại hình. `stretch3d.khoi3dTheoId` nhớ khối căn kéo. `Khung3D` dựng cảnh mới trước rồi gỡ cảnh cũ, không huỷ hình còn dùng.
+  - Móc kiểm mới trên `.vung-3d`: `_chamThu(x, y)` (đối tượng trúng khi bấm ở x, y px trong khung), `_doFps(giay)` (xoay camera bằng rAF, trả FPS / ms khung).
+- Số đo (chi tiết `de_xuat_hieu_nang.md` mục 12): dựng `tm-t2` 24 tầng (vitest) 120–132 → 39–56 ms lần đầu, dựng lại 0,6–0,7 ms; `tm-i1` 78–87 → 30–32 ms, dựng lại < 1 ms. Trên app (GPU RTX 3060): vào Công trình lần đầu 74–93 ms, đổi kiểu vẽ 0,8–6,9 ms, quay lại Công trình 4–5 ms. FPS xoay camera: GPU có vsync 60 / 60 (Toàn dự án / tòa 1,87 triệu tam giác), tắt vsync 2.711 / 437; swiftshader (CPU) 9,5 / 0,6 FPS TB.
+- Kiểm trên app (Edge headless GPU + CDP, vite 5424, API 8787, PA `tztd1udv/pa-1`, chỉ xem): bấm phần lô trống → bỏ chọn tòa, lô tô xanh + viền; Công trình: bấm căn → dải cấp "Tầng 19 · CH-12", ô tầng 19 sáng ở panel trái, panel phải "Chỉ tiêu tầng · Tầng 19", chip "Tầng 19 · CH-12 · 2PN · DT thông thủy 56,7 m²"; rê căn khác → tô nhạt; bấm mái / lõi → chọn tầng (tô cả tầng); bấm đúp căn → màn Tầng 2D, tầng 19, CH-12 đã chọn. Ảnh: `docs/anh/3d/6-chon-lo.png`, `7-cong-trinh-chon-can.png`, `8-cong-trinh-chon-tang.png`, `9-cong-trinh-bam-dup-mo-tang.png`.
+- Bẫy: headless Edge khung tự nhiên 1416×808, `Emulation.setDeviceMetricsOverride` mất khi đóng kết nối CDP → toạ độ bấm / rê lệch với ảnh chụp 1440×900; đặt override ở đầu MỖI lệnh. `Input.dispatchMouseEvent` loại `mouseMoved` phải `button: 'none'`, không thì trang thấy `buttons = 1` (đang kéo) và không rê. Edge headless với profile trống tự đăng nhập / đồng bộ tài khoản máy → chạy `--inprivate --disable-sync --disable-extensions`.
+- Kiểm: `npm run kiem` ĐẠT. Test mới `ve3d/chonToa3d.test.ts` (5 ca, có tòa thật), `hieuNang3d.test.ts` thêm chặn dựng lại < 20 ms.
+- Còn dở: chạm hai lần trên điện thoại ở Công trình chưa thử trên máy thật; căn ở góc lõm có thể bị căn bên cạnh che khi dò tia (theo chân tháp, không theo hình thật); chưa hạ bóng đổ cho máy không có GPU rời; tầng đế không chọn được.
+
 ## 2026-10-29 · Hầm: rải nhanh, xuất XLS không đứng, bản vẽ nhẹ · agent Opus
 
 - Yêu cầu: (1) xuất XLS khi cache hầm trống không làm đứng giao diện; (2) phép rải hầm lô 400×400 m từ 6–16 s xuống < 2 s, KHÔNG đổi kết quả; (3) bản vẽ hầm sau khi rải < 50 ms, đếm nút SVG.

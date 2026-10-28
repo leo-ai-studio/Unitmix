@@ -9,7 +9,7 @@ import type { Lo, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaPA, taoPAMoi } from '../tinh/macDinh';
 import { KhungSoan } from '../ui/KhungSoan';
 import type { CheDoXem } from '../ui/ThanhTren';
-import { chonSauBam } from '../ve3d/chon3d';
+import { chonSauBam, chonSauBamToa } from '../ve3d/chon3d';
 import type { Chon3D } from '../ve3d/MoHinh3D';
 import { ChonLang, ThuongHieu, type CapDo, type MenuCap } from '../ui/ThanhTren';
 import { capHienTai, dsMucTang, giaiKhoaTang, khoaTangDangXem, lenMotCap, type BuocSoan } from '../ui/capDo';
@@ -24,7 +24,7 @@ import { tomTatPA } from '../tinh/tomTat';
 import { diemLechPA } from '../tinh/diemPA';
 import { xuatBaoCaoPA } from '../xuat/xuatXls';
 import { luoi } from '../ui/Luoi';
-import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
+import { chonTangToa, TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
 
 // Màn nặng ít dùng: chunk riêng, tải khi mở (vòng O giữ chỗ) — de_xuat_hieu_nang P5.
@@ -123,13 +123,31 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const chungHam = { ...chung, tv, tangHam, chonTangHam: setTangHam };
   // chọn trong 3D đi qua đúng state chọn của 2D; bấm đúp tòa → mặt bằng tầng (như bấm đúp ở TMB) và về khung 2D
   const [xemGiua, setXemGiua] = useState<CheDoXem>('mat_bang');
-  const chon3d: Chon3D = {
-    chon: { toaId, loId },
-    onChon: (d) => { const c = chonSauBam(d); setLoId(c.loId); setToaId(c.toaId); setCanKhoa(null); },
-    onMo: (d) => { if (d.loai === 'toa') { chungXep.moTang(d.id); setXemGiua('mat_bang'); } },
-  };
   const soTangHam = Math.max(1, Math.round(kho.pa.ham.soTang));
   const xemXuat = toaDangXem(kho.pa, tv, loId, toaId);
+  // 3D Công trình: căn / tầng của tòa đang xem đi qua đúng state màn Tầng (canKhoa + tầng đang xem); bấm đúp căn → màn Tầng tầng đó, chọn căn đó
+  const coXem = useChonO(xemXuat?.toa ?? null);
+  const tang3d = coXem.tangs?.length === 1 ? coXem.tangs[0] : null;
+  const chon3d: Chon3D = {
+    chon: { toaId, loId, tang: tang3d, canKhoa },
+    onChon: (d) => { const c = chonSauBam(d); setLoId(c.loId); setToaId(c.toaId); setCanKhoa(null); },
+    onMo: (d) => { if (d.loai === 'toa') { chungXep.moTang(d.id); setXemGiua('mat_bang'); } },
+    onChonToa: (d) => {
+      const x = xemXuat?.toa;
+      if (!x) return;
+      const c = chonSauBamToa(d);
+      setCanKhoa(c.canKhoa);
+      chonTangToa(x, c.tang ? [c.tang] : null);
+    },
+    onMoToa: (d) => {
+      const x = xemXuat?.toa;
+      if (!x || (d.loai !== 'can' && d.loai !== 'tang')) return;
+      const c = chonSauBamToa(d);
+      setLoId(x.loId); setToaId(x.id); setCanKhoa(c.canKhoa);
+      chonTangToa(x, c.tang ? [c.tang] : null);
+      setBuoc('tang'); setXemGiua('mat_bang');
+    },
+  };
   const xemTang = buoc === 'tang' ? toaDangXem(kho.pa, tv, loId, toaId) : null;
   const loDangChon = buoc !== 'tang' ? loDangXep(kho.pa, loId) : xemTang?.lo;
   const toaDangChon = buoc === 'tmb' ? kho.pa.toa.find((x) => x.id === toaId) : xemTang?.toa;

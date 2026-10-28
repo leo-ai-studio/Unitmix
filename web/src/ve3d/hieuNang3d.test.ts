@@ -9,7 +9,7 @@ import { taoThuVien, type CanMau, type Diem, type ToaMau } from '../tinh/kieu';
 import { viTriCan, type ToaCoMat } from '../tinh/matBang';
 import { themBienThe } from '../tinh/stretch';
 import { nhomMoi, taoVatLieu, THAM_SO_MAC, type Khoi3d } from './dungCan';
-import { dungToa, type LoiHinh } from './dungToa';
+import { dungToa, thongKeNho, xoaNhoHinh3D, type LoiHinh } from './dungToa';
 
 const lib = new URL('../../public/lib/', import.meta.url);
 const doc = <T>(p: string) => JSON.parse(readFileSync(new URL(p, lib), 'utf8')) as T;
@@ -36,9 +36,13 @@ export function demVe(goc: THREE.Object3D) {
   return { ve, tamGiac: Math.round(tamGiac), inst, bong: Math.round(bong) };
 }
 
-function dung(id: string, soTang: number) {
+const napKhoi = new Map<string, Map<string, Khoi3d | null>>();
+/** Dựng tòa `id`. `lanh` = lần đầu thật: xoá bộ nhớ hình + khối 3D căn đọc mới; không thì dùng lại khối đã nạp (như khung 3D dựng lại). */
+function dung(id: string, soTang: number, lanh = true) {
   const mau = tv.toa.get(id) as ToaCoMat & { duong_bao: Diem[] };
-  const khoi3d = new Map<string, Khoi3d | null>();
+  if (lanh) { xoaNhoHinh3D(); napKhoi.delete(id); }
+  const khoi3d = napKhoi.get(id) ?? new Map<string, Khoi3d | null>();
+  napKhoi.set(id, khoi3d);
   for (const vt of viTriCan(mau, tv)) if (!khoi3d.has(vt.canGocId)) khoi3d.set(vt.canGocId, doc<{ khoi3d: Khoi3d | null }>(`can/${vt.canGocId}.json`).khoi3d);
   const loi = new Map<string, LoiHinh>();
   for (const m of mau.mat) for (const q of m.phan_tu) if (q.loai !== 'can') {
@@ -58,14 +62,22 @@ function dung(id: string, soTang: number) {
 }
 
 describe('Hiệu năng 3D tòa (P8)', () => {
-  it.each(['tm-t2', 'tm-i1'])('%s 24 tầng: dưới 100 draw call', (id) => {
+  it.each(['tm-t2', 'tm-i1'])('%s 24 tầng: dưới 100 draw call, dựng lại không đổi hình < 20 ms', (id) => {
     dung(id, 24); // làm nóng JIT
-    const ms: number[] = [];
+    const ms: number[] = [], lai: number[] = [];
     let r = dung(id, 24);
     for (let i = 0; i < 3; i++) { r = dung(id, 24); ms.push(r.ms); }
-    console.log(`[3D] ${id} 24 tầng: gần ${r.ve} draw call (${r.inst} instanced), ${r.tamGiac.toLocaleString('vi')} tam giác (đổ bóng ${r.bong.toLocaleString('vi')}); xa ${r.xa.ve} draw call, ${r.xa.tamGiac.toLocaleString('vi')} tam giác; dựng ${ms.map((x) => x.toFixed(0)).join(' / ')} ms`);
+    // dựng lại khi hình không đổi (đổi chọn / giờ / kiểu vẽ / bật hầm ở khung 3D): trúng bộ nhớ hình
+    let r2 = r;
+    for (let i = 0; i < 5; i++) { r2 = dung(id, 24, false); lai.push(r2.ms); }
+    console.log(`[3D] ${id} 24 tầng: gần ${r.ve} draw call (${r.inst} instanced), ${r.tamGiac.toLocaleString('vi')} tam giác (đổ bóng ${r.bong.toLocaleString('vi')}); xa ${r.xa.ve} draw call, ${r.xa.tamGiac.toLocaleString('vi')} tam giác; dựng lần đầu ${ms.map((x) => x.toFixed(0)).join(' / ')} ms; dựng lại ${lai.map((x) => x.toFixed(1)).join(' / ')} ms`);
     expect(r.ve).toBeLessThan(100);
     expect(r.xa.ve).toBeLessThanOrEqual(r.ve);
     expect(r.xa.tamGiac).toBeLessThan(r.tamGiac / 20);
+    // dựng lại ra đúng hình như lần đầu, không dựng tầng nào mới
+    expect(r2.tamGiac).toBe(r.tamGiac);
+    expect(r2.ve).toBe(r.ve);
+    expect(thongKeNho.tangMoi).toBe(0);
+    expect(Math.min(...lai)).toBeLessThan(20);
   });
 });

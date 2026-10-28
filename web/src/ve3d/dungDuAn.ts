@@ -199,5 +199,11 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     const h = 0.2 + chon.soTangDe * chon.caoDe + chon.soTangDH * chon.caoDH, banKinh = Math.max(...c.map((p) => Math.hypot(p[0] - tx, p[1] - ty))), r = Math.max(60, h * 1.2, banKinh * 2.4);
     ds.push({ ten: t('m3d.g.toaChon'), vt: [tx + r * 0.7, h * 0.65, -ty + r * 0.9], dich: [tx, h * 0.45, -ty], gio: 15 });
   }
-  return { tam, coCanh, cao: caoMax + 4, goc: ds, nen: true, nenTrongSuot: hienHam };
+  // lô chọn / rê: lớp phủ xanh mỏng trên mặt lô + viền (Khung3D · hinhNhan) — lô bán trong suốt khi bật hầm nên pha màu vật liệu gần như không thấy
+  const ranhLo = new Map(pa.lo.filter((l) => laCaoTang(l) && l.ranh.length >= 3).map((l) => [l.id, l.ranh]));
+  return {
+    tam, coCanh, cao: caoMax + 4, goc: ds, nen: true, nenTrongSuot: hienHam,
+    hinhNhan: (d) => (d.loai === 'lo' && ranhLo.has(d.id) ? { chan: ranhLo.get(d.id)! as [number, number][], y0: 0.21, y1: 0.36 } : null),
+    doiTuongChon: (c) => (!c.toaId && c.loId && ranhLo.has(c.loId) ? { loai: 'lo', id: c.loId } : null),
+  };
 }

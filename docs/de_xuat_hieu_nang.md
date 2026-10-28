@@ -388,3 +388,45 @@ Trên app (Edge headless `--use-angle=swiftshader`, 1440×900, PA `tztd1udv/pa-1
 - 3D toàn dự án kiểu Vật liệu dùng cùng `hinhDaiCua` cho mọi tòa.
 
 Chưa làm: chưa nhớ hình tầng đã dựng giữa các lần dựng lại (đổi tham số đứng / số tầng vẫn dựng lại căn: 80–145 ms); chưa hạ `shadow.mapSize` 4096; FPS trên GPU thật chưa đo.
+
+## 12. Đã làm 2026-10-29 (agent, nhánh `worktree-agent-aac6981de13e72c48`): 3D · nhớ hình tầng giữa các lần dựng, chọn căn / tầng ở chế độ Công trình, FPS
+
+### Thời gian dựng một tòa (vitest `web/src/ve3d/hieuNang3d.test.ts`, three thật, 2 tầng đế + 24 tầng điển hình)
+
+"Trước" = mã `b5c5ddf` chạy cùng tệp test trên cùng máy (lượt 2–4 sau làm nóng). "Lần đầu" = xoá bộ nhớ hình + đọc khối căn mới mỗi lượt. "Dựng lại" = cùng đầu vào (như khung 3D dựng lại khi đổi chọn / kiểu vẽ / bật hầm / quay lại tab).
+
+| Tòa 24 tầng | Trước | Sau · lần đầu | Sau · dựng lại không đổi hình |
+|---|---|---|---|
+| `tm-t2` (42 căn / tầng, 5 mẫu căn) | 120–132 ms | **39–56 ms** | **0,6–0,7 ms** |
+| `tm-i1` | 78–87 ms | **30–32 ms** | **0,4–0,8 ms** |
+
+Draw call / tam giác không đổi (tm-t2: 15 draw call, 1.806.328 tam giác, đổ bóng 519.832; xa 8 draw call). Test chặn: dựng lại < 20 ms, ra đúng số tam giác / draw call như lần đầu, không dựng tầng mới nào.
+
+Trên app (Edge headless GPU `--use-angle=d3d11`, NVIDIA RTX 3060, 1440×900, PA `tztd1udv/pa-1`, tòa T2 `tm-t2` 1 + 24 tầng, đo `msDung` qua `_doVe()`):
+- vào 3D Công trình lần đầu: 74–93 ms (gồm nạp mặt bằng, dựng 5 mẫu căn, gộp, LOD, mặt đất);
+- đổi kiểu vẽ (khung tạo renderer mới, dựng lại cảnh): 0,8–6,9 ms (Brand / Mô hình trắng / Vật liệu, 5 lượt);
+- Toàn dự án → Công trình lại (khung dựng lại từ đầu): 3,9–4,6 ms;
+- đổi chọn căn / tầng, rê chuột, đổi giờ mặt trời, cắt ngang: không dựng lại (đổi lớp phủ / đèn).
+
+Đã làm:
+- `ve3d/dungToa.ts`: mỗi mẫu căn dựng **một lần** (khối 3D × tham số đứng, `WeakMap` theo đối tượng khối) rồi đặt vào từng ô bằng phép biến đổi mảng đỉnh (trước: dựng lại hộp / extrude cho cả 42 căn). Tầng đã gộp nhớ trong LRU 48 mục theo khoá mặt bằng tầng (JSON, nhớ theo đối tượng) + bố cục ô (công năng, mẫu căn, số hiệu đối tượng khối 3D) + tham số đứng; khối đế / mái / tum LRU 16; nét nhân tầng nhớ theo dãy cao độ. Khoá theo **tên vật liệu**, không theo đối tượng vật liệu, nên đổi kiểu vẽ dùng lại hình. `xoaNhoHinh3D()` để đo lần đầu.
+- `ve3d/stretch3d.ts`: `khoi3dTheoId` nhớ khối căn kéo theo (khối gốc, mức kéo) → nạp lại tab không làm trượt bộ nhớ hình của căn STRETCH.
+- `ve3d/Khung3D.tsx`: dựng cảnh mới vào nhóm tạm rồi mới gỡ cảnh cũ; chỉ huỷ hình học cảnh mới không dùng lại (không nạp lại GPU), huỷ `InstancedMesh` cũ (bộ đệm ma trận).
+
+### FPS khi xoay camera (`_doFps(giay)` trên `.vung-3d`: xoay quanh điểm nhìn bằng `requestAnimationFrame`, mỗi khung một lượt vẽ có pass bóng, 5 s)
+
+| Máy vẽ | Cảnh | FPS (trung bình) | ms / khung TB · p95 |
+|---|---|---|---|
+| GPU RTX 3060 (D3D11), có vsync | Toàn dự án (26 draw call, 2,7 nghìn tam giác) | **60** (chạm trần vsync) | 16,7 · 16,9 |
+| | Công trình `tm-t2` gần (17–20 draw call, 1,87 triệu tam giác) | **60** (chạm trần vsync) | 16,7 · 16,9 |
+| GPU RTX 3060, tắt vsync (`--disable-gpu-vsync --disable-frame-rate-limit`) | Toàn dự án | 2.711 | 0,37 · 1,2 |
+| | Công trình `tm-t2` gần | **437** | 2,3 · 17,2 (thỉnh thoảng một khung dồn hàng đợi GPU) |
+| swiftshader (CPU, `--use-angle=swiftshader`), tắt vsync | Toàn dự án | 9,5 | 105 · 4 (khung đầu dồn hàng đợi rất lâu, các khung sau ngắn) |
+| | Công trình `tm-t2` gần | **0,6** | 1.806 · 3,5 (một lượt 5 s kéo thành ~13 phút) |
+
+Kết luận: trên GPU rời không cần hạ chi tiết thêm; `shadow.mapSize` 4096 chưa phải nút cổ chai. Máy chỉ có đồ hoạ tích hợp / phần mềm (swiftshader) thì nên hạ bóng đổ hoặc vào LOD xa sớm hơn — chưa làm.
+
+### Chọn trong 3D
+
+- Toàn dự án — bấm phần lô trống (ngoài chân tòa) kiểm trên app thật: quét lưới bằng móc `_chamThu(x, y)` (cùng đường dò như bấm chuột) tìm điểm ra lô, bấm thật qua CDP → tòa bỏ chọn ("Chọn tòa"), panel về số liệu lô, lô tô xanh + viền. Raycast không trúng đất / hầm (chỉ dò mesh có `userData.chon`); lỗi thật là tô nhấn lô gần như không thấy khi bật Hầm (lô bán trong suốt 22 %) → thêm lớp phủ xanh mỏng trên mặt lô (`hinhNhan` trong `dungDuAn`).
+- Công trình — dò tia thuần `chon3d.ts · chonTiaToa` trên bản đồ chọn do `dungToa` trả (`chon`: chân tháp, cao độ tầng, căn từng tầng theo mặt bằng / bố cục của tầng đó): tia vào lăng trụ thân tháp, khối đế che thì thôi, phần trên mặt cắt ngang bỏ qua; điểm chạm lùi 0,15 m vào trong → căn chứa điểm (dung sai 350 mm cho tường ngoài) hoặc tầng (trúng lõi / hành lang / mái). Không raycast 1,8 triệu tam giác nên rê chuột không giật.
