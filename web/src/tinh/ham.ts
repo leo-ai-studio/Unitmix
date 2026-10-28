@@ -14,6 +14,7 @@ import { chuanHoaHam, type HAM_MAC_DINH } from './macDinh';
 import { canCuaToa, coMat } from './matBang';
 import type { PhanTuMat } from './pccc';
 import { gocCanhDaiNhat, raiChoDo } from './raiCho';
+import { mauToa } from './canThem';
 
 export type HamDayDu = typeof HAM_MAC_DINH;
 
@@ -80,7 +81,7 @@ export function loiCotTuToa(pa: TrangThaiPA, tv: ThuVien, loId: string, cotRong:
   const diemCot: Diem[] = [];
   const cot: Diem[][] = [];
   for (const t of pa.toa) {
-    const mau = t.loId === loId ? tv.toa.get(t.mauId) : undefined;
+    const mau = t.loId === loId ? mauToa(tv, t) : undefined;
     if (!mau) continue;
     const xs = mau.duong_bao.map((p) => p[0]), ys = mau.duong_bao.map((p) => p[1]);
     const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
@@ -203,7 +204,7 @@ export function canTrenLo(pa: TrangThaiPA, tv: ThuVien, loId: string): { soCan: 
   for (const t of pa.toa) {
     if (t.loId !== loId) continue;
     soCan += Object.values(dem[t.id] ?? {}).reduce((a, b) => a + b, 0);
-    const mau = tv.toa.get(t.mauId);
+    const mau = mauToa(tv, t);
     if (!mau) continue;
     for (const [id, n] of canCuaToa(mau, t, tv)) dtsd += n * t.soTangDH * (tv.can.get(id)?.dt_tt_m2 ?? 0);
   }

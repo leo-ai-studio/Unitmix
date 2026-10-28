@@ -12,6 +12,7 @@ import { CHI_PHI_MAC_DINH } from '../tinh/macDinh';
 import { tinhTaiChinh, type TaiChinh } from '../tinh/taiChinh';
 import { LOAI_CAN, type ChiPhiPA, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
 import { canCuaToa } from '../tinh/matBang';
+import { mauToa } from '../tinh/canThem';
 
 export type OXls = string | number;
 export type SheetXls = { ten: string; hang: OXls[][] };
@@ -69,7 +70,7 @@ export function baoCaoPA(pa: TrangThaiPA, tv: ThuVien, kq: KetQuaChiTieu, tenDuA
   s3.push([t('xls.lo'), t('xls.toa'), t('xls.mauCan'), t('xls.maCan'), t('xls.loai'), t('xls.dtTt'), t('xls.dtTim'), t('xls.canMoiTang'), t('xls.soTang'), t('xls.soLuong'), t('xls.tongDtTt')]);
   let tongSl = 0, tongDt = 0;
   for (const toa of pa.toa) {
-    const mau = tv.toa.get(toa.mauId);
+    const mau = mauToa(tv, toa);
     if (!mau) continue;
     for (const [id, n] of canCuaToa(mau, toa, tv)) {
       const c = tv.can.get(id);

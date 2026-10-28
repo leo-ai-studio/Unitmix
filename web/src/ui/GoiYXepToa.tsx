@@ -12,6 +12,7 @@ import { goiYXepToaNen, type GoiYXep } from '../tinh/xepToa';
 import { sPoly } from '../ve/BanVe';
 import { taiCuaCan } from '../ve/hinhHocThuVien';
 import { fmtSo } from './so';
+import { mauToa } from '../tinh/canThem';
 
 // ---- trạng thái dùng chung panel trái ↔ bản vẽ (cấp module, không lưu vào PA) ----
 type TrangThai = { khoa: string | null; ds: GoiYXep[] | null; chay: boolean; tienDo: number; xem: number | null; loi: string | null; ms: number | null };
@@ -119,7 +120,7 @@ export function LopGoiY({ loId, tv }: { loId: string | null; tv: ThuVien | null 
   return (
     <g class="lop-goi-y" pointer-events="none">
       {g.toa.map((x, i) => {
-        const m = tv.toa.get(x.mauId);
+        const m = mauToa(tv, x);
         return m ? <polygon key={i} points={sPoly(chanToa(m, x))} fill="var(--green)" fill-opacity="0.12" stroke="var(--green)" stroke-width="2" stroke-dasharray="7 5" vector-effect="non-scaling-stroke" /> : null;
       })}
     </g>

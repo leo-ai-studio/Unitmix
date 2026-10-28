@@ -38,18 +38,20 @@ function gonTang(tr: Record<string, BoCucTang>): Record<number, BoCucTang> | und
   for (const [k, g] of Object.entries(tr)) {
     const cv = g.canViTri && Object.keys(g.canViTri).length ? g.canViTri : undefined;
     const cn = g.congNang && Object.keys(g.congNang).length ? g.congNang : undefined;
-    // mặt bằng tự chỉnh riêng của tầng giữ tới lần tự chỉnh sau (chỉ còn nghĩa khi tầng còn đổi căn / công năng)
-    if (cv || cn || g.coCauMucTieu) kq[Number(k)] = { ...(cv ? { canViTri: cv } : {}), ...(cn ? { congNang: cn } : {}), ...(g.coCauMucTieu ? { coCauMucTieu: g.coCauMucTieu } : {}), ...((cv || cn) && g.matBang ? { matBang: g.matBang } : {}) };
+    const lt = g.lat && Object.keys(g.lat).length ? g.lat : undefined;
+    // mặt bằng tự chỉnh riêng của tầng giữ tới lần tự chỉnh sau (chỉ còn nghĩa khi tầng còn đổi căn / công năng / lật)
+    if (cv || cn || lt || g.coCauMucTieu) kq[Number(k)] = { ...(cv ? { canViTri: cv } : {}), ...(cn ? { congNang: cn } : {}), ...(lt ? { lat: lt } : {}), ...(g.coCauMucTieu ? { coCauMucTieu: g.coCauMucTieu } : {}), ...((cv || cn || lt) && g.matBang ? { matBang: g.matBang } : {}) };
   }
   return Object.keys(kq).length ? kq : undefined;
 }
 
+type GhiDeSua = { canViTri: Record<string, string>; congNang: Record<string, CongNangO>; lat: Record<string, boolean>; coCauMucTieu?: Record<LoaiCan, number> };
 /** Sửa ghi đè của các tầng `tangs` bằng `fn` (nhận bản sao để sửa tại chỗ), rồi dọn gọn. */
-function suaTang<T extends Pick<ToaDat, 'tangRieng'>>(toa: T, tangs: number[], fn: (g: { canViTri: Record<string, string>; congNang: Record<string, CongNangO>; coCauMucTieu?: Record<LoaiCan, number> }, tang: number) => void): T {
+function suaTang<T extends Pick<ToaDat, 'tangRieng'>>(toa: T, tangs: number[], fn: (g: GhiDeSua, tang: number) => void): T {
   const tr: Record<string, BoCucTang> = { ...(toa.tangRieng ?? {}) };
   for (const k of tangs) {
     const cu = tr[k] ?? {};
-    const g = { canViTri: { ...(cu.canViTri ?? {}) }, congNang: { ...(cu.congNang ?? {}) }, coCauMucTieu: cu.coCauMucTieu };
+    const g = { canViTri: { ...(cu.canViTri ?? {}) }, congNang: { ...(cu.congNang ?? {}) }, lat: { ...(cu.lat ?? {}) }, coCauMucTieu: cu.coCauMucTieu };
     fn(g, k);
     tr[k] = g;
   }
@@ -98,7 +100,65 @@ export function apDoiViTriTang<T extends BoCucToa>(toa: T, tangs: number[], canV
 
 /** Bỏ bố cục riêng (đổi căn + công năng) của các tầng; mục tiêu cơ cấu riêng giữ nguyên. */
 export const boTangRieng = <T extends Pick<ToaDat, 'tangRieng'>>(toa: T, tangs: number[]): T =>
-  suaTang(toa, tangs, (g) => { g.canViTri = {}; g.congNang = {}; });
+  suaTang(toa, tangs, (g) => { g.canViTri = {}; g.congNang = {}; g.lat = {}; });
+
+// ---- Công cụ tay màn Tầng: lật gương, đổi chỗ (app cũ mirrorSel · move / commitMove, QT-8 · QT-30) ----
+
+type BoCucToaLat = BoCucToa & Pick<ToaDat, 'lat'>;
+const latChung = (toa: Pick<ToaDat, 'lat'>, k: string) => !!toa.lat?.[k];
+
+/**
+ * Lật gương (⇄) các ô `khoas` trên phạm vi `tangs` (null = bố cục chung): mỗi ô đảo so với bố cục đang xem của tầng đầu. Trùng bố
+ * cục chung thì bỏ ghi đè. Hàng loạt (QT-102): cả danh sách trong một lần gọi = một bước hoàn tác.
+ */
+export function latO<T extends BoCucToaLat>(toa: T, tangs: number[] | null, khoas: string[]): T {
+  if (tangs === null) {
+    const lat = { ...(toa.lat ?? {}) };
+    for (const k of khoas) if (lat[k]) delete lat[k]; else lat[k] = true;
+    return { ...toa, lat: Object.keys(lat).length ? lat : undefined };
+  }
+  const dang = boCucTang(toa, tangs[0]).lat ?? {};
+  return suaTang(toa, tangs, (g) => {
+    for (const k of khoas) {
+      const moi = !dang[k];
+      if (moi === latChung(toa, k)) delete g.lat[k]; else g.lat[k] = moi;
+    }
+  });
+}
+
+/**
+ * Đổi chỗ nội dung hai ô `a`, `b` (kéo căn sang ô khác — Sắp xếp căn ✥): mẫu căn đang dùng, công năng ô (ô trống / phòng KT…) và lật
+ * gương đổi cho nhau; vị trí ô (khoá mẫu tòa) đứng yên, dãy dồn khít lại theo bề ngang mới (XC-04 · QT-30 · QT-8). `tangs` null =
+ * bố cục chung, không thì chỉ các tầng đó (ghi đè).
+ */
+export function doiChoO<T extends BoCucToaLat>(toa: T, tangs: number[] | null, a: ViTriCan, b: ViTriCan): T {
+  if (a.khoa === b.khoa) return toa;
+  const bc = boCucTang(toa, tangs?.[0] ?? null);
+  const can = (v: ViTriCan) => canDangDung(v, bc), cn = (v: ViTriCan) => congNangTai(v.khoa, bc), lt = (v: ViTriCan) => !!bc.lat?.[v.khoa];
+  // `a`, `b` lấy từ viTriCan có bố cục (guong = hướng THẬT, đã tính lật). Căn giữ hướng thật khi sang ô khác (app cũ: "|m" đi theo
+  // căn): lat ô mới = guong gốc của ô XOR hướng thật của căn chuyển tới
+  const gocO = (v: ViTriCan) => v.guong !== lt(v);
+  const moi = [
+    { v: a, id: can(b), cn: cn(b), lat: gocO(a) !== b.guong },
+    { v: b, id: can(a), cn: cn(a), lat: gocO(b) !== a.guong },
+  ];
+  if (tangs === null) {
+    const canViTri = { ...(toa.canViTri ?? {}) }, congNang: Record<string, CongNangO> = { ...(toa.congNang ?? {}) }, lat = { ...(toa.lat ?? {}) };
+    for (const m of moi) {
+      if (m.id === (toa.canTheo[m.v.canGocId] ?? m.v.canGocId)) delete canViTri[m.v.khoa]; else canViTri[m.v.khoa] = m.id;
+      if (m.cn === 'can') delete congNang[m.v.khoa]; else congNang[m.v.khoa] = m.cn;
+      if (m.lat) lat[m.v.khoa] = true; else delete lat[m.v.khoa];
+    }
+    return { ...toa, canViTri: gon(canViTri), congNang: Object.keys(congNang).length ? congNang : undefined, lat: Object.keys(lat).length ? lat : undefined };
+  }
+  return suaTang(toa, tangs, (g) => {
+    for (const m of moi) {
+      if (m.id === canDangDung(m.v, toa)) delete g.canViTri[m.v.khoa]; else g.canViTri[m.v.khoa] = m.id;
+      if (m.cn === congNangTai(m.v.khoa, toa)) delete g.congNang[m.v.khoa]; else g.congNang[m.v.khoa] = m.cn;
+      if (m.lat === latChung(toa, m.v.khoa)) delete g.lat[m.v.khoa]; else g.lat[m.v.khoa] = m.lat;
+    }
+  });
+}
 
 /** Đặt (hoặc bỏ khi null) mục tiêu cơ cấu riêng cho các tầng (S12). */
 export const datCoCauTang = <T extends Pick<ToaDat, 'tangRieng'>>(toa: T, tangs: number[], muc: Record<LoaiCan, number> | null): T =>

@@ -6,6 +6,7 @@ import { demCan } from './coCau';
 import type { MucDo } from './chiTieu';
 import type { CongNangO, ThuVien, ToaDat, TrangThaiPA } from './kieu';
 import { boCucTang, canDangDung, coMat, congNangTai, nhomTang, viTriCan, type BoCucToa } from './matBang';
+import { mauToa } from './canThem';
 
 export type HangMucO = Exclude<CongNangO, 'can' | 'bo'>;
 export type DtCongNang = Record<HangMucO, number>;
@@ -19,7 +20,7 @@ const SAT_NGUONG = 0.03; // như chiTieu.ts: trong 3 % so với ngưỡng thì c
 /** DT (m²) các ô đổi công năng của cả tòa, cộng theo từng tầng điển hình. */
 export function dtCongNangToa(toa: BoCucToa & Pick<ToaDat, 'mauId'>, tv: ThuVien): DtCongNang {
   const kq = dtCongNangRong();
-  const mau = tv.toa.get(toa.mauId);
+  const mau = mauToa(tv, toa);
   if (!mau || !coMat(mau)) return kq;
   const vts = viTriCan(mau, tv);
   for (const { tang, so } of nhomTang(toa)) {

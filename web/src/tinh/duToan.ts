@@ -10,6 +10,7 @@ import { chanToa, dienTich, dtVung, khoiDe } from './hinhHoc';
 import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiPhiPA, type Diem, type KhoaDongDuToan, type LoaiCan, type NhomChiPhi, type ThuVien, type TrangThaiPA } from './kieu';
 import { CHI_PHI_MAC_DINH, chuanHoaHam } from './macDinh';
 import { canCaToa } from './matBang';
+import { mauToa } from './canThem';
 
 /** QCVN 04:2021/BXD 2.4.2: tối thiểu 1 thang máy / 70 căn (dùng khi chưa đếm được thang từ lõi; QS / chủ nhiệm kiểm lại). */
 export const CAN_MOI_THANG = 70;
@@ -90,7 +91,7 @@ export function tinhKhoiLuong(pa: TrangThaiPA, tv: ThuVien, coRaiHam = true): Kh
   for (const lo of pa.lo) {
     const dtLo = lo.ranh.length >= 3 ? dienTich(lo.ranh) : 0;
     const toaLo = pa.toa.filter((t) => t.loId === lo.id && tv.toa.has(t.mauId));
-    const chan = toaLo.map((t) => chanToa(tv.toa.get(t.mauId)!, t));
+    const chan = toaLo.map((t) => chanToa(mauToa(tv, t)!, t));
     const de = khoiDe(chan, toaLo.map((t) => t.deOffset));
     const dtChiemDat = toaLo.length ? dtVung(de) : 0;
     const tongChan = chan.reduce((a, p) => a + dienTich(p), 0);
@@ -98,7 +99,7 @@ export function tinhKhoiLuong(pa: TrangThaiPA, tv: ThuVien, coRaiHam = true): Kh
     const chuViDe = caoDe > 0 ? de.reduce((a, p) => a + chuVi(p), 0) : 0;
 
     const toa: KhoiLuongToa[] = toaLo.map((t, i) => {
-      const mau = tv.toa.get(t.mauId)!;
+      const mau = mauToa(tv, t)!;
       const dtSanDH = dienTich(chan[i]);
       const soCan = dem[t.id] ?? coCauRong();
       const tongCan = LOAI_CAN.reduce((a, l) => a + soCan[l], 0);
