@@ -46,5 +46,13 @@ export function khoi3dBienThe(d: Khoi3d, goc: CanMau, st: number): Khoi3d {
 export function khoi3dTheoId(id: string, dGoc: Khoi3d | null, tv?: ThuVien | null): Khoi3d | null {
   if (!dGoc || !tv) return dGoc;
   const { goc, st } = tachMa(id), g = tv.can.get(goc);
-  return st && g ? khoi3dBienThe(dGoc, g, st) : dGoc;
+  if (!st || !g) return dGoc;
+  // nhớ theo khối gốc × mức kéo: cùng một đối tượng mỗi lần nạp lại → bộ nhớ hình 3D (dungToa) trúng, không dựng lại căn kéo
+  let m = nhoBienThe.get(dGoc);
+  if (!m) nhoBienThe.set(dGoc, (m = new Map()));
+  const k = `${goc}|${st}`;
+  let d = m.get(k);
+  if (!d) m.set(k, (d = khoi3dBienThe(dGoc, g, st)));
+  return d;
 }
+const nhoBienThe = new WeakMap<Khoi3d, Map<string, Khoi3d>>();

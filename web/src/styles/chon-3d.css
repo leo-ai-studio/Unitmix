@@ -1,0 +1,9 @@
+/* Thông tin căn / tầng đang chọn ở 3D Công trình (ve3d/Khung3D.tsx `chuThich`): lớp phủ trong khung 3D, không chiếm chỗ khung giữa. */
+.the-chon-3d {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+  max-width: calc(100% - 32px); padding: 6px 12px; border-radius: 6px;
+  background: color-mix(in srgb, var(--panel, #fffefa) 92%, transparent); color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--green) 35%, transparent); box-shadow: 0 2px 8px rgb(2 43 30 / 0.12);
+  font-size: 13px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+}
+@media (max-width: 760px) { .the-chon-3d { white-space: normal; bottom: 56px; } }

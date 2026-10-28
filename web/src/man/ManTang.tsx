@@ -82,6 +82,8 @@ export function useChonO(toa: ToaDat | null): ChonO {
   return { ...chonO, tangs: tangs?.length ? tangs : null };
 }
 const datChonToa = (toa: ToaDat, p: Partial<ChonO>) => datChonO({ ...(chonO.toaId === toa.id ? {} : { tangs: null, ds: [], menu: null, thang: null }), toaId: toa.id, ...p });
+/** Chọn tầng điển hình đang xem của tòa từ ngoài màn Tầng (3D Công trình bấm căn / tầng): null = bố cục chung. Dùng được cả khi ô ChonTang chưa gắn. */
+export const chonTangToa = (toa: ToaDat, tangs: number[] | null) => datChonToa(toa, { tangs, ds: [], menu: null });
 
 /** Các ô đang chọn: ô chính (canKhoa) + ô chọn thêm. */
 const oDangChon = (canKhoa: string | null, ds: string[]) => [...new Set([...(canKhoa ? [canKhoa] : []), ...ds])];

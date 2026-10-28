@@ -14,6 +14,7 @@ import './styles/xep-toa.css';
 import './styles/stretch.css';
 import './styles/bieu-tuong.css';
 import './styles/tmb-thao-tac.css';
+import './styles/chon-3d.css';
 import './styles/xep-hang-loat.css';
 import './styles/cong-cu-tang.css';
 import './styles/cap-do.css';
