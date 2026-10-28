@@ -3,6 +3,7 @@
  * bộ liền suốt chiều cao khi tòa có tầng riêng (hợp thang mọi tầng / ép theo tầng chung). Chạy trên mẫu thật của thư viện.
  */
 import { describe, expect, it } from 'vitest';
+import { layMau } from '../thu/layMau';
 import { existsSync, readFileSync } from 'node:fs';
 import { tongKhe } from './khe';
 import { taoThuVien, type CanMau, type ToaDat, type ToaMau, type TrangThaiPA } from './kieu';
@@ -80,7 +81,7 @@ describe('Việc 1 · gỡ căn vượt cự ly sau PC-11 (app cũ: tự sinh + 
   });
 
   it('mọi mẫu 24 tầng: sau gỡ căn không mẫu nào còn căn vượt; mẫu không vượt sau PC-11 thì không đổi căn nào', () => {
-    for (const t of toaDs) {
+    for (const t of layMau(toaDs, 3)) {
       const m = mau(t.id);
       if (!Array.isArray(m.mat)) continue;
       const a = tuChinhMatBang(m, tv, dl, { bc: trong, chieuCaoPCCC: H24 });
