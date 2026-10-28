@@ -87,8 +87,9 @@ export function chanToa(mau: ToaMau, toa: ToaDat): Diem[] {
   const xs = mau.duong_bao.map((p) => p[0]), ys = mau.duong_bao.map((p) => p[1]);
   const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
   const bao = toa.duongBao && toa.duongBao.length >= 3 ? toa.duongBao : mau.duong_bao;
-  const m = bao.map(([px, py]) => [(px - cx) / 1000, (py - cy) / 1000] as Diem);
-  return xoayTinhTien(m, toa.x, toa.y, toa.gocDo);
+  const m = bao.map(([px, py]) => [((toa.lat ? -1 : 1) * (px - cx)) / 1000, (py - cy) / 1000] as Diem);
+  // lật: đảo thứ tự đỉnh để giữ chiều vòng như nét bao gốc
+  return xoayTinhTien(toa.lat ? m.reverse() : m, toa.x, toa.y, toa.gocDo);
 }
 
 /**

@@ -3,6 +3,7 @@ import type { ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { mauHieuDung, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type HinhLoiMB, type ToaMB } from '../tinh/loiThang';
 import { coMat } from '../tinh/matBang';
 import { idLoi, tai, taiCuaCan } from '../ve/hinhHocThuVien';
+import { mauToa } from '../tinh/canThem';
 
 /**
  * Dữ liệu cho tự chỉnh mặt bằng tầng (tinh/loiThang.ts): hình lõi (nét bao MDI-BAO-TM, tường để đo sảnh) của mọi khối lõi / thang
@@ -61,7 +62,7 @@ export const suaTuChinh = (sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void, t
       chan = [];
       return { ...p, toa: p.toa.map((x) => {
         if (x.id !== toaId || !dl) return x;
-        const mau = tv.toa.get(x.mauId) as ToaMB | undefined;
+        const mau = mauToa(tv, x) as ToaMB | undefined;
         if (tuy.tay === false) return tuChinhToa(x, mau, tv, dl);
         const truoc = q.toa.find((o) => o.id === toaId);
         if (!truoc) return tuChinhToa(x, mau, tv, dl);

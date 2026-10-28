@@ -11,6 +11,7 @@ import { chuanHoaHam } from '../tinh/macDinh';
 import type { KieuVe3D, T3, VatLieu3D } from './dungCan';
 import type { CanhDung, GocDeXuat } from './Khung3D';
 import { t } from '../i18n/i18n';
+import { mauToa } from '../tinh/canThem';
 
 const trong = (p: Diem, poly: Diem[]): boolean => {
   let c = false;
@@ -123,7 +124,7 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
   for (const l of pa.lo) {
     const ts = pa.toa.filter((x) => x.loId === l.id && tv.toa.has(x.mauId));
     if (!ts.length) continue;
-    const chans = ts.map((x) => chanToa(tv.toa.get(x.mauId)!, x));
+    const chans = ts.map((x) => chanToa(mauToa(tv, x)!, x));
     chanTat.push(...chans);
     const hDe = Math.max(0, ...ts.map((x) => x.soTangDe * x.caoDe));
     if (hDe > 0) {
@@ -177,7 +178,7 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
   ];
   const chon = pa.toa.find((x) => x.id === toaChon && tv.toa.has(x.mauId));
   if (chon) {
-    const c = chanToa(tv.toa.get(chon.mauId)!, chon), [tx, ty] = trongTam(c);
+    const c = chanToa(mauToa(tv, chon)!, chon), [tx, ty] = trongTam(c);
     const h = 0.2 + chon.soTangDe * chon.caoDe + chon.soTangDH * chon.caoDH, banKinh = Math.max(...c.map((p) => Math.hypot(p[0] - tx, p[1] - ty))), r = Math.max(60, h * 1.2, banKinh * 2.4);
     ds.push({ ten: t('m3d.g.toaChon'), vt: [tx + r * 0.7, h * 0.65, -ty + r * 0.9], dich: [tx, h * 0.45, -ty], gio: 15 });
   }

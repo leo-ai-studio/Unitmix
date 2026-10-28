@@ -26,6 +26,8 @@ import { mauCuaToa, suaTuChinh, useDuLieuMB } from './tuChinhTang';
 import { matBangRiengTang, type ChanSua } from '../tinh/loiThang';
 import { ST_BUOC, stretchTay, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
+import { ThanhCongCuTang, useKeoTay, type PropsCongCu } from './CongCuTang';
+import { mauToa } from '../tinh/canThem';
 
 export type ChungTang = {
   pa: TrangThaiPA;
@@ -50,18 +52,19 @@ const LOP_MUC = { ok: 'ok', canh_bao: 'canh-bao', vuot: 'vuot' } as const;
  */
 export function toaDangXem(pa: TrangThaiPA, tv: ThuVien | null, loId: string | null, toaId: string | null): { toa: ToaDat; mau: ToaVe; lo: Lo | undefined; mauTang: (tang: number | null) => ToaVe } | null {
   if (!tv) return null;
-  const co = pa.toa.filter((x) => tv.toa.has(x.mauId) && coMat(tv.toa.get(x.mauId)!));
+  const co = pa.toa.filter((x) => tv.toa.has(x.mauId) && coMat(mauToa(tv, x)!));
   const toa = co.find((x) => x.id === toaId) ?? co.find((x) => x.loId === loId) ?? co[0];
   if (!toa) return null;
-  const goc = tv.toa.get(toa.mauId) as ToaVe;
+  const goc = mauToa(tv, toa) as ToaVe;
   const tang = chonO.toaId === toa.id ? tangXem(chonO.tangs?.filter((k) => k <= toa.soTangDH) ?? null) : null;
   return { toa, mau: mauCuaToa(toa, goc, tang), lo: pa.lo.find((l) => l.id === toa.loId), mauTang: (k) => mauCuaToa(toa, goc, k) };
 }
 
 // ---- Trạng thái chọn của màn Tầng (dùng chung panel trái, bản vẽ, panel phải; không lưu vào PA) ----
 type MenuMo = { loai: 'o' | 'loi'; khoa: string; x: number; y: number };
-type ChonO = { toaId: string | null; tangs: number[] | null; ds: string[]; menu: MenuMo | null };
-let chonO: ChonO = { toaId: null, tangs: null, ds: [], menu: null };
+/** `thang`: ô thang bộ đang chọn (công cụ tay: thêm sau / xoá / dời thang). */
+type ChonO = { toaId: string | null; tangs: number[] | null; ds: string[]; menu: MenuMo | null; thang?: string | null };
+let chonO: ChonO = { toaId: null, tangs: null, ds: [], menu: null, thang: null };
 const ngheO = new Set<() => void>();
 const datChonO = (p: Partial<ChonO>) => { chonO = { ...chonO, ...p }; ngheO.forEach((f) => f()); };
 /** Tầng / ô đang chọn ở màn Tầng (store cấp module); SoanThao đọc để ghi breadcrumb. */
@@ -73,11 +76,11 @@ export function useChonO(toa: ToaDat | null): ChonO {
     return () => void ngheO.delete(f);
   }, []);
   // đổi tòa thì về bố cục chung, bỏ chọn nhiều; tầng chọn vượt số tầng điển hình thì bỏ
-  if (!toa || chonO.toaId !== toa.id) return { toaId: toa?.id ?? null, tangs: null, ds: [], menu: null };
+  if (!toa || chonO.toaId !== toa.id) return { toaId: toa?.id ?? null, tangs: null, ds: [], menu: null, thang: null };
   const tangs = chonO.tangs?.filter((k) => k <= toa.soTangDH) ?? null;
   return { ...chonO, tangs: tangs?.length ? tangs : null };
 }
-const datChonToa = (toa: ToaDat, p: Partial<ChonO>) => datChonO({ ...(chonO.toaId === toa.id ? {} : { tangs: null, ds: [], menu: null }), toaId: toa.id, ...p });
+const datChonToa = (toa: ToaDat, p: Partial<ChonO>) => datChonO({ ...(chonO.toaId === toa.id ? {} : { tangs: null, ds: [], menu: null, thang: null }), toaId: toa.id, ...p });
 
 /** Các ô đang chọn: ô chính (canKhoa) + ô chọn thêm. */
 const oDangChon = (canKhoa: string | null, ds: string[]) => [...new Set([...(canKhoa ? [canKhoa] : []), ...ds])];
@@ -121,7 +124,7 @@ export function TangTrai(p: ChungTang) {
     <>
       <MucGap tieuDe={`${t('tang.toa')} · ${pa.toa.length}`} giaiThich={t('gt.tang.toa')} mo>
         {pa.toa.map((x) => {
-          const m = tv.toa.get(x.mauId), l = pa.lo.find((q) => q.id === x.loId);
+          const m = mauToa(tv, x), l = pa.lo.find((q) => q.id === x.loId);
           return (
             <button type="button" key={x.id} class={`muc-lo${x.id === toa.id ? ' chon' : ''}`} aria-pressed={x.id === toa.id} onClick={() => { chonToa(x.id); chonCan(null); setGhiChu(''); }}>
               <b>{tenNgan(m?.ten_vi)} · {l?.temDat.kyHieu ?? '—'}</b>
@@ -240,12 +243,22 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
     if (e.shiftKey || e.ctrlKey || e.metaKey) {
       const ds = dsO.includes(khoa) ? dsO.filter((k) => k !== khoa) : [...dsO, khoa];
       chonCan(ds[0] ?? null);
-      datChonToa(toa, { ds: ds.slice(1), menu: null });
+      datChonToa(toa, { ds: ds.slice(1), menu: null, thang: null });
       return;
     }
-    datChonToa(toa, { ds: [], menu: null });
+    datChonToa(toa, { ds: [], menu: null, thang: null });
     chonCan(khoa === canKhoa && !co.ds.length ? null : khoa);
   };
+  const onChonThang = (khoa: string) => { chonCan(null); datChonToa(toa, { ds: [], menu: null, thang: co.thang === khoa ? null : khoa }); };
+  // công cụ tay (sắp xếp / thêm / xoá / lật) — lớp phủ, kéo thả bám tay
+  const [keoBat, setKeoBat] = useState(false);
+  const [hienHL, setHienHL] = useState(true);
+  const ccProps: PropsCongCu = {
+    pa, sua: p.sua, chiXem, tv, toa, mau, bc, can: sl.can, tangs: co.tangs, dsO, thangKhoa: co.thang ?? null,
+    chonThang: (k) => datChonToa(toa, { thang: k }), chonCan: (k) => { chonCan(k); datChonToa(toa, { ds: [] }); },
+    keoBat, datKeoBat: setKeoBat, hienHL, datHienHL: setHienHL,
+  };
+  const keoTay = useKeoTay(ccProps);
   const onMenu = (loai: 'o' | 'loi', khoa: string, x: number, y: number) => {
     if (loai === 'o' && !dsO.includes(khoa)) { chonCan(khoa); datChonToa(toa, { ds: [] }); }
     datChonToa(toa, { menu: { loai, khoa, x, y } });
@@ -297,14 +310,17 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
           <button type="button" class="nut-phu" onClick={() => { chonCan(null); datChonToa(toa, { ds: [] }); }}>{t('oc.boChon')}</button>
         </div>
       )}
-      <div class="boc-ve" ref={boc} onPointerDownCapture={batDauKhung} onClickCapture={(e) => { if (nuotClick.current) { e.stopPropagation(); e.preventDefault(); } }}>
+      <div class="boc-ve" ref={boc} onPointerDownCapture={(e) => { keoTay.batDau(e); batDauKhung(e); }} onClickCapture={(e) => { if (nuotClick.current) { e.stopPropagation(); e.preventDefault(); } }}>
         <BanVe khung={khung} nhan={t('tang.banVe')} onDieuKhien={setDk} gocBac={toa.gocDo}>
           <MatBangTang mau={mau} toa={bc} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa}
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
-            deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2} />
+            deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2}
+            thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} oKeo={keoTay.oKeo} hienHanhLang={hienHL} />
         </BanVe>
       </div>
+      <ThanhCongCuTang {...ccProps} />
+      {keoTay.bongKeo}
       {baoSt && (
         <div key={baoSt.id} class={`lop-st-bao ${baoSt.loai}`} role={baoSt.loai === 'loi' ? 'alert' : 'status'}>
           <span>{baoSt.chu}</span>
@@ -547,7 +563,7 @@ export function TangPhai(p: ChungTang) {
         tenCan={(id) => { const c = tv.can.get(id), { st } = tachMa(id); return c ? `${NHAN_LOAI[c.loai]} ${tachMa(id).goc}${st ? ` (STRETCH ${st > 0 ? '+' : ''}${st})` : ''}` : id; }}
         datToa={(fn) => suaTuChinh(sua, tv, toa.id, { tay: false })((q) => doiToa(q, toa.id, fn))} />
       <MucGap tieuDe={t('tt.tieuDe')} mo>
-        {tv.toa.get(toa.mauId) && <BangTuanThu pa={pa} sua={sua} chiXem={chiXem} toa={toa} mau={tv.toa.get(toa.mauId)!} tv={tv} />}
+        {mauToa(tv, toa) && <BangTuanThu pa={pa} sua={sua} chiXem={chiXem} toa={toa} mau={mauToa(tv, toa)!} tv={tv} />}
       </MucGap>
 
       <MucGap tieuDe={chon ? `${t('tang.canDangChon')} · CH-${String(chon.no).padStart(2, '0')}${dsO.length > 1 ? ` (+${dsO.length - 1})` : ''}` : t('tang.canDangChon')} giaiThich={t('gt.tang.canDangChon')} mo>

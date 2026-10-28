@@ -35,9 +35,15 @@ const idTheoMa = (tv: ThuVien, ma: string): string | undefined => {
  * Các vị trí căn trên một tầng của mẫu tòa, theo thứ tự mặt rồi phần tử. Có bố cục `bc` thì dồn khít (XC-04) theo bề ngang
  * mẫu căn đang dùng (đổi mẫu khác bề ngang / STRETCH): xem `donKhit`. Không có thì đúng vị trí bản vẽ.
  */
-export function viTriCan(mau: ToaCoMat, tv: ThuVien, bc?: Pick<ToaDat, 'canTheo' | 'canViTri'>): ViTriCan[] {
+export function viTriCan(mau: ToaCoMat, tv: ThuVien, bc?: Pick<ToaDat, 'canTheo' | 'canViTri' | 'latO'>): ViTriCan[] {
   const kq = viTriGoc(mau, tv);
-  return bc ? donKhit(mau, kq, bc, tv).vts : kq;
+  return bc ? latTheo(donKhit(mau, kq, bc, tv).vts, bc.latO) : kq;
+}
+
+/** Lật gương tay (công cụ ⇄ màn Tầng, ScaleFactors.X = −1 như app cũ `mirrorSel`): đảo `guong` của các ô `lat[khoa]` = true. */
+function latTheo(vts: ViTriCan[], lat: Record<string, boolean> | undefined): ViTriCan[] {
+  if (!lat || !Object.values(lat).some(Boolean)) return vts;
+  return vts.map((v) => (lat[v.khoa] ? { ...v, guong: !v.guong } : v));
 }
 
 function viTriGoc(mau: ToaCoMat, tv: ThuVien): ViTriCan[] {
@@ -59,7 +65,7 @@ function viTriGoc(mau: ToaCoMat, tv: ThuVien): ViTriCan[] {
 }
 
 /** Bố cục MỘT tầng: đổi căn theo mẫu / vị trí và công năng ô. */
-export type BoCuc = Pick<ToaDat, 'canTheo' | 'canViTri' | 'congNang'>;
+export type BoCuc = Pick<ToaDat, 'canTheo' | 'canViTri' | 'congNang' | 'latO'>;
 /** Bố cục cả tòa: bố cục chung + ghi đè theo tầng. */
 export type BoCucToa = BoCuc & Pick<ToaDat, 'tangRieng' | 'soTangDH'>;
 
@@ -76,23 +82,28 @@ const gonMap = <V>(m: Record<string, V> | undefined): Record<string, V> | undefi
 export function ghiDeTang(toa: Pick<ToaDat, 'tangRieng' | 'soTangDH'>, tang: number): BoCucTang | null {
   if (!Number.isInteger(tang) || tang < 1 || tang > toa.soTangDH) return null;
   const g = toa.tangRieng?.[tang];
-  return g && (gonMap(g.canViTri) || gonMap(g.congNang) || g.coCauMucTieu) ? g : null;
+  return g && (gonMap(g.canViTri) || gonMap(g.congNang) || gonMap(g.latO) || g.coCauMucTieu) ? g : null;
 }
+
+/** Lật gương thật của bố cục: chỉ giữ ô đang lật (true); rỗng thì undefined. */
+const gonLat = (m: Record<string, boolean> | undefined) => gonMap(Object.fromEntries(Object.entries(m ?? {}).filter(([, v]) => v)) as Record<string, boolean>);
 
 /** Bố cục thực của một tầng: chung (tang = null) hoặc chung + ghi đè riêng của tầng. */
 export function boCucTang(toa: BoCucToa, tang: number | null): BoCuc {
   const g = tang === null ? null : ghiDeTang(toa, tang);
-  if (!g || (!gonMap(g.canViTri) && !gonMap(g.congNang))) return { canTheo: toa.canTheo, canViTri: toa.canViTri, congNang: toa.congNang };
+  if (!g || (!gonMap(g.canViTri) && !gonMap(g.congNang) && !gonMap(g.latO))) return { canTheo: toa.canTheo, canViTri: toa.canViTri, congNang: toa.congNang, ...(gonLat(toa.latO) ? { latO: gonLat(toa.latO) } : {}) };
+  const lat = gonLat({ ...(toa.latO ?? {}), ...(g.latO ?? {}) });
   return {
     canTheo: toa.canTheo,
     canViTri: gonMap({ ...(toa.canViTri ?? {}), ...(g.canViTri ?? {}) }),
     congNang: gonMap({ ...(toa.congNang ?? {}), ...(g.congNang ?? {}) }),
+    ...(lat ? { latO: lat } : {}),
   };
 }
 
-/** Các tầng có bố cục riêng (đã sắp, trong 1..soTangDH, có ghi đè căn / công năng). */
+/** Các tầng có bố cục riêng (đã sắp, trong 1..soTangDH, có ghi đè căn / công năng / lật). */
 export const tangCoRieng = (toa: Pick<ToaDat, 'tangRieng' | 'soTangDH'>): number[] =>
-  Object.keys(toa.tangRieng ?? {}).map(Number).filter((k) => { const g = ghiDeTang(toa, k); return !!g && (!!gonMap(g.canViTri) || !!gonMap(g.congNang)); }).sort((a, b) => a - b);
+  Object.keys(toa.tangRieng ?? {}).map(Number).filter((k) => { const g = ghiDeTang(toa, k); return !!g && (!!gonMap(g.canViTri) || !!gonMap(g.congNang) || !!gonMap(g.latO)); }).sort((a, b) => a - b);
 
 /** Nhóm tầng cùng bố cục: bố cục chung × số tầng không ghi đè + từng tầng có ghi đè × 1. */
 export function nhomTang(toa: BoCucToa): { tang: number | null; so: number }[] {
@@ -351,7 +362,7 @@ export function donKhit(mau: ToaCoMat, vtsGoc: ViTriCan[], bc: Pick<ToaDat, 'can
 }
 
 /** Mặt tòa sau khi dồn khít: phần tử căn mang vị trí, bề ngang và mã thư viện của căn đang dùng (cho pccc.ts). */
-export function matDaDon(mau: ToaCoMat, bc: Pick<ToaDat, 'canTheo' | 'canViTri'>, tv: ThuVien): MatToa[] {
+export function matDaDon(mau: ToaCoMat, bc: Pick<ToaDat, 'canTheo' | 'canViTri' | 'latO'>, tv: ThuVien): MatToa[] {
   const vts = new Map(viTriCan(mau, tv, bc).map((v) => [v.khoa, v]));
   return mau.mat.map((m, mi) => ({
     ...m,
@@ -359,7 +370,9 @@ export function matDaDon(mau: ToaCoMat, bc: Pick<ToaDat, 'canTheo' | 'canViTri'>
       const v = vts.get(q.khoa ?? `${mi}:${i}`);
       if (!v) return q;
       const c = tv.can.get(canDangDung(v, bc));
-      return { ...q, a0: v.a0, a1: v.a1, rong_mm: v.a1 - v.a0, ma_thu_vien: c?.ma_goc ?? q.ma_thu_vien };
+      // lật tay: cửa căn (pccc.ts đọc sx) đổi phía theo
+      const sx = v.guong === q.sx < 0 ? q.sx : -q.sx || -1;
+      return { ...q, a0: v.a0, a1: v.a1, rong_mm: v.a1 - v.a0, sx, ma_thu_vien: c?.ma_goc ?? q.ma_thu_vien };
     }),
   }));
 }
