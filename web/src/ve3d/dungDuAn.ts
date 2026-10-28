@@ -1,6 +1,7 @@
 /**
  * Dựng 3D toàn dự án (mét, three: X = x, Y = cao, Z = −y): ô đất tô theo loại (cây xanh có cây, mặt nước hạ thấp),
- * nét hạ tầng xung quanh, khối đế + thân tháp từng tòa (vạch sàn từng tầng). Tòa đang chọn tô nhấn.
+ * nét hạ tầng xung quanh, khối đế + thân tháp từng tòa (vạch sàn từng tầng; kiểu Vật liệu thêm dải cửa kính theo tầng).
+ * Mesh / nét của tòa và lô gắn `userData.chon` để bấm chọn trong 3D; tô nhấn tòa / lô đang chọn do Khung3D làm (không dựng lại).
  */
 import type * as THREE from 'three';
 import { khoiHam, ranhHam } from '../tinh/ham';
@@ -9,7 +10,8 @@ import { chanToa, khoiDe, trongTam } from '../tinh/hinhHoc';
 import type { Diem, ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang, loaiDat, MAU_DAT, type LoaiDat } from '../tinh/loaiDat';
 import { chuanHoaHam } from '../tinh/macDinh';
-import type { KieuVe3D, T3, VatLieu3D } from './dungCan';
+import { hinhDaiCua, type KieuVe3D, type T3, type VatLieu3D } from './dungCan';
+import type { DoiTuong3D } from './chon3d';
 import type { CanhDung, GocDeXuat } from './Khung3D';
 import { t } from '../i18n/i18n';
 import { mauToa } from '../tinh/canThem';
@@ -43,7 +45,7 @@ export function diemCay(poly: Diem[], buoc: number, toiDa: number): Diem[] {
 
 export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, pa: TrangThaiPA, tv: ThuVien, toaChon: string | null, hienHam = false): CanhDung | null {
   if (!pa.lo.length) return null;
-  const trang = kieu === 'trang';
+  const trang = kieu === 'trang', vatLieu = kieu === 'vatlieu';
   const shape = (pts: Diem[]) => { const s = new T.Shape(); pts.forEach((p, i) => (i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1]))); return s; };
   const khoi = (pts: Diem[] | Diem[][], cao: number, m: THREE.Material, z0: number, vien?: THREE.LineBasicMaterial) => {
     const ds = (Array.isArray(pts[0]?.[0]) ? pts : [pts]) as Diem[][];
@@ -52,22 +54,27 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     const me = new T.Mesh(g, m);
     me.position.y = z0; me.castShadow = true; me.receiveShadow = true;
     goc.add(me);
-    if (vien) { const l = new T.LineSegments(new T.EdgesGeometry(g, 30), vien); l.position.y = z0; goc.add(l); }
+    if (vien) { const l = new T.LineSegments(new T.EdgesGeometry(g, 30), vien); l.position.y = z0; goc.add(l); me.userData.vien = l; }
     return me;
   };
   const duong = (pts: Diem[], y: number, m: THREE.LineBasicMaterial, kin = false) => {
     const v = pts.map((p) => new T.Vector3(p[0], y, -p[1]));
     if (kin) v.push(v[0]);
-    goc.add(new T.Line(new T.BufferGeometry().setFromPoints(v), m));
+    const l = new T.Line(new T.BufferGeometry().setFromPoints(v), m);
+    goc.add(l);
+    return l;
   };
+  /** Gắn đối tượng chọn được vào mesh (và nét viền của nó). */
+  const gan = (o: THREE.Object3D | undefined, d: DoiTuong3D) => { if (!o) return; o.userData.chon = d; const v = o.userData.vien as THREE.Object3D | undefined; if (v) v.userData.chon = d; };
 
   // --- ô đất ---
   const matDat = new Map<LoaiDat, THREE.MeshStandardMaterial>();
   const vlDat = (l: LoaiDat) => {
     let m = matDat.get(l);
     if (!m) {
-      const mau = trang ? (l === 'mat_nuoc' ? '#e6eef0' : l === 'cay_xanh' ? '#eef1ec' : '#f7f7f5') : MAU_DAT[l][0];
-      m = new T.MeshStandardMaterial({ color: mau, roughness: l === 'mat_nuoc' ? 0.15 : 0.95, metalness: l === 'mat_nuoc' ? 0.1 : 0 });
+      // Vật liệu: lô cao tầng lát nền be sáng (#E9E4D6) tách khỏi đất (#D9D4C5) và nền khung ngà (#F1F0EA)
+      const mau = trang ? (l === 'mat_nuoc' ? '#e6eef0' : l === 'cay_xanh' ? '#eef1ec' : '#f7f7f5') : vatLieu && l === 'o_cao_tang' ? '#e9e4d6' : MAU_DAT[l][0];
+      m = new T.MeshStandardMaterial({ color: mau, roughness: l === 'mat_nuoc' ? 0.15 : 0.95, metalness: l === 'mat_nuoc' ? 0.1 : 0, envMapIntensity: l === 'mat_nuoc' ? 1 : 0.5 });
       matDat.set(l, m);
     }
     return m;
@@ -86,11 +93,13 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
   for (const l of pa.lo) {
     if (l.ranh.length < 3) continue;
     const loai = loaiDat(l);
-    if (loai === 'mat_nuoc') khoi(l.ranh, 0.05, vlDat(loai), -0.35);
-    else khoi(l.ranh, loai === 'o_cao_tang' ? 0.2 : 0.12, hienHam && laCaoTang(l) ? vlDatTrong(loai) : vlDat(loai), 0);
+    const meLo = loai === 'mat_nuoc' ? khoi(l.ranh, 0.05, vlDat(loai), -0.35)
+      : khoi(l.ranh, loai === 'o_cao_tang' ? 0.2 : 0.12, hienHam && laCaoTang(l) ? vlDatTrong(loai) : vlDat(loai), 0);
     if (loai === 'cay_xanh') cay.push(...diemCay(l.ranh, 9, 600));
     if (laCaoTang(l)) {
-      duong(l.ranh, 0.25, netLo, true);
+      const dLo: DoiTuong3D = { loai: 'lo', id: l.id };
+      gan(meLo, dLo);
+      duong(l.ranh, 0.25, netLo, true).userData.chon = dLo;
       if (l.chiGioi) duong(l.chiGioi, 0.24, netCg, true);
     }
   }
@@ -120,9 +129,7 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
 
   rai.xong();
 
-  // --- tòa: khối đế theo lô + thân tháp, vạch sàn ---
-  const vlChon = new T.MeshStandardMaterial({ color: trang ? 0xe5eeea : 0xcfe0d8, roughness: 0.8 });
-  const vienChon = new T.LineBasicMaterial({ color: 0x174f52 });
+  // --- tòa: khối đế theo lô + thân tháp, vạch sàn (tô nhấn tòa chọn / rê chuột: Khung3D đổi vật liệu theo userData.chon) ---
   let caoMax = 0;
   const chanTat: Diem[][] = [];
   for (const l of pa.lo) {
@@ -136,8 +143,12 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
       for (const p of de) khoi(p, hDe, M.de, 0.2, M.line);
     }
     ts.forEach((x, i) => {
-      const chan = chans[i], z0 = 0.2 + x.soTangDe * x.caoDe, h = x.soTangDH * x.caoDH, chon = x.id === toaChon;
-      khoi(chan, h, chon ? vlChon : M.tuong, z0, chon ? vienChon : M.line);
+      const chan = chans[i], z0 = 0.2 + x.soTangDe * x.caoDe, h = x.soTangDH * x.caoDH, dT: DoiTuong3D = { loai: 'toa', id: x.id, loId: l.id };
+      gan(khoi(chan, h, M.tuong, z0, M.line), dT);
+      if (vatLieu && x.soTangDH > 0) { // dải cửa kính theo tầng (nhìn xa)
+        const g = hinhDaiCua(T, chan as [number, number][], z0, x.caoDH, x.soTangDH, 0.75, Math.min(1.75, x.caoDH - 0.95));
+        if (g) { const me = new T.Mesh(g, M.kinhDai); me.receiveShadow = true; goc.add(me); gan(me, dT); }
+      }
       const ln: number[] = [];
       for (let k = 1; k < x.soTangDH; k++) {
         const y = z0 + k * x.caoDH;
@@ -146,7 +157,9 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
       if (ln.length) {
         const g = new T.BufferGeometry();
         g.setAttribute('position', new T.BufferAttribute(new Float32Array(ln), 3));
-        goc.add(new T.LineSegments(g, chon ? vienChon : M.line));
+        const vs = new T.LineSegments(g, M.line);
+        vs.userData.chon = dT;
+        goc.add(vs);
       }
       caoMax = Math.max(caoMax, z0 + h);
     });

@@ -19,7 +19,7 @@ import { nutLopPhong } from '../ve/LopPhong';
 import { MucGap } from '../ui/MucGap';
 import { GocBanVe } from '../ui/GocBanVe';
 import { fmtSo } from '../ui/so';
-import { MoHinhCan, MoHinhChinh } from '../ve3d/MoHinh3D';
+import { MoHinhCan, MoHinhChinh, type Chon3D } from '../ve3d/MoHinh3D';
 import { datCaiTang, useCaiTang } from './caiTang';
 import { datBaoStretch, useBaoStretch } from './baoStretch';
 import { mauCuaToa, suaTuChinh, useDuLieuMB } from './tuChinhTang';
@@ -203,10 +203,10 @@ export function TangGiua(p: ChungTang) {
 }
 
 /** Tab 3D: toàn dự án hoặc công trình đang xem. */
-export function TangMoHinh(p: ChungTang & { tenDuAn: string }) {
+export function TangMoHinh(p: ChungTang & { tenDuAn: string; chon3d?: Chon3D }) {
   const xem = toaDangXem(p.pa, p.tv, p.loId, p.toaId);
   if (!p.tv) return <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('lo.dangTaiThuVien')}</span></div>;
-  return <MoHinhChinh pa={p.pa} tv={p.tv} sua={p.sua} chiXem={p.chiXem} toa={xem?.toa ?? null} mau={xem ? xem.mauTang(null) : null} mauTang={xem?.mauTang} tenDuAn={p.tenDuAn} />;
+  return <MoHinhChinh pa={p.pa} tv={p.tv} sua={p.sua} chiXem={p.chiXem} toa={xem?.toa ?? null} mau={xem ? xem.mauTang(null) : null} mauTang={xem?.mauTang} tenDuAn={p.tenDuAn} chon3d={p.chon3d} />;
 }
 
 /** Đổi công năng các ô trên phạm vi đang chọn (chung hoặc các tầng). */

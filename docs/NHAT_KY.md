@@ -2,6 +2,18 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · 3D: kiểu Vật liệu, chọn tòa / lô trong 3D, gộp draw call (P8) · agent Opus
+
+- Yêu cầu: (1) 3D dễ nhìn — tường be ấm theo brand, viền rõ, kính / cửa / khung nhôm / lan can, nhìn xa vẽ dải cửa theo tầng, đất / lô tách khỏi nền ngà; (2) bấm tòa / lô trong 3D toàn dự án ra thông số bên cạnh như 2D, bấm đúp mở mặt bằng tầng; (3) một tòa 24 tầng 2.655 draw call → dưới 100.
+- Đã làm:
+  - Kiểu `vatlieu` (mặc định, khoá lưu mới `unitmix.kieu-3d.v2`; Brand / Mô hình trắng giữ nguyên): `BANG_MAU` + `taoVatLieu` trong `ve3d/dungCan.ts`. Tường #DDD0B9, đế #CBBFA6, tum #D6CCB9, sàn #C9BFAC, kính #5F7F88 trong 62 % metalness 0,55 có phản chiếu (`RoomEnvironment`, `environmentIntensity` 0,35), dải kính nhìn xa #4E6C76 (polygonOffset), khung nhôm / lan can #3A3F42 kim loại, lover #5B6266, gỗ #8E6F4E, viền / vạch sàn `--logo-ink` #022B1E 62 %, nét mở cửa `--gold`. Nền khung #F1F0EA, mặt đất #C9C3B2, lô cao tầng #E9E4D6; bóng đổ `shadow.intensity` 0,55. Cửa sổ / cửa đi vẫn lấy từ `openings` của mẫu căn như cũ.
+  - Chọn trong 3D: `ve3d/chon3d.ts` (thuần: `doiTuongCua`, `doiTuongTrung`, `laBam` ngưỡng chuột 5 px / chạm 12 px / giữ ≤ 700 ms, `laBamDup`, `chonSauBam`, `dangChon`, `nguongLod`). `dungDuAn` gắn `userData.chon` cho mesh / nét tòa và lô; `Khung3D` raycast khi nhả chuột / nhấc ngón (chỉ thêm listener pointer, không đổi OrbitControls), rê chuột tô nhẹ, đang chọn pha màu `--green` + viền xanh, đổi vật liệu chứ không dựng lại. `SoanThao` nối `chon3d` vào `setToaId` / `setLoId`; bấm đúp tòa → `moTang` + về 2D (`KhungSoan` nhận `xem` / `onXem` từ ngoài). Tòa đang xem rời khỏi `khoa` sang `khoaNhe` nên chọn tòa không reset góc nhìn.
+  - Hiệu năng (chi tiết `de_xuat_hieu_nang.md` mục 10): `gop` trải InstancedMesh + Line; mỗi bố cục tầng một bộ InstancedMesh theo vật liệu; LOD dải cửa. `tm-t2` 24 tầng: 2.752 → 15 draw call, tam giác đổ bóng 1,81 triệu → 0,52 triệu, nhìn xa 1.812 tam giác; dựng không đổi (~130 ms).
+  - Móc kiểm trên phần tử `.vung-3d`: `_chieuDoiTuong()` (toạ độ màn hình tòa / lô), `_doVe()` (draw call / tam giác / ms dựng), `_phong(k)`.
+- Ảnh 1440×900 trước / sau (Edge headless + CDP, `--use-angle=swiftshader`): `docs/anh/3d/{1-toan-du-an,2-mot-toa,3-can-toa,4-chon-toa}-{truoc,sau}.png`, thêm `5-toa-xa-sau.png` (LOD dải cửa). Cận tòa: bản trước phóng bằng 5 nấc lăn chuột, bản sau bằng `_phong(0.38)` (lăn chuột qua CDP bị treo ở headless), khung hình xấp xỉ.
+- Kiểm: `npm run kiem` ĐẠT. Test mới `ve3d/chon3d.test.ts` (7 ca, có raycast thật), `ve3d/hieuNang3d.test.ts` (2 ca, chặn > 100 draw call). Trên app (CDP, sự kiện con trỏ lên canvas): bấm T2 → thanh trên "T2 · Chữ T", panel trái Thông số tòa T2, bảng phải tô dòng T2, tòa pha xanh; bấm nền → bỏ chọn; kéo 20 px → không đổi chọn; chạm (`pointerType: 'touch'`) i1 → chọn i1; 2D → 3D giữ i1; bấm đúp T2 → màn Tầng · Căn, khung 2D, tòa T2. Bấm lô chỉ kiểm bằng test (tâm lô trên app trùng khối tòa i1).
+- Còn dở: chạm hai ngón / điều khiển camera trên điện thoại do agent giao diện điện thoại làm; chưa chọn được trong 3D chế độ Công trình (một tòa); chưa nhớ hình tầng giữa các lần dựng lại; FPS GPU thật chưa đo.
+
 ## 2026-10-29 · rải hầm trong Web Worker · agent Opus
 
 - Yêu cầu: lần rải hầm đầu tiên, hoặc khi đổi thông số hầm, giao diện đứng 4,5–14 s. Chuyển `raiHam` sang Web Worker. Ba chỗ gọi (màn Hầm, Chi phí, 3D bật Hầm) chuyển sang bất đồng bộ. Trong lúc chờ phải giữ kết quả cũ, có vòng O "Đang rải hầm…", khung giữa không đổi; đổi đầu vào thì chỉ giữ lượt mới nhất.

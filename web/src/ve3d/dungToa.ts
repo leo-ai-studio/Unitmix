@@ -7,7 +7,8 @@
 import type * as THREE from 'three';
 import type { Diem, ThuVien, ToaDat } from '../tinh/kieu';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from '../tinh/matBang';
-import { dungCan, nhomMoi, type Khoi3d, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
+import { nguongLod } from './chon3d';
+import { dungCan, hinhDaiCua, nhomMoi, type Khoi3d, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
 
 const K = 0.001;
 export const CAO_TANG_DE_MM = 4000;
@@ -64,53 +65,88 @@ export function ranhTum(mau: DuLieuToa['mau'], loi: Map<string, LoiHinh>, idLoi:
 
 const rad = (d: number) => (d * Math.PI) / 180;
 
-/** Gộp mọi mesh (đang hiện) của `src` thành vài mesh theo vật liệu, đưa vào `dich`. */
-function gop(T: T3, src: THREE.Object3D, dich: THREE.Object3D[]): void {
+const noi = (L: Float32Array[]) => { let n = 0; L.forEach((a) => { n += a.length; }); const o = new Float32Array(n); let p = 0; L.forEach((a) => { o.set(a, p); p += a.length; }); return o; };
+
+/**
+ * Gộp mọi mesh / nét (đang hiện) của `src` thành MỘT mesh mỗi vật liệu + MỘT `LineSegments` mỗi vật liệu nét, đưa vào `dich`.
+ * `InstancedMesh` (nan lover) được trải từng bản sao vào hình học chung, `Line` (nét mở cửa sổ) đổi thành cặp đoạn — trước đây hai
+ * loại này bị `clone` nguyên cái nên một tòa 24 tầng ra 2.655 draw call (docs/de_xuat_hieu_nang.md P8).
+ * `khongBong` = vật liệu không đổ bóng (kính, khung, lan can… mảnh, bóng không thấy rõ mà nặng pass bóng).
+ */
+export function gop(T: T3, src: THREE.Object3D, dich: THREE.Object3D[], khongBong: Set<THREE.Material> = new Set()): void {
   src.updateMatrixWorld(true);
-  const tm = new Map<THREE.Material, { P: Float32Array[]; N: (Float32Array | null)[]; c: boolean }>();
+  const tm = new Map<THREE.Material, { P: Float32Array[]; N: (Float32Array | null)[] }>();
   const tl = new Map<THREE.Material, Float32Array[]>();
+  const themMesh = (geo: THREE.BufferGeometry, mt: THREE.Matrix4, mat: THREE.Material) => {
+    const g = geo.index ? geo.toNonIndexed() : geo.clone();
+    g.applyMatrix4(mt);
+    const r = tm.get(mat) ?? tm.set(mat, { P: [], N: [] }).get(mat)!;
+    r.P.push(g.getAttribute('position').array as Float32Array);
+    r.N.push((g.getAttribute('normal')?.array as Float32Array | undefined) ?? null);
+    g.dispose();
+  };
+  const themNet = (mat: THREE.Material, a: Float32Array) => { (tl.get(mat) ?? tl.set(mat, []).get(mat)!).push(a); };
+  const m4 = new T.Matrix4();
   src.traverse((o) => {
     for (let v: THREE.Object3D | null = o; v && v !== src; v = v.parent) if (!v.visible) return;
     const m = o as THREE.Mesh & { isInstancedMesh?: boolean; isLineSegments?: boolean; isLine?: boolean };
     if (m.isInstancedMesh) {
-      const c = m.clone();
-      c.applyMatrix4(m.matrixWorld);
-      dich.push(c);
+      const im = o as THREE.InstancedMesh;
+      for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, m4); m4.premultiply(im.matrixWorld); themMesh(im.geometry, m4, im.material as THREE.Material); }
     } else if (m.isMesh) {
-      const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
-      g.applyMatrix4(m.matrixWorld);
-      const pos = g.getAttribute('position').array as Float32Array, nor = g.getAttribute('normal')?.array as Float32Array | undefined;
-      const mat = m.material as THREE.Material;
-      let r = tm.get(mat);
-      if (!r) { r = { P: [], N: [], c: m.castShadow }; tm.set(mat, r); }
-      r.P.push(pos); r.N.push(nor ?? null);
-      g.dispose();
+      themMesh(m.geometry, m.matrixWorld, m.material as THREE.Material);
     } else if (m.isLineSegments) {
       const g = m.geometry.clone();
       g.applyMatrix4(m.matrixWorld);
-      const mat = m.material as THREE.Material;
-      (tl.get(mat) ?? tl.set(mat, []).get(mat)!).push(g.getAttribute('position').array as Float32Array);
+      themNet(m.material as THREE.Material, g.getAttribute('position').array as Float32Array);
       g.dispose();
-    } else if (m.isLine) {
+    } else if (m.isLine) { // dải nét liền → cặp đoạn
       const g = m.geometry.clone();
       g.applyMatrix4(m.matrixWorld);
-      dich.push(new T.Line(g, m.material as THREE.Material));
+      const a = g.getAttribute('position').array as Float32Array, n = a.length / 3, o2 = new Float32Array(Math.max(0, n - 1) * 6);
+      for (let i = 0; i + 1 < n; i++) o2.set(a.subarray(i * 3, i * 3 + 6), i * 6);
+      themNet(m.material as THREE.Material, o2);
+      g.dispose();
     }
   });
-  const cat = (L: Float32Array[]) => { let n = 0; L.forEach((a) => { n += a.length; }); const o = new Float32Array(n); let p = 0; L.forEach((a) => { o.set(a, p); p += a.length; }); return o; };
   tm.forEach((r, mat) => {
     const g = new T.BufferGeometry();
-    g.setAttribute('position', new T.BufferAttribute(cat(r.P), 3));
-    if (r.N.every(Boolean)) g.setAttribute('normal', new T.BufferAttribute(cat(r.N as Float32Array[]), 3)); else g.computeVertexNormals();
+    g.setAttribute('position', new T.BufferAttribute(noi(r.P), 3));
+    if (r.N.every(Boolean)) g.setAttribute('normal', new T.BufferAttribute(noi(r.N as Float32Array[]), 3)); else g.computeVertexNormals();
     const me = new T.Mesh(g, mat);
-    me.castShadow = r.c; me.receiveShadow = true;
+    me.castShadow = !khongBong.has(mat); me.receiveShadow = true;
     dich.push(me);
   });
   tl.forEach((P, mat) => {
     const g = new T.BufferGeometry();
-    g.setAttribute('position', new T.BufferAttribute(cat(P), 3));
+    g.setAttribute('position', new T.BufferAttribute(noi(P), 3));
     dich.push(new T.LineSegments(g, mat));
   });
+}
+
+/**
+ * Nhân một tầng đã gộp lên nhiều cao độ: mesh → `InstancedMesh` (1 draw call cho mọi tầng cùng bố cục, GPU giữ một bản hình học);
+ * nét → nối thành một `LineSegments` (nét không instancing được, nhưng nhẹ).
+ */
+function nhanTang(T: T3, ds: THREE.Object3D[], caoDo: number[]): THREE.Object3D[] {
+  const kq: THREE.Object3D[] = [], m4 = new T.Matrix4();
+  for (const o of ds) {
+    const me = o as THREE.Mesh & { isLineSegments?: boolean };
+    if (me.isLineSegments) {
+      const a = me.geometry.getAttribute('position').array as Float32Array, b = new Float32Array(a.length * caoDo.length);
+      caoDo.forEach((y, j) => { const o0 = j * a.length; for (let i = 0; i < a.length; i += 3) { b[o0 + i] = a[i]; b[o0 + i + 1] = a[i + 1] + y; b[o0 + i + 2] = a[i + 2]; } });
+      const g = new T.BufferGeometry();
+      g.setAttribute('position', new T.BufferAttribute(b, 3));
+      kq.push(new T.LineSegments(g, me.material));
+    } else if (me.isMesh) {
+      const im = new T.InstancedMesh(me.geometry, me.material, caoDo.length);
+      caoDo.forEach((y, j) => im.setMatrixAt(j, m4.makeTranslation(0, y, 0)));
+      im.castShadow = me.castShadow; im.receiveShadow = true;
+      im.computeBoundingSphere();
+      kq.push(im);
+    }
+  }
+  return kq;
 }
 
 const trongTam = (P: Diem[]): Diem => {
@@ -146,6 +182,9 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
 
   // --- tầng điển hình: mỗi bố cục khác nhau (chung + tầng riêng) dựng một lần trong nhóm tạm, gộp theo vật liệu ---
   const tums = ranhTum(mau, du.loi, du.idLoi);
+  const khongBong = new Set<THREE.Material>([M.kinh, M.khung, M.lc, M.lov, M.go, M.top]);
+  // khối đế, mái, tum, thành chắn mái dựng vào nhóm tạm rồi gộp theo vật liệu (trước: mỗi đoạn thành chắn là một mesh)
+  const ngoai = new T.Group();
   const dungMau = (bc: BoCuc, mauT: MauToa3D) => {
     const vts = viTriCan(mauT, tv, bc); // dồn khít theo bề ngang căn đang dùng (XC-04), trên mặt đã tự chỉnh
     const tmp = new T.Group(), Gt = nhomMoi();
@@ -172,7 +211,7 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
     }
     Gt.top.forEach((o) => { o.visible = false; });
     const ds: THREE.Object3D[] = [];
-    gop(T, tmp, ds);
+    gop(T, tmp, ds, khongBong);
     goc.remove(tmp);
     tmp.traverse((o) => { (o as THREE.Mesh).geometry?.dispose?.(); });
     return { ds, so };
@@ -193,31 +232,59 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
 
   // --- khối đế, thân, mái, tum ---
   if (hDe > 0) {
-    khoi(foot, hDe, M.de, 0, true);
+    khoi(foot, hDe, M.de, 0, true, ngoai);
     const ln: number[] = [];
     for (let k = 1; k < soDe; k++) foot.forEach((p, i) => { const q = foot[(i + 1) % foot.length]; ln.push(p[0] * K, k * CAO_TANG_DE_MM * K, -p[1] * K, q[0] * K, k * CAO_TANG_DE_MM * K, -q[1] * K); });
-    if (ln.length) { const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(new Float32Array(ln), 3)); goc.add(new T.LineSegments(g, M.line)); }
+    if (ln.length) { const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(new Float32Array(ln), 3)); ngoai.add(new T.LineSegments(g, M.line)); }
   }
-  for (let j = 0; j < nDH; j++) {
-    const g = new T.Group();
-    g.position.y = (hDe + j * P.tang) * K;
-    (rieng.has(j + 1) ? mauCua(j + 1) : chung).ds.forEach((o) => g.add(o.clone()));
-    goc.add(g);
-  }
-  khoi(foot, P.san, M.san, H);
-  tums.forEach((r) => { khoi(r, CAO_TUM_MM, M.tum, H + P.san, true); khoi(r, P.san, M.san, H + P.san + CAO_TUM_MM); });
+  khoi(foot, P.san, M.san, H, false, ngoai);
+  tums.forEach((r) => { khoi(r, CAO_TUM_MM, M.tum, H + P.san, true, ngoai); khoi(r, P.san, M.san, H + P.san + CAO_TUM_MM, false, ngoai); });
   foot.forEach((p, i) => { // thành chắn mái
     const q = foot[(i + 1) % foot.length], L = Math.hypot(q[0] - p[0], q[1] - p[1]);
     if (L < 50) return;
     const me = new T.Mesh(new T.BoxGeometry(L * K, 1100 * K, 120 * K), M.tuong);
     me.position.set(((p[0] + q[0]) / 2) * K, (H + P.san + 550) * K, -((p[1] + q[1]) / 2) * K);
     me.rotation.y = Math.atan2(q[1] - p[1], q[0] - p[0]);
-    goc.add(me);
+    ngoai.add(me);
   });
+  goc.add(ngoai);
+  const dsNgoai: THREE.Object3D[] = [];
+  gop(T, ngoai, dsNgoai);
+  goc.remove(ngoai);
+  ngoai.traverse((o) => { (o as THREE.Mesh).geometry?.dispose?.(); });
+  dsNgoai.forEach((o) => goc.add(o));
 
   const [cx, cy] = trongTam(foot);
   const xs = foot.map((p) => p[0]), ys = foot.map((p) => p[1]);
   const bk = 2 * Math.max(cx - Math.min(...xs), Math.max(...xs) - cx, cy - Math.min(...ys), Math.max(...ys) - cy) * K;
   const cao = (H + CAO_TUM_MM + P.san) * K;
-  return { canh: { tam: [cx * K, cao * 0.45, -cy * K] as [number, number, number], coCanh: Math.max(bk, cao * 0.8), cao }, soCan };
+  const coCanh = Math.max(bk, cao * 0.8);
+
+  // --- thân tháp: LOD. Gần = từng căn chi tiết, mỗi bố cục tầng một bộ InstancedMesh theo vật liệu; xa = khối + dải cửa theo tầng ---
+  const lod = new T.LOD();
+  lod.position.set(cx * K, (hDe + hThan / 2) * K, -cy * K); // LOD đo khoảng cách camera tới tâm thân tháp
+  const gan = new T.Group(), xa = new T.Group();
+  gan.position.copy(lod.position).negate(); xa.position.copy(gan.position);
+  const theoBoCuc = new Map<ReturnType<typeof dungMau>, number[]>();
+  for (let j = 0; j < nDH; j++) {
+    const b = rieng.has(j + 1) ? mauCua(j + 1) : chung;
+    (theoBoCuc.get(b) ?? theoBoCuc.set(b, []).get(b)!).push((hDe + j * P.tang) * K);
+  }
+  theoBoCuc.forEach((caoDo, b) => nhanTang(T, b.ds, caoDo).forEach((o) => gan.add(o)));
+  if (nDH > 0) {
+    const chanM = foot.map((p) => [p[0] * K, p[1] * K] as [number, number]);
+    const than = khoi(foot, hThan, M.tuong, hDe, false, xa);
+    than.castShadow = true;
+    const dai = hinhDaiCua(T, chanM, hDe * K, P.tang * K, nDH, P.bauSo * K, P.caoSo * K);
+    if (dai) xa.add(new T.Mesh(dai, M.kinhDai));
+    const ln: number[] = [];
+    for (let k = 0; k <= nDH; k++) foot.forEach((p, i) => { const q = foot[(i + 1) % foot.length], y = (hDe + k * P.tang) * K; ln.push(p[0] * K, y, -p[1] * K, q[0] * K, y, -q[1] * K); });
+    const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(new Float32Array(ln), 3));
+    xa.add(new T.LineSegments(g, M.line));
+  }
+  lod.addLevel(gan, 0);
+  lod.addLevel(xa, nguongLod(coCanh));
+  xa.visible = false; // trước lượt vẽ đầu (LOD.update theo camera) hiện mức gần
+  goc.add(lod);
+  return { canh: { tam: [cx * K, cao * 0.45, -cy * K] as [number, number, number], coCanh, cao }, soCan };
 }

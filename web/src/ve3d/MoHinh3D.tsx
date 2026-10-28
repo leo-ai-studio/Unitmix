@@ -10,6 +10,7 @@ import type { ToaVe } from '../ve/MatBangTang';
 import { dungCan, type Khoi3d } from './dungCan';
 import { dungToa, type LoiHinh } from './dungToa';
 import { dungDuAn } from './dungDuAn';
+import type { DangChon3D, DoiTuong3D } from './chon3d';
 import { Khung3D } from './Khung3D';
 import { khoi3dTheoId } from './stretch3d';
 
@@ -69,10 +70,12 @@ export function MoHinhCan({ canId, ten, tv }: { canId: string; ten: string; tv?:
   );
 }
 
-type PropsChinh = { pa: TrangThaiPA; tv: ThuVien; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; toa: ToaDat | null; mau: ToaVe | null; mauTang?: (tang: number | null) => ToaVe; tenDuAn: string };
+/** Nối chọn trong 3D với state chọn của 2D (`man/SoanThao.tsx`): đang chọn, bấm chọn, bấm đúp mở mặt bằng tầng. */
+export type Chon3D = { chon: DangChon3D; onChon: (d: DoiTuong3D | null) => void; onMo: (d: DoiTuong3D) => void };
+type PropsChinh = { pa: TrangThaiPA; tv: ThuVien; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; toa: ToaDat | null; mau: ToaVe | null; mauTang?: (tang: number | null) => ToaVe; tenDuAn: string; chon3d?: Chon3D };
 
 /** Tab 3D: chọn Toàn dự án (ô đất, cây xanh, mặt nước, khối tòa) hoặc Công trình (tòa đang chọn, chi tiết từng căn); góc nhìn lưu trong PA. */
-export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn }: PropsChinh) {
+export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, chon3d }: PropsChinh) {
   const [che, setChe] = useState<'du_an' | 'toa'>('du_an');
   const [hienHam, setHienHam] = useState(true);
   const vHam = useNgheHam('3d'); // hầm rải trong Web Worker: có kết quả mới thì dựng lại (khoaNhe)
@@ -96,9 +99,11 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn }:
     </span>
   );
   if (xem === 'toa' && toa && mau) return <MoHinhToa pa={pa} tv={tv} toa={toa} mau={mau} mauTang={mauTang} dauThanh={nut} {...luu} />;
-  const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';'), toa?.id ?? ''].join('|');
+  // tòa đang xem không vào khoá: đổi tòa (kể cả bấm chọn trong 3D) chỉ dựng lại nhẹ, giữ góc nhìn (góc "Cận tòa chọn" theo tòa mới)
+  const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';')].join('|');
   return (
-    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
+    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '')} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
+      chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
       gocBac={0} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, hienHam)} />
   );
 }

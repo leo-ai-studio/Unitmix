@@ -5,7 +5,8 @@ import { t, useLang } from '../i18n/i18n';
 import { chayRaf, easeInOut, giamChuyenDong, tron } from '../ui/chuyenDong';
 import type { GocNhin } from '../tinh/kieu';
 import { GocBanVe } from '../ui/GocBanVe';
-import { nhomMoi, taoVatLieu, THAM_SO_MAC, type KieuVe3D, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
+import { dangChon, doiTuongTrung, laBam, laBamDup, type DangChon3D, type DiemBam, type DoiTuong3D } from './chon3d';
+import { DS_KIEU_3D, nhomMoi, taoVatLieu, THAM_SO_MAC, type KieuVe3D, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
 
 type V3 = [number, number, number];
 /** Góc nhìn đề xuất của cảnh (m, toạ độ three). */
@@ -35,15 +36,24 @@ type Props = {
   onXoaGoc?: (id: string) => void;
   /** Tên tệp ảnh xuất (không đuôi). */
   tenAnh?: string;
+  /** Đang chọn (tòa / lô): đối tượng dựng có `userData.chon` trùng thì tô viền `--green`, không dựng lại cảnh. */
+  chon?: DangChon3D;
+  /** Có thì bấm (chuột / chạm) chọn được đối tượng có `userData.chon`; bấm nền → null. Kéo quá ngưỡng px là xoay camera. */
+  onChon?: (d: DoiTuong3D | null) => void;
+  /** Bấm đúp (hoặc chạm hai lần) vào đối tượng chọn được. */
+  onMo?: (d: DoiTuong3D) => void;
 };
 
-const LUU = 'unitmix.tham-so-3d', LUU_KIEU = 'unitmix.kieu-3d';
+// kiểu 3D: khoá mới (v2) để mặc định Vật liệu áp cho cả máy đã lưu 'brand' từ trước (trước đây khung luôn ghi kiểu đang xem)
+const LUU = 'unitmix.tham-so-3d', LUU_KIEU = 'unitmix.kieu-3d.v2';
 const doc = (): ThamSo3D => {
   try { return { ...THAM_SO_MAC, ...(JSON.parse(localStorage.getItem(LUU) ?? '{}') as Partial<ThamSo3D>) }; } catch { return { ...THAM_SO_MAC }; }
 };
-const docKieu = (): KieuVe3D => { try { return localStorage.getItem(LUU_KIEU) === 'trang' ? 'trang' : 'brand'; } catch { return 'brand'; } };
+const docKieu = (): KieuVe3D => { try { const k = localStorage.getItem(LUU_KIEU) as KieuVe3D | null; return k && DS_KIEU_3D.includes(k) ? k : 'vatlieu'; } catch { return 'vatlieu'; } };
 const NHAN_TS: [keyof ThamSo3D, string][] = [['cuaDi', 'm3d.cuaDi'], ['cuaTruot', 'm3d.cuaTruot'], ['bauSo', 'm3d.bauSo'], ['caoSo', 'm3d.caoSo'], ['lanCan', 'm3d.lanCan'], ['dam', 'm3d.damCao'], ['san', 'm3d.san'], ['tang', 'm3d.caoTang']];
+/** Nền khung (trời), mặt đất, đèn bán cầu. Vật liệu: nền ngà #F1F0EA của brand, đất be xám đậm hơn để tách khỏi nền. */
 const NEN: Record<KieuVe3D, { troi: number; dat: number; hemi: [number, number] }> = {
+  vatlieu: { troi: 0xf1f0ea, dat: 0xc9c3b2, hemi: [0xfffefa, 0xb8b0a3] },
   brand: { troi: 0xf1f0ea, dat: 0xe4e6dd, hemi: [0xfffef6, 0x9aa79d] },
   trang: { troi: 0xffffff, dat: 0xf4f4f2, hemi: [0xffffff, 0xb9bdba] },
 };
@@ -60,7 +70,7 @@ export function gocMacDinh(c: Pick<CanhDung, 'tam' | 'coCanh' | 'cao'>): GocDeXu
 }
 
 /** Khung WebGL: xoay / di / phóng, mặt trời theo giờ, cắt ngang, kiểu Brand / mô hình trắng, góc đề xuất, lưu góc, xuất ảnh. Three.js nạp lười. */
-export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D' }: Props) {
+export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo }: Props) {
   useLang();
   const hop = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -78,6 +88,8 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
   tr.current = { ts, hien, gio, cat, gocBac, kieu };
   const dungRef = useRef(dung);
   dungRef.current = dung;
+  const chonRef = useRef({ chon, onChon, onMo });
+  chonRef.current = { chon, onChon, onMo };
   const kt = useMemo(() => JSON.stringify(ts), [ts]);
 
   useEffect(() => {
@@ -96,9 +108,22 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         R.shadowMap.enabled = true; R.shadowMap.type = T.PCFSoftShadowMap; R.localClippingEnabled = true;
         const scene = new T.Scene();
         scene.background = new T.Color(N.troi);
-        scene.add(new T.HemisphereLight(N.hemi[0], N.hemi[1], kieuVe === 'trang' ? 2.4 : 2.1));
-        const sun = new T.DirectionalLight(0xfff6e8, 2.6);
+        const vatLieu = kieuVe === 'vatlieu';
+        scene.add(new T.HemisphereLight(N.hemi[0], N.hemi[1], kieuVe === 'trang' ? 2.4 : vatLieu ? 1.25 : 2.1));
+        const sun = new T.DirectionalLight(0xfff6e8, vatLieu ? 2.1 : 2.6);
         sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+        if (vatLieu) {
+          sun.shadow.intensity = 0.55; // bóng đổ nhẹ
+          // môi trường phòng sáng dịu cho kính / nhôm phản chiếu; vật liệu mờ chỉ nhận một phần
+          try {
+            const { RoomEnvironment } = await import('three/examples/jsm/environments/RoomEnvironment.js');
+            const pm = new T.PMREMGenerator(R);
+            scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+            scene.environmentIntensity = 0.35;
+            pm.dispose();
+          } catch { /* không có môi trường: kính vẫn vẽ, chỉ không phản chiếu */ }
+          if (huy) { R.dispose(); return; }
+        }
         scene.add(sun); scene.add(sun.target);
         const mp = new T.Plane(new T.Vector3(0, -1, 0), 3.3);
         const M = taoVatLieu(T, [mp], kieuVe);
@@ -110,6 +135,33 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         const ctl = new OrbitControls(cam, R.domElement);
         ctl.enableDamping = !giamChuyenDong(); ctl.dampingFactor = 0.08; ctl.maxPolarAngle = Math.PI / 2 - 0.01;
         let canh: CanhDung | null = null, G = nhomMoi(), cho = 0;
+        // --- chọn trong 3D: mesh / nét có userData.chon; tô nhấn bằng cách đổi vật liệu (nhớ vật liệu gốc), không dựng lại ---
+        type VL = import('three').Material;
+        let dsChon: import('three').Object3D[] = [], ro: DoiTuong3D | null = null;
+        const vlNhan = new Map<VL, VL>(), vlRo = new Map<VL, VL>();
+        const XANH = 0x174f52; // --green
+        const nhan = (m: VL, dam: boolean) => {
+          const bang = dam ? vlNhan : vlRo;
+          let c = bang.get(m);
+          if (!c) {
+            c = m.clone();
+            const s = c as import('three').MeshStandardMaterial & import('three').LineBasicMaterial;
+            if ((c as import('three').LineBasicMaterial).isLineBasicMaterial) { s.color.set(XANH); s.opacity = dam ? 1 : 0.85; s.transparent = !dam; }
+            // pha màu về --green (emissive tối quá trong không gian tuyến tính, gần như không thấy)
+            else if (s.color) s.color.lerp(new T.Color(XANH), dam ? 0.42 : 0.18);
+            bang.set(m, c);
+          }
+          return c;
+        };
+        const apNhan = () => {
+          const c = chonRef.current.chon ?? { toaId: null, loId: null };
+          for (const o of dsChon) {
+            const d = o.userData.chon as DoiTuong3D, me = o as import('three').Mesh;
+            const goc0 = (o.userData.vlGoc ??= me.material) as VL;
+            const laChon = dangChon(d, c), laRo = !laChon && !!ro && ro.loai === d.loai && ro.id === d.id;
+            me.material = laChon ? nhan(goc0, true) : laRo ? nhan(goc0, false) : goc0;
+          }
+        };
         const ve = () => { if (!cho) cho = requestAnimationFrame(() => { cho = 0; R.render(scene, cam); }); };
         // Có đà (damping): update() phải gọi mỗi frame tới khi hết đà; xong thì về render theo yêu cầu.
         let vong = 0;
@@ -142,9 +194,48 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
           sun.position.set(tx + c * 1.6 * Math.sin(az) * Math.cos(el), ty + c * 1.6 * Math.sin(el), tz - c * 1.6 * Math.cos(az) * Math.cos(el));
           sun.target.position.set(tx, 0, tz);
           const s = sun.shadow.camera; s.left = -c; s.right = c; s.top = c; s.bottom = -c; s.near = 0.5; s.far = c * 6; s.updateProjectionMatrix();
-          sun.intensity = gocCao > 2 ? 2.6 : 0.8;
+          sun.intensity = (gocCao > 2 ? 2.6 : 0.8) * (tr.current.kieu === 'vatlieu' ? 0.8 : 1);
           ve();
         };
+        const rc = new T.Raycaster(), v2 = new T.Vector2();
+        const trung = (x: number, y: number): DoiTuong3D | null => {
+          const r = R.domElement.getBoundingClientRect();
+          v2.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+          rc.setFromCamera(v2, cam);
+          return doiTuongTrung(rc.intersectObjects(dsChon.filter((o) => (o as import('three').Mesh).isMesh), false));
+        };
+        // bấm / chạm: chỉ thêm nghe sự kiện, không đổi điều khiển camera (OrbitControls vẫn nhận đủ, không chặn lan truyền)
+        let xuong: DiemBam | null = null, bamTruoc: (DiemBam & { d: DoiTuong3D | null }) | null = null, choRo = 0, roXY = [0, 0];
+        const cv0 = R.domElement;
+        const onDown = (e: PointerEvent) => { xuong = e.isPrimary && e.button <= 0 ? { x: e.clientX, y: e.clientY, t: performance.now(), kieu: e.pointerType } : null; };
+        const onUp = (e: PointerEvent) => {
+          const x0 = xuong; xuong = null;
+          const cb = chonRef.current;
+          if (!x0 || !e.isPrimary || !cb.onChon) return;
+          const len: DiemBam = { x: e.clientX, y: e.clientY, t: performance.now(), kieu: e.pointerType };
+          if (!laBam(x0, len)) return; // kéo xoay camera
+          const d = trung(e.clientX, e.clientY);
+          const dup = laBamDup(bamTruoc, len) && !!d && bamTruoc?.d?.id === d.id;
+          bamTruoc = dup ? null : { ...len, d };
+          if (dup && cb.onMo) cb.onMo(d!); else cb.onChon(d);
+        };
+        const onMove = (e: PointerEvent) => {
+          if (e.pointerType !== 'mouse' || e.buttons || !chonRef.current.onChon) return;
+          roXY = [e.clientX, e.clientY];
+          if (choRo) return;
+          choRo = requestAnimationFrame(() => {
+            choRo = 0;
+            const d = trung(roXY[0], roXY[1]);
+            if (d?.id !== ro?.id || d?.loai !== ro?.loai) { ro = d; cv0.style.cursor = d ? 'pointer' : ''; apNhan(); ve(); }
+          });
+        };
+        const onLeave = () => { if (ro) { ro = null; cv0.style.cursor = ''; apNhan(); ve(); } };
+        const onCancel = () => { xuong = null; };
+        cv0.addEventListener('pointerdown', onDown);
+        cv0.addEventListener('pointerup', onUp);
+        cv0.addEventListener('pointermove', onMove);
+        cv0.addEventListener('pointerleave', onLeave);
+        cv0.addEventListener('pointercancel', onCancel);
         const xoa = () => {
           while (goc.children.length) {
             const c = goc.children[0];
@@ -171,9 +262,15 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
           R.setPixelRatio(pr); R.setSize(w / pr, h / pr, false); R.render(scene, cam);
           return url;
         };
+        let msDung = 0;
         const dungLai = (giuGoc: boolean) => {
           xoa(); G = nhomMoi();
+          const t0 = performance.now();
           canh = dungRef.current({ T, goc, M, G, P: tr.current.ts, kieu: kieuVe });
+          msDung = performance.now() - t0;
+          dsChon = [];
+          goc.traverse((o) => { if (o.userData.chon) dsChon.push(o); });
+          apNhan();
           if (canh) {
             const [x, y, z] = canh.tam;
             if (canh.nen) {
@@ -196,8 +293,36 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         kichCo();
         dungLai(false);
         he.current = { ve: () => { dungLai(true); }, datGoc, layGoc, anh };
-        (hop.current as HTMLDivElement & { _cap?: () => void })._cap = () => { apHien(); datNang(); };
-        don = () => { huyBay(); cancelAnimationFrame(vong); ob.disconnect(); cancelAnimationFrame(cho); ctl.dispose(); xoa(); R.dispose(); he.current = null; };
+        const hopEl = hop.current as HTMLDivElement & { _cap?: () => void; _nhan?: () => void; _chieuDoiTuong?: () => { loai: string; id: string; x: number; y: number }[] };
+        hopEl._cap = () => { apHien(); datNang(); };
+        hopEl._nhan = () => { apNhan(); ve(); };
+        // để chụp tự động: phóng camera về / ra khỏi điểm nhìn `k` lần (k < 1 = lại gần)
+        (hopEl as typeof hopEl & { _phong?: (k: number) => void })._phong = (k: number) => {
+          cam.position.sub(ctl.target).multiplyScalar(k).add(ctl.target); ctl.update(); ve();
+        };
+        // để đo: một lượt vẽ đồng bộ → draw call / tam giác thật của renderer (gồm pass bóng) và thời gian
+        (hopEl as typeof hopEl & { _doVe?: () => { calls: number; tris: number; ms: number; dung: number } })._doVe = () => {
+          const t0 = performance.now(); R.render(scene, cam); R.getContext().finish();
+          return { calls: R.info.render.calls, tris: R.info.render.triangles, ms: performance.now() - t0, dung: msDung };
+        };
+        // để kiểm / chụp tự động: tâm màn hình (px trong khung) của từng đối tượng chọn được
+        hopEl._chieuDoiTuong = () => {
+          const r = R.domElement.getBoundingClientRect(), da = new Set<string>(), kq: { loai: string; id: string; x: number; y: number }[] = [];
+          for (const o of dsChon) {
+            const d = o.userData.chon as DoiTuong3D, k = d.loai + ':' + d.id;
+            if (da.has(k) || !(o as import('three').Mesh).isMesh) continue;
+            da.add(k);
+            const c = new T.Box3().setFromObject(o).getCenter(new T.Vector3()).project(cam);
+            kq.push({ loai: d.loai, id: d.id, x: ((c.x + 1) / 2) * r.width, y: ((1 - c.y) / 2) * r.height });
+          }
+          return kq;
+        };
+        don = () => {
+          huyBay(); cancelAnimationFrame(vong); cancelAnimationFrame(choRo); ob.disconnect(); cancelAnimationFrame(cho);
+          cv0.removeEventListener('pointerdown', onDown); cv0.removeEventListener('pointerup', onUp); cv0.removeEventListener('pointermove', onMove);
+          cv0.removeEventListener('pointerleave', onLeave); cv0.removeEventListener('pointercancel', onCancel);
+          ctl.dispose(); xoa(); vlNhan.forEach((m) => m.dispose()); vlRo.forEach((m) => m.dispose()); scene.environment?.dispose(); R.dispose(); he.current = null;
+        };
       } catch (e) {
         if (!huy) { setLoi(t('m3d.khongNap') + ' ' + String((e as Error).message ?? e)); setDang(false); }
       }
@@ -210,6 +335,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
   useEffect(() => { he.current?.ve(); try { localStorage.setItem(LUU, kt); } catch { /* không lưu được */ } }, [kt]);
   useEffect(() => { (hop.current as (HTMLDivElement & { _cap?: () => void }) | null)?._cap?.(); }, [hien, gio, cat, gocBac]);
   useEffect(() => { try { localStorage.setItem(LUU_KIEU, kieu); } catch { /* không lưu được */ } }, [kieu]);
+  useEffect(() => { (hop.current as (HTMLDivElement & { _nhan?: () => void }) | null)?._nhan?.(); }, [chon?.toaId, chon?.loId]);
 
   const apGoc = (g: GocDeXuat) => { if (g.gio !== undefined) setGio(g.gio); he.current?.datGoc(g, true); };
   const taiAnh = () => {
@@ -243,7 +369,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         </span>
         <span class="gian" />
         <span class="nhom-3d" role="group" aria-label={t('m3d.kieu')}>
-          {(['brand', 'trang'] as const).map((k) => <button type="button" key={k} aria-pressed={kieu === k} onClick={() => setKieu(k)}>{t(`m3d.kieu.${k}`)}</button>)}
+          {DS_KIEU_3D.map((k) => <button type="button" key={k} aria-pressed={kieu === k} onClick={() => setKieu(k)}>{t(`m3d.kieu.${k}`)}</button>)}
         </span>
         <label class="o-tg"><span>{t('m3d.gio')} {gio}h</span><input type="range" min="6" max="18" step="0.5" value={gio} onInput={(e) => setGio(+e.currentTarget.value)} /></label>
         <label class="o-tg"><span>{t('m3d.cat')}</span><input type="range" min="0.05" max="1" step="0.01" value={cat} onInput={(e) => setCat(+e.currentTarget.value)} /></label>
