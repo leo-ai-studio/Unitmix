@@ -2,6 +2,15 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · kiểm trên app 5 tòa (tự chỉnh + 3D + .dxf) · Claude Code
+
+Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unhandledrejection` sau tải lại sạch), cổng 5180:
+- 4wcy55hp (chỉ xem): tm-l1 .dxf 25/25 căn, tm-z3 24/24; 3D dựng được; có lớp MDI-LOI / MDI-HANHLANG.
+- plevadne: tm-t2 "căn vượt 3→0 · bỏ căn 2 · 42→40", .dxf 40/40 (theo mặt bằng đã gỡ căn); tm-i1 "thang 2→4 · vượt 2→0", .dxf 28/28.
+- gwym3l6i: tm-u1 "thang 3→3 · vượt 3→0", thang liền "3 thang chung cả tòa · 2 tầng riêng đặt lại thang"; xuất "Tất cả" ra 3 tệp × 32 căn.
+- Khung giữa giữ nguyên mọi bước; 0 lỗi runtime. Lỗi `tenTepAn` còn trong log console là bản ghi cũ từ lúc HMR giữa hai lần sửa.
+- tm-t2 "cần xem 1" = XC-05: đoạn kẹp giữa hai lõi chồng nét bao 215 mm (> 200) — không có đầu tự do nên chưa dời; đang giao agent sửa bằng STRETCH.
+
 ## 2026-10-29 · chốt luật khít + tải tệp CAD kiểm · Claude Code
 
 - Người dùng chốt: khít đoạn kẹp đổi loại căn trước, bỏ căn sau; 13 ca phần dư không lấp được giữ chặn + gợi ý mẫu vừa ô (`tinh/goiYVuaO.ts`, có test). Đã bỏ chữ "chờ chốt" ở `loiThang.ts` / AI_START.
