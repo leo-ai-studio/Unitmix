@@ -1,19 +1,21 @@
-/* Nút công cụ emoji (ui/NutBieuTuong.tsx): vuông 32 px, gọn trên thanh lớp phủ; không đổi kích thước khung giữa. */
+/* Nút công cụ biểu tượng (ui/NutBieuTuong.tsx) theo brand LEO: ký hiệu nét một màu Primary (--green), nền --panel, viền --line,
+   rê chuột --hover, đang bật --selected, vòng focus #78aaa6 như leo-ui.css. Vuông 32 px, gọn trên thanh lớp phủ; không đổi khung giữa. */
 .nut-bt {
-  display: inline-flex; align-items: center; justify-content: center; gap: 2px;
-  min-width: 32px; height: 32px; padding: 0 6px;
-  font-size: 17px; line-height: 1;
-  background: var(--panel); color: var(--ink);
-  border: 1px solid var(--secondary); border-radius: 8px; cursor: pointer;
-  transition: background-color var(--td-nhanh, 120ms) ease, border-color var(--td-nhanh, 120ms) ease, transform var(--td-nhanh, 120ms) ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+  min-width: 32px; height: 32px; padding: 0 7px;
+  font-family: 'Segoe UI Symbol', var(--font); font-size: 16px; line-height: 1;
+  color: var(--green); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; cursor: pointer;
+  transition: background-color .16s, color .16s, transform .16s;
 }
-.nut-bt:hover:not(:disabled) { border-color: var(--green); }
-.nut-bt:active:not(:disabled) { transform: scale(0.94); }
-.nut-bt[aria-pressed='true'] { background: color-mix(in srgb, var(--green) 16%, var(--panel)); border-color: var(--green); }
-.nut-bt:disabled { opacity: 0.4; cursor: default; }
-.nut-bt:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
-.nut-bt > :not([aria-hidden]) { font-size: 11px; font-weight: 600; }
-/* Nhóm nút liền nhau trên thanh công cụ */
-.nhom-bt { display: inline-flex; gap: 4px; padding: 3px; background: var(--panel); border: 1px solid var(--secondary); border-radius: 10px; box-shadow: 0 1px 4px rgb(0 0 0 / 0.08); }
-.nhom-bt .nut-bt { border-color: transparent; }
+.nut-bt:hover:not(:disabled) { background: var(--hover); filter: none; }
+.nut-bt:active:not(:disabled) { transform: scale(.94); }
+.nut-bt[aria-pressed='true'] { background: var(--selected); color: var(--logo-ink); }
+.nut-bt:disabled { color: var(--muted); opacity: .45; cursor: default; }
+.nut-bt:focus-visible { outline: 3px solid #78aaa6; outline-offset: 2px; }
+.nut-bt > :not([aria-hidden]) { font-family: var(--font); font-size: 11px; font-weight: 600; color: var(--ink); }
+/* Nhóm nút liền nhau — cùng kiểu .nhom-nut của app: một khung viền --line, ngăn bằng vạch dọc */
+.nhom-bt { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); overflow: hidden; }
+.nhom-bt .nut-bt { border: 0; border-right: 1px solid var(--line); border-radius: 0; }
+.nhom-bt .nut-bt:last-child { border-right: 0; }
 @media (prefers-reduced-motion: reduce) { .nut-bt { transition: none; } .nut-bt:active:not(:disabled) { transform: none; } }
