@@ -19,6 +19,9 @@ import {
 } from '../tinh/thaoTacToa';
 import { DsCanhBao, HopToaDo, ThanhTMB, datChonNhieu, datTuyChon, luaChon, suaNhom, useChonNhieu, useLuatTMB, useTuyChon } from './tmbThaoTac';
 import { mauToa } from '../tinh/canThem';
+import { canhGan } from '../tinh/thaoTacToa';
+import { HopCanhLo, NhanCanhLo, datCanhChon } from './loGioiCanh';
+import { HopHangLoat, LopHangLoat } from './xepHangLoat';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -245,7 +248,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
     const el = e.target as HTMLElement | null;
     if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
     const k = e.key, ctrl = e.ctrlKey || e.metaKey;
-    if (k === 'Escape') { if (diemDo.length) setDiemDo([]); else if (tc.do) datTuyChon({ do: false }); else chon([], null); return; }
+    if (k === 'Escape') { datCanhChon(null); if (diemDo.length) setDiemDo([]); else if (tc.do) datTuyChon({ do: false }); else chon([], null); return; }
     if (ctrl && k.toLowerCase() === 'a') { e.preventDefault(); if (lo) chon(pa.toa.filter((x) => x.loId === lo.id).map((x) => x.id)); return; }
     if (chiXem || !sel.length) return;
     const b = e.shiftKey ? 1 : 0.1;
@@ -427,6 +430,9 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
       setDiemDo(diemDo.length >= 2 ? [q] : [...diemDo, q]);
       return;
     }
+    // bấm cạnh lô đang chọn → khai lộ giới cạnh đó (LO-01 từng cạnh)
+    const i = lo ? canhGan(lo, p, buocM * 0.06) : null;
+    datCanhChon(lo && i !== null ? { loId: lo.id, i } : null);
     if (sel.length) chon([], null);
   };
   const tenToa = (id: string) => { const x = pa.toa.find((q) => q.id === id); return x ? tenNgan(tv?.toa.get(x.mauId)) + ` (${x.x.toFixed(0)}, ${x.y.toFixed(0)})` : id; };
@@ -463,6 +469,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
             </g>
           );
         })}
+        <NhanCanhLo dsLo={pa.lo.filter(laCaoTang)} loChon={lo} coChu={coChu} />
         {tv && pa.lo.map((l) => {
           const ts = toaCoMau.filter((x) => x.loId === l.id);
           const de = khoiDe(ts.map((x) => chanToa(mauToa(tv, x)!, x)), ts.map((x) => x.deOffset));
@@ -508,7 +515,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
           <polygon key={`bs${i}`} points={sPoly(F)} fill="var(--green)" fill-opacity="0.15" stroke="var(--green)" stroke-width="2" stroke-dasharray="6 4" vector-effect="non-scaling-stroke" style={{ pointerEvents: 'none' }} />
         ))}
         {/* vi phạm trực tiếp: LO-01 thiếu lùi, LO-02 §2.6.1 giữa tòa */}
-        {kiem?.lui.map((v, i) => nhanDoan(v.a, v.b, `LO-01 ${m1(v.kc)} < ${m1(v.can)}`, 'var(--warn)', `lui${i}`))}
+        {kiem?.lui.map((v, i) => nhanDoan(v.a, v.b, `LO-01 c${v.canh + 1} ${m1(v.kc)} < ${m1(v.can)}`, 'var(--warn)', `lui${i}`))}
         {kiem?.cap.map((c, i) => nhanDoan(c.pa, c.pb, `§2.6.1 ${m1(c.kc)} < ${m1(c.muc === 'loi' ? c.hoi : c.dai)}`, 'var(--warn)', `cap${i}`))}
         {/* nét bắt dính + kích thước khi kéo */}
         {hien?.dan.map((m, i) => (
@@ -537,6 +544,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
         {diemDo.map((p, i) => <circle key={`do${i}`} cx={p[0]} cy={-p[1]} r={buocM * 0.015} fill="var(--green)" style={{ pointerEvents: 'none' }} />)}
         {diemDo.length === 2 && nhanDoan(diemDo[0], diemDo[1], m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1])), 'var(--green)', 'do')}
         <LopGoiY loId={lo?.id ?? null} tv={tv} />
+        <LopHangLoat tv={tv} />
         {pa.lo.map((l) => {
           if (pa.toa.some((x) => x.loId === l.id)) return null;
           const caoTang = laCaoTang(l), xs = l.ranh.map((q) => q[0]), ys = l.ranh.map((q) => q[1]);
@@ -556,6 +564,8 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
             doi={(dx, dy, dg) => suaNhom(sua, diDuoc, (ds) => { const d = dichNhom(ds, dx, dy); return dg ? xoayNhom(d, d.length > 1 ? tamNhom(d) : [d[0].x, d[0].y], dg) : d; })} />
         )}
         {tc.dsCanhBao && <DsCanhBao kiem={kiem} ten={tenToa} chon={(ids) => chon(ids)} />}
+        <HopCanhLo pa={pa} sua={sua} chiXem={chiXem} luat={luat} />
+        <HopHangLoat pa={pa} tv={tv} sua={sua} chiXem={chiXem} luat={luat} />
         {tc.do && <p class="tmb-goi-y">{diemDo.length === 2 ? `${t('tmb.do.ketQua')} ${m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1]))} · Δx ${m1(Math.abs(diemDo[1][0] - diemDo[0][0]))} · Δy ${m1(Math.abs(diemDo[1][1] - diemDo[0][1]))}` : t('tmb.do.huongDan')}</p>}
         {hien?.chan && <p class="tmb-goi-y canh">{t('tmb.chanCG')}</p>}
       </div>

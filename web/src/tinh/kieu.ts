@@ -33,7 +33,12 @@ export type TemDat = {
   deBai?: DeBaiKD;
   nguonChiTieu?: NguonChiTieu;
 };
-export type Lo = { id: string; temDat: TemDat; ranh: Diem[]; chiGioi: Diem[] | null; xungQuanh: Diem[][] };
+/**
+ * Lô đất. `canhDuong` (tuỳ chọn, theo thứ tự cạnh của `ranh`: cạnh i = ranh[i] → ranh[i+1]): số = cạnh giáp đường, bề rộng lộ giới
+ * (m) để tra khoảng lùi LO-01 · QCVN 01:2021 Bảng 2.7; null = không giáp đường (lô bên cạnh, cây xanh…) — lùi 0 như app cũ (`lo.canh`,
+ * `lui_ben` mặc định 0). Chưa khai (hoặc số cạnh không khớp ranh) thì mọi cạnh coi là giáp đường 12 m (hành vi cũ, `tm_rong`).
+ */
+export type Lo = { id: string; temDat: TemDat; ranh: Diem[]; chiGioi: Diem[] | null; xungQuanh: Diem[][]; canhDuong?: (number | null)[] };
 
 /**
  * Tỷ lệ (0–1) DT từng hạng mục được tính vào DT sàn tính HSSDĐ (QCVN 01:2021/BXD 1.4.21: tổng DT sàn gồm cả tầng hầm,

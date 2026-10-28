@@ -8,7 +8,7 @@ import { chanToa } from './hinhHoc';
 import { vungDat } from './hopLo';
 import type { Diem, Lo, ThuVien, ToaDat, TrangThaiPA } from './kieu';
 import type { Luat } from './quyTac';
-import { kcToa261, luiBang27 } from './xepToa';
+import { duLuiTungCanh, kcToa261, luiTungCanh, RONG_DUONG_MAC_DINH, rongCanh } from './xepToa';
 
 export type Doan = [Diem, Diem];
 export type LuatTMB = { lo01: Luat; lo02: Luat };
@@ -97,14 +97,15 @@ const phapTrong = ([a, b]: Doan, chieu: number): Diem => {
  * Các đích bắt dính quanh một lô cho tòa đang kéo: cạnh ranh lô, cạnh chỉ giới, đường lùi LO-01 (cạnh lô dời vào trong đúng
  * khoảng lùi Bảng 2.7), mép tòa khác (thẳng hàng), đường cách tòa khác đúng mức đầu hồi / cạnh dài §2.6.1 (LO-02).
  */
-export function dichBatDinh(lo: Lo | undefined, khac: { F: Diem[]; H: number }[], H: number, luat: LuatTMB | null, rongDuong = 12): MucBat[] {
+export function dichBatDinh(lo: Lo | undefined, khac: { F: Diem[]; H: number }[], H: number, luat: LuatTMB | null, rongDuong = RONG_DUONG_MAC_DINH): MucBat[] {
   const ds: MucBat[] = [];
   if (lo && lo.ranh.length >= 3) {
     const chieu = Math.sign(dtDau(lo.ranh)) || 1;
     for (const c of canhCua(lo.ranh)) ds.push({ doan: c, loai: 'canh' });
     if (luat) {
-      const lui = luiBang27(luat.lo01, rongDuong, H);
-      if (lui > 0) for (const c of canhCua(lo.ranh)) ds.push({ doan: dichDoan(c, phapTrong(c, chieu), lui), loai: 'lui', nhan: `LO-01 ${lui} m` });
+      // LO-01 theo lộ giới từng cạnh: cạnh không giáp đường (lùi 0) không có đường lùi riêng
+      const lui = luiTungCanh(luat.lo01, lo, H, rongDuong);
+      canhCua(lo.ranh).forEach((c, i) => { if (lui[i] > 0) ds.push({ doan: dichDoan(c, phapTrong(c, chieu), lui[i]), loai: 'lui', nhan: `LO-01 ${lui[i]} m` }); });
     }
     if (lo.chiGioi && lo.chiGioi.length >= 3) for (const c of canhCua(lo.chiGioi)) ds.push({ doan: c, loai: 'chiGioi' });
   }
@@ -217,7 +218,8 @@ export function latNhom(ds: ToaDat[]): ToaDat[] {
 }
 
 // ---------- kiểm vi phạm ----------
-export type ViPhamLui = { toaId: string; kc: number; can: number; a: Diem; b: Diem };
+/** Thiếu khoảng lùi LO-01 ở cạnh `canh` của lô (lộ giới `rong` m; lô chưa khai thì là đường mặc định 12 m). */
+export type ViPhamLui = { toaId: string; kc: number; can: number; a: Diem; b: Diem; canh: number; rong: number | null };
 export type ViPhamCap = { a: string; b: string; kc: number; hoi: number; dai: number; muc: 'loi' | 'canh'; pa: Diem; pb: Diem };
 export type KetQuaKiem = {
   /** Tòa ra ngoài chỉ giới / ranh lô (LO-05). */
@@ -239,11 +241,24 @@ export function hinhToa(pa: TrangThaiPA, tv: ThuVien, deTam?: Map<string, ToaDat
 }
 
 /**
- * Kiểm trực tiếp: LO-05 trong chỉ giới / ranh lô, LO-01 khoảng lùi Bảng 2.7 tới mọi cạnh lô (lô chưa có dữ liệu cạnh giáp
- * đường thì áp mọi cạnh, bề rộng đường `rongDuong` như gợi ý xếp tòa), LO-02 §2.6.1 giữa mọi cặp tòa (cả lô bên cạnh, theo tòa
- * cao hơn): dưới mức đầu hồi = lỗi, giữa đầu hồi và cạnh dài = cảnh báo (`cach_tinh` LO-02).
+ * Cạnh lô "tệ nhất" với F theo LO-01 từng cạnh: cạnh thiếu lùi nhiều nhất (kc − cần nhỏ nhất). Không cạnh nào cần lùi thì cạnh
+ * gần nhất (cần 0). Trả kèm cặp điểm gần nhất để vẽ.
  */
-export function kiemViPham(pa: TrangThaiPA, hinh: ToaHinh[], luat: LuatTMB | null, rongDuong = 12): KetQuaKiem {
+export function canhLuiTe(F: Diem[], lo: Lo, lui: number[]): { canh: number; kc: number; can: number; a: Diem; b: Diem } | null {
+  let tot: { canh: number; kc: number; can: number; a: Diem; b: Diem } | null = null;
+  canhCua(lo.ranh).forEach(([p, q], i) => {
+    const c = capGanBien(F, [p, q]), can = lui[i] ?? 0;
+    if (!tot || c.kc - can < tot.kc - tot.can) tot = { canh: i, kc: c.kc, can, a: c.a, b: c.b };
+  });
+  return tot;
+}
+
+/**
+ * Kiểm trực tiếp: LO-05 trong chỉ giới / ranh lô, LO-01 khoảng lùi Bảng 2.7 theo lộ giới TỪNG cạnh lô (`Lo.canhDuong`; cạnh
+ * không giáp đường lùi 0; lô chưa khai thì mọi cạnh giáp đường `rongDuong` như gợi ý xếp tòa), LO-02 §2.6.1 giữa mọi cặp tòa (cả
+ * lô bên cạnh, theo tòa cao hơn): dưới mức đầu hồi = lỗi, giữa đầu hồi và cạnh dài = cảnh báo (`cach_tinh` LO-02).
+ */
+export function kiemViPham(pa: TrangThaiPA, hinh: ToaHinh[], luat: LuatTMB | null, rongDuong = RONG_DUONG_MAC_DINH): KetQuaKiem {
   const kq: KetQuaKiem = { ngoai: new Set(), lui: [], cap: [], muc: new Map() };
   const nang = (id: string, m: 'loi' | 'canh') => { if (kq.muc.get(id) !== 'loi') kq.muc.set(id, m); };
   for (const h of hinh) {
@@ -252,10 +267,10 @@ export function kiemViPham(pa: TrangThaiPA, hinh: ToaHinh[], luat: LuatTMB | nul
     const V = vungDat(lo);
     if (!namTrongNhanh(h.F, V)) { kq.ngoai.add(h.toa.id); nang(h.toa.id, 'loi'); }
     if (luat && lo.ranh.length >= 3) {
-      const can = luiBang27(luat.lo01, rongDuong, h.H);
-      if (can > 0) {
-        const c = capGanBien(h.F, lo.ranh);
-        if (c.kc < can - 1e-6) { kq.lui.push({ toaId: h.toa.id, kc: c.kc, can, a: c.a, b: c.b }); nang(h.toa.id, 'loi'); }
+      const c = canhLuiTe(h.F, lo, luiTungCanh(luat.lo01, lo, h.H, rongDuong));
+      if (c && c.can > 0 && c.kc < c.can - 1e-6) {
+        kq.lui.push({ toaId: h.toa.id, kc: c.kc, can: c.can, a: c.a, b: c.b, canh: c.canh, rong: rongCanh(lo, c.canh, rongDuong) });
+        nang(h.toa.id, 'loi');
       }
     }
   }
@@ -277,11 +292,14 @@ export function kiemViPham(pa: TrangThaiPA, hinh: ToaHinh[], luat: LuatTMB | nul
 export type KichThuoc = { a: Diem; b: Diem; kc: number; loai: 'ranh' | 'chiGioi' | 'toa'; can?: number };
 
 /** Kích thước từ tòa F tới ranh lô, chỉ giới và tòa gần nhất (kèm mức yêu cầu để tô đỏ khi thiếu). */
-export function kichThuocToa(F: Diem[], H: number, lo: Lo | undefined, khac: { F: Diem[]; H: number }[], luat: LuatTMB | null, rongDuong = 12): KichThuoc[] {
+export function kichThuocToa(F: Diem[], H: number, lo: Lo | undefined, khac: { F: Diem[]; H: number }[], luat: LuatTMB | null, rongDuong = RONG_DUONG_MAC_DINH): KichThuoc[] {
   const ds: KichThuoc[] = [];
   if (lo && lo.ranh.length >= 3) {
-    const c = capGanBien(F, lo.ranh);
-    ds.push({ ...c, loai: 'ranh', can: luat ? luiBang27(luat.lo01, rongDuong, H) : undefined });
+    // tới ranh: cạnh thiếu lùi nhất theo lộ giới từng cạnh (không có luật thì cạnh gần nhất)
+    if (luat) {
+      const c = canhLuiTe(F, lo, luiTungCanh(luat.lo01, lo, H, rongDuong));
+      if (c) ds.push({ a: c.a, b: c.b, kc: c.kc, loai: 'ranh', can: c.can });
+    } else ds.push({ ...capGanBien(F, lo.ranh), loai: 'ranh' });
     if (lo.chiGioi && lo.chiGioi.length >= 3) ds.push({ ...capGanBien(F, lo.chiGioi), loai: 'chiGioi' });
   }
   let gan: KichThuoc | null = null;
@@ -307,7 +325,8 @@ export function kepChiGioi<T>(thu: T[], chan: (x: T) => Diem[], V: Diem[], banDa
 // ---------- nhân bản ----------
 /**
  * Nhân bản (app cũ `nhanBanToa` / Ctrl+V): bản sao cùng mẫu · góc · lật · số tầng, thử các vị trí quanh tòa gốc (8 hướng × 3
- * vòng, bắt đầu theo phương ngang thân tòa) và lấy chỗ đầu tiên nằm trong chỉ giới và cách mọi tòa ≥ mức cạnh dài §2.6.1.
+ * vòng, bắt đầu theo phương ngang thân tòa) và lấy chỗ đầu tiên nằm trong chỉ giới, đủ lùi LO-01 từng cạnh và cách mọi tòa ≥ mức
+ * cạnh dài §2.6.1.
  * Không có chỗ trống thì đặt cạnh tòa gốc (người dùng kéo tiếp, cảnh báo hiện ngay).
  */
 export function viTriNhanBan(goc: ToaDat, pa: TrangThaiPA, tv: ThuVien, luat: LuatTMB | null, id: string): { toa: ToaDat; hopLe: boolean } {
@@ -332,7 +351,7 @@ export function viTriNhanBan(goc: ToaDat, pa: TrangThaiPA, tv: ThuVien, luat: Lu
   for (const [x, y] of thu) {
     const c = { ...ban, x: tron2(x), y: tron2(y) }, F = chanToa(mau, c);
     if (V.length >= 3 && !namTrongNhanh(F, V)) continue;
-    if (luat && lo && luiBang27(luat.lo01, 12, H) > capGanBien(F, lo.ranh).kc + 1e-6) continue;
+    if (luat && lo && !duLuiTungCanh(F, lo.ranh, luiTungCanh(luat.lo01, lo, H))) continue;
     if (khac.some((o) => capGanToa(F, o.F).kc < (luat ? kcToa261(luat.lo02, Math.max(H, o.H)).dai : 0) - 1e-6 || capGanToa(F, o.F).kc === 0)) continue;
     return { toa: c, hopLe: true };
   }
@@ -356,3 +375,23 @@ export function toaTrongKhung(hinh: ToaHinh[], a: Diem, b: Diem, caChan = false)
   const trong = (p: Diem) => p[0] >= x0 && p[0] <= x1 && p[1] >= y0 && p[1] <= y1;
   return hinh.filter((h) => (caChan ? h.F.every(trong) : trong([h.toa.x, h.toa.y]) || h.F.some(trong))).map((h) => h.toa.id);
 }
+
+// ---------- lộ giới từng cạnh lô (LO-01) ----------
+/** Cạnh lô gần điểm p nhất trong `nguong` m (bấm cạnh trên bản vẽ); null khi không có. */
+export function canhGan(lo: Lo, p: Diem, nguong: number): number | null {
+  let tot: number | null = null, m = nguong;
+  canhCua(lo.ranh).forEach(([a, b], i) => { const k = dai(tru(p, chieuDoan(p, a, b))); if (k <= m) { m = k; tot = i; } });
+  return tot;
+}
+
+/**
+ * Khai lộ giới cạnh i: số = giáp đường rộng ngần ấy m, null = không giáp đường. Lô chưa khai thì các cạnh khác giữ mặc định
+ * (giáp đường `RONG_DUONG_MAC_DINH` m) — không đổi khoảng lùi của cạnh người dùng chưa đụng tới.
+ */
+export function datCanhDuong(lo: Lo, i: number, v: number | null): Lo {
+  const cu = Array.isArray(lo.canhDuong) && lo.canhDuong.length === lo.ranh.length ? lo.canhDuong : lo.ranh.map(() => RONG_DUONG_MAC_DINH);
+  return { ...lo, canhDuong: cu.map((x, k) => (k === i ? (v !== null && Number.isFinite(v) && v > 0 ? v : null) : x)) };
+}
+
+/** Bỏ khai lộ giới cả lô → mọi cạnh về hành vi cũ (đường mặc định 12 m). */
+export const boCanhDuong = (lo: Lo): Lo => { const { canhDuong: _bo, ...con } = lo; return con; };

@@ -10,6 +10,7 @@ import { taiQuyTac, traLuat } from '../tinh/quyTac';
 import type { KetQuaKiem, LuatTMB } from '../tinh/thaoTacToa';
 import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { fmtSo } from '../ui/so';
+import { batTatHangLoat, useHangLoat } from './xepHangLoat';
 
 // ---- lựa chọn nhiều tòa ----
 let chonDs: string[] = [];
@@ -79,6 +80,7 @@ type ThanhProps = {
 /** Thanh công cụ biểu tượng TMB (lớp phủ trên bản vẽ). */
 export function ThanhTMB(p: ThanhProps) {
   const tc = useTuyChon();
+  const hl = useHangLoat();
   const soLoi = p.kiem ? p.kiem.ngoai.size + p.kiem.lui.length + p.kiem.cap.filter((c) => c.muc === 'loi').length : 0;
   const soCanh = p.kiem ? p.kiem.cap.filter((c) => c.muc === 'canh').length : 0;
   const sua = !p.chiXem;
@@ -99,6 +101,7 @@ export function ThanhTMB(p: ThanhProps) {
       </div>
       <div class="nhom-bt">
         <NutBieuTuong k="toaDo" ghiChu={t('tmb.gc.toaDo')} bat={tc.toaDo} tat={!p.soChon} onClick={() => datTuyChon({ toaDo: !tc.toaDo })} />
+        <NutBieuTuong k="hangLoat" ghiChu={t('tmb.gc.hangLoat')} bat={hl.mo} onClick={batTatHangLoat} />
         <NutBieuTuong k="canhBao" ghiChu={t('tmb.gc.canhBao')} bat={tc.dsCanhBao} onClick={() => datTuyChon({ dsCanhBao: !tc.dsCanhBao })}>
           {soLoi + soCanh > 0 && <span class={soLoi ? 'tmb-dem loi' : 'tmb-dem'}>{soLoi + soCanh}</span>}
         </NutBieuTuong>
@@ -114,7 +117,7 @@ export function DsCanhBao({ kiem, ten, chon }: { kiem: KetQuaKiem | null; ten: (
   const m = (v: number) => fmtSo(v, { thapPhan: 1, donVi: 'm' });
   const dong = [
     ...[...kiem.ngoai].map((id) => ({ ids: [id], loi: true, chu: `${ten(id)} · ${t('tmb.cb.ngoai')}` })),
-    ...kiem.lui.map((v) => ({ ids: [v.toaId], loi: true, chu: `${ten(v.toaId)} · ${t('tmb.cb.lui').replace('{kc}', m(v.kc)).replace('{can}', m(v.can))}` })),
+    ...kiem.lui.map((v) => ({ ids: [v.toaId], loi: true, chu: `${ten(v.toaId)} · ${t('tmb.cb.lui').replace('{kc}', m(v.kc)).replace('{can}', m(v.can)).replace('{i}', String(v.canh + 1)).replace('{r}', v.rong === null ? '—' : m(v.rong))}` })),
     ...kiem.cap.map((c) => ({ ids: [c.a, c.b], loi: c.muc === 'loi', chu: `${ten(c.a)} ↔ ${ten(c.b)} · ${t(c.muc === 'loi' ? 'tmb.cb.capLoi' : 'tmb.cb.capCanh').replace('{kc}', m(c.kc)).replace('{hoi}', m(c.hoi)).replace('{dai}', m(c.dai))}` })),
   ];
   return (
