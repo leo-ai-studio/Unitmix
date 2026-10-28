@@ -2,7 +2,7 @@
 /**
  * Cổng kiểm một lệnh (học app cũ MDI_Unitmix_v4: `chay_selftest.js --nho`, `chay_pha_hoai.js --nhanh`).
  *   node scripts/kiem.mjs            đủ: tsc · vitest web · vitest worker · pytest · vite build — chạy SONG SONG
- *   node scripts/kiem.mjs --nhanh    bài quét nặng lấy mẫu 1/k (KIEM_NHANH=1, xem web/src/thu/layMau.ts), bỏ vite build
+ *   node scripts/kiem.mjs --nhanh    bài quét nặng lấy mẫu 1/k (KIEM_NHANH=1, xem web/src/thu/layMau.ts), bỏ test xuất CAD / .dxf và vite build
  *   node scripts/kiem.mjs --nho      dấu vân tay mã nguồn trùng lần ĐẠT trước (cùng chế độ hoặc lần đủ) → ĐẠT ngay, không chạy lại
  * Lần ĐẠT ghi sha256(tệp nguồn + cấu hình) vào .cache/kiem_da_dat.json. Khác một byte → chạy lại. Trước khi gộp main: chạy đủ.
  */
@@ -49,7 +49,8 @@ const win = process.platform === 'win32';
 const env = { ...process.env, ...(nhanh ? { KIEM_NHANH: '1' } : {}), FORCE_COLOR: '0' };
 const buoc = [
   ['tsc', 'npx', ['tsc', '--noEmit'], 'web'],
-  ['vitest web', 'npx', ['vitest', 'run', '--reporter=dot'], 'web'],
+  // --nhanh bỏ test xuất CAD / .dxf (người dùng yêu cầu 2026-10-29); cổng đủ trước push vẫn chạy.
+  ['vitest web', 'npx', ['vitest', 'run', '--reporter=dot', ...(nhanh ? ['--exclude', 'src/xuat/xuatCad*.test.ts'] : [])], 'web'],
   ['vitest worker', 'npx', ['vitest', 'run', '--reporter=dot'], 'worker'],
   ['pytest', 'python', ['-m', 'pytest', 'tests', '-q', '--color=no'], '.'],
   ...(nhanh ? [] : [['vite build', 'npx', ['vite', 'build', '--logLevel', 'error'], 'web']]),

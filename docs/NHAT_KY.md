@@ -2,6 +2,23 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · XC-05 đoạn kẹp: dời trong đoạn / STRETCH thay vì chỉ cảnh báo · agent Opus
+
+- `tinh/loiThang.ts` `suaKhitLoi` → trả `{ sua, bc, stretch, lyDo }`; đoạn không có đầu tự do (hoặc thang liền không được dời) gọi `khitKepLoi` mới: mốc xa = ô thang / dải lõi khác / dãy khác (kể cả mốc đang chồng lên đầu đoạn) / đầu mặt không tự do; thử Δ bề ngang 0, ±100… (STRETCH QT-81, bước 100, ±500 mỗi căn, căn kề lõi trước, căn người dùng đã chọn sau cùng, căn vừa chọn tay `chan` không kéo) và dời đoạn (`mb.dich`) cho chồng / hở lõi ≤ 200 mm, hở xa ≤ 400 mm (lượt 2: không rộng hơn trước). Dồn khít có thể neo đoạn ở đầu xa → đo lại rồi dời bù (≤ 2 lần). Nhận phương án đầu tiên mà `tinh/khe.ts` không thêm đè (số chỗ / mm, trừ chính chỗ chồng lõi đang sửa — tránh đổi chồng lõi thành chồng ô thang) và không thêm khe trên mặt. Thang không dời. Biến thể STRETCH đi qua bố cục trả về → `khacBoCuc` → `ToaDat.tuDong` như các bước tự chỉnh khác. Không sửa được: ghi chú XC-05 kèm "không sửa được: mặt N (… mm): lý do".
+- tm-t2 24 tầng: đoạn 2PN+ + 3 studio kẹp giữa lõi và ô thang, đè lõi 215 mm / hở ô thang 215 mm → dời 215 mm, XC-05 `canh_bao` → `da_sua`, đè 1 → 0, căn vượt 0, 40 căn/tầng giữ nguyên.
+- Quét 33 mẫu tòa 24 tầng (trước → sau, chỗ XC-05 > 200 mm): tm-t2 1 → 0; 32 mẫu còn lại 0 → 0. Đè / khe / sân / căn vượt / số căn không mẫu nào tệ hơn (tm-t1 đè 1 → 1 có sẵn của mẫu, không phải lõi).
+- Ca STRETCH thật (ép thang đứng yên, căn kề lõi tm-t2 1:0 đang +500 đè lõi 715 mm): kéo lại +200 (STRETCH 300 mm), chồng ≤ 198 mm, 0 đè; với 1:0 là căn vừa chọn tay → giữ, cảnh báo kèm lý do.
+- Test mới `tinh/khitLoiKep.test.ts` (tm-t2, ca STRETCH + tuDong + gỡ, ca chặn, quét mọi mẫu bọc `layMau`).
+- Còn dở: chưa kiểm trên app (5180); đoạn kẹp chỉ có căn không STRETCH được (studio tm-stu-m1…) và Δ > 200 + 400 mm vẫn để cảnh báo (khít đoạn kẹp `khitDoanKep` đổi mẫu lo sau); chưa quét tầng riêng đổi căn cho riêng XC-05.
+## 2026-10-29 · kiểm trên app 5 tòa (tự chỉnh + 3D + .dxf) · Claude Code
+
+Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unhandledrejection` sau tải lại sạch), cổng 5180:
+- 4wcy55hp (chỉ xem): tm-l1 .dxf 25/25 căn, tm-z3 24/24; 3D dựng được; có lớp MDI-LOI / MDI-HANHLANG.
+- plevadne: tm-t2 "căn vượt 3→0 · bỏ căn 2 · 42→40", .dxf 40/40 (theo mặt bằng đã gỡ căn); tm-i1 "thang 2→4 · vượt 2→0", .dxf 28/28.
+- gwym3l6i: tm-u1 "thang 3→3 · vượt 3→0", thang liền "3 thang chung cả tòa · 2 tầng riêng đặt lại thang"; xuất "Tất cả" ra 3 tệp × 32 căn.
+- Khung giữa giữ nguyên mọi bước; 0 lỗi runtime. Lỗi `tenTepAn` còn trong log console là bản ghi cũ từ lúc HMR giữa hai lần sửa.
+- tm-t2 "cần xem 1" = XC-05: đoạn kẹp giữa hai lõi chồng nét bao 215 mm (> 200) — không có đầu tự do nên chưa dời; đang giao agent sửa bằng STRETCH.
+
 ## 2026-10-29 · chốt luật khít + tải tệp CAD kiểm · Claude Code
 
 - Người dùng chốt: khít đoạn kẹp đổi loại căn trước, bỏ căn sau; 13 ca phần dư không lấp được giữ chặn + gợi ý mẫu vừa ô (`tinh/goiYVuaO.ts`, có test). Đã bỏ chữ "chờ chốt" ở `loiThang.ts` / AI_START.
