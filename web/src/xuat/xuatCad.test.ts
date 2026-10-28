@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { layMau } from '../thu/layMau';
 import { existsSync, readFileSync } from 'node:fs';
 import DxfParser from 'dxf-parser';
 import { taoThuVien, type CanMau, type Diem } from '../tinh/kieu';
@@ -22,7 +23,7 @@ const coFile = (p: string) => existsSync(new URL(p.replace('./xref/', ''), cad))
 
 describe('xuất CAD', () => {
   it('mọi mẫu tòa: số lượt chèn căn = số căn/tầng, tệp XREF căn có trong thư viện CAD', () => {
-    for (const t of toaDs) {
+    for (const t of layMau(toaDs, 3)) {
       const ds = danhSachChen(du(t.id));
       const can = ds.filter((x) => x.loai === 'can');
       expect(can.length, t.id).toBe(t.so_can_tang);

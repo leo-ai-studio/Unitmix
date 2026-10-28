@@ -11,6 +11,8 @@
   "scripts": {
     "dev": "npm -w web run dev",
     "build": "npm -w web run build",
-    "test": "npm -w web run test && npm -w worker run test && python -m pytest tests -q"
+    "test": "npm -w web run test && npm -w worker run test && python -m pytest tests -q",
+    "kiem": "node scripts/kiem.mjs",
+    "kiem:nhanh": "node scripts/kiem.mjs --nhanh --nho"
   }
 }

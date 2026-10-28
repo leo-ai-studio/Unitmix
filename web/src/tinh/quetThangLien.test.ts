@@ -5,6 +5,7 @@
  * (giữ căn cũ, báo ô rộng / mẫu hẹp nhất). Thống kê: số ca chặn, số ca dãy dài ra / ngắn lại ở đầu hở ra sân trong.
  */
 import { describe, expect, it } from 'vitest';
+import { layMau } from '../thu/layMau';
 import { existsSync, readFileSync } from 'node:fs';
 import { taoThuVien, type CanMau, type ToaDat, type ToaMau } from './kieu';
 import { apMatBang, doDeKhe, matBangRiengTang, tuChinhSauSua, tuChinhToa, type DuLieuMB, type HinhLoiMB, type ToaMB } from './loiThang';
@@ -49,7 +50,7 @@ describe('quét thang liền: tầng riêng đổi căn giữa → 0 đè, 0 khe
     const t0 = tuChinhToa(toaThu(m), m, tv, dl), kb = doDeKhe(m, t0.matBang!, dl, tv, boCucTang(t0, null));
     let soCa = 0;
     const tk = { ca: 0, cungLoai: 0, khacLoai: 0, chonCung: 0, chonKhac: 0, bo: 0, chan: 0, chanHep: 0, chanDu: 0, daiSan: 0 };
-    for (const vt of vts) {
+    for (const vt of layMau(vts)) {
       const c = tv.can.get(vt.canGocId);
       if (!c || c.vi_tri !== 'giua') continue;
       for (const den of dich(c)) {

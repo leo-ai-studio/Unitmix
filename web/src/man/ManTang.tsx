@@ -450,8 +450,17 @@ export function TangPhai(p: ChungTang) {
   const baoChanDoi = (ds: ChanSua[]) => {
     const m = (mm: number) => fmtSo(mm / 1000, { thapPhan: 1 });
     const ten = (k: string) => { const x = sl.can.find((c) => c.vt.khoa === k); return x ? `CH-${String(x.no).padStart(2, '0')}` : k; };
+    // Gợi ý mẫu khác loại vừa ô (cùng nhóm / vị trí / chiều sâu, rộng ≤ ô + STRETCH tối đa) — chỉ gợi ý, không tự đổi.
+    const goiY = (c: ChanSua) => {
+      const cu = tv.can.get(tachMa(sl.can.find((x) => x.vt.khoa === c.khoa)?.canId ?? '').goc);
+      if (!cu) return '';
+      const vua = [...tv.can.values()].filter((x) => !x.id.includes('~') && x.nhom === cu.nhom && x.vi_tri === cu.vi_tri && x.sau_mm === cu.sau_mm
+        && x.loai !== c.loai && x.rong_mm <= c.rongO + 5 * ST_BUOC);
+      const tot = LOAI_CAN.map((l) => vua.filter((x) => x.loai === l).sort((a, b) => b.rong_mm - a.rong_mm)[0]).filter(Boolean);
+      return tot.length ? ' ' + t('tc.chan.goiY').replace('{ds}', tot.map((x) => `${tenNgan(x!.ten_vi)} (${m(x!.rong_mm)} m)`).join(', ')) : '';
+    };
     datBaoStretch({ loai: 'loi', chu: ds.map((c) => t(`tc.chan.${c.kieu}`).replace('{l}', t(`loai.${c.loai}`)).replace('{x}', m(c.rongO)).replace('{y}', m(c.rongMin))
-      + (ds.length > 1 ? ` (${ten(c.khoa)})` : '')).join(' · ') + ' ' + t('tc.chan.giu') });
+      + (ds.length > 1 ? ` (${ten(c.khoa)})` : '') + goiY(c)).join(' · ') + ' ' + t('tc.chan.giu') });
   };
   /** STRETCH tay (DC-04 · QT-81): kéo căn đang chọn `d` mm, căn kề bù ngược; không bù được thì chặn và báo bằng lớp phủ. */
   const keoTay = (d: number) => {

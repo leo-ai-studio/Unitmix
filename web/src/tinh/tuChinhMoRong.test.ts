@@ -3,6 +3,7 @@
  * tầng có bố cục riêng, 3D + xuất CAD đi theo mặt bằng đã tự chỉnh. Chạy trên mẫu thật của thư viện (public/lib).
  */
 import { describe, expect, it } from 'vitest';
+import { layMau } from '../thu/layMau';
 import { existsSync, readFileSync } from 'node:fs';
 import { tongKhe } from './khe';
 import { taoThuVien, type CanMau, type ToaDat, type ToaMau, type TrangThaiPA } from './kieu';
@@ -66,7 +67,7 @@ describe('PC-11 · chuyển thang sang mặt / đoạn khác (datThangBo app cũ
     expect(q.ghiChu).toMatch(/chủ nhiệm/);
   });
   it('mọi mẫu 24 tầng: không mẫu nào tệ hơn mặt bằng bản vẽ, chạy dưới 1 s / mẫu', () => {
-    for (const t of toaDs) {
+    for (const t of layMau(toaDs, 3)) {
       const m = mau(t.id);
       if (!Array.isArray(m.mat)) continue;
       const t0 = performance.now();

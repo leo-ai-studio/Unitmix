@@ -10,6 +10,15 @@ Tệp này để AI (Claude Code, C2, agent) bắt đầu nhanh. Đọc xong t�
 
 ## Chạy và kiểm
 
+Một lệnh, chạy song song (học app cũ: nhớ lần đạt theo dấu vân tay + lấy mẫu bài quét nặng):
+
+```bash
+npm run kiem:nhanh      # trong lúc làm: bài quét nặng lấy mẫu 1/k (web/src/thu/layMau.ts), bỏ build; mã không đổi so với lần ĐẠT → 0 s
+npm run kiem            # trước khi gộp main / push: đủ ca + vite build (~50 s); node scripts/kiem.mjs --nho = bỏ qua nếu đã ĐẠT
+```
+
+Bài quét mới nặng (quét mọi mẫu / mọi ô) thì bọc vòng lặp bằng `layMau(ds, k)`. Từng lệnh lẻ nếu cần:
+
 ```bash
 cd web && npx tsc --noEmit; echo $?     # phải ra 0 — đừng nối "| tail" sau tsc, sẽ nuốt mã lỗi
 cd web && npx vitest run                # testTimeout 30 s vì vài test quét tệp XREF trên đĩa
@@ -18,7 +27,7 @@ python -m pytest tests -q               # kiểm quy_tac.json, thư viện
 cd web && npx vite build
 ```
 
-Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wrangler dev` cổng 8787 (DB local, tạo dự án thử thoải mái). Agent chạy vite riêng ở cổng khác (5191, 5291, 5377…) — tab trình duyệt dùng chung có thể bị agent đổi sang cổng của nó; kiểm `location.port` trước khi kết luận.
+Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wrangler dev` cổng 8787 (`.claude/launch.json` tên `api`; DB local, tạo dự án thử thoải mái — dự án tạo ở trình duyệt khác thì mở bằng chế độ chỉ xem: sao dự án qua `POST /api/du-an` + `PUT …/pa/<id>` rồi lưu `unitmix.maSua.<mã>` vào localStorage). Agent chạy vite riêng ở cổng khác (5191, 5291, 5377…) — tab trình duyệt dùng chung có thể bị agent đổi sang cổng của nó; kiểm `location.port` trước khi kết luận.
 
 ## Quy tắc bất di bất dịch
 

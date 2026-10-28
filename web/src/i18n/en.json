@@ -961,6 +961,7 @@
   "tang.doiKhacRongGt": "The run re-packs as in the old app: STRETCH neighbouring units, swap other units, lengthen / shorten the run at a free wing end or at an end facing the courtyard (QT-69). If it does not fit, the change is blocked, the previous unit kept and a note shown on the drawing — it is never switched to another type.",
   "tc.chan.hep": "Cannot place {l} in this cell: the cell is {x} m wide, the narrowest template needs {y} m.",
   "tc.chan.du": "Cannot place {l} in this cell: the cell is {x} m wide, the narrowest template needs {y} m, and the leftover fits no unit (it would leave a gap).",
+  "tc.chan.goiY": "Other types that fit this cell: {ds}.",
   "tc.chan.giu": "The change was blocked and the previous unit kept (tried STRETCH, swapping other units, lengthening the run).",
   "tc.san.dai": "QT-69 · {n} run(s) lengthened {m} mm at the end facing the courtyard · outline + footprint follow",
   "tc.san.ngan": "QT-69 · {n} run(s) shortened {m} mm at the end facing the courtyard · outline + footprint follow",
