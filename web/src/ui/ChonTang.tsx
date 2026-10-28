@@ -47,13 +47,12 @@ export function ChonTang({ soTangDH, soTangDe, tangs, datTangs, coRieng, coCauRi
     <div class="chon-tang">
       <label class="o-tg"><input type="radio" name="tang-ap" checked={!tangs} onChange={() => datTangs(null)} /><span>{t('oc.tr.chung')}</span></label>
       <label class="o-tg"><input type="radio" name="tang-ap" checked={!!tangs} onChange={() => datTangs([soTangDH])} /><span>{t('oc.tr.chonTang')}</span></label>
-      <div class="luoi-tang" role="group" aria-label={t('oc.tr.tieuDe')}>
+      <div class="luoi-tang" role="group" aria-label={t('oc.tr.tieuDe')} title={t('oc.tr.ghiChu')}>
         {ds.map((k) => (
           <button type="button" key={k} aria-pressed={chon.has(k)} class={`${coRieng.includes(k) ? 'rieng' : ''}${coCauRieng.includes(k) ? ' cc-rieng' : ''}`}
             title={tenTang(soTangDe, k)} onClick={(e) => bam(k, e)}>{soTangDe + k}</button>
         ))}
       </div>
-      <p class="dong muted" style={{ margin: 0 }}>{t('oc.tr.ghiChu')}</p>
     </div>
   );
 }

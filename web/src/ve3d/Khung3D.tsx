@@ -4,6 +4,7 @@ import { viTriMatTroi } from '../ba_chieu/nang';
 import { t, useLang } from '../i18n/i18n';
 import { chayRaf, easeInOut, giamChuyenDong, tron } from '../ui/chuyenDong';
 import type { GocNhin } from '../tinh/kieu';
+import { GocBanVe } from '../ui/GocBanVe';
 import { nhomMoi, taoVatLieu, THAM_SO_MAC, type KieuVe3D, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
 
 type V3 = [number, number, number];
@@ -285,7 +286,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         {dang && !loi && <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('m3d.dangDung')}</span></div>}
         {loi && <div class="giua-man"><span>{loi}</span></div>}
       </div>
-      <div class="noi-duoi"><p class="goi-y-3d">{t('m3d.goiY')}</p></div>
+      <GocBanVe troGiup={t('m3d.goiY')} />
     </div>
   );
 }

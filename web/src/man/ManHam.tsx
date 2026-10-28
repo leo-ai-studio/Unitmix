@@ -5,7 +5,7 @@ import { chanToa } from '../tinh/hinhHoc';
 import { PHAN_HAM_MAC_DINH, type Diem, type Lo, type LoaiRam, type ThongSoHam, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaHam } from '../tinh/macDinh';
 import { MucGap } from '../ui/MucGap';
-import { ThanhHienThi } from '../ui/ThanhHienThi';
+import { GocBanVe } from '../ui/GocBanVe';
 import { fmtSo } from '../ui/so';
 import { BanVe, khungBao, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { ChuGiaiHam, MatBangHam } from '../ve/MatBangHam';
@@ -257,14 +257,7 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
         )}
         {!ve && !chiXem && h.ranh && <p class="ham-ve-ghi">{t('ham.ve.keoDinh')}</p>}
       </div>
-      <div class="noi-duoi">
-        <ChuGiaiHam coSac={tang.vungSac.length > 0} />
-        <ThanhHienThi nhan={t('ht.nhom')} nut={[
-          { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
-          { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
-          { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
-        ]} />
-      </div>
+      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null} chuGiai={<ChuGiaiHam coSac={tang.vungSac.length > 0} />} />
     </>
   );
 }

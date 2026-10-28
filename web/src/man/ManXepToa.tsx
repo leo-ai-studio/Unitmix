@@ -7,7 +7,8 @@ import { hopLo, taoToaTrenLo, vungDat } from '../tinh/hopLo';
 import { LOAI_CAN, type Diem, type Lo, type LoaiCan, type ThuVien, type ToaDat, type ToaMau, type TrangThaiPA } from '../tinh/kieu';
 import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { MucGap } from '../ui/MucGap';
-import { ThanhHienThi } from '../ui/ThanhHienThi';
+import { GocBanVe } from '../ui/GocBanVe';
+import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { fmtSo } from '../ui/so';
 import { SoDong } from '../ui/SoDong';
 import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
@@ -127,32 +128,28 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
 
       {toa && (
         <MucGap tieuDe={`${t('xep.thongSo')} · ${tenNgan(tv?.toa.get(toa.mauId))}`} giaiThich={t('gt.xep.thongSo')} mo>
+          <div class="luoi-o">
           <O nhan={t('xep.soTangDH')} tip={t('gt.xep.soTangDH')} gt={toa.soTangDH} tat={tat} onDoi={(v) => v >= 1 && datTs('soTangDH')(Math.round(v))} />
           <O nhan={t('xep.soTangDe')} tip={t('gt.xep.soTangDe')} gt={toa.soTangDe} tat={tat} onDoi={(v) => datTs('soTangDe')(Math.round(v))} />
           <O nhan={t('xep.goc')} tip={t('gt.xep.goc')} gt={toa.gocDo} donVi="°" buoc={5} am tat={tat} onDoi={(v) => datTs('gocDo')(((v % 360) + 360) % 360)} />
           <O nhan={t('xep.deOffset')} tip={t('gt.xep.deOffset')} gt={toa.deOffset} donVi="m" buoc={0.5} tat={tat} onDoi={datTs('deOffset')} />
           <O nhan={t('xep.x')} tip={t('gt.xep.x')} gt={toa.x} donVi="m" buoc={0.5} am tat={tat} onDoi={datTs('x')} />
           <O nhan={t('xep.y')} tip={t('gt.xep.y')} gt={toa.y} donVi="m" buoc={0.5} am tat={tat} onDoi={datTs('y')} />
-          <div class="dong" style={{ justifyContent: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
-            <button type="button" class="nut-phu" title={t('gt.xep.nhanBan')} disabled={chiXem || !tv}
+          </div>
+          <div class="dong" style={{ justifyContent: 'flex-start' }}>
+            <div class="nhom-bt">
+            <NutBieuTuong k="nhanBan" ghiChu={t('gt.xep.nhanBan')} tat={chiXem || !tv}
               onClick={() => {
                 if (!tv) return;
                 // chỗ trống quanh tòa gốc: trong chỉ giới, đủ lùi LO-01, cách tòa khác ≥ cạnh dài §2.6.1
                 const ban = viTriNhanBan(toa, pa, tv, luat, idMoi()).toa;
                 sua((p) => ({ ...p, toa: [...p.toa, ban] }));
                 chonToa(ban.id);
-              }}>
-              {t('xep.nhanBan')}
-            </button>
-            <button type="button" class="nut-phu" title={t('gt.xep.lat')} disabled={tat} onClick={() => sua((p) => doiToa(p, toa.id, (x) => ({ ...x, lat: !x.lat })))}>
-              {toa.lat ? t('xep.boLat') : t('xep.lat')}
-            </button>
-            <button type="button" class="nut-phu" title={t('gt.xep.khoa')} disabled={chiXem} onClick={() => sua((p) => doiToa(p, toa.id, (x) => ({ ...x, khoa: !x.khoa })))}>
-              {toa.khoa ? t('xep.moKhoa') : t('xep.khoa')}
-            </button>
-            <button type="button" class="nut-phu" title={t('gt.xep.xoa')} disabled={tat} onClick={() => { sua((p) => ({ ...p, toa: p.toa.filter((x) => x.id !== toa.id) })); chonToa(null); }}>
-              {t('xep.xoa')}
-            </button>
+              }} />
+            <NutBieuTuong k="lat" ghiChu={t('gt.xep.lat')} bat={!!toa.lat} tat={tat} onClick={() => sua((p) => doiToa(p, toa.id, (x) => ({ ...x, lat: !x.lat })))} />
+            <NutBieuTuong k={toa.khoa ? 'moKhoa' : 'khoa'} ghiChu={t('gt.xep.khoa')} bat={!!toa.khoa} tat={chiXem} onClick={() => sua((p) => doiToa(p, toa.id, (x) => ({ ...x, khoa: !x.khoa })))} />
+            <NutBieuTuong k="xoa" ghiChu={t('gt.xep.xoa')} tat={tat} onClick={() => { sua((p) => ({ ...p, toa: p.toa.filter((x) => x.id !== toa.id) })); chonToa(null); }} />
+            </div>
           </div>
         </MucGap>
       )}
@@ -559,15 +556,8 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
         {tc.do && <p class="tmb-goi-y">{diemDo.length === 2 ? `${t('tmb.do.ketQua')} ${m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1]))} · Δx ${m1(Math.abs(diemDo[1][0] - diemDo[0][0]))} · Δy ${m1(Math.abs(diemDo[1][1] - diemDo[0][1]))}` : t('tmb.do.huongDan')}</p>}
         {hien?.chan && <p class="tmb-goi-y canh">{t('tmb.chanCG')}</p>}
       </div>
-      <div class="noi-duoi">
-        <ChuGiaiDat />
-        <p class="dong muted" style={{ justifyContent: 'center' }}>{t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')}</p>
-        <ThanhHienThi nhan={t('ht.nhom')} nut={[
-          { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
-          { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
-          { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
-        ]} />
-      </div>
+      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null}
+        chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
     </>
   );
 }

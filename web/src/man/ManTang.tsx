@@ -17,7 +17,7 @@ import { MenuCongNang, MenuLoi } from '../ve/MenuO';
 import { ChonTang, nhanPhamVi, tenTang } from '../ui/ChonTang';
 import { nutLopPhong } from '../ve/LopPhong';
 import { MucGap } from '../ui/MucGap';
-import { ThanhHienThi } from '../ui/ThanhHienThi';
+import { GocBanVe } from '../ui/GocBanVe';
 import { fmtSo } from '../ui/so';
 import { MoHinhCan, MoHinhChinh } from '../ve3d/MoHinh3D';
 import { datCaiTang, useCaiTang } from './caiTang';
@@ -114,7 +114,6 @@ export function TangTrai(p: ChungTang) {
   const bc = boCucTang(toa, k0);
   const ccRieng = coCauRiengTang(toa, k0);
   const muc = ccRieng ?? mucTieuCua(lo);
-  const sl = soLieuTang(mau, bc, tv);
   const coRieng = tangCoRieng(toa);
   const coCauRieng = Object.keys(toa.tangRieng ?? {}).map(Number).filter((k) => ghiDeTang(toa, k)?.coCauMucTieu);
   const datTangs = (v: number[] | null) => { datChonToa(toa, { tangs: v, ds: [], menu: null }); setGhiChu(''); };
@@ -178,19 +177,17 @@ export function TangTrai(p: ChungTang) {
             onClick={() => { suaTuChinh(sua, tv, toa.id, { tay: false })((q) => doiToa(q, toa.id, veMauGoc)); setGhiChu(''); }}>{t('tang.veGoc')}</button>
         </div>
         {ghiChu && <p class="dong canh-bao" role="status" style={{ margin: 0 }}>{ghiChu}</p>}
-        <p class="dong muted" style={{ margin: 0 }}>{t('tang.mixGhiChu')}</p>
       </MucGap>
-      <MucGap tieuDe={t('tang.hienThi')} giaiThich={t('gt.tang.hienThi')} mo>
+      {/* Gọn: tem căn / nội thất / chấm màu ở nút Lớp góc bản vẽ; hướng dẫn chọn ô nằm trong tooltip — mục này gập mặc định. */}
+      <MucGap tieuDe={t('tang.hienThi')} giaiThich={`${t('gt.tang.hienThi')} ${t('oc.goiYChon')}`}>
         <label class="o-chon" title={t('gt.tang.kieu')}><span>{t('tang.kieu')}</span>
           <select value={cai.kieu} onChange={(e) => datCaiTang({ kieu: e.currentTarget.value as typeof cai.kieu })}>
             {DS_KIEU_MB.map((k) => <option value={k}>{t(`kieu.${k}`)}</option>)}
           </select>
         </label>
-        {([['hienTem', 'tang.hienTem'], ['noiThat', 'tang.noiThat'], ['chamMau', 'tang.chamMau'], ['suaNhieu', 'tang.suaNhieu']] as const).map(([k, nhan]) => (
+        {([['suaNhieu', 'tang.suaNhieu']] as const).map(([k, nhan]) => (
           <label class="o-tg" key={k} title={t(`gt.${nhan}`)}><input type="checkbox" checked={cai[k]} onChange={(e) => datCaiTang({ [k]: e.currentTarget.checked })} /><span>{t(nhan)}</span></label>
         ))}
-        <p class="dong muted" style={{ margin: 0 }}>{t('tang.phamVi').replace('{n}', String(toa.soTangDH))} · {t('xep.canTang').replace('{n}', String(sl.can.filter((c) => c.cn === 'can').length))}</p>
-        <p class="dong muted" style={{ margin: 0 }}>{t('oc.goiYChon')}</p>
       </MucGap>
     </>
   );
@@ -341,16 +338,12 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         <MenuLoi x={menu.x} y={menu.y} dong={dongMenu} tt={thongTinLoi(toa, menu.khoa)} chiXem={chiXem}
           doi={(tt) => p.sua((q) => doiToa(q, toa.id, (x) => datLoi(x, menu.khoa, tt)))} />
       )}
-      <div class="noi-duoi">
-        <ThanhHienThi nhan={t('ht.nhom')} nut={[
-          { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
-          { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
-          { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
-          { khoa: 'tem', nhan: t('tang.hienTem'), bat: cai.hienTem, onClick: () => datCaiTang({ hienTem: !cai.hienTem }) },
-          { khoa: 'noi', nhan: t('tang.noiThat'), bat: cai.noiThat, onClick: () => datCaiTang({ noiThat: !cai.noiThat }) },
-          ...nutLopPhong(pa.nguong),
-        ]} />
-      </div>
+      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null} lop={[
+        { khoa: 'tem', nhan: t('tang.hienTem'), bat: cai.hienTem, onClick: () => datCaiTang({ hienTem: !cai.hienTem }) },
+        { khoa: 'noi', nhan: t('tang.noiThat'), bat: cai.noiThat, onClick: () => datCaiTang({ noiThat: !cai.noiThat }) },
+        { khoa: 'cham', nhan: t('tang.chamMau'), bat: cai.chamMau, onClick: () => datCaiTang({ chamMau: !cai.chamMau }) },
+        ...nutLopPhong(pa.nguong),
+      ]} />
     </>
   );
 }

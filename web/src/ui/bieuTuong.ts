@@ -17,10 +17,15 @@ export const BIEU_TUONG = {
   nhanBan: '⧉',
   do: '⟷', // đo khoảng cách
   batDinh: '⌖', // bắt dính
-  toaDo: '⊕', // nhập toạ độ / góc chính xác
+  toaDo: '⌗', // nhập toạ độ / góc chính xác
   xoay: '⟳',
   vuaKhung: '⛶', // vừa khung
   xem3d: '⬡',
+  phong: '⊕', // phóng to
+  thu: '⊖', // thu nhỏ
+  lop: '☰', // lớp hiển thị (bật / tắt)
+  chuGiai: '▤', // chú giải
+  troGiup: '?', // hướng dẫn thao tác
   // màn Tầng
   sapXep: '✥', // kéo đổi chỗ căn (QT-8 · QT-30)
   them: '＋', // menu gộp Thêm căn / Thêm thang bộ (app cũ tAddMenu)
