@@ -319,10 +319,15 @@ export function viTriNhanBan(goc: ToaDat, pa: TrangThaiPA, tv: ThuVien, luat: Lu
   const lo = pa.lo.find((l) => l.id === goc.loId), V = lo ? vungDat(lo) : [];
   const khac = hinhToa(pa, tv);
   const g = (goc.gocDo * Math.PI) / 180;
+  // mỗi hướng: khoảng tâm–tâm vừa đủ = bề rộng chân tòa theo hướng đó + cạnh dài §2.6.1, rồi xa dần
+  const kcDai = luat ? kcToa261(luat.lo02, H).dai : 0;
   const thu: Diem[] = [];
-  for (let vong = 1; vong <= 3; vong++) for (let k = 0; k < 8; k++) {
-    const a = g - Math.PI / 2 + (k * Math.PI) / 4; // phương ngang thân tòa trước
-    for (const buoc of [0.6, 1, 1.4]) thu.push([goc.x + Math.cos(a) * r * buoc * vong * 1.2, goc.y + Math.sin(a) * r * buoc * vong * 1.2]);
+  for (const them of [0, 0.25, 0.5, 1]) for (let k = 0; k < 8; k++) {
+    const a = g - Math.PI / 2 + (k * Math.PI) / 4; // vuông góc thân tòa trước
+    const u: Diem = [Math.cos(a), Math.sin(a)];
+    const chieu = F0.map((p) => (p[0] - goc.x) * u[0] + (p[1] - goc.y) * u[1]);
+    const d = (Math.max(...chieu) - Math.min(...chieu) + kcDai + 0.5) * (1 + them);
+    thu.push([goc.x + u[0] * d, goc.y + u[1] * d]);
   }
   for (const [x, y] of thu) {
     const c = { ...ban, x: tron2(x), y: tron2(y) }, F = chanToa(mau, c);
@@ -331,8 +336,10 @@ export function viTriNhanBan(goc: ToaDat, pa: TrangThaiPA, tv: ThuVien, luat: Lu
     if (khac.some((o) => capGanToa(F, o.F).kc < (luat ? kcToa261(luat.lo02, Math.max(H, o.H)).dai : 0) - 1e-6 || capGanToa(F, o.F).kc === 0)) continue;
     return { toa: c, hopLe: true };
   }
-  const a = g - Math.PI / 2;
-  return { toa: { ...ban, x: tron2(goc.x + Math.cos(a) * r * 2.2), y: tron2(goc.y + Math.sin(a) * r * 2.2) }, hopLe: false };
+  // hết chỗ: ưu tiên vị trí thử đầu tiên còn trong ranh lô, không thì lệch nhẹ khỏi tòa gốc — luôn nhìn thấy trên bản vẽ
+  const trongLo = lo && lo.ranh.length >= 3 ? thu.find(([x, y]) => namTrongNhanh(chanToa(mau, { ...ban, x, y }), lo.ranh)) : undefined;
+  const [x, y] = trongLo ?? [goc.x + r * 0.25, goc.y - r * 0.25];
+  return { toa: { ...ban, x: tron2(x), y: tron2(y) }, hopLe: false };
 }
 
 // ---------- đo ----------
