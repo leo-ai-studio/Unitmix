@@ -2,6 +2,15 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · thanh trên: dải cấp bấm được (menu lô / PA · cốt · tòa · tầng · căn) · agent Opus
+
+- Dải giữa `nav.cap-do` (`ui/ThanhTren.tsx` `DaiCap` / `NutCap` / `BangCap`) thành nhóm liền khung viền `--line` như `.nhom-nut`, chữ 12 px, cấp đang đứng tô `--selected`. Mỗi ô là menu thả xuống thật (`position: fixed`, `role="menu"` + `menuitemradio`): ↑ / ↓ / Home / End chuyển mục, Enter chọn, Esc / Tab / bấm ngoài đóng, đóng bằng phím thì trả focus về ô; hiệu ứng mở / đóng `menu-cap-vao` / `menu-cap-ra` qua `useDongHop`. Esc trong menu không lọt xuống phím tắt bản vẽ.
+  - lô / PA: nhóm Phương án (chọn PA khác → mở `?pa=`) + nhóm Lô đất (lô cao tầng, kèm số tòa); cốt: Trên cốt 0 (Tầng) / Dưới cốt 0 (Hầm), từ Hầm về lại màn trên cốt 0 vừa làm; tòa: tòa của lô (trùng mẫu thì đánh số 1 · 2 · 3); tầng: tầng điển hình, từng tầng (chấm + "bố cục riêng"), tầng hầm B1…; căn: CH-xx theo đánh số chu vi. Nút ↑ lên một cấp: căn → tầng → tòa (về TMB, giữ tòa) → lô; Hầm → lô.
+- Phần thuần `ui/capDo.ts` (+ `capDo.test.ts`, 8 ca): `capHienTai`, `lenMotCap`, `dsMucTang`, `khoaTangDangXem`, `giaiKhoaTang`, `buocPhim`. Dựng menu trong `man/SoanThao.tsx` `dungCapDo` (chỉ đổi state chọn của SoanThao). Chọn tầng từ ngoài màn Tầng qua kênh `chonTangNgoai` trong `ui/ChonTang.tsx` (ô ChonTang đang gắn nhận lệnh, chưa gắn thì giữ lệnh chờ) — không sửa `ManTang.tsx`.
+- Nhóm chế độ Tự động / Chỉnh tay / Chỉ xem dời sang trái, ngay sau 2D / 3D / Chi phí; bỏ nhãn "Chế độ:". CSS riêng `styles/cap-do.css`; bỏ luật `.cap-do` cũ trong `unitmix.css`. Màn ≤ 1480 px: khoảng cách 8 px, ẩn chữ UNITMIX cạnh logo, đệm tab hẹp; dải cấp co theo thứ tự lô → tòa (cốt / tầng / căn giữ nguyên), chữ cắt "…", tooltip đủ tên.
+- Kiểm trên app (vite 5411, API 8787, dự án thử `g4by0d6l` 2 PA × 3 lô × 7 tòa sao từ `k05gkt6j`; `plevadne` cho tầng riêng): bấm từng menu (chuột + phím), đổi lô, tòa, tầng (từ TMB nhảy sang Tầng đúng tầng), căn, cốt, tầng hầm, PA, ↑ ba lần tới lô (nút tắt). `.panel-giua` trước / khi mở menu / sau chọn: 1440×900 `270,52,870,848`, 1200×800 `270,52,630,748` — không đổi; thanh cao 52 px, `scrollWidth − clientWidth = 0` ở cả hai cỡ. `npm run kiem` ĐẠT (tsc, web 401, worker 9, pytest 12, build).
+- Còn dở: danh sách PA lấy lúc mở dự án (PA tạo sau chưa hiện tới khi tải lại); ở 1200 px tên lô gần như chỉ còn "T…" (tooltip đủ).
+
 ## 2026-10-29 · thao tác tay trên Tổng mặt bằng (học màn ③ app cũ) · agent Opus
 
 - Đối chiếu màn ③ `MDI_Unitmix_v4` (`phimTMB`, `doiCoKhoa`, `nhanBanToa`, `latToa`, kéo / Ctrl+kéo trong `veTMB`): app cũ có chọn một tòa, kéo + khoá CGXD (QT-118), Ctrl+kéo / Ctrl+C·V nhân bản, Q/E ±5°, R 90°, F lật, mũi tên 1 m (Shift 5 m), Delete, ô X / Y / góc; KHÔNG có chọn nhiều tòa, khung chọn, bắt dính, tay nắm xoay, đo, hiện kích thước khi kéo (chỉ tô đỏ khi chạm CGXD).
