@@ -2,6 +2,18 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · Hầm: rải nhanh, xuất XLS không đứng, bản vẽ nhẹ · agent Opus
+
+- Yêu cầu: (1) xuất XLS khi cache hầm trống không làm đứng giao diện; (2) phép rải hầm lô 400×400 m từ 6–16 s xuống < 2 s, KHÔNG đổi kết quả; (3) bản vẽ hầm sau khi rải < 50 ms, đếm nút SVG.
+- Đã làm:
+  - `tinh/raiCho.ts`: lưới chỉ mục khung bao cho vật cản + cạnh ranh, cắt sớm ngoài khung bao ranh, điểm-trong-ranh theo hàng (tìm nhị phân). Phép thử từng ô vẫn là hàm cũ nên kết quả khớp từng bit.
+  - Test đối chiếu `tinh/raiHamDoiChieu.test.ts` + mẫu `tinh/__mau__/hamDoiChieu.json` (6 PA thật từ DB local, chữ ký sinh bằng mã `808abb3`); chữ ký ở `tinh/chuKyHam.ts`.
+  - `tinh/hamNen.ts`: `DieuPhoiHam.cho` + `choRaiHamPA`; `xuat/xuatXls.ts`: `xuatBaoCaoPA` chờ worker rồi mới dựng báo cáo; `ui/ThanhTren.tsx`: nút XLS có vòng O `spin-o`, khoá khi chờ; `man/SoanThao.tsx`, `ui/KhungSoan.tsx` một dòng. Test mới trong `tinh/hamNen.test.ts`.
+  - `ve/MatBangHam.tsx`: mỗi loại ô một `path`, lớp tĩnh nhớ vnode.
+- Số đo (chi tiết `de_xuat_hieu_nang.md` mục 10): rải 400×400 2 tầng 4,4 s → 0,11 s, 5 tầng 12,3 s → 0,14 s; mở tab Hầm tới khi có bản vẽ 8,1 s → 0,53 s; xuất XLS cache trống đứng 8,0 s → ≤ 64 ms (ra tệp sau 0,32 s); nút SVG 6.471 → 20; đổi B1 ↔ B2 91–156 → 22–31 ms.
+- Kiểm: `npm run kiem` ĐẠT (web 480/480). Trên app không lỗi console.
+- Còn dở: chưa gộp tầng giống nhau trong `raiHamTinh`, chưa chia nhiều worker (không cần ở cỡ hiện tại); chưa đo bằng `vite preview`. Đo hai vite song song phải đặt `cacheDir` riêng (junction `node_modules` dùng chung `.vite` → nạp hai bản preact, trang trắng).
+
 ## 2026-10-29 · rải hầm trong Web Worker · agent Opus
 
 - Yêu cầu: lần rải hầm đầu tiên, hoặc khi đổi thông số hầm, giao diện đứng 4,5–14 s. Chuyển `raiHam` sang Web Worker. Ba chỗ gọi (màn Hầm, Chi phí, 3D bật Hầm) chuyển sang bất đồng bộ. Trong lúc chờ phải giữ kết quả cũ, có vòng O "Đang rải hầm…", khung giữa không đổi; đổi đầu vào thì chỉ giữ lượt mới nhất.

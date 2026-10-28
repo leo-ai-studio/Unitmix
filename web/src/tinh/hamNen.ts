@@ -83,6 +83,28 @@ export class DieuPhoiHam {
     this.khai(kenh, new Set(), new Map());
   }
 
+  /**
+   * Chờ mọi lô trong `dsLo` có kết quả rải (xuất XLS: bấm xuất khi cache trống không chặn luồng chính).
+   * Trúng cache thì xong ngay; chưa thì xếp việc cho worker dưới kênh riêng, nghe tới khi đủ rồi bỏ kênh.
+   */
+  cho(kenh: string, pa: TrangThaiPA, tv: ThuVien | null, dsLo: Lo[]): Promise<void> {
+    const doc = (): boolean => {
+      const p = this.phien(kenh);
+      for (const lo of dsLo) p.lay(pa, tv, lo);
+      p.xong();
+      return p.dangCho;
+    };
+    if (!doc()) { this.bo(kenh); return Promise.resolve(); }
+    return new Promise((xong) => {
+      const go = this.nghe(() => {
+        if (doc()) return;
+        go();
+        this.bo(kenh);
+        xong();
+      });
+    });
+  }
+
   nghe(fn: () => void): () => void {
     this.nguoiNghe.add(fn);
     return () => { this.nguoiNghe.delete(fn); };
@@ -176,6 +198,12 @@ const taoWorkerMacDinh = (): WorkerGiong | null => {
 };
 
 export const dieuPhoiHam = new DieuPhoiHam(taoWorkerMacDinh);
+
+/** Chờ rải xong mọi lô có tòa của PA (như các lô `tinhKhoiLuong` cần), qua worker chung. */
+export function choRaiHamPA(pa: TrangThaiPA, tv: ThuVien): Promise<void> {
+  const dsLo = pa.lo.filter((lo) => pa.toa.some((t) => t.loId === lo.id && tv.toa.has(t.mauId)));
+  return dieuPhoiHam.cho('xls', pa, tv, dsLo);
+}
 
 /** Nghe kết quả worker để vẽ lại; gỡ màn thì bỏ việc của kênh. Trả phiên bản (đưa vào khoá nhớ / dựng lại). */
 export function useNgheHam(kenh: string): number {
