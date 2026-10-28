@@ -11,7 +11,7 @@ describe('bộ biểu tượng công cụ', () => {
       for (const k of Object.keys(BIEU_TUONG)) expect(d[`bt.${k}`], `${l} bt.${k}`).toBeTruthy();
     }
   });
-  it('mỗi việc một emoji riêng, không trùng', () => {
+  it('mỗi việc một biểu tượng riêng, không trùng', () => {
     const ds = Object.values(BIEU_TUONG);
     expect(new Set(ds).size).toBe(ds.length);
   });
