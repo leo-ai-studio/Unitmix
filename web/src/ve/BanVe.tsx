@@ -26,11 +26,19 @@ type Props = {
   onDieuKhien?: (d: DieuKhienVe) => void;
   /** Góc (độ, theo chiều kim đồng hồ) từ phía trên màn hình tới hướng Bắc; 0 khi trục y của bản vẽ chính là hướng Bắc. */
   gocBac?: number;
+  /** Bấm (không kéo) lên nền bản vẽ: điểm bấm theo mét (y lên). Bấm lên phần tử con đã chặn sự kiện thì không gọi. */
+  onBamNen?: (p: Diem, e: PointerEvent) => void;
+  /**
+   * Chọn bằng khung: `bat` = kéo nền vẽ khung thay vì di bản vẽ (chế độ cảm ứng); giữ Shift khi kéo nền cũng vẽ khung.
+   * `onXong(a, b, them)` nhận hai góc theo mét; `them` = giữ Shift / Ctrl (thêm vào lựa chọn).
+   */
+  chonKhung?: { bat: boolean; onXong: (a: Diem, b: Diem, them: boolean) => void };
 };
 
 type NhinThay = { cx: number; cy: number; w: number }; // tâm (m, y đã lật) và bề rộng nhìn thấy (m); bề cao suy từ khung bản vẽ
 type CuChi =
   | { loai: 'keo'; x: number; y: number; cx: number; cy: number }
+  | { loai: 'khung'; x: number; y: number; them: boolean }
   | { loai: 'chum'; d0: number; mx: number; my: number; w: number; cx: number; cy: number };
 
 const W_TOI_THIEU = 2, W_TOI_DA = 100000;
@@ -53,7 +61,7 @@ function zoomTu(o: NhinThay, r: number, c: number, k: number, px: number, py: nu
  * Bản vẽ SVG theo mét. Khung cố định theo ô chứa (không phình theo nội dung); thước tỷ lệ và hoa gió là lớp phủ đứng yên.
  * Chuột: kéo để di, lăn để phóng quanh con trỏ. Cảm ứng: một ngón di, hai ngón chụm / kéo để phóng và di.
  */
-export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0 }: Props) {
+export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen, chonKhung }: Props) {
   const goc = khung ?? [0, 0, 100, 60];
   const hop = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -70,6 +78,13 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0 }: Props)
   const rafV = useRef(0), chuaV = useRef<NhinThay | null>(null);
   const mau = useRef<{ x: number; y: number; t: number }[]>([]); // vài điểm kéo cuối để tính vận tốc
   const khoaTruoc = useRef('');
+  const [hcn, setHcn] = useState<[number, number, number, number] | null>(null); // khung chọn đang kéo (px trong ô chứa)
+  const batDauNen = useRef<{ x: number; y: number; xa: number } | null>(null); // điểm bấm nền + quãng đã đi xa nhất (px) để nhận "bấm"
+  /** Điểm px trong ô chứa → mét (y lên) theo khung nhìn hiện tại. */
+  const raMet = (px: number, py: number): Diem => {
+    const { r, c } = ktRef.current, o = vRef.current, m = o.w / (r || 1);
+    return [o.cx + (px - r / 2) * m, -(o.cy + (py - c / 2) * m)];
+  };
   const khoa = khung ? khung.map((n) => n.toFixed(1)).join() : '';
 
   useEffect(() => {
@@ -203,13 +218,23 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0 }: Props)
           onPointerDown={(e) => {
             if (diem.current.size !== 1) return;
             try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch { /* bỏ qua */ }
+            const p0 = viTri(e);
+            batDauNen.current = { x: p0.x, y: p0.y, xa: 0 };
+            if (chonKhung && (chonKhung.bat || e.shiftKey) && e.button === 0) {
+              cuChi.current = { loai: 'khung', x: p0.x, y: p0.y, them: e.shiftKey || e.ctrlKey || e.metaKey };
+              setHcn([p0.x, p0.y, p0.x, p0.y]);
+              return;
+            }
             batDauKeo(e.pointerId);
           }}
           onPointerMove={(e) => {
             if (!diem.current.has(e.pointerId)) return;
             diem.current.set(e.pointerId, viTri(e));
             const g = cuChi.current, { r, c } = ktRef.current;
+            const bn = batDauNen.current, pm = diem.current.get(e.pointerId)!;
+            if (bn) bn.xa = Math.max(bn.xa, Math.hypot(pm.x - bn.x, pm.y - bn.y));
             if (!g || !r) return;
+            if (g.loai === 'khung') { setHcn([g.x, g.y, pm.x, pm.y]); return; }
             if (g.loai === 'chum' && diem.current.size >= 2) {
               const [a, b] = [...diem.current.values()];
               const d = Math.hypot(a.x - b.x, a.y - b.y) || 1, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
@@ -222,11 +247,27 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0 }: Props)
               datV({ ...vRef.current, cx: g.cx - (p.x - g.x) * m, cy: g.cy - (p.y - g.y) * m });
             }
           }}
-          onPointerUp={(e) => ketThuc(e.pointerId, e.timeStamp)}
-          onPointerCancel={(e) => ketThuc(e.pointerId)}
+          onPointerUp={(e) => {
+            const g = cuChi.current, bn = batDauNen.current, p = diem.current.get(e.pointerId) ?? viTri(e);
+            batDauNen.current = null;
+            if (g?.loai === 'khung') {
+              setHcn(null);
+              cuChi.current = null; diem.current.delete(e.pointerId);
+              if (Math.hypot(p.x - g.x, p.y - g.y) >= 4) chonKhung?.onXong(raMet(g.x, g.y), raMet(p.x, p.y), g.them);
+              else onBamNen?.(raMet(p.x, p.y), e);
+              return;
+            }
+            if (g?.loai === 'keo' && bn && bn.xa < 4 && diem.current.size === 1) onBamNen?.(raMet(p.x, p.y), e);
+            ketThuc(e.pointerId, e.timeStamp);
+          }}
+          onPointerCancel={(e) => { if (cuChi.current?.loai === 'khung') { setHcn(null); cuChi.current = null; } batDauNen.current = null; ketThuc(e.pointerId); }}
         >
           {children}
         </svg>
+      )}
+      {hcn && (
+        <div class="ban-ve-khung-chon" aria-hidden="true"
+          style={{ left: `${Math.min(hcn[0], hcn[2])}px`, top: `${Math.min(hcn[1], hcn[3])}px`, width: `${Math.abs(hcn[2] - hcn[0])}px`, height: `${Math.abs(hcn[3] - hcn[1])}px` }} />
       )}
       <div class="ban-ve-phu" aria-hidden="true">
         <div class="thuoc-ty-le" style={{ width: `${Math.max(doDai, 0)}px` }}>

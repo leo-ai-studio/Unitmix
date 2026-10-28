@@ -84,7 +84,7 @@ export function loiCotTuToa(pa: TrangThaiPA, tv: ThuVien, loId: string, cotRong:
     if (!mau) continue;
     const xs = mau.duong_bao.map((p) => p[0]), ys = mau.duong_bao.map((p) => p[1]);
     const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const dat = (pts: Diem[]) => xoayTinhTien(pts.map(([x, y]): Diem => [(x - cx) / 1000, (y - cy) / 1000]), t.x, t.y, t.gocDo);
+    const dat = (pts: Diem[]) => xoayTinhTien(pts.map(([x, y]): Diem => [((t.lat ? -1 : 1) * (x - cx)) / 1000, (y - cy) / 1000]), t.x, t.y, t.gocDo);
     if (coMat(mau)) {
       mau.mat.forEach((m, mi) => {
         (m.phan_tu as (PhanTuMat & { bb_ve_mm?: number[] })[]).forEach((q, qi) => {

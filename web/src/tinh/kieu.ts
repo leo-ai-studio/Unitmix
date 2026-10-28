@@ -61,6 +61,8 @@ export type ToaDat = {
   canTheo: Record<string, string>; // id căn gốc -> id căn thay
   canViTri?: Record<string, string>; // khoá vị trí trên tầng ("mặt:phần tử") -> id căn thay; thắng canTheo
   khoa?: boolean; // khoá: không kéo, không sửa thông số
+  /** Lật chân tòa trên TMB (đối xứng qua trục dọc cục bộ, QT-85 app cũ); mặt bằng căn của mẫu không đổi. */
+  lat?: boolean;
   /** Có ít nhất 1 thang máy chở được băng ca (QCVN 04 chú thích 2.4.1); chưa khai = undefined. */
   thangBangCa?: boolean;
   /** Không gian nhân viên quản lý, trông xe, bảo vệ, kỹ thuật của tòa (QCVN 04 2.2.18); chưa khai = undefined. */
