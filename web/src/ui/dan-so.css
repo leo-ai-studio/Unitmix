@@ -1,0 +1,30 @@
+/* Dashboard dân số (ui/DashDanSo.tsx) + khai báo (ui/KhaiDanSo.tsx). Màu chỉ lấy biến :root (leo-ui.css, unitmix.css). */
+.ds-dash { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+.ds-dash svg { flex: none; }
+.ds-vong-so { font-size: 7px; font-weight: 700; fill: var(--ink); }
+.ds-vong-chu { font-size: 3.6px; fill: var(--muted); }
+.ds-so-lon { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.ds-o { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 6px; }
+.ds-o small { color: var(--muted-text); font-size: 11px; }
+.ds-o b { font-size: 16px; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--green); }
+.ds-o b.ds-vuot { color: var(--warn); }
+.ds-o > .muted { grid-column: 1 / -1; font-size: 10px; font-variant-numeric: tabular-nums; }
+.ds-thanh { grid-column: 1 / -1; display: block; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.ds-thanh i { display: block; height: 100%; background: var(--green); border-radius: 3px; transition: width .3s ease; }
+.ds-thanh.vuot i { background: var(--warn); }
+@media (prefers-reduced-motion: reduce) { .ds-thanh i { transition: none; } }
+.ds-ghi { margin: 2px 0; font-size: 11px; line-height: 1.4; }
+.ds-bang { display: grid; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.ds-hang { display: grid; grid-template-columns: 1.4fr .7fr 1.2fr .8fr .6fr; gap: 4px; padding: 2px 0; border-bottom: 1px solid var(--line); align-items: center; }
+.ds-hang > :not(:first-child) { text-align: right; }
+.ds-hang.dau { color: var(--muted-text); font-weight: 600; }
+.ds-hang.tong { font-weight: 700; border-bottom: none; }
+.ds-hang.ngoai { color: var(--canh-bao); }
+.ds-bang6 .ds-hang { grid-template-columns: 1.3fr .6fr .8fr .8fr .8fr .6fr; }
+.ds-hang span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-chi-tiet { margin-top: 6px; }
+.ds-chi-tiet summary { cursor: pointer; font-size: 12px; color: var(--green); }
+.ds-toa { margin-top: 4px; font-size: 11px; }
+.ds-du-an { margin-top: 4px; font-size: 12px; }
+.khai-dan-so { display: grid; gap: 4px; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--line); }
+.ds-khai-ghi { margin: 0; font-size: 11px; }

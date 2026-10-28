@@ -13,6 +13,7 @@ import { fmtSo } from '../ui/so';
 import { SoDong } from '../ui/SoDong';
 import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
 import { BangChiTieuLo, ChonLoCaoTang, LoChiTieu, LoNhap, SucChuaLo } from './ManLo';
+import { DashDanSo } from '../ui/DashDanSo';
 import { GoiYXepToa, LopGoiY } from '../ui/GoiYXepToa';
 import {
   batDiem, batDinh, batGoc, caoToa, dichBatDinh, dichNhom, gocCanhLo, hinhToa, kichThuocToa, kiemViPham, latNhom, namTrongNhanh,
@@ -612,6 +613,7 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQ
   return (
     <>
       <BangChiTieuLo dong={r?.dong ?? []} />
+      <DashDanSo pa={pa} tv={tv} lo={lo} />
       <MucGap tieuDe={`${t('xep.dtLo')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.xep.dtLo')} mo>
         <div class="dong bang-ct dau"><span /><span>{t('xep.xayDung')}</span><span>{t('xep.tinhHSSDD')}</span></div>
         <div class="dong bang-ct"><span>{t('sc.dtLo')}</span><span>{fmtSo(dtLo, m2)}</span><span>{fmtSo(dtLo, m2)}</span></div>

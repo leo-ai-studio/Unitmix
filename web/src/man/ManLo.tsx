@@ -14,6 +14,7 @@ import { fmtSo } from '../ui/so';
 import { SoDong } from '../ui/SoDong';
 import { NhapChiTieu } from './NhapChiTieu';
 import { NhapDeBai } from './NhapDeBai';
+import { KhaiDanSo } from '../ui/KhaiDanSo';
 
 type Chung = { pa: TrangThaiPA; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; loId: string | null; chonLo: (id: string) => void };
 
@@ -219,6 +220,7 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
               <O nhan={t('ct.choXeMayMoiCan')} tip={t('gt.ct.choXeMayMoiCan')} gt={ct.choXeMayMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('choXeMayMoiCan')} />
               <O nhan={t('ct.cayXanhMin')} tip={t('gt.ct.cayXanhMin')} gt={ct.cayXanhMin} donVi="%" tat={chiXem} onDoi={datCt('cayXanhMin')} />
             </div>
+            <KhaiDanSo lo={lo} sua={sua} chiXem={chiXem} />
           </MucGap>
           <MucGap tieuDe={t('muc.coCauMucTieu')} giaiThich={t('gt.muc.coCauMucTieu')}>
             <DongPreset nhom="coCau" chiXem={chiXem} chup={() => chupPreset('coCau', pa, lo)} ap={apPresetNhom('coCau')} />
