@@ -28,7 +28,8 @@ type Props = {
   onHoanTac?: () => void;
   onLamLai?: () => void;
   onXuatCad?: () => void;
-  onXuatXls?: () => void;
+  /** Trả Promise thì nút hiện vòng O tới khi xong (xuất chờ rải hầm chạy nền). */
+  onXuatXls?: () => void | Promise<void>;
   /** Các bước làm việc chính (tab cố định trên thanh trên). */
   buoc?: { ds: [string, string][]; chon: string; onChon: (k: string) => void };
 };
@@ -241,6 +242,15 @@ export function ThanhTren(p: Props) {
   const xem: [CheDoXem, string][] = [['mat_bang', 'xem.matBang'], ['mo_hinh', 'xem.moHinh'], ['chi_phi', 'xem.chiPhi']];
   const cheDo: [CheDo, string][] = [['tu_dong', 'cheDo.tuDong'], ['chinh_tay', 'cheDo.chinhTay'], ['chi_xem', 'cheDo.chiXem']];
   const luu = p.trangThaiLuu;
+  // Xuất XLS có thể chờ rải hầm chạy nền: hiện vòng O trên nút, chặn bấm lặp.
+  const [dangXls, setDangXls] = useState(false);
+  const xuatXls = () => {
+    if (dangXls || !p.onXuatXls) return;
+    const r = p.onXuatXls();
+    if (!r) return;
+    setDangXls(true);
+    r.catch((e) => console.error('xuat xls:', e)).finally(() => setDangXls(false));
+  };
   return (
     <header class="thanh-tren">
       <ThuongHieu dangXuLy={p.dangXuLy} />
@@ -274,10 +284,12 @@ export function ThanhTren(p: Props) {
           {t(luu === 'da_luu' ? 'luu.daLuu' : luu === 'dang_luu' ? 'luu.dangLuu' : 'luu.chuaLuuDuoc')}
         </span>
       )}
-      <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatXls} onClick={p.onXuatXls}>{t('xuat.xls')}</button>
+      <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatXls || dangXls} aria-busy={dangXls} onClick={xuatXls}>
+        {dangXls && <img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '14px', height: '14px', verticalAlign: '-2px', marginRight: '6px' }} />}{t('xuat.xls')}
+      </button>
       <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatCad} onClick={p.onXuatCad}>{t('xuat.cad')}</button>
       <span class="nhom-xuat"><ChonLang /></span>
-      <MenuThem onXls={p.onXuatXls} onCad={p.onXuatCad} />
+      <MenuThem onXls={p.onXuatXls && xuatXls} onCad={p.onXuatCad} />
     </header>
   );
 }

@@ -173,4 +173,24 @@ describe('điều phối rải hầm (Web Worker)', () => {
     const tv = taoThuVien([mau], can);
     for (const l of [A, B]) expect(JSON.stringify(raiHamTinh(paGonChoHam(pa, l), tv, l))).toBe(JSON.stringify(raiHamTinh(pa, tv, l)));
   });
+
+  it('cho(): xuất XLS chờ worker rải xong mọi lô, không rải đồng bộ; trúng cache thì xong ngay', async () => {
+    const tv = taoThuVien([mau], can);
+    const { ds, dp } = taoBo();
+    let xong = false;
+    const hua = dp.cho('xls', pa, tv, [A, B]).then(() => { xong = true; });
+    await Promise.resolve();
+    expect(xong).toBe(false);
+    expect(ds[0].thu).toHaveLength(1);
+    ds[0].chay();
+    await Promise.resolve();
+    expect(xong).toBe(false);
+    ds[0].chay();
+    await hua;
+    expect(raiHam(pa, tv, A)).toEqual(raiHamTinh(pa, tv, A));
+    expect(dp.ban).toBe(false);
+    // lần hai: cache đủ, không gửi worker nữa
+    await dp.cho('xls', pa, tv, [A, B]);
+    expect(ds.reduce((a, w) => a + w.thu.length, 0)).toBe(0);
+  });
 });

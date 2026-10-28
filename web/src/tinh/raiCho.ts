@@ -56,14 +56,117 @@ function hcnGiaoDaGiac(r: Hcn, poly: Diem[]): boolean {
   return diemTrong((r[0] + r[2]) / 2, (r[1] + r[3]) / 2, poly);
 }
 
-/** Hình chữ nhật nằm trọn trong đa giác. */
-function hcnTrongDaGiac(r: Hcn, poly: Diem[]): boolean {
-  if (!diemTrong((r[0] + r[2]) / 2, (r[1] + r[3]) / 2, poly)) return false;
-  const s: Hcn = [r[0] + EPS, r[1] + EPS, r[2] - EPS, r[3] - EPS];
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    if (doanCatHcn(poly[j], poly[i], s)) return false;
+/*
+ * Lưới chỉ mục khung bao (hệ đã xoay) để kiểm va chạm nhanh mà KHÔNG đổi kết quả: phần tử (đa giác vật cản / cạnh ranh)
+ * có khung bao tách hẳn khỏi hình chữ nhật thu nhỏ `s` thì không cạnh nào của nó cắt `s` và tâm `s` không nằm trong nó,
+ * nên bỏ qua đúng như phép thử đầy đủ trả false. Chỉ phần tử có khung bao chạm `s` mới thử đầy đủ.
+ */
+type ChiMuc = {
+  kt: number; u0: number; v0: number; nu: number; nv: number;
+  o: number[][]; // ô lưới → chỉ số phần tử
+  bb: Float64Array; // 4 số / phần tử
+  dau: Uint32Array; // đánh dấu đã thử trong lượt hỏi hiện tại
+  luot: number;
+};
+
+function taoChiMuc(bbs: Hcn[], kt: number): ChiMuc {
+  let u0 = Infinity, v0 = Infinity, u1 = -Infinity, v1 = -Infinity;
+  for (const b of bbs) {
+    if (b[0] < u0) u0 = b[0];
+    if (b[1] < v0) v0 = b[1];
+    if (b[2] > u1) u1 = b[2];
+    if (b[3] > v1) v1 = b[3];
   }
-  return true;
+  if (!bbs.length) { u0 = v0 = 0; u1 = v1 = 0; }
+  const nu = Math.max(1, Math.min(512, Math.ceil((u1 - u0) / kt) + 1));
+  const nv = Math.max(1, Math.min(512, Math.ceil((v1 - v0) / kt) + 1));
+  const o: number[][] = Array.from({ length: nu * nv }, () => []);
+  const bb = new Float64Array(bbs.length * 4);
+  bbs.forEach((b, i) => {
+    bb.set(b, i * 4);
+    const [a0, a1] = oLuoi(b[0], b[1], u0, v0, kt, nu, nv);
+    const [b0, b1] = oLuoi(b[2], b[3], u0, v0, kt, nu, nv);
+    for (let y = a1; y <= b1; y++) for (let x = a0; x <= b0; x++) o[y * nu + x].push(i);
+  });
+  return { kt, u0, v0, nu, nv, o, bb, dau: new Uint32Array(bbs.length), luot: 0 };
+}
+
+const oLuoi = (u: number, v: number, u0: number, v0: number, kt: number, nu: number, nv: number): [number, number] => [
+  Math.max(0, Math.min(nu - 1, Math.floor((u - u0) / kt))),
+  Math.max(0, Math.min(nv - 1, Math.floor((v - v0) / kt))),
+];
+
+/** Gọi `thu(i)` cho mỗi phần tử có khung bao không tách hẳn khỏi `s`; dừng và trả true khi `thu` trả true. */
+function hoiChiMuc(cm: ChiMuc, s: Hcn, thu: (i: number) => boolean): boolean {
+  if (++cm.luot === 0xffffffff) { cm.dau.fill(0); cm.luot = 1; }
+  const [a0, a1] = oLuoi(s[0], s[1], cm.u0, cm.v0, cm.kt, cm.nu, cm.nv);
+  const [b0, b1] = oLuoi(s[2], s[3], cm.u0, cm.v0, cm.kt, cm.nu, cm.nv);
+  const bb = cm.bb;
+  for (let y = a1; y <= b1; y++) {
+    for (let x = a0; x <= b0; x++) {
+      const ds = cm.o[y * cm.nu + x];
+      for (let k = 0; k < ds.length; k++) {
+        const i = ds[k];
+        if (cm.dau[i] === cm.luot) continue;
+        cm.dau[i] = cm.luot;
+        const j = i * 4;
+        if (bb[j + 2] < s[0] || bb[j] > s[2] || bb[j + 3] < s[1] || bb[j + 1] > s[3]) continue;
+        if (thu(i)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+const khungBao = (p: Diem[]): Hcn => {
+  const b: Hcn = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const [u, v] of p) {
+    if (u < b[0]) b[0] = u;
+    if (v < b[1]) b[1] = v;
+    if (u > b[2]) b[2] = u;
+    if (v > b[3]) b[3] = v;
+  }
+  return b;
+};
+
+/** Bộ kiểm hợp lệ một ô: nằm trọn trong ranh và không giao phần trong vật cản nào. Cùng kết quả với phép thử đầy đủ. */
+function taoKiem(ranh: Diem[], vc: Diem[][], kt: number): (r: Hcn) => boolean {
+  const n = ranh.length;
+  const canh: Hcn[] = [];
+  for (let i = 0, j = n - 1; i < n; j = i++) canh.push(khungBao([ranh[j], ranh[i]]));
+  const cmRanh = taoChiMuc(canh, kt);
+  const bbRanh = khungBao(ranh);
+  const cmVc = taoChiMuc(vc.map(khungBao), kt);
+  // diemTrong(·, ranh) theo hàng: các ô cùng hàng có cùng tung độ tâm → tính giao điểm tia một lần, sắp xếp, đếm bằng tìm nhị phân.
+  const hang = new Map<number, Float64Array>();
+  const trongRanh = (x: number, y: number): boolean => {
+    let xs = hang.get(y);
+    if (!xs) {
+      const ds: number[] = [];
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const [xi, yi] = ranh[i];
+        const [xj, yj] = ranh[j];
+        if (yi > y !== yj > y) ds.push(((xj - xi) * (y - yi)) / (yj - yi) + xi);
+      }
+      xs = Float64Array.from(ds).sort();
+      hang.set(y, xs);
+    }
+    // Số giao điểm có x < giao (như diemTrong): đếm phần tử > x.
+    let lo = 0, hi = xs.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (xs[m] > x) hi = m; else lo = m + 1; }
+    return ((xs.length - lo) & 1) === 1;
+  };
+  return (r: Hcn) => {
+    const cu = (r[0] + r[2]) / 2, cv = (r[1] + r[3]) / 2;
+    // Cắt sớm: tâm ngoài khung bao ranh thì chắc chắn không nằm trong ranh.
+    if (cu < bbRanh[0] || cu > bbRanh[2] || cv < bbRanh[1] || cv > bbRanh[3]) return false;
+    const s: Hcn = [r[0] + EPS, r[1] + EPS, r[2] - EPS, r[3] - EPS];
+    // hcnTrongDaGiac: không cạnh ranh nào cắt s, và tâm nằm trong ranh.
+    if (hoiChiMuc(cmRanh, s, (i) => doanCatHcn(ranh[(i + n - 1) % n], ranh[i], s))) return false;
+    if (!trongRanh(cu, cv)) return false;
+    // !vc.some(hcnGiaoDaGiac)
+    return !hoiChiMuc(cmVc, s, (i) => hcnGiaoDaGiac(r, vc[i]));
+  };
 }
 
 /** Góc (rad) của cạnh dài nhất. */
@@ -88,12 +191,11 @@ export type KichThuocCho = Pick<ThongSoHam, 'choRong' | 'choDai' | 'rongLan'>;
 type Phuong = { cho: Hcn[]; lan: Hcn[] };
 
 /** Rải một phương án với độ lệch lưới (offU, offV) trong hệ xoay. */
-function raiMot(ranh: Diem[], vc: Diem[][], ts: KichThuocCho, offU: number, offV: number, bb: Hcn): Phuong {
+function raiMot(hopLe: (r: Hcn) => boolean, ts: KichThuocCho, offU: number, offV: number, bb: Hcn): Phuong {
   const { choRong: w, choDai: d, rongLan: lan } = ts;
   const mod = 2 * d + lan;
   const cho: Hcn[] = [];
   const lanOk: Hcn[] = [];
-  const hopLe = (r: Hcn) => hcnTrongDaGiac(r, ranh) && !vc.some((p) => hcnGiaoDaGiac(r, p));
   const u0 = bb[0] - w + offU;
   const v0 = bb[1] - mod + offV;
   const soCot = Math.ceil((bb[2] - u0) / w) + 1;
@@ -164,10 +266,11 @@ export function raiChoDo(ranh: Diem[], vatCan: Diem[][], ts: KichThuocCho, tuyCh
   }
 
   const mod = 2 * ts.choDai + ts.rongLan;
+  const hopLe = taoKiem(r, vc, Math.max(4, 2 * Math.max(ts.choRong, ts.choDai)));
   let tot: Phuong | null = null;
   for (let a = 0; a < 4; a++) {
     for (let b = 0; b < 4; b++) {
-      const ph = raiMot(r, vc, ts, (a / 4) * ts.choRong, (b / 4) * mod, bb);
+      const ph = raiMot(hopLe, ts, (a / 4) * ts.choRong, (b / 4) * mod, bb);
       if (!tot || ph.cho.length > tot.cho.length) tot = ph;
     }
   }

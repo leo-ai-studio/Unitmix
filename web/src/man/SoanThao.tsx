@@ -19,7 +19,7 @@ import { soCanChuVi, viTriCan } from '../tinh/matBang';
 import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
 import { diemLechPA } from '../tinh/diemPA';
-import { baoCaoPA, tenTepXls, xuatXls } from '../xuat/xuatXls';
+import { xuatBaoCaoPA } from '../xuat/xuatXls';
 import { luoi } from '../ui/Luoi';
 import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
@@ -153,7 +153,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onLamLai={kho.lamLai}
       thongBao={thongBao}
       onXuatCad={xemXuat && tv ? () => setMoXuat(true) : undefined}
-      onXuatXls={tv && kq ? () => void xuatXls(baoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)), tenTepXls(da.ten, tenPA)) : undefined}
+      onXuatXls={tv && kq ? () => xuatBaoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)) : undefined}
       moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} />}
       chiPhi={<ChiPhiGiua pa={kho.pa} tv={tv} kq={kq} sua={kho.sua} chiXem={chiXem} />}
       chiPhiPhai={<ChiPhiPhai pa={kho.pa} tv={tv} kq={kq} />}

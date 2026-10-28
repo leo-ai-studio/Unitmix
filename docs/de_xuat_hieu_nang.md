@@ -334,3 +334,32 @@ Chưa làm:
 - Chưa chia nhỏ việc rải (nhiều lô vẫn rải lần lượt trong một worker).
 - Lượt vẽ SVG 150–185 ms sau khi có kết quả chưa tối ưu.
 - Chưa đo bằng bản build (`vite preview`).
+
+## 10. Đã làm 2026-10-29 (agent, nhánh `worktree-agent-af7d9df230f795816`): Hầm — rải nhanh, xuất XLS không đứng, bản vẽ nhẹ
+
+Đo hai nơi. (1) node: `raiHamTinh` trên PA thật lấy từ DB local (bundle esbuild, `performance.now`), cùng máy; trước = `808abb3`, sau = nhánh này. (2) App (Browser pane trong app Claude, viewport 1440×900, vite dev): "trước" = `808abb3` chép ra thư mục tạm, vite cổng 5423; "sau" = nhánh này, vite cổng 5422; API 8787; mỗi bản một `cacheDir` riêng (hai vite dùng chung `node_modules/.vite` qua junction thì nạp hai bản preact, trang trắng). Dự án bản sao `grce7wh4` của `tztd1udv/pa-1` (lô 400×400 m, 2 tòa, hầm 2 tầng). Mỗi lượt đo tải lại trang (cache rải trống). Khoảng đứng = nhịp `setInterval` 20 ms (5 ms khi đo đổi tầng) trễ hơn bình thường.
+
+| Việc | Đo | Trước | Sau |
+|---|---|---|---|
+| 2 · rải hầm (node) | lô 400×400, 2 tòa, 2 tầng (`tztd1udv`) | 4.352–4.861 ms | **111 ms** |
+| | lô 400×400, 2 tòa, 5 tầng (`08xuktnd`) | 12.290–12.801 ms | **128–142 ms** |
+| | lô 400×400, 3 tầng + kho 30/tầng + xe điện (`plevadne`, thông số sửa) | 7.436 ms | **60–64 ms** |
+| | lô 311×293, ranh 222 đỉnh, 3 tòa (`xhwv7fzo`) | 2.337–2.343 ms | **77 ms** |
+| | lô 200×120, 1 tòa (`dsf1rxc3`) | 301–314 ms | **13 ms** |
+| | kết quả | — | 6 mẫu thật khớp từng bit (số chỗ, toạ độ chỗ / làn / kho / xe máy / kỹ thuật / khu sạc): `tinh/raiHamDoiChieu.test.ts` |
+| 2 · rải hầm (app) | bấm tab Hầm → có bản vẽ (gồm dựng worker, gửi thư viện) | 8.141 ms | **534 ms** |
+| 1 · xuất XLS, cache trống | bấm XLS → gọi tải tệp | 8.105 ms, **đứng 8.046 ms** | **321 ms**, đứng ≤ 64 ms (lúc SheetJS ghi tệp); nút có vòng O `spin-o` và khoá trong lúc chờ |
+| 3 · bản vẽ hầm | số nút SVG trong bản vẽ (lô trên, B1) | **6.471** (6.359 `polygon.cho`) | **20** (1 `path.cho`) |
+| | đổi B1 ↔ B2 (kết quả có sẵn): bấm → vẽ xong, 4 lần | 156 / 91 / 140 / 122 ms | **22 / 22 / 30 / 31 ms** |
+| | lượt vẽ ngay sau khi rải xong | 125 ms (+72 ms) | không nhịp nào trễ > 50 ms |
+
+Đã làm:
+- **Rải nhanh** (`tinh/raiCho.ts`). Hồ sơ node: 3,3 / 4,8 s nằm ở `hcnGiaoDaGiac` — mỗi ô thử (16 độ lệch lưới × mọi ô × 3 hình) kiểm với MỌI vật cản (hàng trăm cột + lõi + dải). Sửa mà không đổi phép thử:
+  - Lưới chỉ mục khung bao (`taoChiMuc` / `hoiChiMuc`, ô ~10 m) cho vật cản và cho cạnh ranh. Phần tử có khung bao tách hẳn (so sánh chặt) khỏi ô thu nhỏ thì phép thử đầy đủ chắc chắn trả false, nên bỏ qua. Phần còn lại thử bằng đúng hàm cũ.
+  - Cắt sớm: tâm ô ngoài khung bao ranh thì loại.
+  - Điểm trong ranh theo hàng: giao điểm tia của mỗi tung độ tính một lần, sắp xếp, đếm bằng tìm nhị phân (cùng công thức với `diemTrong`, cùng chẵn lẻ). Ranh 222 đỉnh: 334 → 77 ms.
+  - Không cần chạy song song nhiều worker: một lô ≤ 150 ms.
+- **Xuất XLS** (`xuat/xuatXls.ts` `xuatBaoCaoPA`): chờ `choRaiHamPA` (`tinh/hamNen.ts`, `DieuPhoiHam.cho`: xếp mọi lô có tòa vào worker dưới kênh `xls`, nghe tới khi đủ rồi bỏ kênh), tải SheetJS song song, rồi `baoCaoPA` đọc cache. `ui/ThanhTren.tsx`: `onXuatXls` trả Promise thì nút hiện vòng O và khoá tới khi xong (menu ⋯ dùng chung). `man/SoanThao.tsx`, `ui/KhungSoan.tsx`: sửa một dòng.
+- **Bản vẽ nhẹ** (`ve/MatBangHam.tsx`): chỗ đỗ, xe lăn, kho, lõi, cột, khu sạc (chẵn / lẻ) mỗi loại một `path`; lớp tĩnh nhớ vnode theo (kết quả, tầng, cỡ chữ, ngôn ngữ) nên pan / zoom / vẽ ranh (`VeRanh`, lớp tương tác riêng) không dựng lại. Màn Hầm chưa có chọn / rê từng chỗ đỗ nên không mất thao tác nào.
+
+Chưa làm: gộp tầng giống nhau trong `raiHamTinh` (B2…Bn giống hệt nhau khi không phải tầng xe máy / xe điện; đã đủ nhanh nên chưa cần); chia nhiều worker cho nhiều lô; đo bằng `vite preview`.

@@ -21,7 +21,7 @@ type Props = {
   onHoanTac?: () => void;
   onLamLai?: () => void;
   onXuatCad?: () => void;
-  onXuatXls?: () => void;
+  onXuatXls?: () => void | Promise<void>;
   buoc?: { ds: [string, string][]; chon: string; onChon: (k: string) => void };
   thongBao?: ComponentChildren;
 };

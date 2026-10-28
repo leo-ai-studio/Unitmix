@@ -1,4 +1,5 @@
-import { t } from '../i18n/i18n';
+import { useMemo } from 'preact/hooks';
+import { t, useLang } from '../i18n/i18n';
 import { trongTam } from '../tinh/hinhHoc';
 import type { KetQuaHam, KetQuaTangHam } from '../tinh/ham';
 import type { Diem } from '../tinh/kieu';
@@ -11,10 +12,21 @@ const gocDoc = (g: number) => {
   const a = ((((g + 180) % 360) + 360) % 360) - 180;
   return a > 90 ? a - 180 : a <= -90 ? a + 180 : a;
 };
-const duong =(ds: Diem[][]) => ds.map((p) => `M${p.map(s).join(' L')} Z`).join(' ');
+/** Nhiều đa giác → một chuỗi `d` (mỗi đa giác một subpath; các ô không chồng nhau nên tô như từng polygon). */
+const duong = (ds: Diem[][]) => ds.filter((p) => p.length >= 3).map((p) => `M${p.map(s).join(' L')} Z`).join(' ');
 
-/** Mặt bằng một tầng hầm (trong `BanVe`): ranh, làn, chỗ đỗ, xe lăn, khu sạc, xe máy, kho, kỹ thuật, lõi, cột, ram. */
+/**
+ * Mặt bằng một tầng hầm (trong `BanVe`): ranh, làn, chỗ đỗ, xe lăn, khu sạc, xe máy, kho, kỹ thuật, lõi, cột, ram.
+ * Lớp TĨNH: mỗi loại ô (chỗ đỗ, xe lăn, kho, lõi, cột, từng nửa màu khu sạc) gộp thành MỘT `path` thay vì mỗi chỗ một
+ * `polygon`. Cây vnode nhớ theo (kết quả, tầng, cỡ chữ, ngôn ngữ): cùng vnode thì Preact bỏ qua so khác, nên
+ * pan / zoom / vẽ ranh (lớp tương tác `VeRanh` nằm riêng bên trên) không dựng lại lớp này. Không có chọn / rê từng chỗ đỗ.
+ */
 export function MatBangHam({ kq, tang, coChu }: { kq: KetQuaHam; tang: KetQuaTangHam; coChu: number }) {
+  const [lang] = useLang();
+  return useMemo(() => <LopTinhHam kq={kq} tang={tang} coChu={coChu} />, [kq, tang, coChu, lang]);
+}
+
+function LopTinhHam({ kq, tang, coChu }: { kq: KetQuaHam; tang: KetQuaTangHam; coChu: number }) {
   const ram = kq.ram;
   const docRam = kq.ts.ram.dai > 0 ? (kq.ts.caoTang / kq.ts.ram.dai) * 100 : null;
   const nhanVung = (ds: Diem[][], chu: string, key: string) =>
@@ -22,25 +34,27 @@ export function MatBangHam({ kq, tang, coChu }: { kq: KetQuaHam; tang: KetQuaTan
       const [x, y] = trongTam(p);
       return <text key={`${key}${i}`} x={x} y={-y} text-anchor="middle" font-size={coChu * 0.8} font-weight="700">{chu}</text>;
     });
+  // Khu sạc: vùng chẵn / lẻ khác độ đậm → hai path.
+  const sacChan = tang.vungSac.filter((_, v) => v % 2 === 0).flat();
+  const sacLe = tang.vungSac.filter((_, v) => v % 2 === 1).flat();
   return (
     <g class="ham-ve">
       <polygon class="ranh-ham" points={sPoly(kq.ranh)} {...vNS} />
       <path class="lan" d={duong(tang.lan)} />
       <path class="ky-thuat" d={duong(tang.kyThuat)} fill-rule="evenodd" {...vNS} />
       <path class="xe-may" d={duong(tang.xeMay)} fill-rule="evenodd" {...vNS} />
-      {tang.cho.map((p, i) => <polygon key={`c${i}`} class="cho" points={sPoly(p)} {...vNS} />)}
-      {tang.xeLan.map((p, i) => <polygon key={`x${i}`} class="xe-lan" points={sPoly(p)} {...vNS} />)}
-      {tang.vungSac.map((vung, v) => vung.map((p, i) => (
-        <polygon key={`s${v}-${i}`} class="sac" points={sPoly(p)} fill="var(--ham-sac)" fill-opacity={v % 2 ? 0.6 : 1} {...vNS} />
-      )))}
+      {tang.cho.length > 0 && <path class="cho" d={duong(tang.cho)} {...vNS} />}
+      {tang.xeLan.length > 0 && <path class="xe-lan" d={duong(tang.xeLan)} {...vNS} />}
+      {sacChan.length > 0 && <path class="sac" d={duong(sacChan)} fill="var(--ham-sac)" fill-opacity={1} {...vNS} />}
+      {sacLe.length > 0 && <path class="sac" d={duong(sacLe)} fill="var(--ham-sac)" fill-opacity={0.6} {...vNS} />}
       {tang.vungSac.map((vung, v) => {
         const tam = vung.map(trongTam);
         const x = tam.reduce((a, p) => a + p[0], 0) / tam.length, y = tam.reduce((a, p) => a + p[1], 0) / tam.length;
         return <text key={`sv${v}`} x={x} y={-y} text-anchor="middle" font-size={coChu * 0.75} font-weight="700">{`${t('ham.vungSac')} ${v + 1}`}</text>;
       })}
-      {tang.kho.map((p, i) => <polygon key={`k${i}`} class="kho" points={sPoly(p)} {...vNS} />)}
-      {kq.loi.map((p, i) => <polygon key={`l${i}`} class="loi" points={sPoly(p)} />)}
-      {kq.cot.map((p, i) => <polygon key={`o${i}`} class="cot" points={sPoly(p)} />)}
+      {tang.kho.length > 0 && <path class="kho" d={duong(tang.kho)} {...vNS} />}
+      {kq.loi.length > 0 && <path class="loi" d={duong(kq.loi)} />}
+      {kq.cot.length > 0 && <path class="cot" d={duong(kq.cot)} />}
       {ram && (
         <g>
           <polygon class="ram" points={sPoly(ram.poly)} {...vNS} />

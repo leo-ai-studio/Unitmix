@@ -8,6 +8,7 @@ import type { KetQuaChiTieu } from '../tinh/chiTieu';
 import { demCan } from '../tinh/coCau';
 import { chenhChiSo, giaTriCot, KHOA_SO, type ChiSoPA, type KhoaSo } from '../tinh/diemPA';
 import { tinhDuToan, tinhKhoiLuong, type DuToan } from '../tinh/duToan';
+import { choRaiHamPA } from '../tinh/hamNen';
 import { CHI_PHI_MAC_DINH } from '../tinh/macDinh';
 import { tinhTaiChinh, type TaiChinh } from '../tinh/taiChinh';
 import { LOAI_CAN, type ChiPhiPA, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
@@ -208,4 +209,13 @@ export const tenTepXls = (...phan: string[]): string =>
 export async function xuatXls(sheets: SheetXls[], tenTep: string): Promise<void> {
   const XLSX = await import('xlsx');
   XLSX.writeFile(taoSach(XLSX, sheets), tenTep);
+}
+
+/**
+ * Xuất báo cáo một PA (nút XLS thanh trên). Sheet dự toán cần số chỗ đỗ từ phép rải hầm: chờ lớp chạy nền (`tinh/hamNen.ts`)
+ * rải xong mọi lô trước, rồi `baoCaoPA` đọc cache — không rải đồng bộ trên luồng chính (cache trống từng đứng 5–15 s).
+ */
+export async function xuatBaoCaoPA(pa: TrangThaiPA, tv: ThuVien, kq: KetQuaChiTieu, tenDuAn: string, tenPA: string, lech: number | null = null): Promise<void> {
+  await Promise.all([choRaiHamPA(pa, tv), import('xlsx')]);
+  await xuatXls(baoCaoPA(pa, tv, kq, tenDuAn, tenPA, lech), tenTepXls(tenDuAn, tenPA));
 }
