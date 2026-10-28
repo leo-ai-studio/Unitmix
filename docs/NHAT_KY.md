@@ -7,6 +7,7 @@ Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm th
 - Người dùng chốt: khít đoạn kẹp đổi loại căn trước, bỏ căn sau; 13 ca phần dư không lấp được giữ chặn + gợi ý mẫu vừa ô (`tinh/goiYVuaO.ts`, có test). Đã bỏ chữ "chờ chốt" ở `loiThang.ts` / AI_START.
 - Tải .dxf (2,9 MB) + .scr từ hộp CAD trên 5180 (bắt blob qua `URL.createObjectURL`): .dxf hợp lệ, 32 INSERT = 32 căn, lớp MDI-HANHLANG / MDI-BAO / MDI-LOI, block căn kéo `CAN_TM_2PN_M1_SP100`; .scr 37 lượt. Phát hiện tên bản vẽ lấy tên dự án có "/" → thành thư mục con; sửa `tenTepAn` (xuatCad.ts) dùng cho tên .dwg / tệp tải + test.
 - Push `main` (người dùng cho phép).
+- So .dxf tải trên app (dự án `gwym3l6i`, tm-u1, tầng 5 riêng): tầng chung và tầng 5 cùng 32 căn; 5.716 nét lõi / thang (MDI-LOI) và 30 nét hành lang (MDI-HANHLANG) trùng khớp hoàn toàn giữa hai tệp, phần căn khác nhau → thang liền suốt chiều cao đúng cả trong CAD. 3D cùng dự án dựng được, khung giữa giữ nguyên. Lần kiểm cuối trước push là bản đủ ca (`node scripts/kiem.mjs`, 341 test).
 
 ## 2026-10-29 · cổng kiểm nhanh + kiểm nốt trên app · Claude Code
 
