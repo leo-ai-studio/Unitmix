@@ -12,6 +12,7 @@ import './styles/phong.css';
 import './styles/chi-phi.css';
 import './styles/xep-toa.css';
 import './styles/stretch.css';
+import './styles/bieu-tuong.css';
 import { langHienTai } from './i18n/i18n';
 import { DuAn } from './man/DuAn';
 import { SoanThao } from './man/SoanThao';
