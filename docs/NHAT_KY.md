@@ -2,6 +2,13 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · cổng kiểm nhanh + kiểm nốt trên app · Claude Code
+
+- Cổng kiểm `npm run kiem` / `kiem:nhanh` (`scripts/kiem.mjs`, học app cũ `--nho` + `--nhanh`): tsc · vitest web · vitest worker · pytest · build chạy song song; lần ĐẠT ghi sha256 mã nguồn vào `.cache/kiem_da_dat.json`, trùng thì 0 s; `--nhanh` đặt `KIEM_NHANH=1` → 4 bài quét nặng lấy mẫu qua `web/src/thu/layMau.ts`, bỏ build. Đo: vitest đủ 41 s → nhanh 20 s; cổng đủ ~50 s, nhanh ~22 s, nhớ 0 s.
+- Thông báo chặn đổi căn kèm gợi ý mẫu khác loại vừa ô (chỉ gợi ý, không tự đổi): "Mẫu khác vừa ô này: Studio M1 (4,0 m), 1PN M2 (6,0 m)".
+- Kiểm trên 5180 (dự án thử `gwym3l6i`, bản sao tm-u1): tầng 5 riêng đổi CH-25 → 2PN: "Thang bộ liền suốt chiều cao: 3 thang chung cả tòa · 2 tầng riêng đặt lại thang", gỡ căn vượt 1 → 0 (xếp lại 1, không bỏ căn); 3D dựng được; hộp CAD có phạm vi theo tầng (chung / tầng 5 / tầng 25 / tất cả) + dòng tự chỉnh + ghi chú STRETCH; khung giữa giữ nguyên, console sạch.
+- `.claude/launch.json` thêm cấu hình `api` (wrangler dev 8787).
+
 ## 2026-10-28 · kiểm QT-69 sân trong + chặn căn không vừa trên app · Claude Code
 
 - `kho.ts` `sua`: phép sửa không đổi PA (vd đổi căn bị chặn) không ghi bước hoàn tác rỗng.

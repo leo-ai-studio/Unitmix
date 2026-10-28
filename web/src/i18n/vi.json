@@ -961,6 +961,7 @@
   "tang.doiKhacRongGt": "Dãy căn tự khít lại như app cũ: STRETCH căn kề, đổi căn khác, cho dãy dài ra / ngắn lại ở đầu cánh tự do hoặc đầu hở ra sân trong (QT-69). Không đặt vừa thì chặn, giữ căn cũ và báo trên bản vẽ — không tự đổi sang loại khác.",
   "tc.chan.hep": "Không đặt được {l} ở ô này: ô rộng {x} m, mẫu hẹp nhất cần {y} m.",
   "tc.chan.du": "Không đặt được {l} ở ô này: ô rộng {x} m, mẫu hẹp nhất cần {y} m, phần dư không xếp vừa căn nào (thành khe).",
+  "tc.chan.goiY": "Mẫu khác vừa ô này: {ds}.",
   "tc.chan.giu": "Đã chặn phép đổi, giữ căn cũ (đã thử STRETCH, đổi căn khác, cho dãy dài ra).",
   "tc.san.dai": "QT-69 · {n} dãy dài ra {m} mm ở đầu hở ra sân trong · nét bao + DTXD theo",
   "tc.san.ngan": "QT-69 · {n} dãy ngắn lại {m} mm ở đầu hở ra sân trong · nét bao + DTXD theo",
