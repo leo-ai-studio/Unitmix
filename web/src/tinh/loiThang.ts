@@ -3,7 +3,8 @@
  * ganTrucSanh / capNhatTrucSanh · donHubLoi), bật mặc định, chạy lại sau mỗi lần đổi căn / STRETCH / tối ưu:
  *  - XC-03 (QT-10 · QT-60) ô thang bộ rộng 3.000 mm: hút khe ≤ 600 mm hai bên vào ô; ô thiếu thì nới, căn phía sau dồn theo.
  *  - XC-05 (QT-22b · QT-56) căn quanh lõi khít nét bao lõi MDI-BAO-TM: dải lõi chiếu lên từng mặt làm MỐC dồn khít,
- *    đo chồng / hở giữa khung mô-đun căn và nét bao; hở / đè quá tường chung thì dời đoạn căn về khít (nếu đoạn có đầu tự do).
+ *    đo chồng / hở giữa khung mô-đun căn và nét bao; hở / đè quá tường chung thì dời đoạn căn về khít (đầu tự do co / giãn theo);
+ *    đoạn kẹp (không đầu tự do) dời trong khoảng giữa hai mốc, thiếu / thừa thì STRETCH QT-81 (khitKepLoi).
  *  - XC-06 (QT-72) sảnh thang máy NOTM 3,0 m · NOXH 2,6 m (phân loại ở 2.800 mm): đo sảnh trên nét tường lõi, nét hành lang
  *    nối xuyên lõi dời về tim sảnh.
  *  - XC-07 (QT-19 · QT-25 · QT-51 · QT-54) hành lang liền qua góc, vuông góc: kiểm đồ thị liền, kéo trục tới cửa xa nhất.
@@ -970,24 +971,126 @@ export function doKhitLoi(mauHD: ToaMB, dai: DaiLoi[]): DoKhit[] {
   return kq;
 }
 
-/** Sửa XC-05: hở / đè quá tường chung thì dời cả đoạn căn kề lõi về khít (chồng 0, QT-56), nếu đoạn có đầu tự do. */
-function suaKhitLoi(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc, giuThang = false): number {
+/** Kết quả sửa XC-05: số chỗ đã sửa (dời đoạn / STRETCH), bố cục sau STRETCH, lý do các chỗ không sửa được. */
+type SuaKhit = { sua: number; bc: BoCuc; stretch: number; lyDo: string[] };
+/** Ô người dùng vừa chọn tay (không STRETCH) / đã chọn (STRETCH sau cùng). */
+type OptKhit = { khongKeo?: ReadonlySet<string>; giu?: ReadonlySet<string> };
+
+/**
+ * Sửa XC-05: hở / đè quá tường chung thì dời cả đoạn căn kề lõi về khít (chồng 0, QT-56). Đoạn có đầu tự do: đầu đó co / giãn
+ * theo (nét bao nối). Đoạn kẹp (giữa lõi và thang / lõi khác / cánh khác, hoặc thang liền không được dời): dời trong khoảng giữa
+ * hai mốc, thiếu / thừa thì STRETCH QT-81 (khitKepLoi). `mb` sửa tại chỗ; bố cục mới (biến thể `id~s±N`) trả trong `bc`.
+ */
+function suaKhitLoi(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc, giuThang = false, opt: OptKhit = {}): SuaKhit {
   const dai = daiLoi(mau, dl);
-  let sua = 0;
+  let sua = 0, stretch = 0, cur = bc;
+  const lyDo: string[] = [];
   for (const k of doKhitLoi(capNhatDonKhit(mau, mb, dl, tv, bc), dai)) {
     if (Math.abs(k.chong) <= TUONG_CHUNG_MM) continue;
     const d = dai.find((x) => x.khoaLoi === k.khoaLoi && x.matIdx === k.matIdx)!;
     const a = k.ben === 'dau' ? d.t0 - 1 : d.t1 + 1, dn = doanTai(mau, mb, dai, k.matIdx, a);
     const vt = vatThe(mau, mb, k.matIdx).filter((v) => v.a0 >= dn.lo - 1 && v.a0 + v.w <= dn.hi + 1);
-    if (giuThang && vt.some((v) => v.loai === 'thang')) continue; // thang liền các tầng: không dời
     // đoạn phía đầu: dời +(-chong) về lõi, đầu tự do co / giãn theo; đoạn phía cuối: dời +chong
     const dd = k.ben === 'dau' ? -k.chong : k.chong;
-    if (k.ben === 'dau' ? dn.tuDau && gianMat(mau, mb, k.matIdx, false, -dd) : dn.tuCuoi && gianMat(mau, mb, k.matIdx, true, dd)) {
+    // thang liền các tầng: không dời đoạn có thang — khít trong đoạn kẹp bên dưới (thang đứng yên)
+    if (!(giuThang && vt.some((v) => v.loai === 'thang'))
+      && (k.ben === 'dau' ? dn.tuDau && gianMat(mau, mb, k.matIdx, false, -dd) : dn.tuCuoi && gianMat(mau, mb, k.matIdx, true, dd))) {
       vt.forEach((v) => dich(mb, v, dd));
       sua++;
+      continue;
     }
+    const r = khitKepLoi(mau, mb, dl, tv, cur, dai, k, opt);
+    if (typeof r === 'string') { lyDo.push(`mặt ${k.matIdx + 1} (${Math.round(k.chong)} mm): ${r}`); continue; }
+    Object.assign(mb, r.mb);
+    cur = r.bc; sua++; stretch += r.st;
   }
-  return sua;
+  return { sua, bc: cur, stretch, lyDo };
+}
+
+/**
+ * XC-05 · đoạn kẹp (QT-56 · QT-22b · QT-81 app cũ): đoạn căn kề lõi không có đầu tự do. Dời đoạn trong khoảng giữa nét bao lõi
+ * và mốc phía xa (ô thang, dải lõi khác, dãy khác, đầu mặt không tự do) cho chồng / hở lõi ≤ 200 mm; tổng bề ngang không vừa
+ * thì STRETCH (bước 100, ±500 mỗi căn, cắt qua phòng khách) căn kề lõi trước rồi căn khác trong đoạn, để tổng bề ngang khớp hai
+ * mốc. Nhận phương án đầu tiên (ít STRETCH nhất) mà đo lại bằng tinh/khe.ts không thêm đè / khe và không thêm chỗ lệch lõi.
+ * Trả mặt bằng + bố cục mới và tổng mm STRETCH, hoặc lý do không sửa được.
+ */
+function khitKepLoi(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc, dai: DaiLoi[], k: DoKhit, opt: OptKhit):
+  { mb: MatBangSua; bc: BoCuc; st: number } | string {
+  const mi = k.matIdx, cuoi = k.ben === 'cuoi', d = dai.find((x) => x.khoaLoi === k.khoaLoi && x.matIdx === mi)!;
+  const hd = dung(mau, mb, dl), vts = viTriCan(hd, tv, bc), vm = vts.filter((v) => v.matIdx === mi);
+  // phần tử kề lõi phải là căn (ô thang kề lõi: thang đứng yên — XC-03 / thang liền)
+  const ke = cuoi ? vm.filter((v) => v.a1 > d.t1 && v.a0 < d.t1 + 3000).sort((a, b) => a.a0 - b.a0)[0]
+    : vm.filter((v) => v.a0 < d.t0 && v.a1 > d.t0 - 3000).sort((a, b) => b.a1 - a.a1)[0];
+  if (!ke || (cuoi ? ke.a0 - d.t1 : d.t0 - ke.a1) > LECH_DAI_LOI_MM) return 'phần tử kề lõi là ô thang (đứng yên)';
+  const doan = doanCan(vts).find((o) => o.ds.some((i) => vts[i] === ke))!;
+  const run = doan.ds.map((i) => vts[i]);
+  // mốc phía xa: ô thang, dải lõi khác, dãy khác trên mặt; không có thì đầu mặt (đầu tự do thì không phải đoạn kẹp)
+  const [aDau, aCuoi] = mepMat(mau, mb, mi);
+  const moc = [
+    ...mb.thangBo.filter((t) => t.matIdx === mi).map((t) => ({ a0: t.a0, a1: t.a0 + t.rong, bang: false })),
+    ...dai.filter((x) => x.matIdx === mi && x !== d).map((x) => ({ a0: x.t0, a1: x.t1, bang: true })),
+    ...vm.filter((v) => !run.includes(v)).map((v) => ({ a0: v.a0, a1: v.a1, bang: false })),
+  ];
+  // (mốc đang chồng lên đầu xa của đoạn cũng tính — đè cần gỡ)
+  const xa = cuoi ? moc.filter((o) => o.a1 > doan.a1 + KHIT_MM && o.a0 > doan.a0).sort((a, b) => a.a0 - b.a0)[0]
+    : moc.filter((o) => o.a0 < doan.a0 - KHIT_MM && o.a1 < doan.a1).sort((a, b) => b.a1 - a.a1)[0];
+  if (!xa && dauTuDo(mau, mb, mi, cuoi)) return 'đoạn có đầu tự do nhưng không co / giãn được nét bao';
+  // g: hở phía xa (+) / chồng (−); khe tường ≤ 400 mm không tính là khe, dải lõi chồng ≤ 200 mm là tường chung
+  const g = xa ? (cuoi ? xa.a0 - doan.a1 : doan.a0 - xa.a1) : cuoi ? aCuoi - doan.a1 : doan.a0 - aDau;
+  const gMin = xa?.bang ? -TUONG_CHUNG_MM : -KHIT_MM;
+  // phía xa là khoảng trống cỡ hành lang (XC-02): đoạn không kẹp, dời / STRETCH sẽ đổi khoảng trống đó — để nguyên
+  const rongMax = Math.max(0, ...vm.map((v) => v.a1 - v.a0));
+  if (g > rongMax + KHE_HL_THEM_MM) return `phía xa hở ${Math.round(g)} mm (khoảng trống cỡ hành lang, không phải đoạn kẹp)`;
+  // căn STRETCH được: căn hộ có đường cắt, không phải căn người dùng vừa chọn tay; kề lõi trước, căn người dùng đã chọn sau cùng
+  const keo = run.filter((v) => congNangTai(v.khoa, bc) === 'can' && !opt.khongKeo?.has(v.khoa) && tv.can.get(tachMa(canDangDung(v, bc)).goc)?.stretch)
+    .sort((a, b) => Number(!!opt.giu?.has(a.khoa)) - Number(!!opt.giu?.has(b.khoa)) || (cuoi ? a.a0 - b.a0 : b.a1 - a.a1));
+  const truocKhe = kheTrenMat(hd, tv, bc), truocLech = doKhitLoi({ ...hd, mat: matDaDon(hd, bc, tv) }, dai).filter((x) => Math.abs(x.chong) > TUONG_CHUNG_MM).length;
+  const kheMat = (kk: ReturnType<typeof kheTrenMat>) => kk.khe.filter((x) => x.matIdx === mi && x.loai !== 'tuong').reduce((a, x) => a + x.rong, 0);
+  const deMat = (kk: ReturnType<typeof kheTrenMat>) => kk.de.filter((x) => x.matIdx === mi);
+  // đè trước khi sửa, trừ chính chỗ chồng lõi > 200 mm đang sửa: sau sửa không được đè thêm chỗ nào / thêm mm nào (vd. đổi chồng
+  // lõi thành chồng ô thang)
+  const de0 = deMat(truocKhe), boDe = k.chong > TUONG_CHUNG_MM && de0.some((x) => Math.abs(x.mm - k.chong) < 1) ? k.chong : 0;
+  const deSo0 = de0.length - (boDe ? 1 : 0), deMm0 = de0.reduce((a, x) => a + x.mm, 0) - boDe;
+  // Δ = bề ngang đoạn thêm (+) / bớt (−); ít STRETCH trước; s = dời ra xa lõi: chồng lõi c − s, hở xa g − s − Δ
+  const dsD = [0];
+  for (let x = ST_BUOC_MM; x <= ST_MAX * keo.length; x += ST_BUOC_MM) dsD.push(x, -x);
+  const c = k.chong;
+  let lyDo = keo.length ? `STRETCH ±${ST_MAX} mm của ${keo.length} căn không đủ khớp hai mốc` : 'không căn nào trong đoạn STRETCH được, dời đoạn không đủ';
+  // lượt 1: hở phía xa về ≤ 400 mm (khe tường); lượt 2: hở xa không rộng hơn trước (khe sẵn có giữ nguyên)
+  for (const [gMax, D] of [KHE_TUONG_MM, Math.max(KHE_TUONG_MM, g)].flatMap((x, i) => (i && x === KHE_TUONG_MM ? [] : dsD.map((D) => [x, D] as const)))) {
+    const sLo = Math.max(c - TUONG_CHUNG_MM, g - D - gMax), sHi = Math.min(c + TUONG_CHUNG_MM, g - D - gMin);
+    if (sLo > sHi + 1e-6) continue;
+    const s = Math.min(Math.max(c, sLo), sHi);
+    // chia Δ cho căn STRETCH được, bước 100, mỗi căn tổng ≤ ±500
+    let b2 = bc, con = D, st = 0;
+    for (const v of keo) {
+      if (!con) break;
+      const { goc, st: st0 } = tachMa(canDangDung(v, b2));
+      const lim = Math.sign(con) > 0 ? ST_MAX - st0 : -ST_MAX - st0, buoc = Math.abs(con) < Math.abs(lim) ? con : lim;
+      if (!buoc || !tv.can.has(maBienThe(goc, st0 + buoc))) continue;
+      b2 = { ...b2, canViTri: { ...(b2.canViTri ?? {}), [v.khoa]: maBienThe(goc, st0 + buoc) } };
+      con -= buoc; st += Math.abs(buoc);
+    }
+    if (con) continue;
+    // dồn khít (XC-04) có thể neo đoạn ở đầu xa khi bề ngang đổi: đo lại chồng lõi rồi dời bù (tối đa 2 lần)
+    let m2 = mb, hd2 = hd, lech2: DoKhit[] = [], o: DoKhit | undefined, sd = s;
+    for (let lan = 0; lan < 3; lan++) {
+      m2 = banSaoMatBang(mb);
+      for (const v of run) dich(m2, { k: v.khoa, loai: 'can', a0: 0, w: 0 }, cuoi ? sd : -sd);
+      hd2 = dung(mau, m2, dl);
+      lech2 = doKhitLoi({ ...hd2, mat: matDaDon(hd2, b2, tv) }, dai);
+      o = lech2.find((x) => x.khoaLoi === k.khoaLoi && x.matIdx === mi && x.ben === k.ben);
+      if (!o || Math.abs(o.chong) <= TUONG_CHUNG_MM) break;
+      sd += o.chong - (c - s); // về đúng độ chồng đã định
+    }
+    const kh2 = kheTrenMat(hd2, tv, b2);
+    if (!o || Math.abs(o.chong) > TUONG_CHUNG_MM) { lyDo = 'dồn khít lại không giữ được đoạn sát lõi'; continue; }
+    if (lech2.filter((x) => Math.abs(x.chong) > TUONG_CHUNG_MM).length >= truocLech) continue;
+    const de2 = deMat(kh2);
+    if (de2.length > deSo0 || de2.reduce((a, x) => a + x.mm, 0) > deMm0 + 1 || kheMat(kh2) > kheMat(truocKhe) + 1 || kh2.de.length - de2.length > truocKhe.de.length - de0.length) { lyDo = 'mọi cách dời / STRETCH đều để lại đè hoặc khe mới'; continue; }
+    return { mb: m2, bc: b2, st };
+  }
+  return lyDo;
 }
 
 /** Mặt sau dồn khít (căn đang dùng) đặt vào mẫu hiệu dụng — để đo khít lõi theo vị trí thật. */
@@ -1165,23 +1268,27 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
   const pc = ep ? epThang(mau, mb0, dl, tv, cuaCan0, H, bcVao, ep, opt.thangMau)
     : { ...thangTuDong(mau, mb0, dl, tv, cuaCan0, H, bcVao), khongDat: 0, thua: [] as ThangBoMB[], bc: bcVao, soNhuong: 0, conLech: 0 };
   // ép thang có thể co / giãn căn nhường chỗ (bố cục đổi): đo tiếp theo bố cục mới
-  const bc = pc.bc;
-  const cuaCan = bc === bcVao ? cuaCan0 : { ...cuaCan0, ...cuaCanDung(vtsGoc.map((v) => canDangDung(v, bc)), tv, dl?.cuaCan ?? {}) };
   let mb = banSaoMatBang(pc.mb);
-  // XC-05 (thang liền các tầng thì không dời đoạn có thang)
-  const sua05 = suaKhitLoi(mau, mb, dl, tv, bc, !!ep);
+  // XC-05 (thang liền các tầng thì không dời đoạn có thang; đoạn kẹp khít bằng dời trong đoạn / STRETCH — bố cục đổi)
+  const optKhit: OptKhit = { khongKeo: new Set(opt.chan ?? []), giu: new Set(opt.giu ?? Object.keys(bcVao.canViTri ?? {})) };
+  let k05 = suaKhitLoi(mau, mb, dl, tv, pc.bc, !!ep, optKhit);
+  let bc = k05.bc;
+  const cuaCanTheo = (b: BoCuc) => (b === bcVao ? cuaCan0 : { ...cuaCan0, ...cuaCanDung(vtsGoc.map((v) => canDangDung(v, b)), tv, dl?.cuaCan ?? {}) });
+  let cuaCan = cuaCanTheo(bc);
+  const sua05 = k05.sua;
   // XC-06
   const s06 = trucQuaSanh(mau, mb, dl);
   // XC-07
   const sua07 = hanhLangToiCua(mau, mb, dl, cuaCan);
 
   // gác khe / đè: không được tệ hơn mặt bằng mặc định
-  const kheGoc = tongKhe(dung(mau, mb0, dl), tv, bc), kheMoi = tongKhe(dung(mau, mb, dl), tv, bc);
+  const kheGoc = tongKhe(dung(mau, mb0, dl), tv, pc.bc), kheMoi = tongKhe(dung(mau, mb, dl), tv, bc);
   let boPC11 = false;
   if (!ep && (kheMoi.de > kheGoc.de || kheMoi.mm > kheGoc.mm + 200)) {
     boPC11 = true;
     mb = banSaoMatBang(mb0);
-    suaKhitLoi(mau, mb, dl, tv, bc);
+    k05 = suaKhitLoi(mau, mb, dl, tv, pc.bc, false, optKhit);
+    bc = k05.bc; cuaCan = cuaCanTheo(bc);
     trucQuaSanh(mau, mb, dl);
     hanhLangToiCua(mau, mb, dl, cuaCan);
   }
@@ -1201,9 +1308,12 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
   // XC-05
   const khit = doKhitLoi({ ...hd, mat: cuoi.mat }, dai);
   const lech05 = khit.filter((k) => Math.abs(k.chong) > TUONG_CHUNG_MM);
+  const st05 = k05.stretch ? ` · STRETCH ${k05.stretch} mm (QT-81) cho đoạn kẹp` : '';
   qt.push({ ma: 'XC-05', muc: lech05.length ? 'canh_bao' : sua05 ? 'da_sua' : 'ok', sua: sua05,
     ghiChu: !dai.length ? 'chưa có hình lõi' : lech05.length ? `${lech05.length} chỗ căn hở / đè nét bao lõi > ${TUONG_CHUNG_MM} mm (lớn nhất ${Math.round(Math.max(...lech05.map((k) => Math.abs(k.chong))))} mm)`
-      : `${khit.length} mép căn kề lõi khít nét bao (chồng ${Math.round(Math.min(0, ...khit.map((k) => k.chong)))}…${Math.round(Math.max(0, ...khit.map((k) => k.chong)))} mm)` });
+        + (k05.lyDo.length ? ` · không sửa được: ${k05.lyDo.join('; ')}` : '') + st05
+      : `${khit.length} mép căn kề lõi khít nét bao (chồng ${Math.round(Math.min(0, ...khit.map((k) => k.chong)))}…${Math.round(Math.max(0, ...khit.map((k) => k.chong)))} mm)`
+        + (sua05 ? ` · đã dời ${sua05} đoạn` : '') + st05 });
   // XC-06
   const sanh = sanhCuaToa(mau, dl);
   const sai06 = sanh.filter((s) => s.loai !== mau.nhom);
