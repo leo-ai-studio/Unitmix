@@ -12,7 +12,7 @@ type Props = {
   children?: ComponentChildren; // số đếm nhỏ cạnh emoji, nếu cần
 };
 
-/** Nút công cụ chỉ hiện emoji: tên lấy từ i18n `bt.<k>`, nằm ở tooltip và aria-label. */
+/** Nút công cụ chỉ hiện biểu tượng nét theo brand: tên lấy từ i18n `bt.<k>`, nằm ở tooltip và aria-label. */
 export function NutBieuTuong({ k, onClick, ghiChu, bat, tat, children }: Props) {
   const ten = t(`bt.${k}`);
   return (
