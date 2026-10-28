@@ -63,7 +63,7 @@ export function DashDanSo({ pa, tv, lo }: { pa: TrangThaiPA; tv: ThuVien | null;
   const coToa = Object.keys(k.theoToa).length;
   const soLoCoCan = Object.values(da.theoLo).filter((x) => x.soCan > 0).length;
   return (
-    <MucGap tieuDe={`${t('ds.muc')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.ds.muc')} mo>
+    <MucGap tieuDe={`${t('ds.muc')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.ds.muc')}>
       <div class="ds-dash">
         <VongDanSo k={k} />
         <div class="ds-so-lon">
