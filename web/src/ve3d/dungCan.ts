@@ -37,39 +37,84 @@ export const THAM_SO_MAC: ThamSo3D = {
   cuaDi: 2200, cuaTruot: 2400, bauSo: 600, caoSo: 1800, doNgang: 1400, lat: 800, lanCan: 1400, bauLC: 150, dam: 600, san: 130, tang: 3300, kieuLC: 'thep',
 };
 
-export type VatLieu3D = Record<'tuong' | 'san' | 'dam' | 'top' | 'khung' | 'go' | 'khung2' | 'de' | 'tum' | 'kinh' | 'lc' | 'lov', THREE.Material> & {
+export type VatLieu3D = Record<'tuong' | 'san' | 'dam' | 'top' | 'khung' | 'go' | 'khung2' | 'de' | 'tum' | 'kinh' | 'lc' | 'lov' | 'kinhDai', THREE.Material> & {
   line: THREE.LineBasicMaterial;
   mol: THREE.LineBasicMaterial;
 };
 
-/** Kiểu vẽ 3D: theo brand LEO (kem, xanh rêu) hoặc mô hình trắng (nền cho render AI). */
-export type KieuVe3D = 'brand' | 'trang';
+/**
+ * Kiểu vẽ 3D: 'vatlieu' (mặc định — tường be ấm, kính xanh xám phản chiếu nhẹ, khung nhôm xám đậm, viền mực brand),
+ * 'brand' (kem, xanh rêu, kiểu cũ) hoặc 'trang' (mô hình trắng, nền cho render AI).
+ */
+export type KieuVe3D = 'vatlieu' | 'brand' | 'trang';
+export const DS_KIEU_3D: KieuVe3D[] = ['vatlieu', 'brand', 'trang'];
 
-const BANG_MAU: Record<KieuVe3D, Record<'tuong' | 'san' | 'khung' | 'go' | 'khung2' | 'de' | 'tum' | 'kinh' | 'lc' | 'lov' | 'line' | 'mol', number>> = {
-  brand: { tuong: 0xfbfaf4, san: 0xdfe3dc, khung: 0x174f52, go: 0xa7835a, khung2: 0xe9ece5, de: 0xd5e2da, tum: 0xe5eeea, kinh: 0x7fa9a3, lc: 0x174f52, lov: 0x3e6f70, line: 0x174f52, mol: 0xc7aa76 },
-  trang: { tuong: 0xffffff, san: 0xf2f2f0, khung: 0xd9dcda, go: 0xe8e6e1, khung2: 0xf7f7f5, de: 0xf4f4f2, tum: 0xf7f7f5, kinh: 0xcfd8d6, lc: 0xc5cac7, lov: 0xd0d4d2, line: 0x8f9894, mol: 0xb8b0a3 },
+type KhoaMau = 'tuong' | 'san' | 'khung' | 'go' | 'khung2' | 'de' | 'tum' | 'kinh' | 'lc' | 'lov' | 'line' | 'mol' | 'kinhDai';
+/**
+ * Bảng màu. 'vatlieu' lấy từ brand (styles): giấy #FFFEFA / #F1F0EA, `--secondary` #B8B0A3, `--gold` #C7AA76, `--logo-ink` #022B1E,
+ * `--green` #174F52; tường be = giấy pha vàng gold (không trắng tinh), đế đậm hơn thân một bậc để tách khối.
+ */
+export const BANG_MAU: Record<KieuVe3D, Record<KhoaMau, number>> = {
+  vatlieu: { tuong: 0xddd0b9, san: 0xc9bfac, khung: 0x3a3f42, go: 0x8e6f4e, khung2: 0xe6dfd1, de: 0xcbbfa6, tum: 0xd6ccb9, kinh: 0x5f7f88, lc: 0x3a3f42, lov: 0x5b6266, line: 0x022b1e, mol: 0xc7aa76, kinhDai: 0x4e6c76 },
+  brand: { tuong: 0xfbfaf4, san: 0xdfe3dc, khung: 0x174f52, go: 0xa7835a, khung2: 0xe9ece5, de: 0xd5e2da, tum: 0xe5eeea, kinh: 0x7fa9a3, lc: 0x174f52, lov: 0x3e6f70, line: 0x174f52, mol: 0xc7aa76, kinhDai: 0x7fa9a3 },
+  trang: { tuong: 0xffffff, san: 0xf2f2f0, khung: 0xd9dcda, go: 0xe8e6e1, khung2: 0xf7f7f5, de: 0xf4f4f2, tum: 0xf7f7f5, kinh: 0xcfd8d6, lc: 0xc5cac7, lov: 0xd0d4d2, line: 0x8f9894, mol: 0xb8b0a3, kinhDai: 0xdfe5e3 },
 };
 
 /** Bảng vật liệu (dùng chung căn / tầng / tòa / dự án); `cat` gắn mặt phẳng cắt ngang chung. */
 export function taoVatLieu(T: T3, cat: THREE.Plane[], kieu: KieuVe3D = 'brand'): VatLieu3D {
-  const B = BANG_MAU[kieu];
+  const B = BANG_MAU[kieu], vl = kieu === 'vatlieu';
   const mt = (c: number, o: THREE.MeshStandardMaterialParameters = {}) => new T.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, clippingPlanes: cat, ...o });
   const tuong = mt(B.tuong, { side: T.DoubleSide });
   return {
     tuong, dam: tuong,
     san: mt(B.san, { side: T.DoubleSide }),
     top: mt(B.san, { transparent: true, opacity: 0.28, depthWrite: false }),
-    khung: mt(B.khung, { roughness: 0.5, metalness: 0.2 }),
+    // nhôm xám đậm: hơi kim loại để bắt sáng môi trường
+    khung: vl ? mt(B.khung, { roughness: 0.38, metalness: 0.65 }) : mt(B.khung, { roughness: 0.5, metalness: 0.2 }),
     go: mt(B.go, { roughness: 0.7 }),
     khung2: mt(B.khung2, { side: T.DoubleSide }),
     de: mt(B.de, { roughness: 0.8, side: T.DoubleSide }),
     tum: mt(B.tum, { roughness: 0.8, side: T.DoubleSide }),
-    kinh: mt(B.kinh, { transparent: true, opacity: kieu === 'trang' ? 0.5 : 0.42, roughness: 0.1, metalness: 0.1, depthWrite: false, side: T.DoubleSide }),
-    lc: mt(B.lc, { roughness: 0.5, metalness: 0.3 }),
+    // kính xanh xám hơi trong, phản chiếu nhẹ (môi trường RoomEnvironment ở khung 3D, chỉ kiểu Vật liệu)
+    kinh: vl
+      ? mt(B.kinh, { transparent: true, opacity: 0.62, roughness: 0.06, metalness: 0.55, envMapIntensity: 1.6, depthWrite: false, side: T.DoubleSide })
+      : mt(B.kinh, { transparent: true, opacity: kieu === 'trang' ? 0.5 : 0.42, roughness: 0.1, metalness: 0.1, depthWrite: false, side: T.DoubleSide }),
+    // dải cửa khi nhìn xa: kính đặc (không trong suốt) để không lộ tường sau, vẫn phản chiếu
+    // polygonOffset: dải nằm sát mặt tường, nhìn xa không nhấp nháy (z-fighting)
+    kinhDai: mt(B.kinhDai, { ...(vl ? { roughness: 0.15, metalness: 0.45, envMapIntensity: 1.1 } : { roughness: 0.3 }), side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+    lc: vl ? mt(B.lc, { roughness: 0.4, metalness: 0.6 }) : mt(B.lc, { roughness: 0.5, metalness: 0.3 }),
     lov: mt(B.lov, { roughness: 0.6, metalness: 0.2 }),
-    line: new T.LineBasicMaterial({ color: B.line, clippingPlanes: cat, transparent: true, opacity: kieu === 'trang' ? 0.55 : 0.4 }),
+    line: new T.LineBasicMaterial({ color: B.line, clippingPlanes: cat, transparent: true, opacity: kieu === 'trang' ? 0.55 : vl ? 0.62 : 0.4 }),
     mol: new T.LineBasicMaterial({ color: B.mol, clippingPlanes: cat }),
   };
+}
+
+/**
+ * Thân tháp nhìn xa (LOD xa trong 3D tòa, mọi tòa ở 3D toàn dự án kiểu Vật liệu): một dải kính theo từng tầng chạy quanh nét chân
+ * tháp, lùi khỏi góc, đặt nhô ra 6 cm khỏi mặt tường. Toạ độ mét (x, y bản vẽ; cao = Y three). Trả hình học đã gộp (1 draw call).
+ */
+export function hinhDaiCua(T: T3, chan: [number, number][], z0: number, caoTang: number, soTang: number, bau = 0.75, cao = 1.75): THREE.BufferGeometry | null {
+  let A = 0;
+  for (let i = 0; i < chan.length; i++) { const p = chan[i], q = chan[(i + 1) % chan.length]; A += p[0] * q[1] - q[0] * p[1]; }
+  const s = A >= 0 ? 1 : -1, nho = 0.06, lui = 0.35; // CCW: pháp tuyến ra ngoài của cạnh (dx, dy) là (dy, −dx)
+  const P: number[] = [], N: number[] = [];
+  for (let i = 0; i < chan.length; i++) {
+    const p = chan[i], q = chan[(i + 1) % chan.length], dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy);
+    if (L < 2 * lui + 0.8) continue;
+    const ux = dx / L, uy = dy / L, nx = s * uy, ny = -s * ux;
+    const ax = p[0] + ux * lui + nx * nho, ay = p[1] + uy * lui + ny * nho, bx = q[0] - ux * lui + nx * nho, by = q[1] - uy * lui + ny * nho;
+    for (let j = 0; j < soTang; j++) {
+      const y0 = z0 + j * caoTang + bau, y1 = y0 + Math.min(cao, caoTang - bau - 0.1);
+      // hai tam giác; toạ độ three: (x, cao, −y)
+      P.push(ax, y0, -ay, bx, y0, -by, bx, y1, -by, ax, y0, -ay, bx, y1, -by, ax, y1, -ay);
+      for (let k = 0; k < 6; k++) N.push(nx, 0, -ny);
+    }
+  }
+  if (!P.length) return null;
+  const g = new T.BufferGeometry();
+  g.setAttribute('position', new T.BufferAttribute(new Float32Array(P), 3));
+  g.setAttribute('normal', new T.BufferAttribute(new Float32Array(N), 3));
+  return g;
 }
 
 /** Các nhóm đối tượng để bật / tắt hiển thị. */
@@ -244,7 +289,7 @@ export function dungCan(T: T3, d: Khoi3d, P: ThamSo3D, M: VatLieu3D, goc: THREE.
       O.updateMatrix();
       im.setMatrixAt(i, O.matrix);
     }
-    im.castShadow = true;
+    im.castShadow = false; // nan mảnh: bóng không thấy rõ, bỏ để nhẹ pass bóng
     sg.add(im);
   });
 }

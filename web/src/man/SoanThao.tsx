@@ -8,6 +8,9 @@ import { usePhimSoan } from '../kho/phimSoan';
 import type { Lo, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaPA, taoPAMoi } from '../tinh/macDinh';
 import { KhungSoan } from '../ui/KhungSoan';
+import type { CheDoXem } from '../ui/ThanhTren';
+import { chonSauBam } from '../ve3d/chon3d';
+import type { Chon3D } from '../ve3d/MoHinh3D';
 import { ChonLang, ThuongHieu, type CapDo, type MenuCap } from '../ui/ThanhTren';
 import { capHienTai, dsMucTang, giaiKhoaTang, khoaTangDangXem, lenMotCap, type BuocSoan } from '../ui/capDo';
 import { mauToa } from '../tinh/canThem';
@@ -118,6 +121,13 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const chungXep = { ...chung, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); } };
   const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };
   const chungHam = { ...chung, tv, tangHam, chonTangHam: setTangHam };
+  // chọn trong 3D đi qua đúng state chọn của 2D; bấm đúp tòa → mặt bằng tầng (như bấm đúp ở TMB) và về khung 2D
+  const [xemGiua, setXemGiua] = useState<CheDoXem>('mat_bang');
+  const chon3d: Chon3D = {
+    chon: { toaId, loId },
+    onChon: (d) => { const c = chonSauBam(d); setLoId(c.loId); setToaId(c.toaId); setCanKhoa(null); },
+    onMo: (d) => { if (d.loai === 'toa') { chungXep.moTang(d.id); setXemGiua('mat_bang'); } },
+  };
   const soTangHam = Math.max(1, Math.round(kho.pa.ham.soTang));
   const xemXuat = toaDangXem(kho.pa, tv, loId, toaId);
   const xemTang = buoc === 'tang' ? toaDangXem(kho.pa, tv, loId, toaId) : null;
@@ -154,7 +164,9 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       thongBao={thongBao}
       onXuatCad={xemXuat && tv ? () => setMoXuat(true) : undefined}
       onXuatXls={tv && kq ? () => xuatBaoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)) : undefined}
-      moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} />}
+      xem={xemGiua}
+      onXem={setXemGiua}
+      moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} chon3d={chon3d} />}
       chiPhi={<ChiPhiGiua pa={kho.pa} tv={tv} kq={kq} sua={kho.sua} chiXem={chiXem} />}
       chiPhiPhai={<ChiPhiPhai pa={kho.pa} tv={tv} kq={kq} />}
       buoc={{ ds: [['tmb', t('buoc.tmb')], ['tang', t('buoc.tang')], ['ham', t('buoc.ham')]], chon: buoc, onChon: (k) => setBuoc(k as 'tmb' | 'tang' | 'ham') }}

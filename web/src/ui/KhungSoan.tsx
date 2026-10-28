@@ -24,12 +24,16 @@ type Props = {
   onXuatXls?: () => void | Promise<void>;
   buoc?: { ds: [string, string][]; chon: string; onChon: (k: string) => void };
   thongBao?: ComponentChildren;
+  /** Chế độ xem giữa do nơi gọi giữ (vd. bấm đúp tòa trong 3D → về 2D mặt bằng tầng); thiếu thì khung tự giữ. */
+  xem?: CheDoXem;
+  onXem?: (x: CheDoXem) => void;
 };
 
 /** Bố cục soạn thảo: thanh trên, Nhập (trái), Bản vẽ (giữa), Số liệu (phải). */
 export function KhungSoan(p: Props) {
   useLang();
-  const [xem, setXem] = useState<CheDoXem>('mat_bang');
+  const [xemRieng, setXemRieng] = useState<CheDoXem>('mat_bang');
+  const xem = p.xem ?? xemRieng, setXem = p.onXem ?? setXemRieng;
   return (
     <div class="khung khung-soan">
       <ThanhTren capDo={p.capDo} cheDoXem={xem} onCheDoXem={setXem} cheDo={p.cheDo} onCheDo={p.onCheDo}

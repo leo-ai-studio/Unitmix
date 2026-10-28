@@ -363,3 +363,28 @@ Chưa làm:
 - **Bản vẽ nhẹ** (`ve/MatBangHam.tsx`): chỗ đỗ, xe lăn, kho, lõi, cột, khu sạc (chẵn / lẻ) mỗi loại một `path`; lớp tĩnh nhớ vnode theo (kết quả, tầng, cỡ chữ, ngôn ngữ) nên pan / zoom / vẽ ranh (`VeRanh`, lớp tương tác riêng) không dựng lại. Màn Hầm chưa có chọn / rê từng chỗ đỗ nên không mất thao tác nào.
 
 Chưa làm: gộp tầng giống nhau trong `raiHamTinh` (B2…Bn giống hệt nhau khi không phải tầng xe máy / xe điện; đã đủ nhanh nên chưa cần); chia nhiều worker cho nhiều lô; đo bằng `vite preview`.
+## 11. Đã làm 2026-10-29 (agent, nhánh `worktree-agent-a21634ae2eeb30f93`): P8 · 3D gộp hình theo vật liệu + instancing + LOD
+
+Đo bằng vitest với three thật (`web/src/ve3d/hieuNang3d.test.ts`, giữ lại trong cổng kiểm: chặn hồi quy > 100 draw call): `dungToa` mẫu tòa trong thư viện, 2 tầng đế + 24 tầng điển hình, lấy lượt 2–4 sau một lượt làm nóng. "Trước" = `dungToa.ts` / `dungCan.ts` của `808abb3` chạy với cùng tệp test. Draw call đếm như WebGLRenderer (mỗi Mesh / Line / InstancedMesh đang hiện = 1), chưa tính pass bóng.
+
+| Tòa 24 tầng | Đo | Trước | Sau |
+|---|---|---|---|
+| `tm-t2` | draw call (gần) | **2.752** (1.320 InstancedMesh) | **15** (8 InstancedMesh) |
+| | tam giác (gần) | 1.806.328 | 1.806.328 (không bớt chi tiết khi nhìn gần) |
+| | tam giác đổ bóng (vẽ thêm ở pass bóng) | 1.806.040 | **519.832** |
+| | nhìn xa (LOD dải cửa) | — (luôn vẽ đủ) | **8 draw call, 1.812 tam giác** |
+| | thời gian dựng | 128–131 ms | 126–145 ms (không đổi: phần nặng là dựng căn + gộp, chạy một lần mỗi bố cục tầng) |
+| `tm-i1` | draw call | 1.777 | **15** |
+| | tam giác / đổ bóng | 1.173.520 / 1.173.376 | 1.173.520 / **344.656**; xa 924 |
+| | thời gian dựng | 74–79 ms | 79–94 ms |
+
+Trên app (Edge headless `--use-angle=swiftshader`, 1440×900, PA `tztd1udv/pa-1`, đo bằng `renderer.info` sau một lượt vẽ, có pass bóng): một tòa `tm-t2` **17 draw call**, 1,87 triệu tam giác, dựng 310–740 ms (hai lượt, máy đang chạy cổng kiểm song song; chậm hơn vitest); kéo ra xa (LOD dải cửa) **9 draw call, 2.126 tam giác**; toàn dự án 18 draw call, 2.662 tam giác, dựng 22 ms. Trước: theo cấu trúc ở trên là 2.752 draw call cho tòa và gấp đôi khi có pass bóng (chưa có móc đo trong bản cũ). FPS thật vẫn chưa đo (swiftshader không đại diện GPU thật).
+
+Đã làm:
+- `ve3d/dungToa.ts` `gop`: trải `InstancedMesh` (nan lover) từng bản sao vào hình học chung, đổi `Line` (nét mở cửa sổ) thành cặp đoạn → mỗi bố cục tầng còn 1 mesh / vật liệu + 1 `LineSegments` / vật liệu nét. Kính, khung, lan can, lover, gỗ không đổ bóng (`khongBong`).
+- `nhanTang`: mỗi bố cục tầng một bộ `InstancedMesh` (ma trận dịch theo cao độ tầng) thay cho `clone` cả nhóm 24 lần; nét nối thành một `LineSegments`.
+- Khối đế, mái, tum, thành chắn mái gộp theo vật liệu (trước: mỗi đoạn thành chắn một mesh).
+- LOD (`THREE.LOD`, đặt ở tâm thân tháp): gần = chi tiết từng căn; xa hơn `nguongLod(coCanh) = max(120 m, 4 × cỡ cảnh)` = khối + dải cửa kính theo tầng (`hinhDaiCua` trong `dungCan.ts`, 1 draw call) + vạch sàn. Góc mặc định của khung tòa (≈ 2,2 × cỡ cảnh) vẫn ở mức gần.
+- 3D toàn dự án kiểu Vật liệu dùng cùng `hinhDaiCua` cho mọi tòa.
+
+Chưa làm: chưa nhớ hình tầng đã dựng giữa các lần dựng lại (đổi tham số đứng / số tầng vẫn dựng lại căn: 80–145 ms); chưa hạ `shadow.mapSize` 4096; FPS trên GPU thật chưa đo.
