@@ -14,6 +14,7 @@ import { SoDong } from '../ui/SoDong';
 import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
 import { BangChiTieuLo, ChonLoCaoTang, LoChiTieu, LoNhap, SucChuaLo } from './ManLo';
 import { DashDanSo } from '../ui/DashDanSo';
+import { KpiTmb } from '../ui/KpiTmb';
 import { GoiYXepToa, LopGoiY } from '../ui/GoiYXepToa';
 import {
   batDiem, batDinh, batGoc, caoToa, dichBatDinh, dichNhom, gocCanhLo, hinhToa, kichThuocToa, kiemViPham, latNhom, namTrongNhanh,
@@ -616,9 +617,9 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQ
   const cot = { gridTemplateColumns: `1.3fr repeat(${LOAI_CAN.length}, 1fr) 1fr` };
   return (
     <>
-      <BangChiTieuLo dong={r?.dong ?? []} />
+      <BangChiTieuLo dong={r?.dong ?? []} mo={false} />
       <DashDanSo pa={pa} tv={tv} lo={lo} />
-      <MucGap tieuDe={`${t('xep.dtLo')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.xep.dtLo')} mo>
+      <MucGap tieuDe={`${t('xep.dtLo')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.xep.dtLo')}>
         <div class="dong bang-ct dau"><span /><span>{t('xep.xayDung')}</span><span>{t('xep.tinhHSSDD')}</span></div>
         <div class="dong bang-ct"><span>{t('sc.dtLo')}</span><span>{fmtSo(dtLo, m2)}</span><span>{fmtSo(dtLo, m2)}</span></div>
         <div class="dong bang-ct"><span>{t('xep.dtDe')} / {t('xep.dtSan')}</span><span><SoDong value={r && toaLo.length ? r.dtDe : null} {...m2} /></span><span><SoDong value={r && toaLo.length ? r.dtSanTinhHSSDD : null} {...m2} /></span></div>
@@ -715,6 +716,7 @@ export function TmbPhai(p: Chung & { kq: KetQuaChiTieu | null }) {
   if (!lo) return null;
   return (
     <>
+      <KpiTmb pa={p.pa} tv={p.tv} lo={lo} kq={p.kq} />
       <XepPhai {...p} />
       <SucChuaLo lo={lo} />
     </>

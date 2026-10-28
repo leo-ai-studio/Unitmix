@@ -28,6 +28,7 @@ import { ST_BUOC, stretchTay, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
 import { ThanhCongCuTang, useKeoTay, type ChoSang, type PropsCongCu } from './CongCuTang';
 import { mauToa } from '../tinh/canThem';
+import { KpiTang } from '../ui/KpiTang';
 
 export type ChungTang = {
   pa: TrangThaiPA;
@@ -495,7 +496,8 @@ export function TangPhai(p: ChungTang) {
 
   return (
     <>
-      <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}${k0 !== null ? ' · ' + tenTang(toa.soTangDe, k0) : ''}`} giaiThich={t('gt.tang.canTrongToa')} mo>
+      <KpiTang pa={pa} tv={tv} toa={toa} lo={lo} tang={k0} can={sl.can} mucTieu={muc} nguongLech={pa.nguong.coCauDiem} tenTang={phamVi} />
+      <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}${k0 !== null ? ' · ' + tenTang(toa.soTangDe, k0) : ''}`} giaiThich={t('gt.tang.canTrongToa')}>
         <div class="bang-co-cau" role="table">
           <div class="dong bang-cc dau" style={{ gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr' }} role="row"><span /><span>{t('tang.canTang')}</span><span>{t('xep.tyLe')}</span><span>{t('xep.mucTieu')}</span><span>{t('xep.lech')}</span></div>
           {LOAI_CAN.map((k) => {
@@ -524,7 +526,7 @@ export function TangPhai(p: ChungTang) {
         <p class="dong muted" style={{ margin: 0 }}>{t('oc.sh.cum')} {t('oc.sh.dtGhiChu')}</p>
       </MucGap>
 
-      <MucGap tieuDe={t('tang.loaiCanTrongTang')} giaiThich={t('gt.tang.loaiCanTrongTang')} mo>
+      <MucGap tieuDe={t('tang.loaiCanTrongTang')} giaiThich={t('gt.tang.loaiCanTrongTang')}>
         <div class="bang-nhap-nho" role="table">
           <div class="dong hang-lc hang-lc7 dau" role="row"><span>{t('tang.mauCan')}</span><span>{t('tang.soCan')}</span><span>{t('tang.thongThuy')}</span><span>{t('tang.timTuong')}</span><span>{t('tang.phanChung')}</span><span class="tieu-co-tip" title={t('tang.dtBanGhiChu')}>{t('tang.banDT')}</span><span class="tieu-co-tip" title={t('tang.dtBanGhiChu')}>{t('tang.heSoTt')}</span></div>
           {dsMau.map(({ id, n, c }) => {

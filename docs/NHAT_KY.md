@@ -2,6 +2,42 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · bảng KPI cho lãnh đạo ở Tổng mặt bằng và màn Tầng · agent Opus
+
+- Yêu cầu: ở TMB cần nhìn dân số, số căn, tổng DT sàn XD, tổng DT sàn sử dụng, DTXD một sàn, hiệu suất. Ở màn Tầng, với từng mẫu tòa, cần unit mix, số căn theo loại, DT thông thủy, dân số, tổng căn, hiệu suất, DTXD và DTSD một sàn. Phải dễ nhìn, số nổi bật đặt trên cùng.
+- Định nghĩa, theo app cũ `metrics()` (`MDI_Unitmix_v4/prototype/shell.src.html` ~5804–5940):
+  - DTSD = Σ DT thông thủy căn (`dt_tt_m2`); không cộng phần chung, không phải NSA.
+  - DTXD một sàn = DT nét bao sàn (chân tháp). Tầng / tòa tự chỉnh thì đo nét bao mới, giống `tinhChiTieu`.
+  - Hiệu suất = DTSD / DTXD (`eff: tt/foot`; app cũ đã bỏ `effTim` = tim tường / DTXD). Mục tiêu ≥ 75 % theo luật MT-03 `mdi_eff`, đọc từ quy_tac.json.
+  - Tổng DT sàn XD = DT sàn tính HSSDĐ (`dtSanTinhHSSDD`, QCVN 01:2021 1.4.21), so với HSSDĐ × DT lô.
+  - Tổng DT sàn sử dụng = Σ thông thủy × số tầng.
+  - Dân số = dòng chỉ tiêu `danSo` (QĐ tỉnh từng căn, hoặc hệ số chung).
+- Hàm thuần `tinh/kpi.ts`: `soVoi` (đạt / sát 3 % / vượt / chưa đạt), `dtxdTang`, `sanToa`, `kpiTmb(pa, tv, kq, loIds)`, `loDuAn`, `kpiTang(...)`. Dân theo loại lấy người / căn của `danSoLo`, nên tổng các loại bằng dân tòa ở TMB.
+- Giao diện:
+  - `ui/TheSo.tsx`: ô số lớn với chip trạng thái, thanh tỉ lệ, tooltip công thức + căn cứ; `VongKpi`; `useHieuSuatMin`.
+  - `ui/KpiTmb.tsx`: công tắc Lô / Cả dự án; mục gập "Chi tiết theo tòa".
+  - `ui/KpiTang.tsx`: 6 ô (căn / tầng, tổng căn tòa, dân tòa, hiệu suất tầng + cả tòa, DTXD, DTSD 1 sàn); donut + bảng theo loại (căn tầng / tòa, lệch % tô `--warn` khi quá `nguong.coCauDiem`, DT TT min–max + bq, dân); mục gập "Chi tiết từng mẫu căn".
+  - CSS `ui/kpi.css` (biến LEO, `--u-*`, `--warn`).
+  - Gắn một dòng ở `TmbPhai` (`ManXepToa.tsx`) và một dòng ở `TangPhai` (`ManTang.tsx`).
+  - Bỏ trùng bằng cách gập mặc định: Chỉ tiêu lô, Dân số theo căn, DT trên lô (TMB); Căn trong tòa, Loại căn trong tầng (Tầng). i18n `kpi.*` có ở vi + en.
+- Test `tinh/kpi.test.ts`, 8 ca trên mẫu thật tm-i1 / tm-t2 / tm-l1:
+  - DTXD khớp `dtxd_m2` CAD trong 3 %; hiệu suất nằm trong 60–90 %.
+  - Dân các loại cộng lại = `danSoLo`; % cộng 100.
+  - Ô SHCĐ không tính căn và DTSD.
+  - TMB 2 lô 3 tòa: khớp dòng chỉ tiêu; cả dự án = tổng các lô; lô ngưỡng nhỏ báo vượt; lô chưa có tòa ra "—".
+- Kiểm trên app: vite 5417, API 8787, dự án thử `u9z54gw7` sao từ `k05gkt6j` (3 lô, 7 tòa), lô CT-02 hạ ngưỡng (dân 2.000, HSSDĐ 3,5, 600 căn) để có ô vượt. Chụp bằng Edge headless + CDP ở 1440×900. Ảnh ở `docs/anh/kpi/`:
+  - 01 lô CT-01; 02 cả dự án (dân 8.075 / 8.000 vượt, hiệu suất 74,0 % chưa đạt).
+  - 03 chi tiết theo tòa; 04 CT-02 có 3 ô vượt.
+  - 05 + 06 Tầng mẫu i3 (19 căn / tầng, 74,3 %, chi tiết mẫu); 07 Tầng mẫu Y2 (26 căn / tầng, 74,6 %).
+  - `.panel-giua` giữ 270,52,870×848 qua mọi bước ở 1440 và 270,52,630×848 ở 1200; `.panel-phai` scrollWidth − clientWidth = 0 ở cả hai cỡ. Bản EN không lộ khoá `kpi.`.
+- `npm run kiem`: ĐẠT (tsc · web 454 · worker 9 · pytest 12 · build). `worker/node_modules` là junction (không commit).
+- Còn dở / chờ chủ nhiệm chốt:
+  - Ngưỡng hiệu suất 75 % là mục tiêu nội bộ MDI (MT-03), không phải QCVN.
+  - "DTXD một sàn" ở TMB = Σ chân tháp tầng điển hình; MĐXD bên dưới tính theo khối đế.
+  - Hiệu suất cả tòa / lô là bình quân có trọng số theo DT sàn mọi tầng.
+  - Căn đã STRETCH lấy `dt_tt_m2` của biến thể trong thư viện.
+  - Chưa có ô NSA (khả bán) riêng.
+
 ## 2026-10-29 · dân số theo từng căn theo QĐ tỉnh + dashboard vòng tròn · agent Opus
 
 - Yêu cầu: "bảng chỉ tiêu không có cách tính dân theo từng khu vực… tính dân theo từng căn… có cái bảng tròn tròn như TMB". Trước đây `chiTieu.ts` = số căn × `nguoiMoiCan` (một hệ số).
