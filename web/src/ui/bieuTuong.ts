@@ -40,6 +40,7 @@ export const BIEU_TUONG = {
   // Tổng mặt bằng
   tuDat: '◎', // tự đặt / gợi ý xếp tòa (MT-05)
   datToa: '▣', // đặt tòa đang chọn
+  moTang: '⧈', // mở mặt bằng tầng của tòa
   hangLoat: '▦', // xếp hàng loạt
   canhBao: '⚠︎', // vi phạm khoảng lùi / khoảng cách
   bongDo: '☼',

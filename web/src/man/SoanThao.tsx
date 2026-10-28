@@ -101,7 +101,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const [moXuat, setMoXuat] = useState(false);
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
-  const chungXep = { ...chung, tv, toaId, chonToa: setToaId };
+  const chungXep = { ...chung, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); } };
   const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };
   const chungHam = { ...chung, tv, tangHam, chonTangHam: setTangHam };
   const soTangHam = Math.max(1, Math.round(kho.pa.ham.soTang));

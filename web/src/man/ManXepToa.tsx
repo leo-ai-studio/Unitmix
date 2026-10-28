@@ -33,6 +33,8 @@ type Chung = {
   tv: ThuVien | null;
   toaId: string | null;
   chonToa: (id: string | null) => void;
+  /** Mở mặt bằng tầng của tòa để làm tiếp (bấm đúp tòa trên TMB / nút ở Thông số tòa). */
+  moTang?: (id: string) => void;
 };
 
 const xayO = laCaoTang;
@@ -60,7 +62,7 @@ function O({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1, am = false }: { nhan: s
 }
 
 /** Panel trái màn Xếp tòa: chọn lô, thư viện mẫu tòa (hợp lô trước), tòa trên lô và thông số tòa đang chọn. */
-export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
+export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: Chung) {
   const lo = loDangXep(pa, loId);
   const [nhom, setNhom] = useState<'tm' | 'xh' | null>(null);
   const luat = useLuatTMB();
@@ -141,6 +143,7 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
           </div>
           <div class="dong" style={{ justifyContent: 'flex-start' }}>
             <div class="nhom-bt">
+            <NutBieuTuong k="moTang" ghiChu={t('gt.xep.moTang')} tat={!moTang} onClick={() => moTang?.(toa.id)} />
             <NutBieuTuong k="nhanBan" ghiChu={t('gt.xep.nhanBan')} tat={chiXem || !tv}
               onClick={() => {
                 if (!tv) return;
@@ -189,7 +192,7 @@ type LuotKeo = {
 type HienKeo = { loai: LuotKeo['loai']; ids: string[]; dx: number; dy: number; dGoc: number; tam: Diem; dan: MucBat[]; gocTheo: number | null; chan: boolean };
 
 /** Bản vẽ màn Xếp tòa: lô, chỉ giới, khối đế, chân tháp; chọn / kéo / xoay / nhân bản / đo tòa, cảnh báo LO-01 · LO-02 · LO-05. */
-export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: Chung) {
+export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moTang }: Chung) {
   const [dk, setDk] = useState<DieuKhienVe | null>(null);
   const [hien, setHien] = useState<HienKeo | null>(null);
   const [diemDo, setDiemDo] = useState<Diem[]>([]);
@@ -480,6 +483,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
           const soCan = Object.values(dem[x.id] ?? {}).reduce((a, b) => a + b, 0);
           return (
             <g key={x.id} class="tmb-toa" data-toa={x.id} style={{ cursor: tc.do ? 'crosshair' : chiXem || x.khoa ? 'pointer' : 'move' }}
+              onDblClick={(e) => { if (tc.do) return; e.stopPropagation(); moTang?.(x.id); }}
               onPointerDown={(e) => {
                 if (tc.do || e.button !== 0) return; // đo: để bản vẽ nhận bấm
                 e.stopPropagation();
