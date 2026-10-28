@@ -13,6 +13,7 @@
 .nut-bt[aria-pressed='true'] { background: var(--selected); color: var(--logo-ink); }
 .nut-bt:disabled { color: var(--muted); opacity: .45; cursor: default; }
 .nut-bt:focus-visible { outline: 3px solid #78aaa6; outline-offset: 2px; }
+.nut-bt .bt-svg { display: block; flex: none; }
 .nut-bt > :not([aria-hidden]) { font-family: var(--font); font-size: 11px; font-weight: 600; color: var(--ink); }
 /* Nhóm nút liền nhau — cùng kiểu .nhom-nut của app: một khung viền --line, ngăn bằng vạch dọc */
 .nhom-bt { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); overflow: hidden; }
