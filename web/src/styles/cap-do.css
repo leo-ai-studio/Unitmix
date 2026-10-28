@@ -1,0 +1,61 @@
+/* Dải cấp giữa thanh trên (ui/ThanhTren.tsx DaiCap): lô / PA · cốt · tòa · tầng · căn.
+   Cùng kiểu nhóm nút của thanh (.nhom-nut / .tab-xem): một khung viền --line, ngăn vạch dọc, chữ 12 px, cấp đang đứng tô --selected.
+   Chật thì từng ô co lại, chữ cắt "…" (tooltip giữ tên đủ). Menu thả xuống là lớp phủ position: fixed — không xô thanh, không bóp khung giữa. */
+.thanh-tren .cap-do { display: inline-flex; flex: 0 1 auto; flex-wrap: nowrap; align-items: stretch; gap: 0; min-width: 0; overflow: hidden; border: 1px solid var(--line); background: var(--panel); }
+.thanh-tren .cap-do > button {
+  display: inline-flex; align-items: center; gap: 5px; min-width: 0; max-width: none;
+  border: 0; border-right: 1px solid var(--line); background: var(--panel); padding: 6px 9px;
+  font-size: 12px; font-weight: 400; color: var(--ink); white-space: nowrap; cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-io), color var(--dur-1) var(--ease-io);
+}
+.thanh-tren .cap-do > button:last-child { border-right: 0; }
+.thanh-tren .cap-do > button:not(:disabled):hover { background: var(--hover); }
+.thanh-tren .cap-do .cap-len { flex: 0 0 auto; padding: 6px 8px; font-weight: 700; color: var(--green); }
+.thanh-tren .cap-do .nut-cap { flex: 0 1 auto; min-width: 38px; }
+/* Co theo thứ tự: tên dự án · PA · lô (dài nhất) trước, rồi tên tòa, cuối cùng cốt / tầng / căn */
+.thanh-tren .cap-do .cap-lo { flex-shrink: 8; font-weight: 600; }
+.thanh-tren .cap-do .cap-toa { flex-shrink: 3; }
+.thanh-tren .cap-do :is(.cap-cot, .cap-tang, .cap-can) { flex-shrink: 0; }
+.thanh-tren .cap-do .cap-chu { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.thanh-tren .cap-do .cap-mui { flex: none; font-size: 10px; color: var(--muted-text); }
+.thanh-tren .cap-do .nut-cap.dang-o { background: var(--selected); font-weight: 700; color: var(--green); }
+.thanh-tren .cap-do .nut-cap[aria-expanded="true"] { background: var(--hover); }
+.thanh-tren .cap-do .nut-cap.dang-o[aria-expanded="true"] { background: var(--selected); }
+/* Nhóm chế độ cùng kiểu: đang chọn tô --selected */
+.thanh-tren .nhom-nut button[aria-pressed="true"] { background: var(--selected); }
+
+/* Màn hẹp (1200–1480 px): thanh vẫn một hàng 52 px — khoảng cách gọn hơn, ẩn chữ UNITMIX cạnh logo (rê logo vẫn có tên),
+   nút tab đệm hẹp lại; phần còn lại nhường cho dải cấp, chật nữa thì chữ cắt "…". */
+.khung-soan .thanh-tren { gap: 8px 10px; }
+@media (max-width: 1480px) {
+  .khung-soan .thanh-tren { gap: 8px; }
+  .khung-soan .thuong-hieu strong { display: none; }
+  .khung-soan .tab-buoc button { padding: 6px 10px; }
+  .khung-soan .tab-xem button { padding: 6px 9px; }
+  .khung-soan .nhom-nut.che-do button { padding: 6px 7px; }
+}
+
+/* Menu thả xuống của dải cấp */
+@keyframes menu-cap-vao { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes menu-cap-ra { to { opacity: 0; transform: translateY(-4px); } }
+.bang-cap {
+  position: fixed; z-index: 60; min-width: 180px; max-width: min(360px, calc(100vw - 8px)); overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; padding: 4px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 20px rgba(0, 0, 0, .14);
+  animation: menu-cap-vao var(--dur-1) var(--ease-out);
+}
+.bang-cap.dang-dong { animation: menu-cap-ra 160ms var(--ease-io) forwards; pointer-events: none; }
+.bang-cap > button {
+  flex: none; display: flex; align-items: center; gap: 8px; border: 0; background: none; text-align: left;
+  padding: 6px 10px; font-size: 12px; color: var(--ink); border-radius: 4px; white-space: nowrap; cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-io);
+}
+.bang-cap > button:not(:disabled):hover, .bang-cap > button:focus-visible { background: var(--hover); outline: none; }
+.bang-cap > button[aria-checked="true"] { background: var(--selected); color: var(--green); font-weight: 700; }
+.bang-cap > button:disabled { opacity: .45; cursor: default; }
+.bang-cap-chu { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bang-cap small { flex: none; font-size: 11px; font-weight: 400; color: var(--muted-text); }
+.bang-cap-dau { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.bang-cap-nhom { padding: 6px 10px 2px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-text); }
+.bang-cap-nhom:not(:first-child) { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.bang-cap-trong { padding: 6px 10px; font-size: 12px; color: var(--muted-text); }

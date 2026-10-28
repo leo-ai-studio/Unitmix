@@ -1,11 +1,17 @@
 import { nhanPhienBan, PHIEN_BAN } from '../phienBan';
 import { LICH_SU_PHIEN_BAN } from '../lichSuPhienBan';
-import type { ComponentChildren } from 'preact';
+import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t, useLang } from '../i18n/i18n';
+import { buocPhim } from './capDo';
+import { useDongHop } from './useDongHop';
 
-/** onCoTe: đổi Trên / Dưới cốt 0 (vào màn Hầm); onTang: bấm ô tầng (vd. chuyển tầng hầm). */
-export type CapDo = { lo: string; coTe: 'tren' | 'duoi'; toa?: string; tang?: string; can?: string; onCoTe?: () => void; onTang?: () => void };
+/** Một mục trong menu cấp: `nhom` = tiêu đề nhóm (hiện khi đổi nhóm), `phu` = chữ phụ xám bên phải, `danhDau` = chấm (vd. tầng có bố cục riêng). */
+export type MucCap = { khoa: string; nhan: string; phu?: string; nhom?: string; chon?: boolean; danhDau?: boolean; tat?: boolean };
+/** Một ô trên dải cấp: chữ đang hiện (cắt … khi chật), tooltip đủ tên, danh sách mục thả xuống. `dangO` = cấp đang đứng (tô --selected). */
+export type MenuCap = { nhan: string; tieuDe: string; ds: MucCap[]; onChon: (khoa: string) => void; dangO?: boolean };
+/** Dải cấp giữa thanh trên: lô / PA · cốt · tòa · tầng · căn; `onLen` lên một cấp (căn → tầng → tòa → lô). */
+export type CapDo = { lo: MenuCap; coTe: MenuCap; toa?: MenuCap; tang?: MenuCap; can?: MenuCap; onLen?: () => void; nhanLen?: string };
 export type CheDo = 'tu_dong' | 'chinh_tay' | 'chi_xem';
 export type CheDoXem = 'mat_bang' | 'mo_hinh' | 'chi_phi';
 export type TrangThaiLuu = 'da_luu' | 'dang_luu' | 'chua_luu_duoc';
@@ -139,6 +145,97 @@ function MenuThem({ onXls, onCad }: { onXls?: () => void; onCad?: () => void }) 
   );
 }
 
+/** Dải cấp: một nhóm liền khung như `.nhom-nut`; mỗi ô mở menu thả xuống (lớp phủ cố định, không xô thanh / khung giữa). */
+function DaiCap({ c }: { c: CapDo }) {
+  const o = ([['lo', c.lo], ['cot', c.coTe], ['toa', c.toa], ['tang', c.tang], ['can', c.can]] as const).filter((x): x is [typeof x[0], MenuCap] => !!x[1]);
+  return (
+    <nav class="cap-do" aria-label={t('cap.nhom')}>
+      <button type="button" class="cap-len" aria-label={t('cap.len')} title={c.nhanLen ?? t('cap.len')} disabled={!c.onLen} onClick={c.onLen}>↑</button>
+      {o.map(([k, m]) => <NutCap key={k} m={m} lop={`cap-${k}`} />)}
+    </nav>
+  );
+}
+
+/** Một ô cấp: bấm (hoặc ↓) mở menu; menu đóng bằng phím thì trả focus về ô. */
+function NutCap({ m, lop }: { m: MenuCap; lop: string }) {
+  const [mo, setMo] = useState(false);
+  const nut = useRef<HTMLButtonElement>(null);
+  const dong = (traFocus: boolean) => { setMo(false); if (traFocus) nut.current?.focus(); };
+  return (
+    <>
+      <button type="button" ref={nut} class={`nut-cap ${lop}${m.dangO ? ' dang-o' : ''}`} title={m.tieuDe} aria-haspopup="menu" aria-expanded={mo}
+        onClick={() => setMo(!mo)} onKeyDown={(e) => { if (e.key === 'ArrowDown' && !mo) { e.preventDefault(); setMo(true); } }}>
+        <span class="cap-chu">{m.nhan}</span><span class="cap-mui" aria-hidden="true">▾</span>
+      </button>
+      {mo && nut.current && <BangCap m={m} nut={nut.current} dong={dong} />}
+    </>
+  );
+}
+
+/** Bảng menu cấp: `position: fixed` dưới ô, ↑ ↓ Home End chuyển mục, Enter chọn, Esc / bấm ngoài / Tab đóng (hiệu ứng như hộp thoại). */
+function BangCap({ m, nut, dong }: { m: MenuCap; nut: HTMLElement; dong: (traFocus: boolean) => void }) {
+  const bang = useRef<HTMLDivElement>(null);
+  const traFocus = useRef(true);
+  const { lop, dongMem } = useDongHop(() => dong(traFocus.current));
+  const b = nut.getBoundingClientRect();
+  const [vt, setVt] = useState({ top: b.bottom + 4, left: b.left });
+  const nuts = () => [...(bang.current?.querySelectorAll<HTMLButtonElement>('button[role="menuitemradio"]') ?? [])];
+  useLayoutEffect(() => {
+    const el = bang.current;
+    if (!el) return;
+    // không tràn mép phải màn hình
+    setVt({ top: b.bottom + 4, left: Math.max(4, Math.min(b.left, window.innerWidth - el.offsetWidth - 4)) });
+    const ds = nuts();
+    const dau = ds.find((x) => x.getAttribute('aria-checked') === 'true' && !x.disabled) ?? ds.find((x) => !x.disabled);
+    dau?.focus();
+    dau?.scrollIntoView?.({ block: 'nearest' });
+  }, []);
+  useEffect(() => {
+    const ngoai = (e: Event) => {
+      const el = e.target as Node;
+      if (bang.current?.contains(el)) return;
+      traFocus.current = false;
+      // bấm lại chính ô đang mở: để onClick của ô đóng (tránh đóng rồi mở lại)
+      if (nut.contains(el)) return;
+      dongMem();
+    };
+    const thoi = () => { traFocus.current = false; dong(false); };
+    document.addEventListener('pointerdown', ngoai);
+    window.addEventListener('resize', thoi);
+    return () => { document.removeEventListener('pointerdown', ngoai); window.removeEventListener('resize', thoi); };
+  }, []);
+  const phim = (e: KeyboardEvent) => {
+    if (e.key === 'Tab') { traFocus.current = false; dongMem(); return; }
+    // Esc chỉ đóng menu, không lọt xuống phím tắt bản vẽ (vd. Esc bỏ chọn tòa ở TMB)
+    if (e.key === 'Escape') { e.stopPropagation(); dongMem(); return; }
+    const ds = nuts();
+    const j = buocPhim(e.key, ds.indexOf(document.activeElement as HTMLButtonElement), ds.map((x) => x.disabled));
+    if (j !== null) { e.preventDefault(); ds[j].focus(); }
+  };
+  let nhom: string | undefined;
+  return (
+    <div class={`bang-cap${lop}`} role="menu" aria-label={m.tieuDe} ref={bang} onKeyDown={phim}
+      style={{ top: `${vt.top}px`, left: `${vt.left}px`, maxHeight: `calc(100vh - ${Math.round(vt.top) + 12}px)` }}>
+      {m.ds.length === 0 && <div class="bang-cap-trong">{t('cap.trong')}</div>}
+      {m.ds.map((x) => {
+        const dau = x.nhom !== undefined && x.nhom !== nhom;
+        nhom = x.nhom;
+        return (
+          <Fragment key={x.khoa}>
+            {dau && <div class="bang-cap-nhom" role="presentation">{x.nhom}</div>}
+            <button type="button" role="menuitemradio" aria-checked={!!x.chon} disabled={x.tat} title={x.phu ? `${x.nhan} · ${x.phu}` : x.nhan}
+              onClick={() => { m.onChon(x.khoa); dongMem(); }}>
+              <span class="bang-cap-chu">{x.nhan}</span>
+              {x.danhDau && <i class="bang-cap-dau" aria-hidden="true" />}
+              {x.phu && <small>{x.phu}</small>}
+            </button>
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ThanhTren(p: Props) {
   useLang();
   const xem: [CheDoXem, string][] = [['mat_bang', 'xem.matBang'], ['mo_hinh', 'xem.moHinh'], ['chi_phi', 'xem.chiPhi']];
@@ -161,33 +258,21 @@ export function ThanhTren(p: Props) {
           <button type="button" key={k} aria-pressed={p.cheDoXem === k} onClick={() => p.onCheDoXem?.(k)}>{t(nhan)}</button>
         ))}
       </TabTruot>
-      <span class="gian" />
-      {p.capDo && (
-        <nav class="cap-do" aria-label={t('cap.nhom')}>
-          <button type="button" aria-label={t('cap.len')}>↑</button>
-          <button type="button" title={p.capDo.lo}>{p.capDo.lo}</button>
-          <span class="xam">|</span>
-          <button type="button" title={t('cap.doiCoTe')} onClick={p.capDo.onCoTe}>{t(p.capDo.coTe === 'tren' ? 'cap.tren' : 'cap.duoi')} ▾</button>
-          {p.capDo.toa && <button type="button" title={p.capDo.toa}>{p.capDo.toa} ▾</button>}
-          {p.capDo.tang && <button type="button" title={p.capDo.tang} onClick={p.capDo.onTang}>{p.capDo.tang} ▾</button>}
-          {p.capDo.can && <button type="button" title={p.capDo.can}>{p.capDo.can} ▾</button>}
-        </nav>
+      {/* Chế độ sửa đứng ngay cạnh 2D / 3D / Chi phí (bên trái); bên phải chỉ còn lưu / xuất / ngôn ngữ. */}
+      {p.cheDo && (
+        <div class="nhom-nut che-do" role="group" aria-label={t('cheDo.nhom')}>
+          {cheDo.map(([k, nhan]) => (
+            <button type="button" key={k} aria-pressed={p.cheDo === k} title={t(nhan)} disabled={p.duocSua === false && k !== 'chi_xem'} onClick={() => p.onCheDo?.(k)}>{t(nhan)}</button>
+          ))}
+        </div>
       )}
+      <span class="gian" />
+      {p.capDo && <DaiCap c={p.capDo} />}
       <span class="gian" />
       {luu && (
         <span key={luu} class={`trang-thai-luu${luu === 'chua_luu_duoc' ? ' loi' : luu === 'dang_luu' ? ' dang' : ' da'}`} role="status">
           {t(luu === 'da_luu' ? 'luu.daLuu' : luu === 'dang_luu' ? 'luu.dangLuu' : 'luu.chuaLuuDuoc')}
         </span>
-      )}
-      {p.cheDo && (
-        <>
-          <span class="nhan-che-do">{t('cheDo.nhan')}</span>
-          <div class="nhom-nut" role="group" aria-label={t('cheDo.nhom')}>
-            {cheDo.map(([k, nhan]) => (
-              <button type="button" aria-pressed={p.cheDo === k} disabled={p.duocSua === false && k !== 'chi_xem'} onClick={() => p.onCheDo?.(k)}>{t(nhan)}</button>
-            ))}
-          </div>
-        </>
       )}
       <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatXls} onClick={p.onXuatXls}>{t('xuat.xls')}</button>
       <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatCad} onClick={p.onXuatCad}>{t('xuat.cad')}</button>
