@@ -850,6 +850,7 @@
   "ham.tu": "auto",
   "ham.chuaCoToa": "No building on this plot yet: no cores, columns or unit count to check.",
   "ham.chuaCoCan": "No units on this plot yet, so the required parking area is not computed.",
+  "ham.dangRai": "Laying out basement…",
   "ham.ranhRong": "Basement outline is empty (setback too large or plot has no boundary).",
   "ham.mucTang": "Basement levels",
   "ham.soTang": "Basement levels",

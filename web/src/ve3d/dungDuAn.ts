@@ -3,7 +3,8 @@
  * nét hạ tầng xung quanh, khối đế + thân tháp từng tòa (vạch sàn từng tầng). Tòa đang chọn tô nhấn.
  */
 import type * as THREE from 'three';
-import { khoiHam, raiHam, ranhHam } from '../tinh/ham';
+import { khoiHam, ranhHam } from '../tinh/ham';
+import { dieuPhoiHam } from '../tinh/hamNen';
 import { chanToa, khoiDe, trongTam } from '../tinh/hinhHoc';
 import type { Diem, ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang, loaiDat, MAU_DAT, type LoaiDat } from '../tinh/loaiDat';
@@ -95,6 +96,7 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
   }
 
   // --- hầm: khối bán trong suốt dưới cốt 0 (ranh hầm × số tầng × cao tầng), ram và lõi ---
+  const rai = dieuPhoiHam.phien('3d'); // rải hầm trong Web Worker: chưa xong thì vẽ khối theo ranh mặc định, xong thì MoHinh3D dựng lại
   if (hienHam) {
     const h = chuanHoaHam(pa.ham);
     const vlHam = new T.MeshStandardMaterial({ color: trang ? 0xdfe6e3 : 0x2f7d79, roughness: 0.9, transparent: true, opacity: 0.3, depthWrite: false });
@@ -105,7 +107,7 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
       if (!laCaoTang(l) || !pa.toa.some((x) => x.loId === l.id)) continue;
       // ranh cố định trong PA chỉ áp cho lô chứa nó; các lô còn lại lấy ranh mặc định
       const dung = !h.ranh || trong(trongTam(h.ranh), l.ranh);
-      const kq = dung ? raiHam(pa, tv, l) : null;
+      const kq = dung ? rai.lay(pa, tv, l) ?? null : null;
       const kh = khoiHam(kq?.ranh ?? ranhHam(l, { ranh: null, lui: h.lui }), h.soTang, h.caoTang);
       if (!kh) continue;
       const me = khoi(kh.ranh, -kh.yDuoi, vlHam, kh.yDuoi, vienHam);
@@ -115,6 +117,8 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
       if (kq?.ram && kq.ram.poly.length >= 3) { const r = khoi(kq.ram.poly, h.caoTang, vlRam, -h.caoTang); r.castShadow = false; }
     }
   }
+
+  rai.xong();
 
   // --- tòa: khối đế theo lô + thân tháp, vạch sàn ---
   const vlChon = new T.MeshStandardMaterial({ color: trang ? 0xe5eeea : 0xcfe0d8, roughness: 0.8 });
