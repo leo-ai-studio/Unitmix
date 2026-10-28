@@ -35,6 +35,8 @@ export type DuLieuXuat = {
 const rad = (d: number) => (d * Math.PI) / 180;
 /** Bỏ dấu, chỉ giữ ASCII in được: tên tệp và chú thích. */
 export const asciiHoa = (s: string): string => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^\x20-\x7E]/g, '-');
+/** Tên tệp an toàn cho Windows / AutoCAD: ASCII, ký tự cấm trong tên tệp thành '-' (`/` trong tên dự án từng thành thư mục con). */
+export const tenTepAn = (s: string): string => asciiHoa(s).replace(/[\\/:*?"<>|]/g, '-');
 const f4 = (v: number) => (Math.abs(v) < 5e-5 ? 0 : v).toFixed(4);
 const dgBo = (p: string) => p.replace(/\/+$/, '');
 
@@ -154,7 +156,7 @@ export function lenhXclip(it: LuotChen): string | null {
 export function taoScr(d: DuLieuXuat): string {
   const L: string[] = [];
   const say = (s: string) => L.push(';; ' + asciiHoa(s));
-  const ds = danhSachChen(d), tenDwg = asciiHoa(d.ten) + '.dwg';
+  const ds = danhSachChen(d), tenDwg = tenTepAn(d.ten) + '.dwg';
   say('PHIEU LAP GHEP MAT BANG TU XREF - MDIUnitmix');
   say(`mau toa   : ${d.mau.id}`);
   const oc = oCongNang(d);

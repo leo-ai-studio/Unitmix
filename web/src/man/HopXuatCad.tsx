@@ -7,7 +7,7 @@ import { boCucTang, nhomTang, tangCoRieng, type NetVe } from '../tinh/matBang';
 import { idTepCan, laBienThe, veTheoId } from '../tinh/stretch';
 import { tenTang } from '../ui/ChonTang';
 import type { ToaVe } from '../ve/MatBangTang';
-import { asciiHoa, danhSachChen, taoDxf, taoScr, THU_VIEN_XREF_MAC_DINH } from '../xuat/xuatCad';
+import { asciiHoa, danhSachChen, taoDxf, taoScr, tenTepAn, THU_VIEN_XREF_MAC_DINH } from '../xuat/xuatCad';
 import { chuKyMatBang } from '../tinh/loiThang';
 import { fmtSo } from '../ui/so';
 
@@ -32,7 +32,7 @@ export function HopXuatCad({ toa, mau, mauTang, tv, ten, dong }: Props) {
   const mauCua = (tang: number | null) => mauTang?.(tang) ?? mau;
   const kyMB = chuKyMatBang(toa);
   const { lop, dongMem } = useDongHop(dong);
-  const [tenBv, setTenBv] = useState(asciiHoa(`${ten} ${mau.ten_vi.split(' · ')[0]}`).trim().replace(/\s+/g, '_'));
+  const [tenBv, setTenBv] = useState(tenTepAn(`${ten} ${mau.ten_vi.split(' · ')[0]}`).trim().replace(/\s+/g, '_'));
   const [goc, setGoc] = useState(THU_VIEN_XREF_MAC_DINH);
   const rieng = tangCoRieng(toa);
   const [pv, setPv] = useState<PhamVi>('chung');
@@ -54,7 +54,7 @@ export function HopXuatCad({ toa, mau, mauTang, tv, ten, dong }: Props) {
   const du = (tang: number | null) => ({ mau: mauCua(tang), toa: boCucTang(toa, tang), tv, ten: tenBv || 'MatBang', goc: goc || THU_VIEN_XREF_MAC_DINH, hinh: hinh!, loi: loi! });
   const bcTc = toa.matBang?.baoCao;
   const san = !!hinh && !!loi;
-  const ten0 = asciiHoa(tenBv || 'MatBang');
+  const ten0 = tenTepAn(tenBv || 'MatBang');
   /** Tên tệp / bản vẽ kèm tên tầng (bố cục chung: "DH"). */
   const duoiTen = (tang: number | null) => `${ten0}_${tang === null ? 'DH' : asciiHoa(tenTang(toa.soTangDe, tang)).replace(/\s+/g, '')}`;
   /** Các tầng cần xuất theo phạm vi đã chọn (null = bố cục chung). */

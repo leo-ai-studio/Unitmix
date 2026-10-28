@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import DxfParser from 'dxf-parser';
 import { taoThuVien, type CanMau, type Diem } from '../tinh/kieu';
 import { boCucTang, ungVienDoi, viTriCan, type NetVe, type ToaCoMat } from '../tinh/matBang';
-import { danhSachChen, duongXref, khungCatCan, lenhXclip, LOP_CONG_NANG, LOP_NHAN_CAN, nhanCanDxf, oCongNang, taoDxf, taoScr, type DuLieuXuat } from './xuatCad';
+import { danhSachChen, duongXref, khungCatCan, lenhXclip, LOP_CONG_NANG, LOP_NHAN_CAN, nhanCanDxf, oCongNang, taoDxf, taoScr, tenTepAn, type DuLieuXuat } from './xuatCad';
 
 const lib = new URL('../../public/lib/', import.meta.url);
 const cad = new URL('../../../cad/xref/', import.meta.url);
@@ -121,6 +121,11 @@ describe('xuất CAD theo tầng và công năng ô', () => {
     expect(chu.some((e) => /m2$/.test(e.text ?? ''))).toBe(true);
     expect(ent.filter((e) => e.type === 'TEXT' && e.layer === LOP_NHAN_CAN)).toHaveLength(2 * (can0 - 2));
     expect(ent.some((e) => e.layer === LOP_CONG_NANG && e.type !== 'TEXT')).toBe(true);
+  });
+
+  it('tên tệp bản vẽ: bỏ dấu, ký tự cấm trên Windows (/ \\ : * ? " < > |) thành -, không tách thư mục', () => {
+    expect(tenTepAn('Kiểm thang liền 3D/CAD: tòa "A"?')).toBe('Kiem thang lien 3D-CAD- toa -A--');
+    expect(tenTepAn('a\\b|c*d<e>f')).toBe('a-b-c-d-e-f');
   });
 
   it('PA cũ (không tangRieng / congNang) xuất như trước, không có lớp công năng', () => {
