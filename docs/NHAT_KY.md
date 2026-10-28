@@ -2,6 +2,12 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · chốt luật khít + tải tệp CAD kiểm · Claude Code
+
+- Người dùng chốt: khít đoạn kẹp đổi loại căn trước, bỏ căn sau; 13 ca phần dư không lấp được giữ chặn + gợi ý mẫu vừa ô (`tinh/goiYVuaO.ts`, có test). Đã bỏ chữ "chờ chốt" ở `loiThang.ts` / AI_START.
+- Tải .dxf (2,9 MB) + .scr từ hộp CAD trên 5180 (bắt blob qua `URL.createObjectURL`): .dxf hợp lệ, 32 INSERT = 32 căn, lớp MDI-HANHLANG / MDI-BAO / MDI-LOI, block căn kéo `CAN_TM_2PN_M1_SP100`; .scr 37 lượt. Phát hiện tên bản vẽ lấy tên dự án có "/" → thành thư mục con; sửa `tenTepAn` (xuatCad.ts) dùng cho tên .dwg / tệp tải + test.
+- Push `main` (người dùng cho phép).
+
 ## 2026-10-29 · cổng kiểm nhanh + kiểm nốt trên app · Claude Code
 
 - Cổng kiểm `npm run kiem` / `kiem:nhanh` (`scripts/kiem.mjs`, học app cũ `--nho` + `--nhanh`): tsc · vitest web · vitest worker · pytest · build chạy song song; lần ĐẠT ghi sha256 mã nguồn vào `.cache/kiem_da_dat.json`, trùng thì 0 s; `--nhanh` đặt `KIEM_NHANH=1` → 4 bài quét nặng lấy mẫu qua `web/src/thu/layMau.ts`, bỏ build. Đo: vitest đủ 41 s → nhanh 20 s; cổng đủ ~50 s, nhanh ~22 s, nhớ 0 s.

@@ -1481,7 +1481,7 @@ function tinhGiam(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | undefined, opt:
  *  3. đổi căn khác sang loại khác (đổi cơ cấu);
  *  4. bỏ căn (như giamCanThoatNan) — căn DT nhỏ nhất trước, không bỏ căn người dùng chọn;
  *  5. đường cùng (đoạn chỉ có căn người dùng chọn, không mẫu cùng loại nào vừa): đổi căn đó sang loại khác vừa đoạn — báo rõ.
- * Bậc là luật nội bộ theo app cũ, chờ chủ nhiệm chốt.
+ * Bậc theo app cũ — người dùng đã chốt 2026-10-29: đổi loại căn trước, bỏ căn sau. Phần dư không lấp được: chặn + gợi ý mẫu vừa ô (`goiYVuaO`).
  */
 const GIA_KHIT = { cungLoai: 1e3, canChon: 1e5, khacLoai: 1e7, bo: 1e9, canChonKhacLoai: 1e11 } as const;
 
