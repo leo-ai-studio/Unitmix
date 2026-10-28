@@ -62,6 +62,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | Preset, lưu | `kho/preset.ts`, `kho/kho.ts`, `kho/luu.ts` |
 | Xuất | `xuat/xuatCad.ts`, `xuat/xuatXls.ts`, `man/HopXuatCad.tsx` |
 | So sánh PA | `man/SoSanhPA.tsx`, `tinh/diemPA.ts` |
+| Thao tác tay TMB (chọn nhiều, bắt dính, xoay, đo, cảnh báo LO-01/02/05) | `tinh/thaoTacToa.ts`, `man/tmbThaoTac.tsx`, `man/ManXepToa.tsx` `XepGiua` |
 | Tự xếp tòa, tối ưu tầng | `tinh/xepToa.ts`, `ui/GoiYXepToa.tsx`, `tinh/toiUu.ts`, `tinh/stretch.ts`, `tinh/khe.ts` |
 | Tự chỉnh MB tầng (thang, lõi, sảnh, hành lang, QT-69) | `tinh/loiThang.ts`, `man/tuChinhTang.ts`; 3D / CAD theo mặt bằng tự chỉnh: `ve3d/dungToa.ts`, `xuat/xuatCad.ts` |
 | Chi phí, tài chính | `tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`, số tạm `CHI_PHI_MAC_DINH` trong `tinh/macDinh.ts` |

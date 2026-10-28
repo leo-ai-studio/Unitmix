@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { KetQuaChiTieu } from '../tinh/chiTieu';
 import { demCan, diemLechCoCau, dtTbTheoLoai } from '../tinh/coCau';
-import { chanToa, dienTich, khoiDe, namTrong } from '../tinh/hinhHoc';
+import { chanToa, dienTich, khoiDe } from '../tinh/hinhHoc';
 import { hopLo, taoToaTrenLo, vungDat } from '../tinh/hopLo';
 import { LOAI_CAN, type Diem, type Lo, type LoaiCan, type ThuVien, type ToaDat, type ToaMau, type TrangThaiPA } from '../tinh/kieu';
 import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
@@ -13,6 +13,11 @@ import { SoDong } from '../ui/SoDong';
 import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
 import { BangChiTieuLo, ChonLoCaoTang, LoChiTieu, LoNhap, SucChuaLo } from './ManLo';
 import { GoiYXepToa, LopGoiY } from '../ui/GoiYXepToa';
+import {
+  batDiem, batDinh, batGoc, caoToa, dichBatDinh, dichNhom, gocCanhLo, hinhToa, kichThuocToa, kiemViPham, latNhom, namTrongNhanh,
+  tamNhom, toaTrongKhung, viTriNhanBan, xoayNhom, type MucBat,
+} from '../tinh/thaoTacToa';
+import { DsCanhBao, HopToaDo, ThanhTMB, datChonNhieu, datTuyChon, luaChon, suaNhom, useChonNhieu, useLuatTMB, useTuyChon } from './tmbThaoTac';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -53,6 +58,7 @@ function O({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1, am = false }: { nhan: s
 export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
   const lo = loDangXep(pa, loId);
   const [nhom, setNhom] = useState<'tm' | 'xh' | null>(null);
+  const luat = useLuatTMB();
   const nhomXem = nhom ?? (lo?.temDat.chucNang === 'xh' ? 'xh' : 'tm');
   const vung = lo ? vungDat(lo) : [];
   const khoaVung = vung.map((p) => p.map((n) => n.toFixed(1)).join()).join(';');
@@ -127,17 +133,18 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
           <O nhan={t('xep.x')} tip={t('gt.xep.x')} gt={toa.x} donVi="m" buoc={0.5} am tat={tat} onDoi={datTs('x')} />
           <O nhan={t('xep.y')} tip={t('gt.xep.y')} gt={toa.y} donVi="m" buoc={0.5} am tat={tat} onDoi={datTs('y')} />
           <div class="dong" style={{ justifyContent: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
-            <button type="button" class="nut-phu" title={t('gt.xep.nhanBan')} disabled={chiXem}
+            <button type="button" class="nut-phu" title={t('gt.xep.nhanBan')} disabled={chiXem || !tv}
               onClick={() => {
-                // Dời bản sao sang cạnh bản gốc theo phương ngang thân tòa: bề sâu tòa + 12 m.
-                const m = tv?.toa.get(toa.mauId);
-                const sau = m ? (Math.max(...m.duong_bao.map((p) => p[1])) - Math.min(...m.duong_bao.map((p) => p[1]))) / 1000 : 20;
-                const a = (toa.gocDo * Math.PI) / 180, d = sau + 12;
-                const ban = { ...toa, id: idMoi(), x: Math.round((toa.x + d * Math.sin(a)) * 100) / 100, y: Math.round((toa.y - d * Math.cos(a)) * 100) / 100, khoa: false };
+                if (!tv) return;
+                // chỗ trống quanh tòa gốc: trong chỉ giới, đủ lùi LO-01, cách tòa khác ≥ cạnh dài §2.6.1
+                const ban = viTriNhanBan(toa, pa, tv, luat, idMoi()).toa;
                 sua((p) => ({ ...p, toa: [...p.toa, ban] }));
                 chonToa(ban.id);
               }}>
               {t('xep.nhanBan')}
+            </button>
+            <button type="button" class="nut-phu" title={t('gt.xep.lat')} disabled={tat} onClick={() => sua((p) => doiToa(p, toa.id, (x) => ({ ...x, lat: !x.lat })))}>
+              {toa.lat ? t('xep.boLat') : t('xep.lat')}
             </button>
             <button type="button" class="nut-phu" title={t('gt.xep.khoa')} disabled={chiXem} onClick={() => sua((p) => doiToa(p, toa.id, (x) => ({ ...x, khoa: !x.khoa })))}>
               {toa.khoa ? t('xep.moKhoa') : t('xep.khoa')}
@@ -154,33 +161,304 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa }: Chung) {
 
 const duongPath = (vung: Diem[][]) => vung.map((p) => `M${p.map(s).join(' L')} Z`).join(' ');
 
-/** Bản vẽ màn Xếp tòa: lô đang xếp, chỉ giới, khối đế, chân tháp; kéo tòa để di chuyển. */
+/** Lượt kéo đang chạy (ref, không gây vẽ lại): dời / nhân bản / xoay nhóm tòa. */
+type LuotKeo = {
+  loai: 'dich' | 'nhan' | 'xoay';
+  idBam: string;
+  ids: string[];
+  goc: Map<string, ToaDat>;
+  p0: Diem;
+  pxM: number; // px màn hình / m
+  nghich: DOMMatrix;
+  svg: SVGSVGElement;
+  di: boolean;
+  shift: boolean;
+  alt: boolean;
+  bam: 'xong' | 'batTat' | 'rieng'; // bấm không kéo: lựa chọn đã xử lý lúc nhấn / bật tắt tòa trong lựa chọn / chọn riêng tòa
+  kq?: HienKeo;
+  pCuoi: Diem;
+  raf: number;
+  muc: MucBat[];
+  tamKhac: Diem[];
+  trongCG: boolean;
+  okCuoi: { dx: number; dy: number; dGoc: number };
+  a0: number; // góc tay nắm lúc bấm (xoay)
+  tam: Diem;
+};
+type HienKeo = { loai: LuotKeo['loai']; ids: string[]; dx: number; dy: number; dGoc: number; tam: Diem; dan: MucBat[]; gocTheo: number | null; chan: boolean };
+
+/** Bản vẽ màn Xếp tòa: lô, chỉ giới, khối đế, chân tháp; chọn / kéo / xoay / nhân bản / đo tòa, cảnh báo LO-01 · LO-02 · LO-05. */
 export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: Chung) {
   const [dk, setDk] = useState<DieuKhienVe | null>(null);
-  const [keo, setKeo] = useState<{ id: string; dx: number; dy: number } | null>(null);
-  const batDau = useRef<{ id: string; cx: number; cy: number; k: number } | null>(null);
+  const [hien, setHien] = useState<HienKeo | null>(null);
+  const [diemDo, setDiemDo] = useState<Diem[]>([]);
+  const luot = useRef<LuotKeo | null>(null);
+  const hienRef = useRef<HienKeo | null>(null);
+  hienRef.current = hien;
+  const dsNhieu = useChonNhieu();
+  const tc = useTuyChon();
+  const luat = useLuatTMB();
   const lo = loDangXep(pa, loId);
+  const sel = luaChon(pa, dsNhieu, toaId);
+  const toaChon = pa.toa.filter((x) => sel.includes(x.id));
+  const diDuoc = toaChon.filter((x) => !x.khoa).map((x) => x.id);
+  const tatCaKhoa = toaChon.length > 0 && toaChon.every((x) => x.khoa);
+
+  const chon = (ids: string[], chinh?: string | null) => {
+    datChonNhieu(ids);
+    const c = chinh ?? ids[ids.length - 1] ?? null;
+    chonToa(c);
+    const x = pa.toa.find((q) => q.id === c);
+    if (x && x.loId !== lo?.id) chonLo(x.loId);
+  };
+
+  // ---- thao tác nhóm (một bước hoàn tác mỗi lần) ----
+  const xoay = (dGoc: number) => !chiXem && diDuoc.length && suaNhom(sua, diDuoc, (ds) => xoayNhom(ds, ds.length > 1 ? tamNhom(ds) : [ds[0].x, ds[0].y], dGoc));
+  const dich = (dx: number, dy: number) => !chiXem && diDuoc.length && suaNhom(sua, diDuoc, (ds) => dichNhom(ds, dx, dy));
+  const lat = () => !chiXem && diDuoc.length && suaNhom(sua, diDuoc, latNhom);
+  const xoa = () => {
+    if (chiXem || !diDuoc.length) return;
+    sua((p) => ({ ...p, toa: p.toa.filter((x) => !diDuoc.includes(x.id)) }));
+    chon([], null);
+  };
+  const khoa = () => {
+    if (chiXem || !sel.length) return;
+    sua((p) => ({ ...p, toa: p.toa.map((x) => (sel.includes(x.id) ? { ...x, khoa: !tatCaKhoa } : x)) }));
+  };
+  const nhanBan = () => {
+    if (chiXem || !tv || !sel.length) return;
+    let p2 = pa;
+    const moi: ToaDat[] = [];
+    for (const x of toaChon) {
+      const { toa } = viTriNhanBan(x, p2, tv, luat, idMoi());
+      moi.push(toa);
+      p2 = { ...p2, toa: [...p2.toa, toa] };
+    }
+    sua((p) => ({ ...p, toa: [...p.toa, ...moi] }));
+    chon(moi.map((x) => x.id));
+  };
+
+  // ---- phím tắt (không gõ trong ô nhập) ----
+  const phimRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  phimRef.current = (e: KeyboardEvent) => {
+    const el = e.target as HTMLElement | null;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
+    const k = e.key, ctrl = e.ctrlKey || e.metaKey;
+    if (k === 'Escape') { if (diemDo.length) setDiemDo([]); else if (tc.do) datTuyChon({ do: false }); else chon([], null); return; }
+    if (ctrl && k.toLowerCase() === 'a') { e.preventDefault(); if (lo) chon(pa.toa.filter((x) => x.loId === lo.id).map((x) => x.id)); return; }
+    if (chiXem || !sel.length) return;
+    const b = e.shiftKey ? 1 : 0.1;
+    if (ctrl && k.toLowerCase() === 'd') { e.preventDefault(); nhanBan(); }
+    else if (ctrl) return;
+    else if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); xoa(); }
+    else if (k === 'r' || k === 'R') xoay(e.shiftKey ? -90 : 90);
+    else if (k === 'q' || k === 'Q') xoay(e.shiftKey ? 1 : 5);
+    else if (k === 'e' || k === 'E') xoay(e.shiftKey ? -1 : -5);
+    else if (k === 'f' || k === 'F') lat();
+    else if (k === 'ArrowLeft') { e.preventDefault(); dich(-b, 0); }
+    else if (k === 'ArrowRight') { e.preventDefault(); dich(b, 0); }
+    else if (k === 'ArrowUp') { e.preventDefault(); dich(0, b); }
+    else if (k === 'ArrowDown') { e.preventDefault(); dich(0, -b); }
+  };
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => phimRef.current(e);
+    window.addEventListener('keydown', f);
+    return () => window.removeEventListener('keydown', f);
+  }, []);
+  useEffect(() => () => { const l = luot.current; if (l) cancelAnimationFrame(l.raf); }, []);
+
   if (!pa.lo.length) return <div class="giua-man"><span>{t('xep.chuaCoLo')}</span></div>;
   const khung = khungBao(pa.lo.map((l) => l.ranh));
   const coChu = Math.max(1.2, khung ? (khung[2] - khung[0]) / 70 : 2);
-  const viTri = (x: ToaDat): ToaDat => (keo?.id === x.id ? { ...x, x: x.x + keo.dx, y: x.y + keo.dy } : x);
+  const buocM = dk?.tyLeM ?? coChu * 6; // thước tỷ lệ ≈ 1/8 khung nhìn → cỡ chữ / tay nắm gần như cố định trên màn hình
+  const chuNho = Math.max(0.15, buocM * 0.045);
+
+  // vị trí tạm khi đang kéo / xoay (chưa ghi vào PA)
+  const deTam = new Map<string, ToaDat>();
+  if (hien && hien.loai !== 'nhan') {
+    const goc = pa.toa.filter((x) => hien.ids.includes(x.id));
+    const moi = hien.loai === 'xoay' ? xoayNhom(goc, hien.tam, hien.dGoc) : dichNhom(goc, hien.dx, hien.dy);
+    moi.forEach((x) => deTam.set(x.id, x));
+  }
+  const viTri = (x: ToaDat): ToaDat => deTam.get(x.id) ?? x;
   const toaCoMau = tv ? pa.toa.filter((x) => tv.toa.has(x.mauId)).map(viTri) : [];
   const dem = tv ? demCan(pa, tv) : {};
+  const hinh = tv ? hinhToa(pa, tv, deTam) : [];
+  const kiem = tv ? kiemViPham(pa, hinh, luat) : null;
+  const banSao = hien?.loai === 'nhan' && tv
+    ? pa.toa.filter((x) => hien.ids.includes(x.id)).map((x) => chanToa(tv.toa.get(x.mauId)!, { ...x, x: x.x + hien.dx, y: x.y + hien.dy }))
+    : [];
+  // kích thước tới ranh / chỉ giới / tòa gần nhất cho tòa đang kéo
+  const kt = (() => {
+    if (!hien || !tv) return [];
+    const h = hinh.find((q) => q.toa.id === (luot.current?.idBam ?? hien.ids[0]));
+    if (!h) return [];
+    const F = hien.loai === 'nhan' ? chanToa(tv.toa.get(h.toa.mauId)!, { ...h.toa, x: h.toa.x + hien.dx, y: h.toa.y + hien.dy }) : h.F;
+    const khac = hinh.filter((q) => hien.loai === 'nhan' || !hien.ids.includes(q.toa.id));
+    return kichThuocToa(F, h.H, pa.lo.find((l) => l.id === h.toa.loId), khac, luat);
+  })();
+
+  // ---- kéo tòa / tay nắm xoay ----
+  const raMet = (l: { nghich: DOMMatrix; svg: SVGSVGElement }, e: PointerEvent): Diem => {
+    const q = l.svg.createSVGPoint(); q.x = e.clientX; q.y = e.clientY;
+    const r = q.matrixTransform(l.nghich);
+    return [r.x, -r.y];
+  };
+  const tinh = () => {
+    const l = luot.current;
+    if (!l || !tv) return;
+    l.raf = 0;
+    const [px, py] = l.pCuoi;
+    if (l.loai === 'xoay') {
+      const a = (Math.atan2(py - l.tam[1], px - l.tam[0]) * 180) / Math.PI;
+      const chinh = l.goc.get(l.idBam)!;
+      let dGoc = a - l.a0, theo: number | null = null;
+      if (!l.alt) {
+        const b = batGoc(chinh.gocDo + dGoc, gocCanhLo(pa.lo.find((q) => q.id === chinh.loId)), l.shift);
+        dGoc = b.goc - chinh.gocDo; theo = b.theo;
+      }
+      if (tc.khoaCG) {
+        const ds = [...l.goc.values()];
+        const hop = xoayNhom(ds, l.tam, dGoc).every((x) => { const lo2 = pa.lo.find((q) => q.id === x.loId); return !lo2 || !l.trongCG || namTrongNhanh(chanToa(tv.toa.get(x.mauId)!, x), vungDat(lo2)); });
+        if (!hop) dGoc = l.okCuoi.dGoc; else l.okCuoi = { ...l.okCuoi, dGoc };
+      }
+      l.kq = { loai: 'xoay', ids: l.ids, dx: 0, dy: 0, dGoc, tam: l.tam, dan: [], gocTheo: theo, chan: false };
+      setHien(l.kq);
+      return;
+    }
+    let dx = px - l.p0[0], dy = py - l.p0[1];
+    let dan: MucBat[] = [];
+    const chinh = l.goc.get(l.idBam)!;
+    const mau = tv.toa.get(chinh.mauId)!;
+    if (tc.bat && !l.alt) {
+      const F = chanToa(mau, { ...chinh, x: chinh.x + dx, y: chinh.y + dy });
+      const b = batDinh(F, [chinh.x + dx, chinh.y + dy], chinh.gocDo, l.muc, l.tamKhac, 8 / l.pxM);
+      dx += b.dx; dy += b.dy; dan = b.dan;
+    }
+    let chan = false;
+    if (tc.khoaCG && l.loai === 'dich' && l.trongCG) {
+      const ds = [...l.goc.values()];
+      const hop = (o: { dx: number; dy: number }) => dichNhom(ds, o.dx, o.dy).every((x) => {
+        const lo2 = pa.lo.find((q) => q.id === x.loId);
+        return !lo2 || namTrongNhanh(chanToa(tv.toa.get(x.mauId)!, x), vungDat(lo2));
+      });
+      const thu = [{ dx, dy }, { dx, dy: l.okCuoi.dy }, { dx: l.okCuoi.dx, dy }];
+      const ok = thu.find(hop);
+      if (ok) { chan = ok !== thu[0]; dx = ok.dx; dy = ok.dy; l.okCuoi = { ...l.okCuoi, dx, dy }; }
+      else { dx = l.okCuoi.dx; dy = l.okCuoi.dy; chan = true; dan = []; }
+    }
+    l.kq = { loai: l.loai, ids: l.ids, dx, dy, dGoc: 0, tam: l.tam, dan, gocTheo: null, chan };
+    setHien(l.kq);
+  };
+  const batDauLuot = (e: PointerEvent, loai: LuotKeo['loai'], idBam: string, ids: string[], bam: LuotKeo['bam']) => {
+    const svg = (e.currentTarget as SVGElement).ownerSVGElement!;
+    const ctm = svg.getScreenCTM();
+    if (!ctm || !tv) return;
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    const goc = new Map(pa.toa.filter((x) => ids.includes(x.id)).map((x) => [x.id, x]));
+    const chinh = goc.get(idBam) ?? pa.toa.find((x) => x.id === idBam)!;
+    const loCua = pa.lo.find((l) => l.id === chinh.loId);
+    const khac = hinhToa(pa, tv).filter((h) => loai === 'nhan' || !ids.includes(h.toa.id));
+    const ds = [...goc.values()];
+    const tam: Diem = ds.length > 1 ? tamNhom(ds) : [chinh.x, chinh.y];
+    const l: LuotKeo = {
+      loai, idBam, ids, goc, nghich: ctm.inverse(), svg, pxM: ctm.a || 1, p0: [0, 0], di: false, shift: e.shiftKey, alt: e.altKey, bam,
+      pCuoi: [0, 0], raf: 0, muc: dichBatDinh(loCua, khac, caoToa(chinh), luat), tamKhac: khac.map((h) => [h.toa.x, h.toa.y] as Diem),
+      trongCG: ds.every((x) => { const lo2 = pa.lo.find((q) => q.id === x.loId); return !lo2 || namTrongNhanh(chanToa(tv.toa.get(x.mauId)!, x), vungDat(lo2)); }),
+      okCuoi: { dx: 0, dy: 0, dGoc: 0 }, a0: 0, tam,
+    };
+    l.p0 = raMet(l, e); l.pCuoi = l.p0;
+    l.a0 = (Math.atan2(l.p0[1] - tam[1], l.p0[0] - tam[0]) * 180) / Math.PI;
+    luot.current = l;
+  };
+  const diLuot = (e: PointerEvent) => {
+    const l = luot.current;
+    if (!l) return;
+    const p = raMet(l, e);
+    if (!l.di) {
+      if (Math.hypot(p[0] - l.p0[0], p[1] - l.p0[1]) * l.pxM < 3) return; // run tay dưới 3 px = bấm
+      l.di = true;
+    }
+    l.pCuoi = p; l.shift = e.shiftKey; l.alt = e.altKey;
+    if (!l.raf) l.raf = requestAnimationFrame(tinh);
+  };
+  const xongLuot = () => {
+    const l = luot.current;
+    luot.current = null;
+    if (!l) return;
+    if (l.raf) { cancelAnimationFrame(l.raf); l.raf = 0; tinh(); }
+    const h = l.kq ?? hienRef.current;
+    setHien(null);
+    if (!l.di) {
+      // bấm không kéo: Shift / Ctrl bật tắt trong lựa chọn, không thì chọn riêng tòa này
+      if (l.loai === 'xoay' || l.bam === 'xong') return;
+      if (l.bam === 'batTat') chon(sel.includes(l.idBam) ? sel.filter((x) => x !== l.idBam) : [...sel, l.idBam], sel.includes(l.idBam) ? sel.find((x) => x !== l.idBam) ?? null : l.idBam);
+      else chon([l.idBam], l.idBam);
+      return;
+    }
+    if (!h || chiXem) return;
+    if (l.loai === 'xoay') { if (Math.abs(h.dGoc) > 1e-6) suaNhom(sua, l.ids, (ds) => xoayNhom(ds, l.tam, h.dGoc)); return; }
+    if (Math.hypot(h.dx, h.dy) < 0.005) return;
+    if (l.loai === 'dich') { suaNhom(sua, l.ids, (ds) => dichNhom(ds, h.dx, h.dy)); return; }
+    const moi = pa.toa.filter((x) => l.ids.includes(x.id)).map((x) => ({ ...x, id: idMoi(), khoa: false, x: Math.round((x.x + h.dx) * 100) / 100, y: Math.round((x.y + h.dy) * 100) / 100 }));
+    sua((p) => ({ ...p, toa: [...p.toa, ...moi] }));
+    chon(moi.map((x) => x.id));
+  };
+  // tay nắm xoay: phía "trên" cục bộ của tòa chính, ngoài nét bao
+  const tayNam = (() => {
+    if (chiXem || !tv || !diDuoc.length || tc.do) return null;
+    const ds = toaCoMau.filter((x) => diDuoc.includes(x.id));
+    if (!ds.length) return null;
+    const chinh = ds.find((x) => x.id === toaId) ?? ds[0];
+    const tam: Diem = hien?.loai === 'xoay' ? hien.tam : ds.length > 1 ? tamNhom(ds) : [chinh.x, chinh.y];
+    const g = (chinh.gocDo * Math.PI) / 180, up: Diem = [-Math.sin(g), Math.cos(g)];
+    let r = 0;
+    for (const x of ds) for (const p of chanToa(tv.toa.get(x.mauId)!, x)) r = Math.max(r, (p[0] - tam[0]) * up[0] + (p[1] - tam[1]) * up[1]);
+    const L = r + buocM * 0.25;
+    return { tam, dau: [tam[0] + up[0] * L, tam[1] + up[1] * L] as Diem, goc: chinh.gocDo };
+  })();
+
+  // đo: bắt vào đỉnh tòa / lô / chỉ giới
+  const dinhBat = (): Diem[] => [...pa.lo.flatMap((l) => [...l.ranh, ...(l.chiGioi ?? [])]), ...hinh.flatMap((h) => h.F)];
+  const bamNen = (p: Diem) => {
+    if (tc.do) {
+      const q = batDiem(p, dinhBat(), (buocM * 0.12));
+      setDiemDo(diemDo.length >= 2 ? [q] : [...diemDo, q]);
+      return;
+    }
+    if (sel.length) chon([], null);
+  };
+  const tenToa = (id: string) => { const x = pa.toa.find((q) => q.id === id); return x ? tenNgan(tv?.toa.get(x.mauId)) + ` (${x.x.toFixed(0)}, ${x.y.toFixed(0)})` : id; };
+  const m1 = (v: number) => fmtSo(v, { thapPhan: 1, donVi: 'm' });
+  const nhanDoan = (a: Diem, b: Diem, chu: string, mau: string, key: string, net = true) => {
+    const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+    return (
+      <g key={key} style={{ pointerEvents: 'none' }}>
+        {net && <line x1={a[0]} y1={-a[1]} x2={b[0]} y2={-b[1]} stroke={mau} stroke-width="1.5" stroke-dasharray="5 3" vector-effect="non-scaling-stroke" />}
+        <text x={cx} y={-cy} text-anchor="middle" dominant-baseline="middle" font-size={chuNho} font-weight="700" fill={mau}
+          stroke="var(--panel)" stroke-width={chuNho * 0.25} paint-order="stroke">{chu}</text>
+      </g>
+    );
+  };
 
   return (
     <>
-      <BanVe khung={khung} nhan={t('xep.banVe')} onDieuKhien={setDk}>
+      <BanVe khung={khung} nhan={t('xep.banVe')} onDieuKhien={setDk} onBamNen={bamNen}
+        chonKhung={tc.do ? undefined : {
+          bat: tc.khung,
+          onXong: (a, b, them) => { const ids = toaTrongKhung(hinh, a, b); chon(them ? [...new Set([...sel, ...ids])] : ids); },
+        }}>
         {pa.lo.flatMap((l) => l.xungQuanh).map((d, i) => (
           <polyline key={`xq${i}`} points={sPoly(d)} fill="none" stroke="var(--muted)" stroke-width="1" vector-effect="non-scaling-stroke" />
         ))}
         {pa.lo.map((l) => {
-          const loai = loaiDat(l), caoTang = loai === 'o_cao_tang', chon = l.id === lo?.id;
+          const loai = loaiDat(l), caoTang = loai === 'o_cao_tang', chonL = l.id === lo?.id;
           const [nen, vien] = MAU_DAT[loai];
           return (
-            <g key={l.id} onClick={() => caoTang && !chon && (chonLo(l.id), chonToa(null))} style={{ cursor: caoTang ? 'pointer' : 'default' }}>
-              <polygon points={sPoly(l.ranh)} fill={chon ? 'var(--soft)' : caoTang ? 'var(--panel)' : nen} stroke={chon ? 'var(--green)' : vien}
-                stroke-width={chon ? 2.5 : caoTang ? 1.6 : 1} vector-effect="non-scaling-stroke" />
-              {caoTang && l.chiGioi && <polygon points={sPoly(l.chiGioi)} fill="none" stroke="#b42318" stroke-width="1.2" stroke-dasharray="8 5" vector-effect="non-scaling-stroke" />}
+            <g key={l.id} onClick={() => !tc.do && caoTang && !chonL && (chonLo(l.id), chon([], null))} style={{ cursor: caoTang ? 'pointer' : 'default' }}>
+              <polygon points={sPoly(l.ranh)} fill={chonL ? 'var(--soft)' : caoTang ? 'var(--panel)' : nen} stroke={chonL ? 'var(--green)' : vien}
+                stroke-width={chonL ? 2.5 : caoTang ? 1.6 : 1} vector-effect="non-scaling-stroke" />
+              {caoTang && l.chiGioi && <polygon points={sPoly(l.chiGioi)} fill="none" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="8 5" vector-effect="non-scaling-stroke" />}
             </g>
           );
         })}
@@ -192,45 +470,71 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
         {tv && toaCoMau.map((x) => {
           const mau = tv.toa.get(x.mauId)!;
           const chan = chanToa(mau, x);
-          const loCua = pa.lo.find((l) => l.id === x.loId);
-          const ngoai = loCua ? !namTrong(chan, vungDat(loCua)) : true;
-          const chon = x.id === toaId;
+          const viPham = kiem?.muc.get(x.id);
+          const daChon = sel.includes(x.id);
           const soCan = Object.values(dem[x.id] ?? {}).reduce((a, b) => a + b, 0);
           return (
-            <g key={x.id} style={{ cursor: chiXem || x.khoa ? 'pointer' : 'move' }}
+            <g key={x.id} class="tmb-toa" data-toa={x.id} style={{ cursor: tc.do ? 'crosshair' : chiXem || x.khoa ? 'pointer' : 'move' }}
               onPointerDown={(e) => {
+                if (tc.do || e.button !== 0) return; // đo: để bản vẽ nhận bấm
                 e.stopPropagation();
-                chonToa(x.id);
-                if (x.loId !== lo?.id) chonLo(x.loId);
-                if (chiXem || x.khoa) return;
-                const svg = (e.currentTarget as SVGGElement).ownerSVGElement!;
-                (e.currentTarget as Element).setPointerCapture(e.pointerId);
-                batDau.current = { id: x.id, cx: e.clientX, cy: e.clientY, k: svg.getScreenCTM()?.a || 1 };
+                const ctrl = e.ctrlKey || e.metaKey;
+                // bấm tòa ngoài lựa chọn → chọn nó ngay để kéo (Shift / Ctrl: thêm vào lựa chọn); trong lựa chọn: kéo cả nhóm,
+                // bấm không kéo thì Shift / Ctrl bỏ nó khỏi lựa chọn, không thì chọn riêng nó
+                let ids = sel, bam: LuotKeo['bam'] = e.shiftKey || ctrl ? 'batTat' : 'rieng';
+                if (!sel.includes(x.id)) { ids = e.shiftKey || ctrl ? [...sel, x.id] : [x.id]; chon(ids, x.id); bam = 'xong'; }
+                const di = pa.toa.filter((q) => ids.includes(q.id) && !q.khoa).map((q) => q.id);
+                if (chiXem || x.khoa || !di.length) { batDauLuot(e, 'dich', x.id, [], bam); return; }
+                batDauLuot(e, ctrl ? 'nhan' : 'dich', x.id, di, bam);
               }}
-              onPointerMove={(e) => {
-                const b = batDau.current;
-                if (!b || b.id !== x.id) return;
-                setKeo({ id: x.id, dx: (e.clientX - b.cx) / b.k, dy: -(e.clientY - b.cy) / b.k });
-              }}
-              onLostPointerCapture={() => { batDau.current = null; setKeo(null); }}
-              onPointerUp={() => {
-                const b = batDau.current;
-                batDau.current = null;
-                if (b && keo && keo.id === b.id && Math.hypot(keo.dx, keo.dy) > 0.05) {
-                  const { dx, dy } = keo;
-                  sua((p) => doiToa(p, b.id, (q) => ({ ...q, x: Math.round((q.x + dx) * 100) / 100, y: Math.round((q.y + dy) * 100) / 100 })));
-                }
-                setKeo(null);
-              }}>
-              <polygon points={sPoly(chan)} fill={ngoai ? '#f6d8d4' : 'var(--u-2pn)'} fill-opacity="0.85"
-                stroke={ngoai ? 'var(--vuot)' : chon ? 'var(--green)' : 'var(--ink)'} stroke-width={chon ? 3 : 1.5} vector-effect="non-scaling-stroke" />
-              <text x={x.x} y={-x.y} text-anchor="middle" font-size={coChu} font-weight="700" fill="var(--ink)" style={{ pointerEvents: 'none' }}>{tenNgan(mau)}</text>
+              onPointerMove={(e) => { if (luot.current?.ids.length && luot.current.loai !== 'xoay') diLuot(e); }}
+              onPointerUp={() => luot.current?.loai !== 'xoay' && xongLuot()}
+              onLostPointerCapture={() => { if (luot.current && luot.current.loai !== 'xoay') xongLuot(); }}>
+              <polygon points={sPoly(chan)} fill={viPham === 'loi' ? 'var(--warn)' : 'var(--u-2pn)'} fill-opacity={viPham === 'loi' ? 0.35 : 0.85}
+                stroke={viPham ? 'var(--warn)' : daChon ? 'var(--green)' : 'var(--ink)'} stroke-width={daChon ? 3 : viPham ? 2.5 : 1.5}
+                stroke-dasharray={viPham === 'canh' ? '6 3' : undefined} vector-effect="non-scaling-stroke" />
+              {daChon && viPham && <polygon points={sPoly(chan)} fill="none" stroke="var(--green)" stroke-width="1" vector-effect="non-scaling-stroke" style={{ pointerEvents: 'none' }} />}
+              <text x={x.x} y={-x.y} text-anchor="middle" font-size={coChu} font-weight="700" fill="var(--ink)" style={{ pointerEvents: 'none' }}>
+                {tenNgan(mau)}{x.khoa ? ' ⊠' : ''}{x.lat ? ' ⇋' : ''}
+              </text>
               <text x={x.x} y={-x.y + coChu * 1.3} text-anchor="middle" font-size={coChu * 0.8} fill="var(--ink)" style={{ pointerEvents: 'none' }}>
                 {`${x.soTangDe + x.soTangDH}T · ${t('xep.tongCan').replace('{n}', String(soCan))}`}
               </text>
             </g>
           );
         })}
+        {banSao.map((F, i) => (
+          <polygon key={`bs${i}`} points={sPoly(F)} fill="var(--green)" fill-opacity="0.15" stroke="var(--green)" stroke-width="2" stroke-dasharray="6 4" vector-effect="non-scaling-stroke" style={{ pointerEvents: 'none' }} />
+        ))}
+        {/* vi phạm trực tiếp: LO-01 thiếu lùi, LO-02 §2.6.1 giữa tòa */}
+        {kiem?.lui.map((v, i) => nhanDoan(v.a, v.b, `LO-01 ${m1(v.kc)} < ${m1(v.can)}`, 'var(--warn)', `lui${i}`))}
+        {kiem?.cap.map((c, i) => nhanDoan(c.pa, c.pb, `§2.6.1 ${m1(c.kc)} < ${m1(c.muc === 'loi' ? c.hoi : c.dai)}`, 'var(--warn)', `cap${i}`))}
+        {/* nét bắt dính + kích thước khi kéo */}
+        {hien?.dan.map((m, i) => (
+          <line key={`dan${i}`} x1={m.doan[0][0]} y1={-m.doan[0][1]} x2={m.doan[1][0]} y2={-m.doan[1][1]} stroke="var(--green)" stroke-width="1.2"
+            stroke-dasharray={m.loai === 'truc' || m.loai === 'thang' ? '2 3' : undefined} vector-effect="non-scaling-stroke" style={{ pointerEvents: 'none' }} />
+        ))}
+        {kt.filter((k) => k.kc > 0.01).map((k, i) => {
+          const thieu = k.can !== undefined && k.kc < k.can - 1e-6;
+          return nhanDoan(k.a, k.b, m1(k.kc), thieu ? 'var(--warn)' : 'var(--green)', `kt${i}`);
+        })}
+        {hien?.loai === 'xoay' && tayNam && nhanDoan(tayNam.tam, tayNam.dau, `${fmtSo(tayNam.goc, { thapPhan: 1 })}°${hien.gocTheo !== null ? ' ∥' : ''}`, 'var(--green)', 'goc', false)}
+        {tayNam && (
+          <g class="tmb-tay-nam">
+            <line x1={tayNam.tam[0]} y1={-tayNam.tam[1]} x2={tayNam.dau[0]} y2={-tayNam.dau[1]} stroke="var(--green)" stroke-width="1.2" vector-effect="non-scaling-stroke" style={{ pointerEvents: 'none' }} />
+            <circle cx={tayNam.dau[0]} cy={-tayNam.dau[1]} r={buocM * 0.032} fill="var(--panel)" stroke="var(--green)" stroke-width="2" vector-effect="non-scaling-stroke"
+              style={{ cursor: 'grab' }} role="presentation"
+              onPointerDown={(e) => { if (e.button !== 0) return; e.stopPropagation(); batDauLuot(e, 'xoay', toaChon.find((x) => x.id === toaId && !x.khoa)?.id ?? diDuoc[0], diDuoc, 'xong'); }}
+              onPointerMove={(e) => { if (luot.current?.loai === 'xoay') diLuot(e); }}
+              onPointerUp={() => luot.current?.loai === 'xoay' && xongLuot()}
+              onLostPointerCapture={() => { if (luot.current?.loai === 'xoay') xongLuot(); }}>
+              <title>{t('tmb.gc.tayNam')}</title>
+            </circle>
+          </g>
+        )}
+        {/* đo khoảng cách */}
+        {diemDo.map((p, i) => <circle key={`do${i}`} cx={p[0]} cy={-p[1]} r={buocM * 0.015} fill="var(--green)" style={{ pointerEvents: 'none' }} />)}
+        {diemDo.length === 2 && nhanDoan(diemDo[0], diemDo[1], m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1])), 'var(--green)', 'do')}
         <LopGoiY loId={lo?.id ?? null} tv={tv} />
         {pa.lo.map((l) => {
           if (pa.toa.some((x) => x.loId === l.id)) return null;
@@ -242,9 +546,21 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
           );
         })}
       </BanVe>
+      <div class="noi-tren">
+        <ThanhTMB chiXem={chiXem} soChon={sel.length} coDiChuyen={diDuoc.length > 0} tatCaKhoa={tatCaKhoa} kiem={kiem}
+          xoay90={() => xoay(90)} lat={lat} nhanBan={nhanBan} khoa={khoa} xoa={xoa} />
+        {tc.toaDo && sel.length > 0 && (
+          <HopToaDo ds={toaChon} tat={chiXem || !diDuoc.length}
+            datTuyetDoi={(k, v) => suaNhom(sua, diDuoc.slice(0, 1), (ds) => ds.map((x) => ({ ...x, [k]: k === 'gocDo' ? ((v % 360) + 360) % 360 : Math.round(v * 100) / 100 })))}
+            doi={(dx, dy, dg) => suaNhom(sua, diDuoc, (ds) => { const d = dichNhom(ds, dx, dy); return dg ? xoayNhom(d, d.length > 1 ? tamNhom(d) : [d[0].x, d[0].y], dg) : d; })} />
+        )}
+        {tc.dsCanhBao && <DsCanhBao kiem={kiem} ten={tenToa} chon={(ids) => chon(ids)} />}
+        {tc.do && <p class="tmb-goi-y">{diemDo.length === 2 ? `${t('tmb.do.ketQua')} ${m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1]))} · Δx ${m1(Math.abs(diemDo[1][0] - diemDo[0][0]))} · Δy ${m1(Math.abs(diemDo[1][1] - diemDo[0][1]))}` : t('tmb.do.huongDan')}</p>}
+        {hien?.chan && <p class="tmb-goi-y canh">{t('tmb.chanCG')}</p>}
+      </div>
       <div class="noi-duoi">
         <ChuGiaiDat />
-        <p class="dong muted" style={{ justifyContent: 'center' }}>{t('xep.keoGoiY')}</p>
+        <p class="dong muted" style={{ justifyContent: 'center' }}>{t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')}</p>
         <ThanhHienThi nhan={t('ht.nhom')} nut={[
           { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
           { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },

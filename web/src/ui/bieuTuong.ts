@@ -35,6 +35,7 @@ export const BIEU_TUONG = {
   canhBao: '⚠︎', // vi phạm khoảng lùi / khoảng cách
   bongDo: '☼',
   nenBanDo: '▧',
+  khoaCG: '⊟', // giữ tòa trong chỉ giới khi kéo / xoay (LO-05)
   // xuất
   xuatCad: '◫',
   xuatXls: '▥',

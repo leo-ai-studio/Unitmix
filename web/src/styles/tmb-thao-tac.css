@@ -1,0 +1,27 @@
+/* Công cụ tay màn Tổng mặt bằng (man/tmbThaoTac.tsx): mọi thứ là lớp phủ trong .noi-tren — không đổi kích thước khung giữa. */
+.thanh-tmb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 8px 0; max-width: calc(100% - 80px); }
+.thanh-tmb .tmb-ghi { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--panel) 88%, transparent); color: var(--green); font-weight: 600; }
+.tmb-dem { min-width: 14px; padding: 0 3px; border-radius: 7px; background: var(--muted); color: var(--panel); font-size: 10px; line-height: 14px; }
+.tmb-dem.loi { background: var(--warn); }
+.tmb-toa-do, .tmb-ds-cb, .tmb-goi-y {
+  margin: 6px 8px 0; align-self: flex-start; max-width: calc(100% - 96px);
+  background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.08);
+}
+.tmb-toa-do { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 8px; font-size: 12px; }
+.tmb-toa-do label { display: inline-flex; align-items: center; gap: 4px; }
+.tmb-toa-do input { width: 76px; }
+.tmb-vach { width: 1px; align-self: stretch; background: var(--line); }
+.tmb-ds-cb { display: flex; flex-direction: column; max-height: 40%; overflow: auto; padding: 4px; font-size: 12px; }
+.tmb-ds-cb button { text-align: left; background: none; border: 0; border-radius: 6px; padding: 3px 6px; cursor: pointer; color: var(--ink); }
+.tmb-ds-cb button:hover { background: var(--hover); }
+.tmb-ds-cb button.loi { color: var(--warn); font-weight: 600; }
+.tmb-ds-cb button.canh::before { content: '· '; color: var(--warn); }
+.tmb-goi-y { padding: 3px 10px; font-size: 12px; color: var(--green); }
+.tmb-goi-y.canh { color: var(--warn); }
+/* khung chọn (BanVe chonKhung): lớp phủ tuyệt đối trong .ban-ve */
+.ban-ve-khung-chon { position: absolute; pointer-events: none; border: 1px dashed var(--green); background: color-mix(in srgb, var(--green) 10%, transparent); z-index: 2; }
+.tmb-tay-nam circle:active { cursor: grabbing; }
+/* Ô sr-only (absolute) trong panel trái / phải phải nằm trong khung cuộn của panel: thiếu cái này thì panel trái dài ra (chọn tòa
+   mở "Thông số tòa") làm cả trang có thanh cuộn dọc → khung giữa hẹp đi 15 px. */
+.panel-trai, .panel-phai { position: relative; }
