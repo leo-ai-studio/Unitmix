@@ -57,17 +57,22 @@ export function useKho({ ma, paId, tenPA, maSua, duocSua, ban, tomTat }: Mo) {
       ap(moi);
     },
     hoanTac() {
+      if (cheDo === 'chi_xem') return;
       const p = truoc.current.pop();
-      if (!p || cheDo === 'chi_xem') return;
+      if (!p) return;
       sau.current.push(pa);
       ap(p);
     },
     lamLai() {
+      if (cheDo === 'chi_xem') return;
       const p = sau.current.pop();
-      if (!p || cheDo === 'chi_xem') return;
+      if (!p) return;
       truoc.current.push(pa);
       ap(p);
     },
+    /** Ctrl+S: ghi ngay, không chờ debounce. */
+    luuNgay: () => void boLuu.luuNgay(),
+    conChuaLuu: () => boLuu.conChuaLuu(),
     nhapCu,
   };
 }

@@ -1,47 +1,63 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
-import { mauHieuDung, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type HinhLoiMB, type ToaMB } from '../tinh/loiThang';
+import { mauHieuDung, THANG_KHOI, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type HinhLoiMB, type ToaMB } from '../tinh/loiThang';
 import { coMat } from '../tinh/matBang';
 import { idLoi, tai, taiCuaCan } from '../ve/hinhHocThuVien';
 import { mauToa } from '../tinh/canThem';
 
 /**
- * Dữ liệu cho tự chỉnh mặt bằng tầng (tinh/loiThang.ts): hình lõi (nét bao MDI-BAO-TM, tường để đo sảnh) của mọi khối lõi / thang
- * trong thư viện mẫu tòa + tim cửa căn. Tải một lần, nhớ cấp module để hàm thuần dùng đồng bộ.
+ * Dữ liệu cho tự chỉnh mặt bằng tầng (tinh/loiThang.ts): hình lõi (nét bao MDI-BAO-TM, tường để đo sảnh) của các khối lõi / thang
+ * mà các tòa TRONG PA dùng + tim cửa căn (`cua_x` tiền tính trong can.json). Tải dần theo khối thực dùng (de_xuat_hieu_nang P3),
+ * nhớ cấp module để hàm thuần dùng đồng bộ. Đang tải thêm khối thì `layDuLieuMB` trả null (sửa vẫn được, chưa tự chỉnh).
  */
 let dl: DuLieuMB | null = null;
-let dangTai: Promise<DuLieuMB> | null = null;
+let choTai = 0;
+const daHoi = new Set<string>();
 const nghe = new Set<() => void>();
 
-export const layDuLieuMB = (): DuLieuMB | null => dl;
+export const layDuLieuMB = (): DuLieuMB | null => (choTai ? null : dl);
 
-function taiDuLieuMB(tv: ThuVien): Promise<DuLieuMB> {
-  if (!dangTai) {
-    const khoi = new Set<string>();
-    for (const m of tv.toa.values()) if (coMat(m)) for (const f of m.mat) for (const q of f.phan_tu) if (q.loai !== 'can' && q.block) khoi.add(q.block);
-    dangTai = Promise.all([
-      Promise.all([...khoi].map((b) => tai<HinhLoiMB>(`/lib/loi/${idLoi(b)}.json`).then((j) => [b, j] as const))),
-      taiCuaCan(tv, 'tm'),
-      taiCuaCan(tv, 'xh'),
-    ]).then(([loi, a, b]) => {
-      dl = { loi: new Map(loi.filter((x): x is readonly [string, HinhLoiMB] => !!x[1])), cuaCan: { ...a, ...b } };
-      nghe.forEach((f) => f());
-      return dl;
-    });
+/** Tên khối lõi / thang các tòa của PA cần: khối trên mặt mẫu tòa, thang thêm tay (THANG_KHOI) và khối ghi trong mặt bằng đã sửa. */
+export function khoiCuaPA(pa: TrangThaiPA, tv: ThuVien): string[] {
+  const khoi = new Set<string>([THANG_KHOI]);
+  for (const t of pa.toa) {
+    const m = tv.toa.get(t.mauId);
+    if (m && coMat(m)) for (const f of m.mat) for (const q of f.phan_tu) if (q.loai !== 'can' && q.block) khoi.add(q.block);
+    if (t.matBang) for (const x of JSON.stringify(t.matBang).matchAll(/"block":"([^"]+)"/g)) khoi.add(x[1]);
   }
-  return dangTai;
+  return [...khoi].sort();
 }
 
-/** Hook: tải dữ liệu (một lần) và vẽ lại khi xong. */
-export function useDuLieuMB(tv: ThuVien | null): DuLieuMB | null {
+function napChoPA(khoi: string[], tv: ThuVien): void {
+  const moi = khoi.filter((b) => !daHoi.has(b));
+  if (!moi.length && (dl || choTai)) return;
+  moi.forEach((b) => daHoi.add(b));
+  choTai++;
+  void Promise.all([
+    Promise.all(moi.map((b) => tai<HinhLoiMB>(`/lib/loi/${idLoi(b)}.json`).then((j) => [b, j] as const))),
+    dl ? dl.cuaCan : Promise.all([taiCuaCan(tv, 'tm'), taiCuaCan(tv, 'xh')]).then(([a, b]) => ({ ...a, ...b })),
+  ]).then(([loi, cuaCan]) => {
+    const m = new Map(dl?.loi ?? []);
+    for (const [b, j] of loi) if (j) m.set(b, j);
+    dl = { loi: m, cuaCan };
+    choTai--;
+    nghe.forEach((f) => f());
+  });
+}
+
+/** Hook: tải dữ liệu (lõi theo PA `pa`) và vẽ lại khi xong. Không truyền `pa` thì chỉ nghe (nơi khác đã tải). */
+export function useDuLieuMB(tv: ThuVien | null, pa?: TrangThaiPA): DuLieuMB | null {
   const [, ve] = useState(0);
+  const khoa = tv && pa ? khoiCuaPA(pa, tv).join() : '';
   useEffect(() => {
     const f = () => ve((n) => n + 1);
     nghe.add(f);
-    if (tv && !dl) void taiDuLieuMB(tv);
     return () => void nghe.delete(f);
-  }, [tv]);
-  return dl;
+  }, []);
+  useEffect(() => {
+    if (tv && khoa) napChoPA(khoa.split(','), tv);
+  }, [tv, khoa]);
+  return layDuLieuMB();
 }
 
 /** Mẫu tòa hiệu dụng của tòa (mặt bằng đã tự chỉnh / mặc định của mẫu); `tang` = tầng có bố cục riêng thì theo mặt bằng của tầng đó. */
@@ -60,6 +76,7 @@ export const suaTuChinh = (sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void, t
     sua((q) => {
       const p = fn(q);
       chan = [];
+      const dl = layDuLieuMB();
       return { ...p, toa: p.toa.map((x) => {
         if (x.id !== toaId || !dl) return x;
         const mau = mauToa(tv, x) as ToaMB | undefined;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { useDongHop } from '../ui/useDongHop';
 import type { ThuVien, ToaDat } from '../tinh/kieu';
-import { tai } from '../ve/hinhHocThuVien';
+import { tai, taiVeCan } from '../ve/hinhHocThuVien';
 import { boCucTang, nhomTang, tangCoRieng, type NetVe } from '../tinh/matBang';
 import { idTepCan, laBienThe, veTheoId } from '../tinh/stretch';
 import { tenTang } from '../ui/ChonTang';
@@ -46,7 +46,7 @@ export function HopXuatCad({ toa, mau, mauTang, tv, ten, dong }: Props) {
     const canIds = [...new Set(ds.filter((x) => x.loai === 'can' && x.no).map((x) => x.no!))];
     const blocks = [...new Set(ds.filter((x) => x.loai !== 'can').map((x) => x.ten))];
     Promise.all([
-      Promise.all(canIds.map((id) => tai<{ ve: NetVe[] }>(`/lib/can/${idTepCan(id)}.json`).then((j) => [id, veTheoId(id, j?.ve ?? [], tv)] as const))),
+      Promise.all(canIds.map((id) => taiVeCan(idTepCan(id), true).then((ve) => [id, veTheoId(id, ve, tv)] as const))), // CAD: kèm nội thất
       Promise.all(blocks.map((b) => tai<{ paths: NetVe[] }>(`/lib/loi/loi-${b.replace(/^x_/, '').replace(/_/g, '-')}.json`).then((j) => [b, j ?? { paths: [] }] as const))),
     ]).then(([a, b]) => { if (!huy) { setHinh(new Map(a)); setLoi(new Map(b)); setSoKeo(canIds.filter(laBienThe).length); } });
     return () => { huy = true; };

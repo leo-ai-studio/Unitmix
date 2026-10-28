@@ -231,10 +231,10 @@ Rà trực tiếp mã: `man/CongCuTang.tsx` (màn Tầng), `man/tmbThaoTac.tsx` 
 
 ## 5. Năm việc nên làm ngay (chung hiệu năng / tính năng / công cụ)
 
-1. **P1 · Cache `raiHam` theo đầu vào** (S). Hết khựng 5,9 s (6,0 s ở Chi phí, 4,6 s ở 3D-Hầm) mỗi lần sửa PA; từ 3 lần giải xuống 1.
-2. **B1 · Ctrl+Z / Ctrl+Y / Ctrl+S + cảnh báo đóng tab** (S). Giao diện đã hứa Ctrl+Z ở 3 tooltip nhưng không có phím; dùng hằng ngày, rủi ro mất việc.
-3. **P3 · Tiền tính tim cửa vào `can.json` + chỉ tải lõi của tòa trong PA** (S). Màn Tầng 57 request / 5,16 MB → ≤ ~10 request / ~1 MB (ước lượng); thao tác Tối ưu tầng bấm là chạy.
-4. **P2 + P5 · Khởi động song song + tách chunk màn nặng** (S–M). Ba RTT nối đuôi → một; chunk khởi động 242 KB gz bớt khoảng 40–45 KB gz (ước lượng).
+1. **ĐÃ LÀM (mục 8)** · **P1 · Cache `raiHam` theo đầu vào** (S). Hết khựng 5,9 s (6,0 s ở Chi phí, 4,6 s ở 3D-Hầm) mỗi lần sửa PA; từ 3 lần giải xuống 1.
+2. **ĐÃ LÀM (mục 8)** · **B1 · Ctrl+Z / Ctrl+Y / Ctrl+S + cảnh báo đóng tab** (S). Giao diện đã hứa Ctrl+Z ở 3 tooltip nhưng không có phím; dùng hằng ngày, rủi ro mất việc.
+3. **ĐÃ LÀM (mục 8, kèm P7 tách nội thất)** · **P3 · Tiền tính tim cửa vào `can.json` + chỉ tải lõi của tòa trong PA** (S). Màn Tầng 57 request / 5,16 MB → ≤ ~10 request / ~1 MB (ước lượng); thao tác Tối ưu tầng bấm là chạy.
+4. **ĐÃ LÀM (mục 8, một phần)** · **P2 + P5 · Khởi động song song + tách chunk màn nặng** (S–M). Ba RTT nối đuôi → một; chunk khởi động 242 KB gz bớt khoảng 40–45 KB gz (ước lượng).
 5. **P8 · Gộp `InstancedMesh` trong 3D tòa** (M) — 2.655 draw call / 1,82 triệu tam giác mỗi tòa 24 tầng. Kèm làm sớm (S, nếu còn sức): **P6** chẻ `quetThangLien.test.ts` để cổng đủ 45 s → ~25 s.
 
 Việc tính năng sau đó (theo A): **A2** đưa tủ họng nước / cửa ngăn cháy lên giao diện (hàm đã có), **A3** đếm thang máy, **A4** gói dân số theo tỉnh, **A1** xuất PDF.
@@ -264,3 +264,34 @@ node scripts/kiem.mjs --nhanh ; node scripts/kiem.mjs     # cổng kiểm
 cd web && npx vitest run --reporter=json --outputFile=<tạm>.json --exclude "src/xuat/xuatCad*.test.ts"   # thời gian từng tệp test
 cd web && npx tsc --noEmit ; npx tsc --noEmit --incremental --tsBuildInfoFile <tạm>
 ```
+
+## 8. Đã làm 2026-10-29 (agent, nhánh `worktree-agent-adb71382267ec325e`): 4 việc "nên làm ngay" 1–4
+
+Đo trên máy này, cùng cách đo mục 1 (máy đang chạy nhiều agent nên số tuyệt đối dao động; so trước / sau đo cùng lúc). "Trước" = bản build `b808b73` (vite preview 5419, tệp `public/lib` gốc); "sau" = nhánh này (vite preview 5418); API 8787. PA mẫu `tztd1udv/pa-1` (2 tòa, 1.584 căn); thử sửa trên bản sao `4sybq7h3` tạo qua API.
+
+| Việc | Đo | Trước | Sau |
+|---|---|---|---|
+| 1 · cache `raiHam` | vitest tạm: `tinhKhoiLuong`+`tinhDuToan` sau khi đổi một đơn giá | 6.484 ms | **6,5 ms** (`raiHam` trúng cache 0,16 ms) |
+| | trên app: sửa ô đơn giá tab Chi phí (đổi ô → render xong), 3 lần | 7.847 / 8.346 / 8.316 ms | **26 / 23 / 15 ms** |
+| | mở tab Hầm sau khi đã mở Chi phí (dùng chung cache) | rải lại ~6–8 s | **71 ms** |
+| | rải lần đầu / đổi `ham.soTang` (phải rải lại) | 4,5–14 s | không đổi (vẫn rải, kết quả đúng) |
+| 2 · phím | Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z | không có | chạy (phím thật trong trình duyệt + test) |
+| | Ctrl+S → `PUT` | chờ debounce 800 ms | **4 ms** sau phím |
+| | đóng tab khi còn thay đổi chưa lưu | không hỏi | `beforeunload` hỏi; đã lưu thì không hỏi |
+| | đang gõ trong ô / chế độ chỉ xem | — | Ctrl+Z không bị bắt / bị khoá |
+| 3 · màn Tầng | request + dung lượng (giải nén) khi bấm "Tầng · Căn" | **57 req, 5.156 KB** (34 `can/*` + 23 `loi/*`) | **15 req, 937 KB** (3 lõi + 6 căn + 6 tệp nội thất; lớp Nội thất đang bật mặc định) |
+| | như trên nếu tắt lớp Nội thất (cộng từ danh sách) | 57 req, 5.156 KB | 9 req, ~351 KB |
+| | tổng ký tự `d` SVG mặt bằng khi tắt Nội thất | 2,90 triệu (vẫn tải đủ) | 0,52 triệu (bật lại: 2,90 triệu, như cũ) |
+| | bấm Tối ưu tầng / gợi ý xếp tòa: tải tim cửa | 34 tệp `can/*` | 0 request (đọc `cua_x` trong `can.json`) |
+| 4 · chunk | chunk khởi động `index-*.js` | 737,0 KB / 250,1 KB gz | **661,3 KB / 227,3 KB gz** (−75,7 / −22,8 KB gz) |
+| | chunk mới (tải khi mở) | — | `napDxf` 30,6 · `ManHam` 21,1 · `HopXuatCad` (+`xuatCad`) 12,3 · `ManChiPhi` 10,2 · `SoSanhPA` 6,1 KB |
+| | thứ tự tải khi mở dự án (ms từ điều hướng) | dự án 839→908 → PA 912→929 → thư viện 1.839→1.865 (nối đuôi) | dự án, kiểm mã, PA, `toa.json`, `can.json` cùng bắt đầu 91, xong 152 |
+| | khung giữa khi chunk đang tải | — | vòng O `spin-o` phủ khung; `.panel-giua` 1348×854 trước = sau |
+
+Đã làm:
+- **P1**: `tinh/ham.ts` `raiHam` nhớ theo khoá `khoaRaiHam` = JSON(`pa.ham`, lô, tòa thuộc lô) trong `WeakMap` theo `tv` (LRU 12); `raiHamTinh` là bản không nhớ. Ba chỗ gọi (ManHam, `tinhKhoiLuong`, 3D Hầm) dùng chung. Test `tinh/hamNho.test.ts`.
+- **B1**: `kho/phimSoan.ts` (`lenhTuPhim`, `usePhimSoan`), `kho/luu.ts` (`luuNgay`, `conChuaLuu`, gửi lại bản lỗi), `kho/kho.ts`; gọi ở `TrinhSoan`. Nhãn nút ↶ ↷ ghi "(Ctrl+Z)" / "(Ctrl+Y)". Test `kho/phimSoan.test.ts`.
+- **P3 + P7**: `scripts/sinh_phai_sinh_can.py` ghi `cua_x` (bản Python của `tinhCuaCan`) vào `can.json`, tách nét `furn`/`equip`/`hidd` sang `can/<id>.noithat.json` (đánh số lại `stretch.cung`); `--kiem` chỉ so. `ve/hinhHocThuVien.ts` (`taiVeCan`, `cuaCanTuThuVien`; `useHinhHoc` tải nội thất theo `caiTang.noiThat`), `man/HopXuatCad.tsx` (CAD luôn kèm nội thất), `man/tuChinhTang.ts` (`khoiCuaPA`: lõi của tòa trong PA + `THANG_KHOI` + khối trong `matBang`, tải dần). Test `tinh/cuaCanTienTinh.test.ts`, `tests/test_phai_sinh_can.py`.
+- **P2 + P5**: `SoanThao` gọi `taiThuVien()` ngay khi mở và đọc PA `?pa=` song song với dự án; `ui/Luoi.tsx` (`luoi()` + `ChoTai`) tách `ManHam`, `ManChiPhi`, `HopXuatCad`, `SoSanhPA`; `ManLo` `import()` `dxf/napDxf` khi chọn tệp.
+
+Chưa làm: Web Worker cho `raiHam` (lần rải đầu vẫn 4,5–14 s, ba chỗ gọi đều đồng bộ — cần đổi cả ba sang bất đồng bộ); tách `ve3d/dung*` và `manualChunks`; gộp endpoint `GET …/mo`; link không có `?pa=` vẫn đọc PA sau danh sách. Lớp Nội thất vẫn bật mặc định nên màn Tầng mặc định tải 15 request (tắt lớp: 9). P4, P6, P8–P12 chưa đụng.
