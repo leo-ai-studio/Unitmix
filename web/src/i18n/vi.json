@@ -850,6 +850,7 @@
   "ham.tu": "tự",
   "ham.chuaCoToa": "Lô chưa có tòa: chưa có lõi, cột và số căn để kiểm.",
   "ham.chuaCoCan": "Chưa có căn trên lô nên chưa tính DT đỗ xe yêu cầu.",
+  "ham.dangRai": "Đang rải hầm…",
   "ham.ranhRong": "Ranh hầm rỗng (khoảng lùi quá lớn hoặc lô chưa có ranh).",
   "ham.mucTang": "Tầng hầm",
   "ham.soTang": "Số tầng hầm",

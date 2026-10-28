@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
-import { diemTheoDoDai, dongRanhVe, raiHam, type HamDayDu, type KetQuaHam, type KiemHam } from '../tinh/ham';
+import { diemTheoDoDai, dongRanhVe, type HamDayDu, type KiemHam } from '../tinh/ham';
+import { useRaiHam } from '../tinh/hamNen';
 import { chanToa } from '../tinh/hinhHoc';
-import { PHAN_HAM_MAC_DINH, type Diem, type Lo, type LoaiRam, type ThongSoHam, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
+import { PHAN_HAM_MAC_DINH, type Diem, type LoaiRam, type ThongSoHam, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaHam } from '../tinh/macDinh';
 import { MucGap } from '../ui/MucGap';
 import { GocBanVe } from '../ui/GocBanVe';
@@ -26,14 +27,12 @@ export type ChungHam = {
   chonTangHam: (n: number) => void;
 };
 
-/* Ba panel cùng cần kết quả rải: nhớ theo đúng đối tượng PA / thư viện / lô (PA bất biến sau mỗi lần sửa). */
-let nho: { pa: TrangThaiPA; tv: ThuVien | null; lo: Lo; kq: KetQuaHam | null } | null = null;
-export function ketQuaHam(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaHam | null {
-  if (nho && nho.pa === pa && nho.tv === tv && nho.lo === lo) return nho.kq;
-  const kq = raiHam(pa, tv, lo);
-  nho = { pa, tv, lo, kq };
-  return kq;
-}
+/* Ba panel cùng cần kết quả rải: rải trong Web Worker (tinh/hamNen.ts), trúng cache thì có ngay; đang rải thì giữ kết quả cũ. */
+const VongRai = ({ nho }: { nho?: boolean }) => (
+  <img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={nho ? { width: '14px', height: '14px', verticalAlign: '-2px', marginRight: '6px' } : undefined} />
+);
+/** Lớp phủ "Đang rải hầm…" trên bản vẽ (không đổi kích thước khung giữa). */
+const PhuDangRai = () => <div class="ham-dang-rai" role="status"><VongRai nho />{t('ham.dangRai')}</div>;
 
 const suaHam = (sua: ChungHam['sua'], f: (h: HamDayDu) => Partial<ThongSoHam>) =>
   sua((p) => {
@@ -79,7 +78,7 @@ function OTich({ nhan, bat, onDoi, tat, goiY }: { nhan: string; bat: boolean; on
 export function HamTrai({ pa, sua, chiXem, loId, chonLo, tv, tangHam, chonTangHam }: ChungHam) {
   const lo = loDangXep(pa, loId);
   const h = chuanHoaHam(pa.ham);
-  const kq = lo ? ketQuaHam(pa, tv, lo) : null;
+  const kq = useRaiHam('ham.trai', pa, tv, lo).kq ?? null;
   const tat = chiXem;
   const so = (k: keyof ThongSoHam) => (v: number | null) => suaHam(sua, () => ({ [k]: v }));
   const ram = (k: keyof HamDayDu['ram']) => (v: unknown) => suaHam(sua, (x) => ({ ram: { ...x.ram, [k]: v } }));
@@ -184,6 +183,7 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
   const [bao, setBao] = useState('');
   const [doDai, setDoDai] = useState('');
   const lo = loDangXep(pa, loId);
+  const { kq, dangCho } = useRaiHam('ham.giua', pa, tv, lo);
   const huyVe = () => { setVe(false); setPts([]); setCon(null); setBao(''); setDoDai(''); };
   const dongVe = (ds: Diem[]) => {
     const r = dongRanhVe(ds);
@@ -206,8 +206,8 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
     return () => window.removeEventListener('keydown', phim);
   }, [ve, pts]);
   if (!lo) return <div class="giua-man"><span>{t('xep.chuaCoLo')}</span></div>;
-  const kq = ketQuaHam(pa, tv, lo);
-  if (!kq) return <div class="giua-man"><span>{t('ham.ranhRong')}</span></div>;
+  if (kq === undefined) return <div class="giua-man"><VongRai /><span>{t('ham.dangRai')}</span></div>;
+  if (!kq) return <div class="giua-man"><span>{t('ham.ranhRong')}</span>{dangCho && <PhuDangRai />}</div>;
   const tang = kq.tang[Math.min(Math.max(1, tangHam), kq.tang.length) - 1];
   const h = chuanHoaHam(pa.ham);
   const khung = khungBao([lo.ranh, kq.ranh]);
@@ -257,6 +257,7 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
         )}
         {!ve && !chiXem && h.ranh && <p class="ham-ve-ghi">{t('ham.ve.keoDinh')}</p>}
       </div>
+      {dangCho && <PhuDangRai />}
       <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null} chuGiai={<ChuGiaiHam coSac={tang.vungSac.length > 0} />} />
     </>
   );
@@ -283,8 +284,9 @@ function DongKiem({ k }: { k: KiemHam }) {
 /** Panel phải màn Hầm: kiểm theo quy chuẩn, số liệu đỗ xe, tỷ lệ sàn hầm (áp vào DT sàn tính HSSDĐ), bảng từng tầng. */
 export function HamPhai({ pa, sua, chiXem, loId, tv }: ChungHam) {
   const lo = loDangXep(pa, loId);
+  const { kq, dangCho } = useRaiHam('ham.phai', pa, tv, lo);
   if (!lo) return null;
-  const kq = ketQuaHam(pa, tv, lo);
+  if (kq === undefined) return <p class="ham-ghi-chu" role="status"><VongRai nho />{t('ham.dangRai')}</p>;
   if (!kq) return <p class="ham-ghi-chu">{t('ham.ranhRong')}</p>;
   const { tong, soCan } = kq;
   const m2 = { donVi: 'm²' };
@@ -293,6 +295,7 @@ export function HamPhai({ pa, sua, chiXem, loId, tv }: ChungHam) {
   const kiem = kq.kiem.filter((k) => !k.duThao), duThao = kq.kiem.filter((k) => k.duThao);
   return (
     <>
+      {dangCho && <p class="ham-ghi-chu" role="status"><VongRai nho />{t('ham.dangRai')}</p>}
       <MucGap tieuDe={`${t('ham.mucKiem')} · ${lo.temDat.kyHieu}`} mo>
         <div class="ham-kiem dau"><span>{t('ct.chiTieu')}</span><span>{t('ct.dat')}</span><span>{t('ham.yeuCau')}</span></div>
         {kiem.map((k) => <DongKiem key={k.khoa} k={k} />)}

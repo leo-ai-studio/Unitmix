@@ -58,7 +58,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | Bố cục tầng, công năng ô, nhiều tầng | `tinh/matBang.ts`, `tinh/congNang.ts`, `tinh/doiCan.ts`, `man/ManTang.tsx`, `ve/MatBangTang.tsx` |
 | Luật | `web/public/lib/quy_tac.json` (sinh bởi `scripts/chep_quy_tac.py`), `tinh/quyTac.ts`, `tinh/qcvn04.ts`, `tinh/pccc.ts` |
 | Phòng (bóc CAD) | `scripts/boc_cad/boc_phong.py` → `web/public/lib/can.json` (`phong`), `tinh/phong.ts`, `ve/LopPhong.tsx` |
-| Hầm | `tinh/ham.ts`, `tinh/raiCho.ts`, `man/ManHam.tsx`, `ve/MatBangHam.tsx`, `ve/VeRanh.tsx` |
+| Hầm (rải trong Web Worker: giao diện đọc qua `tinh/hamNen.ts`, không gọi `raiHam` đồng bộ) | `tinh/ham.ts`, `tinh/hamNen.ts`, `tinh/raiHam.worker.ts`, `tinh/raiCho.ts`, `man/ManHam.tsx`, `ve/MatBangHam.tsx`, `ve/VeRanh.tsx` |
 | Bản vẽ 2D, zoom / pan | `ve/BanVe.tsx`; 3D `ve3d/*` |
 | Khung soạn, thanh trên | `ui/KhungSoan.tsx`, `ui/ThanhTren.tsx`, `man/SoanThao.tsx` |
 | Preset, lưu | `kho/preset.ts`, `kho/kho.ts`, `kho/luu.ts` |

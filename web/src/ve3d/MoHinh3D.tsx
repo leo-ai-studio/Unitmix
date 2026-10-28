@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
+import { dieuPhoiHam, useNgheHam } from '../tinh/hamNen';
 import type { GocNhin, ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { chuKyMatBang } from '../tinh/loiThang';
 import { boCucTang, canDangDung, nhomTang, viTriCan } from '../tinh/matBang';
@@ -74,6 +75,7 @@ type PropsChinh = { pa: TrangThaiPA; tv: ThuVien; sua: (fn: (p: TrangThaiPA) => 
 export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn }: PropsChinh) {
   const [che, setChe] = useState<'du_an' | 'toa'>('du_an');
   const [hienHam, setHienHam] = useState(true);
+  const vHam = useNgheHam('3d'); // hầm rải trong Web Worker: có kết quả mới thì dựng lại (khoaNhe)
   const xem = che === 'toa' && toa && mau ? 'toa' : 'du_an';
   const gocLuu = (pa.gocNhin ?? []).filter((g) => g.che === xem && (xem === 'du_an' || g.toaId === toa?.id));
   const luu: LuuGoc = {
@@ -90,12 +92,13 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn }:
   const nutHam = (
     <span class="nhom-3d" role="group" aria-label={t('m3d.ham')}>
       <button type="button" aria-pressed={hienHam} title={t('m3d.hamGiaiThich')} onClick={() => setHienHam(!hienHam)}>{t('m3d.ham')}</button>
+      {hienHam && dieuPhoiHam.dangChoKenh('3d') && <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '0 8px' }}><img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '14px', height: '14px' }} />{t('ham.dangRai')}</span>}
     </span>
   );
   if (xem === 'toa' && toa && mau) return <MoHinhToa pa={pa} tv={tv} toa={toa} mau={mau} mauTang={mauTang} dauThanh={nut} {...luu} />;
   const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';'), toa?.id ?? ''].join('|');
   return (
-    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham)} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
+    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
       gocBac={0} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, hienHam)} />
   );
 }

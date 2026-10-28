@@ -313,21 +313,41 @@ const TV_RONG = {};
 export const khoaRaiHam = (pa: TrangThaiPA, lo: Lo): string =>
   JSON.stringify([pa.ham ?? null, lo, pa.toa.filter((t) => t.loId === lo.id)]);
 
-/** Rải toàn bộ các tầng hầm dưới lô `lo` và kiểm (có nhớ theo đầu vào). Ranh không hợp lệ thì null. */
-export function raiHam(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaHam | null {
+const nhoTheoTv = (tv: ThuVien | null): Map<string, KetQuaHam | null> => {
   const theoTv = nhoHam.get(tv ?? TV_RONG) ?? new Map<string, KetQuaHam | null>();
   nhoHam.set(tv ?? TV_RONG, theoTv);
-  const khoa = khoaRaiHam(pa, lo);
-  if (theoTv.has(khoa)) {
-    const kq = theoTv.get(khoa)!;
-    theoTv.delete(khoa); theoTv.set(khoa, kq); // dùng gần nhất xếp cuối (LRU)
-    return kq;
-  }
-  const kq = raiHamTinh(pa, tv, lo);
-  theoTv.set(khoa, kq);
-  if (theoTv.size > NHO_HAM_TOI_DA) theoTv.delete(theoTv.keys().next().value!);
+  return theoTv;
+};
+
+/** Tra cache theo khoá: có thì trả (kể cả null = ranh rỗng), chưa có thì undefined. */
+export function layNhoHam(tv: ThuVien | null, khoa: string): KetQuaHam | null | undefined {
+  const theoTv = nhoTheoTv(tv);
+  if (!theoTv.has(khoa)) return undefined;
+  const kq = theoTv.get(khoa)!;
+  theoTv.delete(khoa); theoTv.set(khoa, kq); // dùng gần nhất xếp cuối (LRU)
   return kq;
 }
+
+/** Ghi kết quả vào cache (worker rải xong cũng ghi vào đây). */
+export function datNhoHam(tv: ThuVien | null, khoa: string, kq: KetQuaHam | null): void {
+  const theoTv = nhoTheoTv(tv);
+  theoTv.delete(khoa); theoTv.set(khoa, kq);
+  if (theoTv.size > NHO_HAM_TOI_DA) theoTv.delete(theoTv.keys().next().value!);
+}
+
+/** Rải toàn bộ các tầng hầm dưới lô `lo` và kiểm (có nhớ theo đầu vào), ĐỒNG BỘ. Ranh không hợp lệ thì null.
+ *  Giao diện không gọi thẳng hàm này (chặn luồng chính vài giây): dùng `tinh/hamNen.ts` (Web Worker). */
+export function raiHam(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaHam | null {
+  const khoa = khoaRaiHam(pa, lo);
+  const co = layNhoHam(tv, khoa);
+  if (co !== undefined) return co;
+  const kq = raiHamTinh(pa, tv, lo);
+  datNhoHam(tv, khoa, kq);
+  return kq;
+}
+
+/** PA thu gọn gửi sang worker: chỉ phần raiHamTinh đọc (khoá cache = pa.ham, lô, tòa thuộc lô). */
+export const paGonChoHam = (pa: TrangThaiPA, lo: Lo): TrangThaiPA => ({ ...pa, lo: [lo], toa: pa.toa.filter((t) => t.loId === lo.id) });
 
 /** Bản không nhớ (test so sánh). */
 export function raiHamTinh(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaHam | null {

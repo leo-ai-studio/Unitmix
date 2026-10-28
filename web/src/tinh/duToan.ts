@@ -5,9 +5,9 @@
  * MỌI ĐƠN GIÁ / TỶ LỆ MẶC ĐỊNH LÀ SỐ TẠM, chờ chủ nhiệm / QS chốt. Hàm thuần.
  */
 import { coCauRong, congCoCau, demCan } from './coCau';
-import { raiHam } from './ham';
+import { raiHam, type KetQuaHam } from './ham';
 import { chanToa, dienTich, dtVung, khoiDe } from './hinhHoc';
-import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiPhiPA, type Diem, type KhoaDongDuToan, type LoaiCan, type NhomChiPhi, type ThuVien, type TrangThaiPA } from './kieu';
+import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiPhiPA, type Diem, type KhoaDongDuToan, type LoaiCan, type Lo, type NhomChiPhi, type ThuVien, type TrangThaiPA } from './kieu';
 import { CHI_PHI_MAC_DINH, chuanHoaHam } from './macDinh';
 import { canCaToa } from './matBang';
 import { mauToa } from './canThem';
@@ -83,7 +83,12 @@ export const soThangTheoCan = (soCan: number): number => (soCan > 0 ? Math.max(1
  * Khối lượng từng lô / tòa. `coRaiHam` = false thì bỏ rải hầm (nhanh), số chỗ đỗ ước theo DT hầm.
  * Diện tích là diện tích hình học thật (không nhân hệ số tính HSSDĐ).
  */
-export function tinhKhoiLuong(pa: TrangThaiPA, tv: ThuVien, coRaiHam = true): KhoiLuong {
+/** `layHam`: nguồn kết quả rải hầm — mặc định rải đồng bộ (`raiHam`, có cache); giao diện truyền phiên `tinh/hamNen.ts`
+ *  (Web Worker): undefined = đang rải, lô đó tạm ước theo DT như khi không rải được. */
+export function tinhKhoiLuong(
+  pa: TrangThaiPA, tv: ThuVien, coRaiHam = true,
+  layHam: (pa: TrangThaiPA, tv: ThuVien, lo: Lo) => KetQuaHam | null | undefined = raiHam,
+): KhoiLuong {
   const dem = demCan(pa, tv);
   const ph = pa.phanHam ?? PHAN_HAM_MAC_DINH;
   const ts = chuanHoaHam(pa.ham);
@@ -123,7 +128,7 @@ export function tinhKhoiLuong(pa: TrangThaiPA, tv: ThuVien, coRaiHam = true): Kh
     let nguonHam: KhoiLuongLo['nguonHam'] = 'khong';
     const soTangHam = toaLo.length ? (lo.temDat.chiTieu.tangHam ?? ts.soTang) : 0;
     if (soTangHam > 0) {
-      const r = coRaiHam ? raiHam(pa, tv, lo) : null;
+      const r = coRaiHam ? layHam(pa, tv, lo) : null;
       if (r) {
         nguonHam = 'rai';
         dtHam = r.tong.dtSan;

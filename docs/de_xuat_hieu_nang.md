@@ -295,3 +295,42 @@ cd web && npx tsc --noEmit ; npx tsc --noEmit --incremental --tsBuildInfoFile <t
 - **P2 + P5**: `SoanThao` gọi `taiThuVien()` ngay khi mở và đọc PA `?pa=` song song với dự án; `ui/Luoi.tsx` (`luoi()` + `ChoTai`) tách `ManHam`, `ManChiPhi`, `HopXuatCad`, `SoSanhPA`; `ManLo` `import()` `dxf/napDxf` khi chọn tệp.
 
 Chưa làm: Web Worker cho `raiHam` (lần rải đầu vẫn 4,5–14 s, ba chỗ gọi đều đồng bộ — cần đổi cả ba sang bất đồng bộ); tách `ve3d/dung*` và `manualChunks`; gộp endpoint `GET …/mo`; link không có `?pa=` vẫn đọc PA sau danh sách. Lớp Nội thất vẫn bật mặc định nên màn Tầng mặc định tải 15 request (tắt lớp: 9). P4, P6, P8–P12 chưa đụng.
+
+## 9. Đã làm 2026-10-29 (agent, nhánh `worktree-agent-a1015961e97fc0420`): `raiHam` chạy trong Web Worker
+
+Đo trên app (Browser pane trong app Claude), vite dev: "trước" = bản `4fac0d6` chép ra thư mục tạm, chạy vite cổng 5421; "sau" = nhánh này, vite cổng 5420; API 8787. Dự án bản sao `08xuktnd` của `tztd1udv/pa-1` (1 lô, 2 tòa, 1.584 căn). Trước mỗi lượt đo, đặt lại PA về `ham.soTang = 2` qua API rồi tải lại trang (cache rỗng). Kịch bản giống nhau cho hai bản: bấm tab Hầm, đợi ra bản vẽ (rải B1–B2); đổi ô "Số tầng hầm" sang 3; đổi tiếp sang 4.
+
+Có hai số đo. "Long task" lấy từ `PerformanceObserver` type `longtask`. "Khoảng đứng lớn nhất" lấy từ nhịp `setInterval` 20 ms: ghi các khoảng giữa hai nhịp dài hơn 100 ms. Trong Browser pane này, observer `longtask` lúc báo lúc không: nhiều tác vụ 8–16 s không có entry nào, dù nhịp bị chặn đúng chừng ấy. Vì vậy cột chính là khoảng đứng; cột long task ghi khi observer có báo.
+
+| Thao tác | Trước: giao diện đứng | Sau: giao diện đứng | Thời gian tới khi có kết quả (sau) |
+|---|---|---|---|
+| Mở tab Hầm lần đầu (rải 2 tầng) | **7.859 ms** (lượt khác: long task 7.847 ms) | **0 ms** (không nhịp nào trễ > 100 ms) | 8,4 s, vòng O + "Đang rải hầm…" giữa khung |
+| Đổi số tầng hầm 2 → 3 | **11.686 ms** (lượt khác: long task 4.872 ms) | **185 ms** | 12,1 s, bản vẽ 2 tầng cũ giữ nguyên, lớp phủ "Đang rải hầm…" |
+| Đổi số tầng hầm 3 → 4 | **15.717 ms** (lượt khác: long task 5.668 ms) | **153 ms** | 15,9 s |
+| Đổi 4 → 5 rồi 6 liền nhau | — | ≤ 169 ms | 11,0 s ra B1–B6; lượt 5 bị huỷ (terminate worker), không hiện B5 |
+| Chi phí sau khi đổi số tầng (rải 1 tầng) | đứng tới khi rải xong | không nhịp trễ > 100 ms | 1,4 s, dòng "Đang rải hầm…" ở đầu trang Chi phí |
+| 3D Toàn dự án, bật Hầm, số tầng chưa rải | đứng tới khi rải xong | không nhịp trễ > 100 ms | 7,1 s; trong lúc chờ, khối hầm vẽ theo ranh mặc định và thanh 3D có "Đang rải hầm…"; rải xong thì dựng lại, giữ góc nhìn |
+
+- Thời gian rải không giảm: phép tính vẫn vậy, chỉ chuyển sang worker. Thứ đổi là giao diện vẫn bấm, cuộn, gõ được trong lúc chờ. Phần chặn còn lại (150–185 ms) là lượt vẽ SVG mặt bằng hầm sau khi có kết quả; phần này không thuộc `raiHam`.
+- `.panel-giua` 1348×854 trước, trong và sau lúc rải. Không có lỗi console.
+
+Đã làm:
+- `tinh/hamNen.ts`: lớp `DieuPhoiHam` và bản dùng chung `dieuPhoiHam`. Mỗi kênh (`ham.trai`, `ham.giua`, `ham.phai`, `chiPhi`, `3d`) đọc qua `phien(kenh).lay(pa, tv, lo)`:
+  - trúng cache `raiHam` thì trả ngay, không gọi worker;
+  - chưa có thì trả kết quả cũ của kênh ở đúng lô đó (chưa có thì `undefined`) kèm `dangCho`.
+  - `xong()` khai bộ khoá kênh đang cần. Việc không kênh nào cần nữa thì bỏ khỏi hàng; việc đang chạy thì `terminate` worker và dựng worker mới cho lượt mới nhất. Kết quả của lượt đã huỷ bị bỏ (so `id`).
+  - Không có `Worker` (vitest) thì rải đồng bộ. Worker lỗi thì rải đồng bộ đúng việc đó.
+  - Hook: `useRaiHam`, `useNgheHam`.
+- `tinh/raiHam.worker.ts` (`new Worker(new URL('./raiHam.worker.ts', import.meta.url), { type: 'module' })`): thư viện gửi một lần cho mỗi worker. Mỗi lượt gửi PA thu gọn `paGonChoHam` (chỉ lô đó và tòa thuộc lô, đúng khoá cache).
+- `tinh/ham.ts`: tách `layNhoHam` / `datNhoHam`, nên worker và `raiHam` đồng bộ dùng chung một cache.
+- Ba chỗ gọi:
+  - `man/ManHam.tsx` (bỏ `ketQuaHam`);
+  - `man/ManChiPhi.tsx` → `tinhKhoiLuong(pa, tv, true, phien.lay)`. Tham số mới `layHam`, mặc định là `raiHam`. Lô đang rải mà chưa có số cũ thì tạm ước theo DT, như khi không rải được;
+  - `ve3d/dungDuAn.ts`: chỉ đổi dòng gọi `raiHam` và khai `rai.xong()`. `ve3d/MoHinh3D.tsx` thêm `useNgheHam('3d')` vào `khoaNhe` và vòng tải trên thanh 3D.
+- Test: `tinh/hamNen.test.ts` (worker giả lập): trúng cache không gửi worker; huỷ lượt cũ và bỏ kết quả muộn; giữ kết quả cũ đúng lô; nhiều lô xếp hàng; worker lỗi; không có Worker; PA thu gọn cho cùng kết quả. `raiHamTinh` vẫn test đồng bộ.
+
+Chưa làm:
+- `xuat/xuatXls.ts` vẫn gọi `tinhKhoiLuong` đồng bộ khi bấm xuất XLS. Nếu cache đang trống, lúc xuất vẫn rải trên luồng chính.
+- Chưa chia nhỏ việc rải (nhiều lô vẫn rải lần lượt trong một worker).
+- Lượt vẽ SVG 150–185 ms sau khi có kết quả chưa tối ưu.
+- Chưa đo bằng bản build (`vite preview`).

@@ -2,6 +2,27 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · rải hầm trong Web Worker · agent Opus
+
+- Yêu cầu: lần rải hầm đầu tiên, hoặc khi đổi thông số hầm, giao diện đứng 4,5–14 s. Chuyển `raiHam` sang Web Worker. Ba chỗ gọi (màn Hầm, Chi phí, 3D bật Hầm) chuyển sang bất đồng bộ. Trong lúc chờ phải giữ kết quả cũ, có vòng O "Đang rải hầm…", khung giữa không đổi; đổi đầu vào thì chỉ giữ lượt mới nhất.
+- Đã làm:
+  - Thêm `tinh/hamNen.ts`: lớp `DieuPhoiHam` theo kênh, có huỷ bằng `terminate`; hook `useRaiHam` / `useNgheHam`.
+  - Thêm `tinh/raiHam.worker.ts`.
+  - `tinh/ham.ts`: thêm `layNhoHam`, `datNhoHam`, `paGonChoHam`; cache dùng chung giữa worker và bản đồng bộ.
+  - Chỗ gọi: `man/ManHam.tsx`, `man/ManChiPhi.tsx` (tham số mới `layHam` của `tinhKhoiLuong`), `ve3d/dungDuAn.ts` + `ve3d/MoHinh3D.tsx` (chỉ phần gọi `raiHam` và `khoaNhe`).
+  - Thêm i18n `ham.dangRai` và CSS `.ham-dang-rai` trong `styles/ham.css`.
+- Số đo, chi tiết ở `de_xuat_hieu_nang.md` mục 9. Giao diện đứng:
+  - mở Hầm lần đầu: 7,9 s → 0;
+  - đổi số tầng 2 → 3: 11,7 s → 0,19 s;
+  - đổi 3 → 4: 15,7 s → 0,15 s.
+  Thời gian tới khi có kết quả vẫn như cũ. `.panel-giua` 1348×854 trước, trong và sau lúc rải.
+- Kiểm: `npm run kiem` ĐẠT. Test mới `tinh/hamNen.test.ts` (7 ca, worker giả). Đã thử trên app: Hầm, đổi liền 5 → 6 (lượt 5 bị huỷ), Chi phí, 3D bật Hầm; không lỗi console.
+- Còn dở:
+  - Xuất XLS vẫn gọi `tinhKhoiLuong` đồng bộ.
+  - Lượt vẽ SVG mặt bằng hầm 150–185 ms chưa tối ưu.
+  - Trong Browser pane, observer `longtask` báo không đều, nên số chính lấy theo nhịp `setInterval`.
+  - Worktree agent thiếu `worker/node_modules`; đã nối junction tới bản ở repo chính để chạy `kiem`.
+
 ## 2026-10-29 · bảng KPI cho lãnh đạo ở Tổng mặt bằng và màn Tầng · agent Opus
 
 - Yêu cầu: ở TMB cần nhìn dân số, số căn, tổng DT sàn XD, tổng DT sàn sử dụng, DTXD một sàn, hiệu suất. Ở màn Tầng, với từng mẫu tòa, cần unit mix, số căn theo loại, DT thông thủy, dân số, tổng căn, hiệu suất, DTXD và DTSD một sàn. Phải dễ nhìn, số nổi bật đặt trên cùng.
