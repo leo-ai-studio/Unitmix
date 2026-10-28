@@ -1,0 +1,33 @@
+/* Xếp hàng loạt + lộ giới cạnh lô (man/xepHangLoat.tsx, man/loGioiCanh.tsx): hộp lớp phủ trong .noi-tren — khung giữa không đổi. */
+.tmb-hang-loat, .tmb-lo-gioi {
+  margin: 6px 8px 0; align-self: flex-start; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px;
+  max-width: min(460px, calc(100% - 96px)); font-size: 12px; color: var(--ink);
+  background: color-mix(in srgb, var(--panel) 96%, transparent); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.08);
+}
+.tmb-hang-loat { max-height: 62%; overflow: auto; }
+.tmb-lo-gioi { width: 280px; }
+.hl-dau { display: flex; align-items: center; gap: 8px; }
+.hl-dau b { color: var(--green); font-size: 13px; }
+.hl-dau .hl-dong { margin-left: auto; }
+.hl-dong, .hl-lai { background: none; border: 0; border-radius: 6px; padding: 1px 6px; cursor: pointer; color: var(--green); font-size: 13px; line-height: 18px; }
+.hl-dong:hover, .hl-lai:hover { background: var(--hover); }
+.hl-ghi { margin: 0; display: flex; align-items: center; gap: 6px; }
+.hl-ghi .spin-o { width: 16px; height: 16px; }
+.hl-lo { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.hl-lo label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.hl-nut { display: flex; flex-wrap: wrap; gap: 6px; }
+.hl-nut .nut-chinh, .hl-nut .nut-phu { padding: 4px 10px; font-size: 12px; }
+.hl-tien-do { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.hl-tien-do i { display: block; height: 100%; background: var(--green); transition: width 0.2s; }
+@media (prefers-reduced-motion: reduce) { .hl-tien-do i { transition: none; } }
+.hl-bang { width: 100%; border-collapse: collapse; }
+.hl-bang th, .hl-bang td { padding: 3px 4px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.hl-bang th:nth-child(-n + 2), .hl-bang td:nth-child(-n + 2) { text-align: left; }
+.hl-bang select { max-width: 230px; font-size: 12px; }
+.hl-bang tfoot td { font-weight: 600; border-bottom: 0; }
+.tmb-hang-loat label, .tmb-lo-gioi label { flex-direction: row; font-size: 12px; color: var(--ink); }
+.tmb-hang-loat input[type='checkbox'], .tmb-lo-gioi input[type='checkbox'] { min-width: 0; margin: 0; padding: 0; }
+.lg-dong { display: flex; align-items: center; gap: 6px; }
+.lg-dong input[type='number'] { width: 76px; min-width: 0; padding: 3px 6px; }
+.hl-bang select { min-width: 0; padding: 2px 4px; }

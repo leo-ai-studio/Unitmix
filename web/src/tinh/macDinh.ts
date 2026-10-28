@@ -139,6 +139,18 @@ const chuanHoaToa = (t: ToaDat): ToaDat => {
 };
 
 /**
+ * Lộ giới từng cạnh lô (`Lo.canhDuong`, LO-01): sai cấu trúc hoặc số cạnh không khớp ranh thì bỏ (về hành vi cũ: mọi cạnh giáp
+ * đường 12 m); phần tử không phải số dương / null thì coi là null (không giáp đường).
+ */
+export const chuanHoaCanhDuong = (l: Lo): Lo => {
+  const c = l.canhDuong;
+  if (c === undefined) return l;
+  const { canhDuong: _bo, ...con } = l;
+  if (!Array.isArray(c) || c.length !== l.ranh.length) return con;
+  return { ...con, canhDuong: c.map((v) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null)) };
+};
+
+/**
  * PA lưu từ bản cũ thiếu trường chỉ tiêu mới: điền giá trị mặc định (null = chưa quy định).
  * PA chưa có `phanHam` lưu từ khi hệ số hầm chưa dùng tới: chuyển sang tính hầm vào HSSDĐ theo QCVN 01 1.4.21.
  */
@@ -147,7 +159,7 @@ export const chuanHoaPA = (pa: TrangThaiPA): TrangThaiPA => ({
   heSo: pa.phanHam ? pa.heSo : { ...pa.heSo, ham: HE_SO_MAC_DINH.ham, apMai: pa.heSo.apMai ?? HE_SO_MAC_DINH.apMai },
   phanHam: pa.phanHam ?? { ...PHAN_HAM_MAC_DINH },
   ham: chuanHoaHam(pa.ham ?? HAM_MAC_DINH),
-  lo: pa.lo.map((l) => ({ ...l, temDat: { ...l.temDat, chiTieu: { ...CHI_TIEU_MAC_DINH, ...l.temDat.chiTieu } } })),
+  lo: pa.lo.map((l) => chuanHoaCanhDuong({ ...l, temDat: { ...l.temDat, chiTieu: { ...CHI_TIEU_MAC_DINH, ...l.temDat.chiTieu } } })),
   toa: (pa.toa ?? []).map(chuanHoaToa),
   chiPhi: chuanHoaChiPhi(pa.chiPhi),
 });

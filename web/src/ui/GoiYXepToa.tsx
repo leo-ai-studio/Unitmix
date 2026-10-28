@@ -28,7 +28,7 @@ const daChay = new Set<string>(); // lô đã tự chạy (không tự chạy l�
 
 /** Chữ ký đầu vào của lô: đổi ranh, chỉ giới, chỉ tiêu, cơ cấu mục tiêu hay tòa lô bên cạnh thì gợi ý cũ hết hiệu lực. */
 const khoaLo = (pa: TrangThaiPA, lo: Lo) =>
-  lo.id + '|' + JSON.stringify([lo.ranh, lo.chiGioi, lo.temDat.chucNang, lo.temDat.chiTieu, lo.temDat.coCauMucTieu, pa.toa.filter((x) => x.loId !== lo.id).map((x) => [x.mauId, x.x, x.y, x.gocDo, x.soTangDH])]);
+  lo.id + '|' + JSON.stringify([lo.ranh, lo.chiGioi, lo.canhDuong ?? null, lo.temDat.chucNang, lo.temDat.chiTieu, lo.temDat.coCauMucTieu, pa.toa.filter((x) => x.loId !== lo.id).map((x) => [x.mauId, x.x, x.y, x.gocDo, x.soTangDH])]);
 
 const coChiTieu = (lo: Lo) => lo.temDat.chucNang !== 'khac' && lo.ranh.length >= 3 && lo.temDat.chiTieu.matDoMax > 0 && lo.temDat.chiTieu.hssddMax > 0;
 
