@@ -519,8 +519,12 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
         {hien?.loai === 'xoay' && tayNam && nhanDoan(tayNam.tam, tayNam.dau, `${fmtSo(tayNam.goc, { thapPhan: 1 })}°${hien.gocTheo !== null ? ' ∥' : ''}`, 'var(--green)', 'goc', false)}
         {tayNam && (
           <g class="tmb-tay-nam">
+            {/* Xoay theo brand: vòng dẫn tròn quanh tâm tòa + tay nắm vòng O (vòng ngoài + chấm tâm) như vòng O logo LEO. */}
+            <circle class="tmb-vong-xoay" cx={tayNam.tam[0]} cy={-tayNam.tam[1]} r={Math.hypot(tayNam.dau[0] - tayNam.tam[0], tayNam.dau[1] - tayNam.tam[1])}
+              fill="none" stroke="var(--green)" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke" style={{ pointerEvents: 'none' }} />
             <line x1={tayNam.tam[0]} y1={-tayNam.tam[1]} x2={tayNam.dau[0]} y2={-tayNam.dau[1]} stroke="var(--green)" stroke-width="1.2" vector-effect="non-scaling-stroke" style={{ pointerEvents: 'none' }} />
-            <circle cx={tayNam.dau[0]} cy={-tayNam.dau[1]} r={buocM * 0.032} fill="var(--panel)" stroke="var(--green)" stroke-width="2" vector-effect="non-scaling-stroke"
+            <circle cx={tayNam.dau[0]} cy={-tayNam.dau[1]} r={buocM * 0.012} fill="var(--green)" style={{ pointerEvents: 'none' }} />
+            <circle cx={tayNam.dau[0]} cy={-tayNam.dau[1]} r={buocM * 0.032} fill="color-mix(in srgb, var(--panel) 70%, transparent)" stroke="var(--green)" stroke-width="2.2" vector-effect="non-scaling-stroke"
               style={{ cursor: 'grab' }} role="presentation"
               onPointerDown={(e) => { if (e.button !== 0) return; e.stopPropagation(); batDauLuot(e, 'xoay', toaChon.find((x) => x.id === toaId && !x.khoa)?.id ?? diDuoc[0], diDuoc, 'xong'); }}
               onPointerMove={(e) => { if (luot.current?.loai === 'xoay') diLuot(e); }}

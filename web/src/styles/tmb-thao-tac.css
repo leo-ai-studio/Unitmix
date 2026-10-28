@@ -25,3 +25,4 @@
 /* Ô sr-only (absolute) trong panel trái / phải phải nằm trong khung cuộn của panel: thiếu cái này thì panel trái dài ra (chọn tòa
    mở "Thông số tòa") làm cả trang có thanh cuộn dọc → khung giữa hẹp đi 15 px. */
 .panel-trai, .panel-phai { position: relative; }
+.tmb-vong-xoay { opacity: .45; }

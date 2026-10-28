@@ -1,4 +1,5 @@
-import { nhanPhienBan } from '../phienBan';
+import { nhanPhienBan, PHIEN_BAN } from '../phienBan';
+import { LICH_SU_PHIEN_BAN } from '../lichSuPhienBan';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t, useLang } from '../i18n/i18n';
@@ -27,13 +28,40 @@ type Props = {
 };
 
 export function ThuongHieu({ dangXuLy = false }: { dangXuLy?: boolean }) {
+  const [moLs, setMoLs] = useState(false);
+  const [lang] = useLang();
+  useEffect(() => {
+    if (!moLs) return;
+    const dong = (e: Event) => { if (!(e.target as Element).closest?.('.lich-su-ban, .ban')) setMoLs(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMoLs(false); };
+    addEventListener('pointerdown', dong); addEventListener('keydown', esc);
+    return () => { removeEventListener('pointerdown', dong); removeEventListener('keydown', esc); };
+  }, [moLs]);
   return (
     <a class="thuong-hieu" href="/" aria-label={t('app.ten')} title={`${t('app.ten')} ${nhanPhienBan()}`}>
       <span class="mark">
         <img src="/brand/leo_ai_mark_base.png" alt="" />
         <img class={`brand-o${dangXuLy ? ' spinning' : ''}`} src="/brand/leo_ai_o.png" alt="" />
       </span>
-      <strong>{t('app.ten').toUpperCase()}</strong>
+      <span class="ten-ban">
+        <strong>{t('app.ten').toUpperCase()}</strong>
+        {/* Bấm số phiên bản (không về trang chủ) → lịch sử phiên bản tóm tắt. */}
+        <small class="ban" role="button" tabIndex={0} aria-expanded={moLs} title={t('ls.tieuDe')}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMoLs((m) => !m); }}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMoLs((m) => !m); } }}>v{PHIEN_BAN}</small>
+      </span>
+      {moLs && (
+        <div class="lich-su-ban" role="dialog" aria-label={t('ls.tieuDe')} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+          <b>{t('ls.tieuDe')}</b>
+          {LICH_SU_PHIEN_BAN.map((m) => (
+            <div key={m.v} class="ls-muc">
+              <div class="ls-dau"><span>v{m.v}</span><small>{m.ngay}</small></div>
+              <ul>{(lang === 'en' ? m.en : m.vi).map((x) => <li key={x}>{x}</li>)}</ul>
+            </div>
+          ))}
+          <small class="ls-chan">{nhanPhienBan()}</small>
+        </div>
+      )}
     </a>
   );
 }

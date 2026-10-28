@@ -159,7 +159,7 @@ export function TangTrai(p: ChungTang) {
         <p class="dong muted" style={{ margin: 0 }}>{ccRieng ? t('oc.cc.dangDungRieng').replace('{v}', nhanPhamVi(tangs, toa.soTangDe)) : t('oc.cc.theoLo')}</p>
         {lo?.temDat.deBai && <p class="dong muted" style={{ margin: 0 }}>{t('lo.nguonDeBai').replace('{n}', lo.temDat.deBai.nguon)}</p>}
         <div class="dong" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
-          <button type="button" class="nut-chinh" title={t('gt.tang.toiUu')} disabled={chiXem}
+          <button type="button" class="nut-chinh" title={chiXem ? t('soan.chiXem') : t('gt.tang.toiUu')} disabled={chiXem}
             onClick={async () => {
               const cuaCan = await taiCuaCan(tv, mau.nhom);
               const kq = toiUuCoCau(mau, bc, tv, muc, {
@@ -173,7 +173,7 @@ export function TangTrai(p: ChungTang) {
                 + (kq.pcccSau !== null ? ' ' + t('tang.pcccKq').replace('{a}', String(kq.pcccTruoc)).replace('{b}', String(kq.pcccSau)) : '') : t('tang.khongDoiDuoc'));
             }}>{t('tang.toiUu')}{tangs ? ` · ${nhanPhamVi(tangs, toa.soTangDe)}` : ''}</button>
           <label class="o-tg" title={t('gt.tang.doiRong')}><input type="checkbox" disabled={chiXem} checked={doiRong} onChange={(e) => setDoiRong(e.currentTarget.checked)} /><span>{t('tang.doiRong')}</span></label>
-          <button type="button" class="nut-phu" title={t('gt.tang.veGoc')} disabled={chiXem || !coDoiCan}
+          <button type="button" class="nut-phu" title={chiXem ? t('soan.chiXem') : t('gt.tang.veGoc')} disabled={chiXem || !coDoiCan}
             onClick={() => { suaTuChinh(sua, tv, toa.id, { tay: false })((q) => doiToa(q, toa.id, veMauGoc)); setGhiChu(''); }}>{t('tang.veGoc')}</button>
         </div>
         {ghiChu && <p class="dong canh-bao" role="status" style={{ margin: 0 }}>{ghiChu}</p>}
