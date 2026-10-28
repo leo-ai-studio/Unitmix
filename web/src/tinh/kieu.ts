@@ -394,6 +394,8 @@ export type CanMau = {
   /** Đường cắt STRETCH qua phòng khách (DC-04 · QT-81, scripts/boc_stretch.py app cũ): x cắt (mm), chiều sâu cắt qua
    * thông thủy / tim tường, nét thuộc block [chỉ số nét, 1 dời / 0 đứng]. Thiếu = không kéo được. */
   stretch?: { x_mm: number; sau_tt_mm: number; sau_tim_mm: number; cung: [number, number][] };
+  /** Tim cửa chính chuẩn hoá 0..1 theo mặt tiền, tiền tính bằng `tinhCuaCan` (scripts/sinh_phai_sinh_can.py). Thiếu thì tính từ can/<id>.json. */
+  cua_x?: number;
   /** Có ở mẫu biến thể STRETCH (tinh/stretch.ts): id mẫu gốc + mức kéo (mm). */
   stretchGoc?: { id: string; st: number };
 };

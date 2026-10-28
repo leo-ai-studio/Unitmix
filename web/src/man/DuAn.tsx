@@ -9,7 +9,10 @@ import { taoPAMoi } from '../tinh/macDinh';
 import { LOAI_CAN } from '../tinh/kieu';
 import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
 import { fmtSo } from '../ui/so';
-import { SoSanhPA } from './SoSanhPA';
+import { luoi } from '../ui/Luoi';
+
+// So sánh PA (kèm tính chi phí): chunk riêng, tải khi mở hộp.
+const SoSanhPA = luoi(() => import('./SoSanhPA').then((m) => m.SoSanhPA), 'hop');
 
 type Dong = { ma: string; da: DuAnApi | null; loi: boolean };
 

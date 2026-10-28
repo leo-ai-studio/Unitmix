@@ -100,7 +100,7 @@ const mucTieuTang = (toa: ToaDat, lo: Lo | undefined, tangs: number[] | null) =>
 /** Panel trái: chọn tòa, tầng áp dụng, cơ cấu mục tiêu + tối ưu, hiển thị. */
 export function TangTrai(p: ChungTang) {
   const { pa, sua, chiXem, tv, chonToa, chonCan } = p;
-  useDuLieuMB(tv);
+  useDuLieuMB(tv, pa);
   const cai = useCaiTang();
   const [ghiChu, setGhiChu] = useState('');
   // Đổi khác bề ngang + STRETCH khi tối ưu (A8 · DC-04/05, như app cũ): mặc định bật

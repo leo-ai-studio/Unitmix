@@ -301,8 +301,36 @@ export type KetQuaHam = {
   kiem: KiemHam[];
 };
 
-/** Rải toàn bộ các tầng hầm dưới lô `lo` và kiểm. Ranh không hợp lệ thì null. */
+/*
+ * Nhớ kết quả rải theo ĐẦU VÀO THẬT của raiHamTinh (không theo cả PA): thông số hầm, lô (ranh / chỉ giới / tem đất), các tòa
+ * trên lô (vị trí, mẫu, lõi, số căn) và thư viện. Sửa đơn giá, tên, cơ cấu mục tiêu, tòa ở lô khác… không rải lại.
+ * Dùng chung cho màn Hầm, Chi phí (tinhKhoiLuong) và 3D bật Hầm. Kết quả coi là bất biến: nơi gọi không được sửa.
+ */
+const NHO_HAM_TOI_DA = 12;
+const nhoHam = new WeakMap<object, Map<string, KetQuaHam | null>>();
+const TV_RONG = {};
+/** Khoá cache: mọi thứ raiHamTinh đọc từ PA (pa.ham, lô, tòa thuộc lô). */
+export const khoaRaiHam = (pa: TrangThaiPA, lo: Lo): string =>
+  JSON.stringify([pa.ham ?? null, lo, pa.toa.filter((t) => t.loId === lo.id)]);
+
+/** Rải toàn bộ các tầng hầm dưới lô `lo` và kiểm (có nhớ theo đầu vào). Ranh không hợp lệ thì null. */
 export function raiHam(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaHam | null {
+  const theoTv = nhoHam.get(tv ?? TV_RONG) ?? new Map<string, KetQuaHam | null>();
+  nhoHam.set(tv ?? TV_RONG, theoTv);
+  const khoa = khoaRaiHam(pa, lo);
+  if (theoTv.has(khoa)) {
+    const kq = theoTv.get(khoa)!;
+    theoTv.delete(khoa); theoTv.set(khoa, kq); // dùng gần nhất xếp cuối (LRU)
+    return kq;
+  }
+  const kq = raiHamTinh(pa, tv, lo);
+  theoTv.set(khoa, kq);
+  if (theoTv.size > NHO_HAM_TOI_DA) theoTv.delete(theoTv.keys().next().value!);
+  return kq;
+}
+
+/** Bản không nhớ (test so sánh). */
+export function raiHamTinh(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaHam | null {
   const ts = chuanHoaHam(pa.ham);
   const ranh = ranhHam(lo, ts);
   if (ranh.length < 3) return null;

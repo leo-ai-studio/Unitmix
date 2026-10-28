@@ -38,6 +38,16 @@ Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm th
   - Căn đã STRETCH lấy `dt_tt_m2` của biến thể trong thư viện.
   - Chưa có ô NSA (khả bán) riêng.
 
+## 2026-10-29 · hiệu năng: cache raiHam · Ctrl+Z/Y/S · tim cửa tiền tính + nội thất tải lười · tách chunk · agent Opus
+
+- Làm 4 việc "nên làm ngay" 1–4 của `docs/de_xuat_hieu_nang.md`; bảng số đo trước / sau ở mục 8 của tài liệu đó.
+- P1: `raiHam` (`tinh/ham.ts`) tự nhớ theo đầu vào thật (`pa.ham`, lô, tòa thuộc lô, `tv`), dùng chung cho Hầm / Chi phí / 3D Hầm. Sửa đơn giá Chi phí 7,8–8,3 s → 15–26 ms. Lần rải đầu vẫn chạy trên luồng chính (chưa Worker).
+- B1: `kho/phimSoan.ts` + `usePhimSoan` ở `TrinhSoan`: Ctrl+Z, Ctrl+Y / Ctrl+Shift+Z, Ctrl+S lưu ngay (`BoLuu.luuNgay`), `beforeunload` khi `conChuaLuu`. Bỏ qua khi đang gõ ô nhập (trừ Ctrl+S), khoá ở chế độ chỉ xem.
+- P3 (+P7): `scripts/sinh_phai_sinh_can.py` — chạy lại sau MỖI lần chép / bóc lại căn (`chep_thu_vien.py`, `boc_cad/boc_lai_can*.py`): ghi `cua_x` vào `can.json`, tách nội thất sang `can/<id>.noithat.json`, đánh số lại `stretch.cung`; `--kiem` để soát (pytest gọi). Màn Tầng chỉ tải lõi của tòa trong PA (`man/tuChinhTang.ts` `khoiCuaPA`) và nội thất khi lớp Nội thất bật: 57 req / 5,16 MB → 15 req / 0,94 MB.
+- P2 + P5: thư viện + PA `?pa=` tải song song với dự án; `ui/Luoi.tsx` tách chunk ManHam, ManChiPhi, HopXuatCad, SoSanhPA; `napDxf` (dxf-parser) `import()` khi chọn tệp. Chunk khởi động 737 → 661 KB (250 → 227 KB gz).
+- Tệp vùng agent khác: `man/ManTang.tsx` sửa đúng 1 dòng (`useDuLieuMB(tv, pa)` ở `TangTrai`); không đụng `loiThang` / `thaoTacTay` / `matBang` / `CongCuTang` / `MatBangTang` / `ve3d` / `unitmix.css` / `KhungSoan`. Test CAD (`xuatCad*.test.ts`) chỉ đổi hàm đọc nét để ghép tệp nội thất — chưa chạy (`kiem:cad`).
+- Kiểm trên app: vite preview 5418 (nhánh) và 5419 (`b808b73`), API 8787, tab riêng, dự án thử `4sybq7h3` (sao PA `tztd1udv/pa-1` qua API). Ctrl+Z bằng phím thật, Ctrl+Y, Ctrl+Shift+Z, Ctrl+S → PUT sau 4 ms; khung giữa 1348×854 không đổi khi chunk Chi phí / Hầm đang tải (vòng O). Console sạch. Worktree thiếu `worker/node_modules` → junction (không commit).
+- Còn dở: Worker cho `raiHam`; tách `ve3d/dung*` + `manualChunks`; endpoint gộp mở dự án; lớp Nội thất vẫn bật mặc định.
 ## 2026-10-29 · dân số theo từng căn theo QĐ tỉnh + dashboard vòng tròn · agent Opus
 
 - Yêu cầu: "bảng chỉ tiêu không có cách tính dân theo từng khu vực… tính dân theo từng căn… có cái bảng tròn tròn như TMB". Trước đây `chiTieu.ts` = số căn × `nguoiMoiCan` (một hệ số).

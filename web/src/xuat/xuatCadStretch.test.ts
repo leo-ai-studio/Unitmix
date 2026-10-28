@@ -14,7 +14,8 @@ const tvK = themBienThe(taoThuVien(toaDs, doc<CanMau[]>('can.json')));
 describe('xuất CAD căn STRETCH (DC-04 · QT-81)', () => {
   const mauK = toaDs.find((x) => x.id === 'tm-u2')!;
   const vK = viTriCan(mauK, tvK);
-  const veK = (id: string) => veTheoId(id, doc<{ ve: NetVe[] }>(`can/${idTepCan(id)}.json`).ve, tvK);
+  // nét căn đủ: tệp chính + nội thất tách riêng (scripts/sinh_phai_sinh_can.py), như hộp xuất CAD tải
+  const veK = (id: string) => veTheoId(id, [...doc<{ ve: NetVe[] }>(`can/${idTepCan(id)}.json`).ve, ...doc<{ ve: NetVe[] }>(`can/${idTepCan(id)}.noithat.json`).ve], tvK);
   // hai căn khác mẫu kéo +300 và −300: tên block không trùng nhau, không trùng mẫu gốc
   const g = vK.find((v) => tvK.can.get(v.canGocId)?.stretch)!;
   const idP = maBienThe(g.canGocId, 300);

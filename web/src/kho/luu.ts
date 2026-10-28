@@ -17,6 +17,10 @@ export type BoLuu = {
   thayDoi(trangThai: unknown, tomTat: unknown): void;
   /** Bản nháp còn lại ở máy từ lần trước chưa lưu được (nếu có). */
   layNhap(): Nhap | null;
+  /** Ghi ngay (Ctrl+S): bỏ chờ debounce; bản ghi lỗi lần trước cũng gửi lại. */
+  luuNgay(): Promise<void>;
+  /** Còn thay đổi chưa lên máy chủ (đang chờ, đang ghi hoặc lần ghi trước lỗi) — cảnh báo khi đóng tab. */
+  conChuaLuu(): boolean;
   huy(): void;
 };
 
@@ -25,6 +29,7 @@ export function taoBoLuu({ ghi, kho, khoaNhap, duocGhi, khiDoi, choMs = 800 }: T
   let hen: ReturnType<typeof setTimeout> | null = null;
   let choGhi: Nhap | null = null;
   let dangGhi = false;
+  let banLoi: Nhap | null = null; // bản ghi lỗi gần nhất (nháp vẫn ở máy); Ctrl+S gửi lại
 
   const datNhap = (n: Nhap) => {
     try {
@@ -43,11 +48,13 @@ export function taoBoLuu({ ghi, kho, khoaNhap, duocGhi, khiDoi, choMs = 800 }: T
     khiDoi('dang_luu');
     try {
       await ghi(ban.trangThai, ban.tomTat);
+      banLoi = null;
       if (!choGhi) {
         kho.removeItem(khoaNhap);
         khiDoi('da_luu');
       }
     } catch {
+      banLoi = ban;
       khiDoi('chua_luu_duoc');
     } finally {
       dangGhi = false;
@@ -70,6 +77,16 @@ export function taoBoLuu({ ghi, kho, khoaNhap, duocGhi, khiDoi, choMs = 800 }: T
       } catch {
         return null;
       }
+    },
+    luuNgay() {
+      if (!duocGhi) return Promise.resolve();
+      if (hen) clearTimeout(hen);
+      hen = null;
+      if (!choGhi && banLoi) choGhi = banLoi;
+      return chay();
+    },
+    conChuaLuu() {
+      return duocGhi && (!!choGhi || dangGhi || !!banLoi);
     },
     huy() {
       if (hen) clearTimeout(hen);

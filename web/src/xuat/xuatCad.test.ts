@@ -11,7 +11,8 @@ const cad = new URL('../../../cad/xref/', import.meta.url);
 const doc = <T>(p: string) => JSON.parse(readFileSync(new URL(p, lib), 'utf8')) as T;
 const toaDs = doc<(ToaCoMat & { duong_bao: Diem[]; hanhlang_ve: Diem[][] })[]>('toa.json');
 const tv = taoThuVien(toaDs, doc<CanMau[]>('can.json'));
-const veCan = (id: string) => doc<{ ve: NetVe[] }>(`can/${id}.json`).ve;
+// nét căn đủ (kèm nội thất tách ở can/<id>.noithat.json — scripts/sinh_phai_sinh_can.py), như hộp xuất CAD tải
+const veCan = (id: string) => [...doc<{ ve: NetVe[] }>(`can/${id}.json`).ve, ...(existsSync(new URL(`can/${id}.noithat.json`, lib)) ? doc<{ ve: NetVe[] }>(`can/${id}.noithat.json`).ve : [])];
 
 const du = (id: string): DuLieuXuat => {
   const mau = toaDs.find((t) => t.id === id)!;

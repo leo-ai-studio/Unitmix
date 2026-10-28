@@ -70,6 +70,8 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | Tự xếp tòa, tối ưu tầng | `tinh/xepToa.ts`, `ui/GoiYXepToa.tsx`, `tinh/toiUu.ts`, `tinh/stretch.ts`, `tinh/khe.ts` |
 | Công cụ tay màn Tầng (kéo đổi chỗ, thêm / xoá căn + thang, lật) | `man/CongCuTang.tsx`, `tinh/thaoTacTay.ts`, `tinh/canThem.ts` (`mauToa`, `rutCanThem`), `tinh/choTrong.ts`, `tinh/baoThaoTac.ts`, `tinh/doiCan.ts` (`latO`, `doiChoO`) |
 | Tự chỉnh MB tầng (thang, lõi, sảnh, hành lang, QT-69) | `tinh/loiThang.ts`, `man/tuChinhTang.ts`; 3D / CAD theo mặt bằng tự chỉnh: `ve3d/dungToa.ts`, `xuat/xuatCad.ts` |
+| Dữ liệu phái sinh mẫu căn (`cua_x`, nội thất tách `can/<id>.noithat.json`) — chạy lại sau mỗi lần chép / bóc căn | `scripts/sinh_phai_sinh_can.py` (`--kiem`), đọc ở `ve/hinhHocThuVien.ts` |
+| Phím tắt trình soạn (Ctrl+Z/Y/S, cảnh báo đóng tab), màn tải lười | `kho/phimSoan.ts`, `kho/luu.ts`; `ui/Luoi.tsx` |
 | Chi phí, tài chính | `tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`, số tạm `CHI_PHI_MAC_DINH` trong `tinh/macDinh.ts` |
 
 ## Tài liệu khác

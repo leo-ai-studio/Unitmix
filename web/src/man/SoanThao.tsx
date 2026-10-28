@@ -4,6 +4,7 @@ import { api, LoiApi, type DuAnApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
 import { useKho } from '../kho/kho';
 import { ghiNhoDuAn, layMaSua, nhanMaTuLink } from '../kho/maSua';
+import { usePhimSoan } from '../kho/phimSoan';
 import type { Lo, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaPA, taoPAMoi } from '../tinh/macDinh';
 import { KhungSoan } from '../ui/KhungSoan';
@@ -19,11 +20,19 @@ import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
 import { diemLechPA } from '../tinh/diemPA';
 import { baoCaoPA, tenTepXls, xuatXls } from '../xuat/xuatXls';
-import { ChiPhiGiua, ChiPhiPhai } from './ManChiPhi';
-import { HamGiua, HamPhai, HamTrai } from './ManHam';
-import { HopXuatCad } from './HopXuatCad';
+import { luoi } from '../ui/Luoi';
 import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
+
+// Màn nặng ít dùng: chunk riêng, tải khi mở (vòng O giữ chỗ) — de_xuat_hieu_nang P5.
+const napHam = () => import('./ManHam');
+const HamTrai = luoi(() => napHam().then((m) => m.HamTrai));
+const HamGiua = luoi(() => napHam().then((m) => m.HamGiua), 'giua');
+const HamPhai = luoi(() => napHam().then((m) => m.HamPhai));
+const napChiPhi = () => import('./ManChiPhi');
+const ChiPhiGiua = luoi(() => napChiPhi().then((m) => m.ChiPhiGiua), 'giua');
+const ChiPhiPhai = luoi(() => napChiPhi().then((m) => m.ChiPhiPhai));
+const HopXuatCad = luoi(() => import('./HopXuatCad').then((m) => m.HopXuatCad), 'hop');
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
 
@@ -51,13 +60,17 @@ export function SoanThao({ ma }: { ma: string }) {
       try {
         nhanMaTuLink(ma);
         const maSua = layMaSua(ma);
-        const [da, quyen] = await Promise.all([api.docDuAn(ma), api.kiemMa(ma, maSua)]);
+        // Thư viện không phụ thuộc PA: tải song song với dự án + PA (bỏ bậc nối đuôi, de_xuat_hieu_nang P2).
+        void taiThuVien().catch(() => {});
         const muon = new URLSearchParams(location.search).get('pa');
+        // Link có ?pa=: đọc PA cùng lúc với dự án; PA không có trong dự án thì bỏ bản đọc trước.
+        const docTruoc = muon ? api.docPA(ma, muon).catch(() => null) : null;
+        const [da, quyen] = await Promise.all([api.docDuAn(ma), api.kiemMa(ma, maSua)]);
         let paId = (muon && da.phuong_an.some((p) => p.id === muon) ? muon : da.phuong_an[0]?.id) ?? 'pa-1';
         let ban: TrangThaiPA;
         let tenPA = t('pa.mau');
         if (da.phuong_an.length) {
-          const pa = await api.docPA(ma, paId);
+          const pa = (paId === muon ? await docTruoc : null) ?? (await api.docPA(ma, paId));
           ban = chuanHoaPA(pa.trang_thai as TrangThaiPA);
           tenPA = pa.ten;
         } else {
@@ -91,6 +104,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   useEffect(() => void taiThuVien().then(setTv, () => setTv(null)), []);
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
   const chiXem = kho.cheDo === 'chi_xem';
+  usePhimSoan({ chiXem, hoanTac: kho.hoanTac, lamLai: kho.lamLai, luuNgay: kho.luuNgay, conChuaLuu: kho.conChuaLuu });
   const kq: KetQuaChiTieu | null = tv ? tinhChiTieu(kho.pa, tv) : null;
   const [buoc, setBuocGoc] = useState<BuocSoan>('tmb');
   // bước trên cốt 0 gần nhất (menu cốt: Dưới → Trên trở lại đúng màn đang làm)
