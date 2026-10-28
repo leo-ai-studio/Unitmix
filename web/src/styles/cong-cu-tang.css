@@ -1,0 +1,22 @@
+/* Thanh công cụ tay màn Tầng (man/CongCuTang.tsx): LỚP PHỦ góc trên phải bản vẽ, cạnh hoa gió — không chiếm chỗ, không bóp / xô khung giữa. */
+.thanh-cc-tang {
+  position: absolute; top: 10px; right: 80px; z-index: 4;
+  display: flex; align-items: flex-start; gap: 6px; pointer-events: auto;
+}
+.thanh-cc-tang .cc-them { position: relative; display: inline-flex; }
+.thanh-cc-tang .cc-menu-them {
+  position: absolute; top: calc(100% + 4px); left: -1px; z-index: 5;
+  box-shadow: 0 6px 18px rgb(0 0 0 / .12);
+}
+/* bóng kéo: bám con trỏ 1:1 (transform qua rAF), không bắt chuột để dò ô đích bên dưới */
+.bong-keo {
+  position: fixed; left: 0; top: 0; z-index: 40; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 2px dashed var(--green); border-radius: 6px;
+  background: color-mix(in srgb, var(--selected) 70%, transparent);
+  color: var(--ink); font-size: 12px; font-weight: 600; text-align: center;
+  box-shadow: 0 8px 22px rgb(0 0 0 / .16); will-change: transform;
+}
+.bong-keo small { font-weight: 500; color: var(--muted); font-size: 11px; }
+.lop-st-bao.loi { border-color: var(--warn); }
+@media (prefers-reduced-motion: reduce) { .bong-keo { transition: none !important; } }

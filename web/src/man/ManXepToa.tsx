@@ -18,6 +18,7 @@ import {
   tamNhom, toaTrongKhung, viTriNhanBan, xoayNhom, type MucBat,
 } from '../tinh/thaoTacToa';
 import { DsCanhBao, HopToaDo, ThanhTMB, datChonNhieu, datTuyChon, luaChon, suaNhom, useChonNhieu, useLuatTMB, useTuyChon } from './tmbThaoTac';
+import { mauToa } from '../tinh/canThem';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -464,11 +465,11 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa }: C
         })}
         {tv && pa.lo.map((l) => {
           const ts = toaCoMau.filter((x) => x.loId === l.id);
-          const de = khoiDe(ts.map((x) => chanToa(tv.toa.get(x.mauId)!, x)), ts.map((x) => x.deOffset));
+          const de = khoiDe(ts.map((x) => chanToa(mauToa(tv, x)!, x)), ts.map((x) => x.deOffset));
           return de.length ? <path key={`de${l.id}`} d={duongPath(de)} fill="var(--secondary)" fill-opacity="0.25" fill-rule="nonzero" stroke="var(--secondary)" stroke-width="1" vector-effect="non-scaling-stroke" /> : null;
         })}
         {tv && toaCoMau.map((x) => {
-          const mau = tv.toa.get(x.mauId)!;
+          const mau = mauToa(tv, x)!;
           const chan = chanToa(mau, x);
           const viPham = kiem?.muc.get(x.id);
           const daChon = sel.includes(x.id);

@@ -23,7 +23,9 @@ export const BIEU_TUONG = {
   xem3d: '⬡',
   // màn Tầng
   sapXep: '✥', // kéo đổi chỗ căn (QT-8 · QT-30)
+  them: '＋', // menu gộp Thêm căn / Thêm thang bộ (app cũ tAddMenu)
   themCan: '⊞',
+  thangTuDong: '⟲', // bỏ thang đặt tay, PC-11 tự đặt lại
   themThang: '≣', // thêm thang bộ — ô 3.000 mm (QT-10)
   hanhLang: '⇉', // hành lang tự động
   toiUu: '✦', // tối ưu theo cơ cấu / tự chỉnh

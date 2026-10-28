@@ -12,6 +12,7 @@ import { ChuGiaiHam, MatBangHam } from '../ve/MatBangHam';
 import { VeRanh } from '../ve/VeRanh';
 import { ChonLoCaoTang } from './ManLo';
 import { loDangXep } from './ManXepToa';
+import { mauToa } from '../tinh/canThem';
 
 export type ChungHam = {
   pa: TrangThaiPA;
@@ -211,7 +212,7 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
   const h = chuanHoaHam(pa.ham);
   const khung = khungBao([lo.ranh, kq.ranh]);
   const coChu = Math.max(1, khung ? (khung[2] - khung[0]) / 70 : 2);
-  const chan = tv ? pa.toa.filter((x) => x.loId === lo.id && tv.toa.has(x.mauId)).map((x) => chanToa(tv.toa.get(x.mauId)!, x)) : [];
+  const chan = tv ? pa.toa.filter((x) => x.loId === lo.id && tv.toa.has(x.mauId)).map((x) => chanToa(mauToa(tv, x)!, x)) : [];
   const nut: Diem[] = [...lo.ranh, ...(lo.chiGioi ?? [])];
   const datDoDai = () => {
     const v = Number(doDai.replace(',', '.')), a = pts[pts.length - 1];

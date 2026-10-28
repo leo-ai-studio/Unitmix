@@ -95,7 +95,24 @@ export type ToaDat = {
   duongBao?: Diem[];
   /** DTXD (m²) theo `duongBao`; thiếu = `dtxd_m2` của mẫu. */
   dtxdM2?: number;
+  /**
+   * Thang bộ người dùng đặt tay (công cụ màn Tầng · p17d · QT-10 app cũ): thêm ô 3.000 mm ngay sau ô đang chọn, bỏ / dời thang.
+   * Có thì tự chỉnh coi tập thang là lựa chọn tay — PC-11 không dời / bỏ / thêm thang. Áp cho MỌI tầng (thang liền suốt chiều cao).
+   */
+  thangTay?: ThangTay;
+  /** Lật gương căn theo vị trí ở bố cục chung (khoá ô -> true = lật so với mẫu); tầng riêng ghi đè ở `BoCucTang.latO`. */
+  latO?: Record<string, boolean>;
+  /** Căn thêm tay (công cụ "Thêm căn" · QT-69): chèn ngay sau ô `sau` trên mặt `mat`, dãy dài ra ở đầu tự do. Mọi tầng. */
+  canThem?: CanThem[];
 };
+/**
+ * Thang bộ thêm tay: chèn ô 3.000 mm ngay sau vật thể `sau` (khoá căn / thang) — hoặc ngay trước vật thể `truoc` (thang đầu dãy) —
+ * trên mặt `mat`; `tu` = dời thang có sẵn (giữ khoá) tới đó.
+ */
+export type ThangTayThem = { khoa: string; mat: number; sau?: string; truoc?: string; sx: 1 | -1; tu?: string };
+export type ThangTay = { them: ThangTayThem[]; bo: string[] };
+/** Căn thêm tay: mẫu căn `id` chèn ngay sau ô `sau` (khoá vị trí) trên mặt `mat`. */
+export type CanThem = { mat: number; sau: string; id: string };
 
 /** Ô thang bộ trên một mặt tòa (mm, hệ mặt): ô [a0, a0 + rong], điểm chèn khối thang = (a0 + dIns, bIns), lật theo `sx`. */
 export type ThangBoMB = { khoa: string; matIdx: number; a0: number; rong: number; sx: 1 | -1; dIns: number; bIns: number; block: string; nguon: 'mau' | 'them' };
@@ -188,6 +205,8 @@ export type BoCucTang = {
   canViTri?: Record<string, string>;
   congNang?: Record<string, CongNangO>;
   coCauMucTieu?: Record<LoaiCan, number>;
+  /** Lật gương riêng của tầng (ghi đè `ToaDat.latO`; false = bỏ lật). */
+  latO?: Record<string, boolean>;
   /** Mặt bằng tự chỉnh RIÊNG của tầng (thang, căn dồn, nét bao, hành lang theo căn của tầng); thiếu = như bố cục chung. */
   matBang?: MatBangSua;
 };

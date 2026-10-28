@@ -3,6 +3,7 @@ import { dtCongNangToa } from './congNang';
 import { canCaToa, ghiDeTang, nhomTang } from './matBang';
 import { chanToa, dienTich, dtVung, hopDienTich, khoiDe } from './hinhHoc';
 import { PHAN_HAM_MAC_DINH, type LoaiCan, type ThuVien, type TrangThaiPA } from './kieu';
+import { mauToa } from './canThem';
 
 export type MucDo = 'ok' | 'canh_bao' | 'vuot';
 export type DongChiTieu = {
@@ -52,13 +53,13 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
     const ct = lo.temDat.chiTieu;
     const dtLo = lo.ranh.length >= 3 ? dienTich(lo.ranh) : 0;
     const toaLo = pa.toa.filter((t) => t.loId === lo.id && tv.toa.has(t.mauId));
-    const chan = toaLo.map((t) => chanToa(tv.toa.get(t.mauId)!, t));
+    const chan = toaLo.map((t) => chanToa(mauToa(tv, t)!, t));
     const de = khoiDe(chan, toaLo.map((t) => t.deOffset));
     const dtDe = dtVung(de);
 
     const ct0: DTSanChiTiet = { thap: 0, de: 0, apMai: 0, hamTinh: 0, hamTru: 0, oKyThuat: 0 };
     for (let i = 0; i < toaLo.length; i++) {
-      const t = toaLo[i], mau = tv.toa.get(t.mauId)!;
+      const t = toaLo[i], mau = mauToa(tv, t)!;
       // Căn cộng theo từng tầng (bố cục riêng tầng); ô đổi sang kỹ thuật bị trừ, ô SHCĐ / thương mại rơi vào phần chung.
       const dtCan = canCaToa(mau, t, tv).reduce((a, [id, n]) => a + n * (tv.can.get(id)?.dt_tim_m2 ?? 0), 0);
       const dtKyThuat = dtCongNangToa(t, tv).ky_thuat;

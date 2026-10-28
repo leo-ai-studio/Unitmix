@@ -6,6 +6,7 @@ import type { DuToan, KhoiLuong } from './duToan';
 import { LOAI_CAN, type GiaBan, type LoaiCan, type ThuVien, type TrangThaiPA } from './kieu';
 import { CHI_PHI_MAC_DINH } from './macDinh';
 import { boCucTang, canCuaToa, tangCoRieng } from './matBang';
+import { mauToa } from './canThem';
 
 export type TaiChinh = {
   /** Theo loại căn: số căn, DT thông thủy, doanh thu (đã tính hệ số tầng). */
@@ -44,7 +45,7 @@ export function tinhTaiChinh(pa: TrangThaiPA, tv: ThuVien, kl: KhoiLuong, dt: Du
   const b = (pa.chiPhi ?? CHI_PHI_MAC_DINH).ban;
   const theoLoai = Object.fromEntries(LOAI_CAN.map((l) => [l, { soCan: 0, dtTT: 0, doanhThu: 0 }])) as TaiChinh['theoLoai'];
   for (const t of pa.toa) {
-    const mau = tv.toa.get(t.mauId);
+    const mau = mauToa(tv, t);
     if (!mau) continue;
     const rieng = new Set(tangCoRieng(t));
     const chung = canCuaToa(mau, boCucTang(t, null), tv);
