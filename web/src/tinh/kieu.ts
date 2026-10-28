@@ -116,8 +116,11 @@ export type ToaDat = {
  */
 export type ThangTayThem = { khoa: string; mat: number; sau?: string; truoc?: string; sx: 1 | -1; tu?: string };
 export type ThangTay = { them: ThangTayThem[]; bo: string[] };
-/** Căn thêm tay: mẫu căn `id` chèn ngay sau ô `sau` (khoá vị trí) trên mặt `mat`. */
-export type CanThem = { mat: number; sau: string; id: string };
+/**
+ * Căn thêm tay: mẫu căn `id` chèn ngay sau ô `sau` (khoá vị trí) — hoặc ngay TRƯỚC ô `truoc` (chèn đầu dãy, app cũ tAdd ở ô đầu)
+ * — trên mặt `mat`. Có `sau` thì bỏ qua `truoc`.
+ */
+export type CanThem = { mat: number; sau?: string; truoc?: string; id: string };
 
 /** Ô thang bộ trên một mặt tòa (mm, hệ mặt): ô [a0, a0 + rong], điểm chèn khối thang = (a0 + dIns, bIns), lật theo `sx`. */
 export type ThangBoMB = { khoa: string; matIdx: number; a0: number; rong: number; sx: 1 | -1; dIns: number; bIns: number; block: string; nguon: 'mau' | 'them' };

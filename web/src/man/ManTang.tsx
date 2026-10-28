@@ -26,7 +26,7 @@ import { mauCuaToa, suaTuChinh, useDuLieuMB } from './tuChinhTang';
 import { matBangRiengTang, type ChanSua } from '../tinh/loiThang';
 import { ST_BUOC, stretchTay, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
-import { ThanhCongCuTang, useKeoTay, type PropsCongCu } from './CongCuTang';
+import { ThanhCongCuTang, useKeoTay, type ChoSang, type PropsCongCu } from './CongCuTang';
 import { mauToa } from '../tinh/canThem';
 
 export type ChungTang = {
@@ -250,10 +250,11 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   // công cụ tay (sắp xếp / thêm / xoá / lật) — lớp phủ, kéo thả bám tay
   const [keoBat, setKeoBat] = useState(false);
   const [hienHL, setHienHL] = useState(true);
+  const [choSang, setChoSang] = useState<ChoSang>(null);
   const ccProps: PropsCongCu = {
     pa, sua: p.sua, chiXem, tv, toa, mau, bc, can: sl.can, tangs: co.tangs, dsO, thangKhoa: co.thang ?? null,
     chonThang: (k) => datChonToa(toa, { thang: k }), chonCan: (k) => { chonCan(k); datChonToa(toa, { ds: [] }); },
-    keoBat, datKeoBat: setKeoBat, hienHL, datHienHL: setHienHL,
+    keoBat, datKeoBat: setKeoBat, hienHL, datHienHL: setHienHL, datChoSang: setChoSang,
   };
   const keoTay = useKeoTay(ccProps);
   const onMenu = (loai: 'o' | 'loi', khoa: string, x: number, y: number) => {
@@ -313,7 +314,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
             deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2}
-            thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} oKeo={keoTay.oKeo} hienHanhLang={hienHL} />
+            thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} dichLoi={keoTay.dichLoi} oKeo={keoTay.oKeo} hienHanhLang={hienHL} choSang={choSang} />
         </BanVe>
       </div>
       <ThanhCongCuTang {...ccProps} />
