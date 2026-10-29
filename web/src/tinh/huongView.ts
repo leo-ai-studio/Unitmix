@@ -173,12 +173,17 @@ export type BoiCanhView = {
 };
 /** Ký hiệu quảng trường (bảng QH hay ghi QT, QTr). Chỉ dùng cho view — `loaiDat` không có nhóm này. */
 const LA_QUANG_TRUONG = /^(QT|QTR|QUANG\s*TRUONG|QUẢNG\s*TRƯỜNG)/i;
-/** Lô cây xanh / mặt nước / quảng trường + cạnh lô giáp đường lộ giới ≥ `rongDuongLon` (Lo.canhDuong) của mọi lô trong PA. */
-export function boiCanhView(pa: Pick<TrangThaiPA, 'lo'>, cai: Pick<CaiDatView, 'rongDuongLon'> = VIEW_MAC_DINH): BoiCanhView {
+/**
+ * Lô cây xanh / mặt nước / quảng trường + cạnh lô giáp đường lộ giới ≥ `rongDuongLon` (Lo.canhDuong) của mọi lô trong PA. Lô mang ký
+ * hiệu CX / MN… mà chức năng để nhà ở (nhập bảng chưa sửa) và KHÔNG có tòa nào thì vẫn tính theo ký hiệu.
+ */
+export function boiCanhView(pa: Pick<TrangThaiPA, 'lo'> & { toa?: Pick<ToaDat, 'loId'>[] }, cai: Pick<CaiDatView, 'rongDuongLon'> = VIEW_MAC_DINH): BoiCanhView {
   const xanh: BoiCanhView['xanh'] = [], duong: BoiCanhView['duong'] = [];
+  const coToa = new Set((pa.toa ?? []).map((x) => x.loId));
   for (const l of pa.lo) {
     if (l.ranh.length < 3) continue;
-    const ld = loaiDat(l);
+    let ld = loaiDat(l);
+    if (ld === 'o_cao_tang' && !coToa.has(l.id)) ld = loaiDat({ temDat: { ...l.temDat, chucNang: 'khac' } });
     const loai: LoaiCanhQuan | null = ld === 'cay_xanh' || ld === 'mat_nuoc' ? ld : LA_QUANG_TRUONG.test(l.temDat.kyHieu.trim().normalize('NFC')) ? 'quang_truong' : null;
     if (loai) xanh.push({ P: l.ranh, bb: khungBao(l.ranh), loai });
     if (Array.isArray(l.canhDuong) && l.canhDuong.length === l.ranh.length) {

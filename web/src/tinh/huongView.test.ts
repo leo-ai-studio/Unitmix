@@ -152,6 +152,11 @@ describe('cảnh quan theo lô bên cạnh', () => {
     expect(nho.canh).toBe(rong.canh);
     expect(rong.canh).toBe(45);
   });
+  it('lô ký hiệu CX để chức năng nhà ở: không có tòa thì vẫn là cây xanh, có tòa thì không', () => {
+    const cx = { ...lo('x', 'CX-1', hcn(-50, 30, 110, 90)), temDat: { ...lo('x', 'CX-1', []).temDat, chucNang: 'tm' as const } };
+    expect(boiCanhView({ lo: [cx], toa: [] }).xanh.length).toBe(1);
+    expect(boiCanhView({ lo: [cx], toa: [{ loId: 'x' }] }).xanh.length).toBe(0);
+  });
   it('cây xanh nằm sau tòa đối diện thì không thấy', () => {
     const bo = new BoDemView(cai, boiCanhView({ lo: [lo('x', 'CX-01', hcn(-50, 60, 110, 120))] }));
     bo.them(toa('A', hcn(0, 0, 60, 10), 60, [can('1', [30, 10.3], [0, 1])]));
