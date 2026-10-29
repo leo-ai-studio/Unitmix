@@ -16,6 +16,7 @@ import { tenTang } from '../ui/ChonTang';
 import { fmtSo } from '../ui/so';
 import { Khung3D } from './Khung3D';
 import { khoi3dTheoId } from './stretch3d';
+import { caiDatView } from '../tinh/huongView'; // góc Bắc dự án (TMB › Điểm view › Cài đặt): mặt trời 3D cả dự án quay theo
 
 type Nap = { khoi3d: Map<string, Khoi3d | null>; loi: Map<string, LoiHinh>; xong: boolean };
 
@@ -143,6 +144,6 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   return (
     <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '')} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
-      gocBac={0} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, hienHam)} />
+      gocBac={caiDatView(pa.huongView).gocBac} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, hienHam)} />
   );
 }
