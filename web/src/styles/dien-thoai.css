@@ -37,7 +37,7 @@
   .panel-giua .nhom-nut button, .panel-giua .nut-nho, .panel-giua .nut-phu, .panel-giua .nut-chinh { min-height: 40px; min-width: 40px; }
   .panel-giua .noi-tren button:not(.nut-bt) { min-height: 40px; min-width: 40px; }
   .ngan-keo .nut-nho:last-child { flex-basis: 44px; }
-  .ngan-keo .bang-cc { min-height: 36px; align-items: center; }
+  .ngan-keo .bang-cc { min-height: 40px; align-items: center; }
   .thanh-tren .menu-them { display: inline-flex; flex-shrink: 0; }
   .thanh-tren .nut-them { min-width: 44px; min-height: 44px; font-size: 20px; line-height: 1; border-radius: 8px; }
   .thanh-tren .nut-them[aria-expanded="true"] { background: var(--selected); }
@@ -102,6 +102,7 @@
   .ngan-keo .muc-dau, .ngan-keo .muc-lo, .ngan-keo .the-mau { min-height: 44px; }
   .ngan-keo .nut-nho, .ngan-keo .nut-phu, .ngan-keo .nut-chinh { min-height: 40px; }
   .ngan-keo .o-tg { min-height: 40px; }
+  .ngan-keo .nhom-nut button { min-height: 40px; }
 
   /* ---- lớp phủ trên bản vẽ: không che nhau ---- */
   .nut-bt { min-width: 44px; height: 44px; }
@@ -111,7 +112,7 @@
   .goc-bv { bottom: 8px; }
   .goc-bv.trai { left: 8px; } .goc-bv.phai { right: 8px; }
   .goc-bv-hop { max-width: calc(100vw - 32px); max-height: 40dvh; font-size: 13px; }
-  .goc-bv-hop.lop label { min-height: 36px; }
+  .goc-bv-hop.lop label { min-height: 40px; }
   /* thanh công cụ TMB: một hàng, dư thì vuốt ngang trong thanh (không cuộn cả trang), chừa chỗ hoa gió */
   .thanh-tmb { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; max-width: calc(100% - 64px); box-sizing: border-box; padding: 8px 8px 4px; touch-action: pan-x; }
   .thanh-tmb::-webkit-scrollbar { display: none; }
@@ -146,7 +147,7 @@
     z-index: 40; top: var(--vv-y, 0px); bottom: auto; height: var(--vv-h, 100dvh); box-sizing: border-box; overscroll-behavior: contain;
     padding: calc(8px + var(--an-t)) calc(8px + var(--an-r)) calc(8px + var(--an-b)) calc(8px + var(--an-l));
   }
-  .hop-thoai > div, .hop-thoai > form {
+  .hop-thoai > div, .hop-thoai > div.hop-rong, .hop-thoai > form {
     --hop-dem: 16px; box-sizing: border-box; max-height: 100%; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     padding: var(--hop-dem);
   }
@@ -158,6 +159,7 @@
   .hop-thoai .chan-hop > button, .hop-thoai .chan-hop > a { min-height: 44px; }
   .hop-thoai .nut-phu, .hop-thoai .nut-chinh { min-height: 40px; }
   .hop-thoai input, .hop-thoai select, .hop-thoai textarea { font-size: 16px; }
+  .hop-thoai textarea { font-size: 16px !important; } /* đề bài KD: cỡ chữ ghi trong style của ô dán */
   .hop-thoai .o-chon select, .hop-thoai .o-chon input { max-width: min(220px, 100%); min-height: 40px; }
   /* hàng chọn tệp + sheet: xuống dòng thay vì tràn khỏi hộp */
   .hop-thoai .dong-tep { flex-wrap: wrap; align-items: center; }
@@ -170,12 +172,35 @@
   .hop-thoai .so-sanh .ss-dau { position: sticky; top: 0; z-index: 4; margin: calc(-1 * var(--hop-dem)) calc(-1 * var(--hop-dem)) 0; padding: var(--hop-dem) var(--hop-dem) 10px; background: var(--panel); border-bottom: 1px solid var(--line); }
   .hop-thoai .so-sanh .ss-dau .nut-phu { min-height: 44px; }
   .hop-xuat { max-height: 100%; overscroll-behavior: contain; }
+  .hop-3d input, .hop-3d select { font-size: 16px; min-height: 40px; box-sizing: border-box; }
+  .hop-xuat .o-chon { flex-direction: column; align-items: stretch; gap: 4px; padding: 4px 0; }
+  .hop-xuat .o-chon input, .hop-xuat .o-chon select { max-width: none; width: 100%; }
+  .hop-xuat .nut-chinh { min-height: 44px; }
   .hop-3d-trong { height: 100%; }
   .dong-hop { min-width: 44px; min-height: 44px; top: 0; right: 0; }
   .hop-xuat h3 { padding-right: 40px; }
   /* bàn phím ảo đang mở (html.ban-phim, ui/manHep.ts): ngăn kéo bám mép trên bàn phím, dock ẩn để ô nhập không bị che */
   .ban-phim .dock-duoi { visibility: hidden; }
   .ban-phim .khung-soan .ngan-keo { bottom: var(--vv-duoi, 0px); max-height: calc(var(--vv-h, 100dvh) - 8px); }
+}
+
+/* Trang Dự án của tôi trên điện thoại: hàng PA không còn rộng 980 px phải vuốt ngang (nút Mở PA / So sánh / Đổi tên nằm
+   ngoài mép) — xuống dòng, nút chạm 44 px; ô nhập 16 px để iOS không tự phóng. */
+@media (max-width: 760px) {
+  .trang input, .trang select { font-size: 16px; }
+  .khung > .thanh-tren .chon-lang button { min-width: 44px; min-height: 40px; }
+  .trang form .nut-phu, .trang > div > .nut-chinh { min-height: 44px; }
+  .bang-du-an { overflow-x: visible; }
+  .bang-du-an .hang { min-width: 0; flex-wrap: wrap; gap: 6px 12px; padding: 10px 12px; }
+  .bang-du-an .hang > span[style]:empty { display: none; } /* khoảng đệm flex: 1 */
+  .bang-du-an .hang > span[style*="width"], .bang-du-an .hang > b[style*="width"], .bang-du-an .hang > form[style*="width"] { width: auto !important; }
+  .bang-du-an .hang > b { flex: 1 1 60%; }
+  .bang-du-an .hang .so { font-size: 12px; }
+  .bang-du-an .hang code { flex: 1 1 160px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bang-du-an .hang .nut-phu, .bang-du-an .hang .nut-chinh { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+  .bang-du-an .hang > a.nut-chinh { flex: 1 1 100%; }
+  .bang-du-an .sua-ten { flex-wrap: wrap; }
+  .bang-du-an .sua-ten input { flex: 1 1 100%; }
 }
 
 /* Điện thoại dọc: hộp thoại thành tấm trượt từ đáy (sheet), trải hết bề ngang, nút chân hộp chia đều cho ngón cái. */
@@ -217,8 +242,20 @@
   .khung-soan .tab-buoc .nhan-ngan { display: none; }
 }
 
+/* Điện thoại hẹp (iPhone SE / mini / X: 375 px): thanh trên khít hơn để nút ⋯ không bị đẩy ra ngoài mép. */
+@media (max-width: 380px) {
+  .khung-soan .thanh-tren { gap: 4px; padding-left: calc(6px + var(--an-l)); padding-right: calc(6px + var(--an-r)); }
+  .khung-soan .thuong-hieu .mark, .khung-soan .thuong-hieu .mark img { height: 22px; }
+  .khung-soan .tab-buoc button { padding: 0 6px; min-width: 40px; }
+  .khung-soan .tab-xem button { padding: 0 5px; }
+  .thanh-tren .nut-them { min-width: 40px; }
+}
+
 /* Màn chạm bất kỳ cỡ nào (máy tính bảng ngang lớn, màn cảm ứng): nút công cụ ≥ 40 px. */
 @media (pointer: coarse) {
+  .khung > .thanh-tren .chon-lang button { min-width: 44px; min-height: 40px; }
+  .trang form .nut-phu, .trang > div > .nut-chinh { min-height: 44px; }
+  .bang-du-an .hang .nut-phu, .bang-du-an .hang .nut-chinh { min-height: 40px; display: inline-flex; align-items: center; }
   .nut-bt { min-width: 40px; height: 40px; }
   .thanh-tren .cap-do > button, .tab-buoc button, .tab-xem button, .nhom-nut button { min-height: 36px; }
 }
