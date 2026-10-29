@@ -44,3 +44,6 @@
 .thanh-cc-tang .cc-loai-thang .nut-bt { min-width: 34px; padding: 0 8px; font-size: 12px; font-weight: 600; }
 /* ⟲ thang về tự động đang chạy nền (tinh/tayNen.ts): vòng O nhỏ cạnh biểu tượng */
 .nut-bt .cc-dang-do { width: 14px; height: 14px; margin-left: 2px; }
+/* phép tay đang chạy nền (tinh/tayNen.ts): vòng O cạnh thanh công cụ */
+.thanh-cc-tang .cc-dang-chay { display: inline-flex; align-items: center; padding: 0 4px; }
+.thanh-cc-tang .cc-dang-chay img { width: 16px; height: 16px; }

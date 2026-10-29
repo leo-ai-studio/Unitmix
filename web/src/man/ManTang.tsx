@@ -26,7 +26,7 @@ import { mauCuaToa, suaTuChinh, useDuLieuMB } from './tuChinhTang';
 import { matBangRiengTang, type ChanSua } from '../tinh/loiThang';
 import { ST_BUOC, stretchTay, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
-import { ThanhCongCuTang, useKeoTay, type ChoSang, type PropsCongCu } from './CongCuTang';
+import { ThanhCongCuTang, useKeoTay, useToaTam, type ChoSang, type PropsCongCu } from './CongCuTang';
 import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
 
@@ -228,6 +228,10 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   const k0 = tangXem(co.tangs);
   const bc: BoCuc = useMemo(() => boCucTang(toa, k0), [toa, k0]);
   const sl = useMemo(() => soLieuTang(mau, bc, tv), [mau, bc, tv]);
+  // phép tay đang chạy nền: vẽ mặt bằng tạm (phần hình học nhanh, chưa tự chỉnh); công cụ tay vẫn dựa trên tòa trong PA
+  const tam = useToaTam(toa);
+  const mauVe = useMemo(() => (tam ? mauCuaToa(tam, mauToa(tv, tam) as ToaVe, k0) : mau), [tam, mau, tv, k0]);
+  const bcVe = useMemo(() => (tam ? boCucTang(tam, k0) : bc), [tam, bc, k0]);
   const loiIds = useMemo(() => mau.mat.flatMap((m) => m.phan_tu.filter((q) => q.loai !== 'can').map((q) => idLoi(q.block))), [mau]);
   const hinh = useHinhHoc(sl.can.map((c) => c.canId), loiIds, tv);
   const khung = useMemo(() => {
@@ -313,7 +317,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
       )}
       <div class="boc-ve" ref={boc} onPointerDownCapture={(e) => { keoTay.batDau(e); batDauKhung(e); }} onClickCapture={(e) => { if (nuotClick.current) { e.stopPropagation(); e.preventDefault(); } }}>
         <BanVe khung={khung} nhan={t('tang.banVe')} onDieuKhien={setDk} gocBac={toa.gocDo}>
-          <MatBangTang mau={mau} toa={bc} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa}
+          <MatBangTang mau={mauVe} toa={bcVe} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa}
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
             deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2}

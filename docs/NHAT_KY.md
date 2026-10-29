@@ -2,6 +2,28 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · câu báo "0 → N" ở thao tác đầu tiên · mọi phép tay màn Tầng chạy nền · agent Opus
+
+- **Câu báo "Căn / tầng: 0 → N"** (commit d761166): `baoThaoTac.soCanTang` lấy `baoCao.soCan` của mặt bằng lưu. PA chưa có `ToaDat.matBang` thì mặt bằng mặc định không có báo cáo, nên ra 0. Giờ khi thiếu báo cáo thì đếm căn trên mặt bằng hiệu dụng đang vẽ (`mauHieuDung` + `boCucTang`), giống số trên nhãn màn Tầng. Test `tinh/baoThaoTac.test.ts`: tm-u1 / xh-z4 / tm-t2 trên PA mới, xoá một căn ra N → N-1. Trên app xh-z4 PA mới xoá căn báo 23 → 22 (trước 0 → 22).
+- **Phép tay chạy nền** (commit sau d761166, xem `docs/de_xuat_hieu_nang.md` mục 13):
+  - `useChay` gửi `PhepTay` (tên + đối số chép được) qua `dieuPhoiTay` (`tinh/tayNen.ts`, `BANG_TAY` có đủ mọi phép tay + `goiYGiuCan`).
+  - Trong lúc chờ, bản vẽ hiện mặt bằng tạm (`hinhNhanh`: đổi ô, chưa tự chỉnh; `datTam` / `goTam` có mã lượt; `useToaTam` trong `TangVe`) và vòng `spin-o` ở thanh công cụ.
+  - Có kết quả cuối mới ghi, một bước hoàn tác. Lượt mới huỷ lượt cũ.
+  - Kéo thả dò ô đích trên worker riêng `dieuPhoiDo`; thả lúc đang dò thì chờ đúng lượt đó.
+  - `LopPhong` nhớ tâm vòng nội tiếp theo hình phòng. Đây là phần còn chặn 50–90 ms sau khi chuyển tự chỉnh sang nền.
+- Kết quả: luồng chính bị chặn khi xoá căn trên PA mới giảm từ 272–419 ms xuống 0 ms ở xh-z4 và 68–74 ms ở tm-t2 (phần này là lượt vẽ lại Preact dev, không phải tự chỉnh). Xoá thang giảm từ 158–185 ms xuống 0. Dò khi rê giảm từ 224–531 ms xuống 0. Đứng lớn nhất còn 18–79 ms. Câu báo và số căn trùng bản cũ ở mọi ca.
+- Chuẩn kết quả: `phaHoaiChay.ts` tách `phepNgauNhien` (giữ đúng thứ tự rút số ngẫu nhiên) và chạy phép qua `chayPhep`. Phá hoại hạt 0 / 101 / 202 / 303 vẫn 0 vi phạm. `tinh/tayNen.test.ts` thêm 5 ca: chuỗi phép ngẫu nhiên qua worker giả y hệt đồng bộ (xh-z4, tm-t2, tm-v4), PA mới, lượt mới huỷ lượt cũ, hình học nhanh, mặt bằng tạm.
+- Đo: vite 5428, API 8787, Edge headless + CDP, dự án thử `dfux96ui` (pa-1 xh-z4, pa-2 tm-t2). Kịch bản `do.mjs` trong scratchpad đặt lại PA trước mỗi ca, tự nhận hộp thoại rời trang.
+- `npm run kiem` ĐẠT (web 696 · worker 9 · pytest 15 · build).
+- Bẫy:
+  - Worktree agent không có `node_modules`: tạo junction `web/node_modules` và `worker/node_modules` trỏ về repo chính (đã gitignore). Thiếu `worker/node_modules` thì `vitest worker` HỎNG.
+  - Kịch bản CDP mở lại trang mà không bật `Page.enable` sẽ treo ở hộp thoại "rời trang" (cảnh báo đóng tab của trình soạn).
+  - `(node … &)` trong Bash của agent bị giết khi lệnh trả về: dùng chạy nền của công cụ.
+- Còn dở:
+  - Lượt vẽ lại SVG mặt bằng lớn (tm-t2 42 căn) ~70–80 ms ở chế độ dev; chưa đo bản build.
+  - Kết quả tới chậm hơn 0–150 ms do dựng / gửi worker.
+  - Bấm phép mới trong lúc chờ sẽ huỷ phép trước, không xếp hàng. Phép trước mất, đúng theo yêu cầu "lượt mới huỷ lượt cũ".
+
 ## 2026-10-29 · nét bao mẫu V theo hình bao thật · PC-11 dò lại nhanh + ⟲ chạy nền · chụm hai ngón khi bật ✥ · agent Opus
 
 - **Nét bao mẫu V** (commit 6ac4e7d): căn góc V không phải chữ nhật — `can.json` thêm `khung` (nét `khung` DefPoints chuẩn hoá, 4 căn tm-2pn-v1/v2, tm-3pn-v1, xh-2pn-v1) qua `scripts/sinh_phai_sinh_can.py`; `matBang.khungTaiO` đặt khung vào ô như `veCanTaiViTri` (app cũ `bienCan = c.khung || c.pts`). `tinh/netBao.ts`: ô đặc căn V theo khung; hành lang co / giãn cũng tính là sàn (như `sanPrims` app cũ); bỏ dải mảnh do làm tròn mm trước khi nới 700 mm (hai mép thẳng hàng lệch 1–3 mm cho dải dài cả mặt, nới ra cắt đôi nét bao); lấp hốc ≤ 1 m mà phần nới khoét vào sàn chung trong tòa. `thaoTacTay.chotSua`: căn V đè ô / lõi theo hình bao thật (`deKhung`) = đè → từ chối, như p20b `vaCham` app cũ (trước: đổi chỗ căn V vào giữa dãy được nhận vì kiểm theo ô chữ nhật).

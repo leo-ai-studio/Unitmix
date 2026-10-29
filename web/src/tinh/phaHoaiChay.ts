@@ -22,7 +22,8 @@ import type { Diem, ToaDat, TrangThaiPA } from './kieu';
 import { apMatBang, daGiacCacLoi, demLoaiThang, doDeKhe, matBangCua, matBangMacDinh, THANG_N2, THANG_N3, thangDungLuat, tuChinhToa, type ToaMB } from './loiThang';
 import { taoPAMoi } from './macDinh';
 import { boCucTang, canDangDung, congNangTai, khungTaiO, viTriCan } from './matBang';
-import { doiChoTay, doiLoaiThangTay, doiThangTay, latTay, mauThem, thangTuDongLai, themCanTay, themThangTay, xoaCanTay, xoaThangTay, type KetQuaTay } from './thaoTacTay';
+import { chayPhep, phepTay, type PhepTay } from './tayNen';
+import { mauThem, type KetQuaTay } from './thaoTacTay';
 
 const { tv, dl, toaDs } = napThuVien();
 const c = { tv, dl };
@@ -130,23 +131,33 @@ function kiem(id: string, buoc: number, op: string, toa: ToaDat, nen: ReturnType
   return s;
 }
 
-/** Một bước ngẫu nhiên: trả tên phép + kết quả (null = không có phép hợp lệ để thử). */
-function buocNgauNhien(toa: ToaDat, r: () => number): { op: string; kq: KetQuaTay | { ok: true; toa: ToaDat; chan: [] } } | null {
+/**
+ * Một phép ngẫu nhiên dạng dữ liệu (tên + đối số) — đúng dạng màn Tầng gửi worker (tinh/tayNen.ts `PhepTay`), nên bài phá hoại chạy
+ * qua cùng bảng phép với giao diện; 'donKhit' = chạy lại tự chỉnh. null = không có phép hợp lệ để thử.
+ */
+export function phepNgauNhien(toa: ToaDat, r: () => number): { op: string; ph: PhepTay | 'donKhit' } | null {
   const s = doTrangThai(toa);
   const can = s.vts.filter((v) => congNangTai(v.khoa, boCucTang(toa, null)) === 'can');
   const chon = <T,>(ds: T[]) => ds[Math.floor(r() * ds.length)];
   const x = r();
   if (!can.length) return null;
-  if (x < 0.14) { const v = chon(can); return { op: `xoá ${v.khoa}`, kq: xoaCanTay(toa, null, [v.khoa], c) }; }
-  if (x < 0.26) { const v = chon(can); return { op: `thêm sau ${v.khoa}`, kq: themCanTay(toa, null, v, mauThem(tv, canDangDung(v, boCucTang(toa, null))), c, r() < 0.3) }; }
-  if (x < 0.38) { const a = chon(can), b = chon(can); return { op: `đổi chỗ ${a.khoa} ↔ ${b.khoa}`, kq: doiChoTay(toa, null, a, b, c) }; }
-  if (x < 0.5) { const ds = [...new Set([chon(can).khoa, ...(r() < 0.4 ? [chon(can).khoa] : [])])]; return { op: `lật ${ds.join(',')}`, kq: latTay(toa, null, ds, c) }; }
-  if (x < 0.6) { const v = chon(can); return { op: `thêm thang sau ${v.khoa}`, kq: themThangTay(toa, v.matIdx, v.khoa, c) }; }
-  if (x < 0.7) { const t = chon(s.thang); return { op: `xoá thang ${t.khoa}`, kq: xoaThangTay(toa, t.khoa, c) }; }
-  if (x < 0.8) { const t = chon(s.thang), v = chon(can); return { op: `dời thang ${t.khoa} → sau ${v.khoa}`, kq: doiThangTay(toa, t.khoa, v.matIdx, v.khoa, c) }; }
-  if (x < 0.88) { const t = chon(s.thang); return { op: `đổi loại ${t.khoa}`, kq: doiLoaiThangTay(toa, t.khoa, t.block === THANG_N2 ? THANG_N3 : THANG_N2, c) }; }
-  if (x < 0.94) return { op: 'dồn khít (tự chỉnh lại)', kq: { ok: true, toa: tuChinhToa(toa, mauToa(tv, toa) as ToaMB, tv, dl), chan: [] } };
-  return { op: 'thang về tự động', kq: thangTuDongLai(toa, c) };
+  if (x < 0.14) { const v = chon(can); return { op: `xoá ${v.khoa}`, ph: phepTay('xoaCanTay', toa, null, [v.khoa]) }; }
+  if (x < 0.26) { const v = chon(can); return { op: `thêm sau ${v.khoa}`, ph: phepTay('themCanTay', toa, null, v, mauThem(tv, canDangDung(v, boCucTang(toa, null))), r() < 0.3) }; }
+  if (x < 0.38) { const a = chon(can), b = chon(can); return { op: `đổi chỗ ${a.khoa} ↔ ${b.khoa}`, ph: phepTay('doiChoTay', toa, null, a, b) }; }
+  if (x < 0.5) { const ds = [...new Set([chon(can).khoa, ...(r() < 0.4 ? [chon(can).khoa] : [])])]; return { op: `lật ${ds.join(',')}`, ph: phepTay('latTay', toa, null, ds) }; }
+  if (x < 0.6) { const v = chon(can); return { op: `thêm thang sau ${v.khoa}`, ph: phepTay('themThangTay', toa, v.matIdx, v.khoa) }; }
+  if (x < 0.7) { const t = chon(s.thang); return { op: `xoá thang ${t.khoa}`, ph: phepTay('xoaThangTay', toa, t.khoa) }; }
+  if (x < 0.8) { const t = chon(s.thang), v = chon(can); return { op: `dời thang ${t.khoa} → sau ${v.khoa}`, ph: phepTay('doiThangTay', toa, t.khoa, v.matIdx, v.khoa) }; }
+  if (x < 0.88) { const t = chon(s.thang); return { op: `đổi loại ${t.khoa}`, ph: phepTay('doiLoaiThangTay', toa, t.khoa, t.block === THANG_N2 ? THANG_N3 : THANG_N2) }; }
+  if (x < 0.94) return { op: 'dồn khít (tự chỉnh lại)', ph: 'donKhit' };
+  return { op: 'thang về tự động', ph: phepTay('thangTuDongLai', toa) };
+}
+
+/** Một bước ngẫu nhiên: trả tên phép + kết quả (chạy đồng bộ `chayPhep` — bản chuẩn của đường nền). */
+function buocNgauNhien(toa: ToaDat, r: () => number): { op: string; kq: KetQuaTay | { ok: true; toa: ToaDat; chan: [] } } | null {
+  const p = phepNgauNhien(toa, r);
+  if (!p) return null;
+  return { op: p.op, kq: p.ph === 'donKhit' ? { ok: true, toa: tuChinhToa(toa, mauToa(tv, toa) as ToaMB, tv, dl), chan: [] } : chayPhep(p.ph, c) };
 }
 
 /** Tóm tắt trạng thái để dò lỗi (PHA_HOAI_DUMP): nét bao + ô trên từng mặt. */
@@ -160,6 +171,7 @@ function tomTat(toa: ToaDat) {
  * Đăng ký bài phá hoại cho một hạt: mỗi mẫu tòa (kiểm nhanh lấy mẫu 1/4) chạy `soBuoc` bước ngẫu nhiên. Hạt 0 = bài gốc (env
  * `PHA_HOAI_HAT` cộng thêm); các hạt 101 / 202 / 303 × 24 bước nằm ở tệp test riêng để vitest chạy song song.
  */
+export { rng, hatCua };
 export function moTaPhaHoai(hatThem: number, soBuoc: number) {
 const SO_BUOC = Number(process.env.PHA_HOAI_BUOC) || soBuoc;
 const HAT = hatThem + (Number(process.env.PHA_HOAI_HAT) || 0);

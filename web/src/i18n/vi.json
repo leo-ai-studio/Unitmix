@@ -1198,6 +1198,7 @@
   "cc.ngan.bd": "căn / tầng {a} → {b}",
   "cc.dangDo": "đang dò…",
   "cc.dangTuDong": "đang đặt lại thang tự động…",
+  "cc.dangChay": "đang tính tự chỉnh / thoát nạn (chạy nền)…",
   "cc.doCham": "kiểm khi thả",
   "ds.muc": "Dân số theo căn",
   "gt.ds.muc": "Dân số tính theo từng căn: DT thông thủy của căn → số người theo bảng / công thức trong quyết định của tỉnh (địa giới cũ trước 1/7/2025), theo loại hình NOTM / NOXH / TĐC và giai đoạn hồ sơ; tỉnh chưa có quyết định thì P = S / 32 m²/người (QĐ 2161/QĐ-TTg). Lô chưa khai tỉnh: số căn × hệ số người / căn chung. So với dân số tối đa của lô theo quy hoạch.",

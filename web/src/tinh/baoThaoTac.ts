@@ -6,7 +6,8 @@
  */
 import { mauToa } from './canThem';
 import type { ThayDoiTuDong, ToaDat } from './kieu';
-import { matBangCua, matBangTang, type ToaMB } from './loiThang';
+import { matBangCua, matBangTang, mauHieuDung, type ToaMB } from './loiThang';
+import { boCucTang, congNangTai, viTriCan } from './matBang';
 import { chieuCaoPCCC, gioiHanThoatNan } from './pccc';
 import { doiThangTay, thangTuDongLai, type Ctx } from './thaoTacTay';
 
@@ -31,10 +32,17 @@ const GO = new Set(['bo', 'ky_thuat']);
 const oGo = (ds: ThayDoiTuDong[] | undefined, tang: number | null) =>
   new Set((ds ?? []).filter((d) => d.truong === 'congNang' && GO.has(d.moi) && (d.tang === tang || d.tang === null)).map((d) => d.khoa));
 
-/** Số căn một tầng theo mặt bằng đã tự chỉnh lưu trong tòa. */
+/**
+ * Số căn một tầng theo mặt bằng đã tự chỉnh lưu trong tòa. PA chưa có mặt bằng lưu (`ToaDat.matBang` chưa có — thao tác tay đầu
+ * tiên) thì mặt bằng mặc định không có báo cáo: đếm căn trên mặt bằng hiệu dụng đang vẽ (mẫu thư viện + bố cục tầng), không lấy 0.
+ */
 export function soCanTang(toa: ToaDat, c: Ctx, tang: number | null): number {
   const mau = mauToa(c.tv, toa) as ToaMB | undefined;
-  return mau ? matBangTang(toa, mau, c.dl, tang).baoCao?.soCan ?? 0 : 0;
+  if (!mau) return 0;
+  const so = matBangTang(toa, mau, c.dl, tang).baoCao?.soCan;
+  if (so !== undefined) return so;
+  const bc = boCucTang(toa, tang);
+  return viTriCan(mauHieuDung(toa, mau, c.dl, tang), c.tv, bc).filter((v) => congNangTai(v.khoa, bc) === 'can').length;
 }
 
 export function bienDongCan(truoc: ToaDat, sau: ToaDat, c: Ctx, tang: number | null): BienDongCan {
