@@ -6,6 +6,9 @@
  *   · TRÀN NGANG: scrollWidth > bề rộng khung                            → LỖI (mã 1)
  *   · NÚT BỊ CHE: tâm nút đang hiện bị phần tử khác đè (elementFromPoint) → LỖI (mã 1)
  *   · nút < 40 px (khung điện thoại / máy tính bảng)                       → cảnh báo
+ *   · Ô TÍCH LỆCH DÒNG: label có ô tích / ô chọn mà ô không nằm cùng dòng đầu với chữ (kit LEO xếp label dọc) → LỖI
+ *   · THANH XUỐNG DÒNG (khung ≥ 1280 px): thanh công cụ (.thanh-3d, .thanh-tmb, .thanh-cc-tang, .hang-nhap-tmb, .thanh-tren,
+ *     [role=toolbar]) có phần tử con ở hơn một hàng                                                     → LỖI
  * Rồi mở lần lượt mọi HỘP THOẠI / LỚP NỔI mở được (khung Leo AI — không gửi câu, bảng QH Excel — nạp tệp mẫu scripts/mau_kiem/chi_tieu_man_hep.xlsx,
  * đề bài KD, xuất CAD — chỉ mở hộp, KHÔNG bấm tải, xếp hàng loạt, so sánh mẫu tòa (không bấm Đặt), chú giải / hướng dẫn / lớp góc bản vẽ, menu ⋯, menu cấp;
  * ở trang Dự án: tạo dự án — không bấm Tạo, so sánh PA) và đo:
@@ -37,8 +40,43 @@ const cho = (ms) => new Promise((r) => setTimeout(r, ms));
 const timTrinhDuyet = () => [process.env.CHROME_PATH, 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
   'C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome', '/usr/bin/chromium'].find((p) => p && existsSync(p));
 
+/**
+ * Đo bố cục gọn (đợt "Bố cục quá kém, làm gọn lại"): ô tích lệch dòng với chữ, thanh công cụ xuống dòng. Chuỗi hàm, dán vào DO / DO_HOP.
+ * Ô tích: tâm ô phải nằm trong hộp dòng ĐẦU của chữ trong label (Range.getClientRects) — kit LEO xếp label dọc làm ô ra giữa, chữ xuống dưới.
+ * Thanh: gom con đang hiện thành hàng theo khoảng dọc chồng nhau; > 1 hàng là xuống dòng.
+ */
+const DO_GON = `
+  const tichLech = (goc) => {
+    const ra = [];
+    for (const l of goc.querySelectorAll('label')) {
+      const o = l.querySelector('input[type=checkbox], input[type=radio]');
+      if (!o) continue;
+      const a = o.getBoundingClientRect(), r = l.getBoundingClientRect();
+      if (!a.width || !r.width || getComputedStyle(l).visibility === 'hidden' || l.closest('[inert]')) continue;
+      const w = document.createTreeWalker(l, NodeFilter.SHOW_TEXT, { acceptNode: (n) => n.textContent.trim() && !n.parentElement.closest('select, option, small.muted') ? 1 : 3 });
+      const n = w.nextNode(); if (!n) continue;
+      const rg = document.createRange(); rg.selectNodeContents(n);
+      const d = [...rg.getClientRects()].find((q) => q.width > 0); if (!d) continue;
+      const cy = a.top + a.height / 2;
+      if (cy < d.top - 3 || cy > d.bottom + 3) ra.push('"' + l.textContent.trim().slice(0, 28) + '" ô y=' + Math.round(cy) + ' chữ ' + Math.round(d.top) + '–' + Math.round(d.bottom));
+    }
+    return ra;
+  };
+  const thanhBoc = () => {
+    const ra = [];
+    for (const t of document.querySelectorAll('.thanh-3d, .thanh-tmb, .thanh-cc-tang, .hang-nhap-tmb, .thanh-tren, [role=toolbar]')) {
+      const tr = t.getBoundingClientRect(); if (!tr.width || !tr.height || t.closest('[inert],[aria-hidden="true"]')) continue;
+      const con = [...t.children].map((c) => [c, c.getBoundingClientRect(), getComputedStyle(c)]).filter(([, q, cs]) => q.width > 0 && q.height > 0 && cs.position !== 'fixed' && cs.position !== 'absolute')
+        .sort((x, y) => x[1].top - y[1].top);
+      let hang = 0, day = -1e9;
+      for (const [, q] of con) { if (q.top >= day - 2) { hang++; day = q.bottom; } else day = Math.max(day, q.bottom); }
+      if (hang > 1) ra.push(t.tagName.toLowerCase() + '.' + String(t.className).split(/\\s+/)[0] + ' ' + hang + ' hàng, cao ' + Math.round(tr.height) + ' px');
+    }
+    return ra;
+  };`;
+
 /** Đo trong trang: tràn ngang, nút bị che, nút nhỏ. */
-const DO = `((MOBILE) => {
+const DO = `((MOBILE) => {${DO_GON}
   const vis = (e) => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
     return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden' && +cs.opacity > 0.05 && !e.closest('[inert],[aria-hidden="true"]'); };
   const ten = (e) => e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\\s+/).slice(0, 2).join('.') : '')
@@ -61,7 +99,8 @@ const DO = `((MOBILE) => {
   const g = document.querySelector('.panel-giua')?.getBoundingClientRect();
   // thanh trên tự cuộn ngang (ẩn thanh cuộn) nên không làm trang tràn — nút cuối bị đẩy ra ngoài mép cũng là lỗi
   const ngoaiThanh = [...(document.querySelector('.thanh-tren')?.children ?? [])].filter(vis).filter((e) => e.getBoundingClientRect().right > innerWidth + 0.5).map(ten);
-  return { sw: document.documentElement.scrollWidth, iw: innerWidth, che, nho, ngoaiThanh, giua: g ? [g.left, g.top, g.width, g.height].map(Math.round) : null };
+  return { sw: document.documentElement.scrollWidth, iw: innerWidth, che, nho, ngoaiThanh, giua: g ? [g.left, g.top, g.width, g.height].map(Math.round) : null,
+    tich: tichLech(document), boc: innerWidth >= 1280 ? thanhBoc() : [] };
 })`;
 
 /**
@@ -69,7 +108,7 @@ const DO = `((MOBILE) => {
  * (.nut-chinh, ✕, đầu hộp so sánh) được cuộn tới (scrollIntoView, như ngón tay vuốt) rồi mới đo. BAN_PHIM: chỉ đo chân hộp
  * với phần nhìn thấy = --vv-h (bàn phím giả).
  */
-const DO_HOP = `((SEL, NUT, MOBILE, BAN_PHIM) => {
+const DO_HOP = `((SEL, NUT, MOBILE, BAN_PHIM) => {${DO_GON}
   const hop = [...document.querySelectorAll(SEL)].pop();
   if (!hop) return { co: false, loi: [] };
   const loi = [];
@@ -96,6 +135,7 @@ const DO_HOP = `((SEL, NUT, MOBILE, BAN_PHIM) => {
     if (MOBILE) for (const e of [...hop.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]), select, textarea')].filter(vis))
       if (parseFloat(getComputedStyle(e).fontSize) < 16) loi.push('ô nhập < 16 px (iOS tự phóng): ' + ten(e) + ' ' + getComputedStyle(e).fontSize);
   }
+  if (!BAN_PHIM) for (const x of tichLech(hop)) loi.push('ô tích lệch dòng: ' + x);
   return { co: true, loi, soNut: chan.length };
 })`;
 
@@ -228,8 +268,10 @@ async function main() {
       }
       await js(`(() => { document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); return true; })()`); await cho(300);
       await bam('.tab-buoc button', 1); await cho(1200);
-      if (hep && !(await js(`!!document.querySelector('.menu-them-bang')`))) { await bam('.thanh-tren .nut-them'); await cho(400); }
-      if (!(await bamChu('/(^|\\s)CAD\\b/', hep ? '.menu-them-bang' : '.thanh-tren'))) boQua(k, 'xuat-cad', '(chưa chọn tòa)');
+      // nút CAD: trên thanh (màn rất rộng) hoặc trong menu ⋯ (≤ 1600 px, kể cả máy bàn 1440)
+      const coCadThanh = await js(`[...document.querySelectorAll('.thanh-tren > .nhom-xuat')].some((e) => e.getBoundingClientRect().width > 0)`);
+      if (!coCadThanh && !(await js(`!!document.querySelector('.menu-them-bang')`))) { await bam('.thanh-tren .nut-them'); await cho(400); }
+      if (!(await bamChu('/(^|\\s)CAD\\b/', coCadThanh ? '.thanh-tren' : '.menu-them-bang'))) boQua(k, 'xuat-cad', '(chưa chọn tòa)');
       else { await cho(700); n += await doHop(k, 'xuat-cad', '.hop-3d', { nut: '.dong-hop, .nut-chinh', dong: () => bam('.hop-3d .dong-hop') }); }
       await bam('.tab-buoc button', 0); await cho(300);
       return n;
@@ -242,9 +284,10 @@ async function main() {
         await gui('Emulation.setTouchEmulationEnabled', { enabled: k.mobile, maxTouchPoints: 5 });
         await moi(URL0 + '/'); await doiCo(`!!document.querySelector('main .nut-chinh')`); await cho(1200);
         const d = await js(`${DO}(${k.mobile})`);
-        const hong = d.sw > d.iw || d.che.length > 0;
+        const hong = d.sw > d.iw || d.che.length > 0 || d.tich.length > 0 || d.boc.length > 0;
         if (hong) n++;
         console.log(`${hong ? 'LỖI' : 'đạt'}  ${k.w}×${k.h} trang-du-an   tràn ${d.sw > d.iw ? d.sw + '>' + d.iw : 'không'} · che ${d.che.length} · nút < 40 px ${d.nho.length}`);
+        for (const x of [...d.tich.map((q) => 'ô tích lệch dòng: ' + q), ...d.boc.map((q) => 'thanh xuống dòng: ' + q)].slice(0, 6)) console.log('      ' + x);
         for (const x of [...d.che.slice(0, 4), ...d.nho.slice(0, 4)]) console.log('      ' + x);
         await bam('main > div > .nut-chinh'); await cho(500);
         n += await doHop(k, 'tao-du-an', '.hop-thoai', { dong: () => bam('.hop-thoai .chan-hop .nut-phu') });
@@ -283,7 +326,9 @@ async function main() {
         const tran = d.sw > d.iw || (k.mobile && d.ngoaiThanh.length > 0);
         for (const x of d.ngoaiThanh) console.log('      ra ngoài thanh trên: ' + x);
         const che = ten === 'menu-them' ? d.che.filter((x) => !x.includes('menu-them')) : d.che; // menu nổi đè bản vẽ là đúng ý
-        const hong = tran || (che.length > 0 && !/^ngan-|^menu-/.test(ten));
+        const hong = tran || (che.length > 0 && !/^ngan-|^menu-/.test(ten)) || d.tich.length > 0 || d.boc.length > 0;
+        for (const x of d.tich.slice(0, 6)) console.log('      ô tích lệch dòng: ' + x);
+        for (const x of d.boc.slice(0, 6)) console.log('      thanh xuống dòng: ' + x);
         if (hong) loi++;
         mkdirSync(RA, { recursive: true });
         const anh = await gui('Page.captureScreenshot', { format: 'png' });
