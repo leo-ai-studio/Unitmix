@@ -11,12 +11,17 @@ export type DoiTuong3D =
   | { loai: 'toa'; id: string; loId: string }
   | { loai: 'lo'; id: string }
   | { loai: 'tang'; id: string; tang: number }
-  | { loai: 'can'; id: string; tang: number | null; canId: string; no: number };
-/** Đang chọn (đi qua state chọn của 2D trong `man/SoanThao.tsx`); `tang` / `canKhoa` chỉ dùng ở 3D Công trình. */
-export type DangChon3D = { toaId: string | null; loId: string | null; tang?: number | null; canKhoa?: string | null };
+  | { loai: 'can'; id: string; tang: number | null; canId: string; no: number }
+  /**
+   * Khối đế. Toàn dự án: `id` = lô, `toaIds` = các tòa chung khối đế đó (bấm → tòa gần điểm chạm, `toaGanDiem`).
+   * Công trình: khối đế của tòa đang xem (`DE_TOA`, `toaIds` rỗng).
+   */
+  | { loai: 'de'; id: string; toaIds: string[] };
+/** Đang chọn (đi qua state chọn của 2D trong `man/SoanThao.tsx`); `tang` / `canKhoa` / `de` chỉ dùng ở 3D Công trình. */
+export type DangChon3D = { toaId: string | null; loId: string | null; tang?: number | null; canKhoa?: string | null; de?: boolean };
 
 type CoCha = { userData?: Record<string, unknown>; parent?: CoCha | null };
-const LOAI = new Set(['toa', 'lo', 'tang', 'can']);
+const LOAI = new Set(['toa', 'lo', 'tang', 'can', 'de']);
 
 /** Tìm `userData.chon` từ đối tượng trúng tia ngược lên các nút cha (mesh con của nhóm tòa vẫn ra đúng tòa). */
 export function doiTuongCua(o: CoCha | null | undefined): DoiTuong3D | null {
@@ -31,10 +36,45 @@ export function doiTuongCua(o: CoCha | null | undefined): DoiTuong3D | null {
 export const khoaDoiTuong = (d: DoiTuong3D | null | undefined): string =>
   !d ? '' : d.loai === 'tang' || d.loai === 'can' ? `${d.loai}:${d.id}:${d.tang ?? ''}` : `${d.loai}:${d.id}`;
 
-/** Danh sách giao điểm (gần trước) → đối tượng chọn được đầu tiên; không trúng gì chọn được = bấm nền. */
-export function doiTuongTrung(ds: { object: CoCha }[]): DoiTuong3D | null {
-  for (const g of ds) { const d = doiTuongCua(g.object); if (d) return d; }
+/** Tòa trên khối đế: id + chân (m, toạ độ bản vẽ — đã nới theo `deOffset` như khối đế vẽ). */
+export type ToaTrenDe = { id: string; loId: string; chan: Diem[] };
+
+/** Điểm chạm (m, bản vẽ) trên khối đế chung nhiều tòa → tòa có chân đế chứa điểm, không thì tòa có chân gần nhất. */
+export function toaGanDiem(ds: ToaTrenDe[], p: Diem): ToaTrenDe | null {
+  let tot: ToaTrenDe | null = null, dTot = Infinity;
+  for (const x of ds) {
+    if (x.chan.length < 3) continue;
+    if (trongDaGiac(p, x.chan)) return x;
+    const d = cachBien(p, x.chan);
+    if (d < dTot) { dTot = d; tot = x; }
+  }
+  return tot;
+}
+
+/**
+ * Danh sách giao điểm (gần trước) → đối tượng chọn được đầu tiên; không trúng gì chọn được = bấm nền.
+ * Trúng khối đế (Toàn dự án): ra tòa đứng trên phần đế ở điểm chạm (`userData.deToa`); khối đế không có tòa thì ra lô.
+ */
+export function doiTuongTrung(ds: { object: CoCha; point?: { x: number; z: number } }[]): DoiTuong3D | null {
+  for (const g of ds) {
+    const d = doiTuongCua(g.object);
+    if (!d) continue;
+    if (d.loai !== 'de' || !d.toaIds.length) return d;
+    const tren = deToaCua(g.object), x = g.point && tren ? toaGanDiem(tren, [g.point.x, -g.point.z]) : null;
+    return x ? { loai: 'toa', id: x.id, loId: x.loId } : { loai: 'lo', id: d.id };
+  }
   return null;
+}
+function deToaCua(o: CoCha | null | undefined): ToaTrenDe[] | null {
+  for (let v = o; v; v = v.parent ?? null) { const x = v.userData?.deToa as ToaTrenDe[] | undefined; if (x) return x; }
+  return null;
+}
+
+/** Rê chuột trúng `ro`: đối tượng `d` có tô nhạt không (khối đế tô theo tòa đang rê trên nó). */
+export function trungRo(d: DoiTuong3D, ro: DoiTuong3D | null): boolean {
+  if (!ro) return false;
+  if (d.loai === 'de' && ro.loai === 'toa') return d.toaIds.includes(ro.id);
+  return ro.loai === d.loai && ro.id === d.id;
 }
 
 /** Ngưỡng (px) chuột / ngón tay xê dịch giữa lúc nhấn và nhả mà vẫn tính là bấm; quá ngưỡng = kéo xoay camera. */
@@ -59,6 +99,7 @@ export function laBamDup(truoc: DiemBam | null, sau: DiemBam): boolean {
 /** Áp kết quả bấm vào state chọn: bấm tòa → chọn tòa + lô của nó; bấm lô → chọn lô, bỏ tòa; bấm nền → bỏ chọn cả hai. */
 export function chonSauBam(d: DoiTuong3D | null): DangChon3D {
   if (!d) return { toaId: null, loId: null };
+  if (d.loai === 'de') return d.toaIds.length === 1 ? { toaId: d.toaIds[0], loId: d.id } : { toaId: null, loId: d.id };
   return d.loai === 'toa' ? { toaId: d.id, loId: d.loId } : { toaId: null, loId: d.id };
 }
 
@@ -66,28 +107,43 @@ export function chonSauBam(d: DoiTuong3D | null): DangChon3D {
 export function dangChon(d: DoiTuong3D, c: DangChon3D): boolean {
   if (d.loai === 'toa') return d.id === c.toaId;
   if (d.loai === 'lo') return !c.toaId && d.id === c.loId;
-  if (d.loai === 'tang') return !c.canKhoa && (c.tang ?? null) === d.tang;
+  // khối đế: Toàn dự án tô khi một tòa trên nó đang chọn; Công trình (không danh sách tòa) theo cờ `de`
+  if (d.loai === 'de') return d.toaIds.length ? !!c.toaId && d.toaIds.includes(c.toaId) : !!c.de;
+  if (d.loai === 'tang') return !c.de && !c.canKhoa && (c.tang ?? null) === d.tang;
   return d.id === c.canKhoa && (c.tang ?? null) === d.tang;
 }
 
-/** Bấm trong 3D Công trình → căn / tầng chọn mới: căn → ô + tầng của nó; tầng → tầng, bỏ căn; nền → bỏ cả hai (về bố cục chung). */
-export function chonSauBamToa(d: DoiTuong3D | null): { canKhoa: string | null; tang: number | null } {
-  if (d?.loai === 'can') return { canKhoa: d.id, tang: d.tang };
-  if (d?.loai === 'tang') return { canKhoa: null, tang: d.tang };
-  return { canKhoa: null, tang: null };
+/**
+ * Bấm trong 3D Công trình → căn / tầng chọn mới: căn → ô + tầng của nó; tầng → tầng, bỏ căn; khối đế → `de` (chọn tòa, bỏ căn /
+ * tầng); nền → bỏ cả hai (về bố cục chung).
+ */
+export function chonSauBamToa(d: DoiTuong3D | null): { canKhoa: string | null; tang: number | null; de: boolean } {
+  if (d?.loai === 'can') return { canKhoa: d.id, tang: d.tang, de: false };
+  if (d?.loai === 'tang') return { canKhoa: null, tang: d.tang, de: false };
+  return { canKhoa: null, tang: null, de: d?.loai === 'de' };
 }
 
 // ---------- dò tia trong 3D Công trình (thuần, không cần WebGL) ----------
 
 type Diem = [number, number];
 type V3 = [number, number, number];
-/** Căn trên một tầng: khoá ô, mẫu đang dùng, số CH-xx, 4 góc (mm, toạ độ bản vẽ). */
-export type CanChon = { khoa: string; canId: string; no: number; goc: Diem[] };
+/**
+ * Căn trên một tầng: khoá ô, mẫu đang dùng, số CH-xx, 4 góc ô (mm, toạ độ bản vẽ); `hinh` = hình bao thật của căn góc V / chữ L
+ * (`CanMau.khung` đặt vào ô — `matBang.khungTaiO`), căn chữ nhật không có thì dùng `goc`.
+ */
+export type CanChon = { khoa: string; canId: string; no: number; goc: Diem[]; hinh?: Diem[] };
+/** Hình căn dùng để dò / tô: hình bao thật nếu có, không thì ô chữ nhật. */
+export const hinhCan = (c: { goc: Diem[]; hinh?: Diem[] }): Diem[] => (c.hinh && c.hinh.length >= 3 ? c.hinh : c.goc);
 /**
  * Bản đồ chọn của một tòa (đơn vị mét, toạ độ bản vẽ x, y; cao = Y three, mặt bằng three Z = −y): chân tháp, cao độ tầng điển hình,
- * căn của từng tầng (theo mặt bằng / bố cục của tầng đó — cùng khoá ô với màn Tầng).
+ * căn của từng tầng (theo mặt bằng / bố cục của tầng đó — cùng khoá ô với màn Tầng). `chanTang` = nét bao của chính tầng đó (mặt bằng
+ * tự chỉnh / tầng riêng có thể khác chân tháp), `chanDe` = chân khối đế; thiếu thì lấy `chan`.
  */
-export type BanDoChonToa = { chan: Diem[]; hDe: number; caoTang: number; nDH: number; canTang: (tang: number) => CanChon[]; canChung: () => CanChon[] };
+export type BanDoChonToa = {
+  chan: Diem[]; hDe: number; caoTang: number; nDH: number; canTang: (tang: number) => CanChon[]; canChung: () => CanChon[];
+  chanTang?: (tang: number) => Diem[]; chanDe?: Diem[];
+};
+const chanCua = (bd: BanDoChonToa, tang: number): Diem[] => { const c = bd.chanTang?.(tang); return c && c.length >= 3 ? c : bd.chan; };
 
 /** Điểm trong đa giác (chẵn lẻ). */
 export function trongDaGiac(p: Diem, P: Diem[]): boolean {
@@ -110,12 +166,16 @@ function cachBien(p: Diem, P: Diem[]): number {
   return d;
 }
 
-/** Căn chứa điểm (mm); không căn nào chứa thì căn gần nhất trong `dungSai` mm (tường ngoài nhô khỏi khung căn), không thì null. */
-export function canTaiDiem<C extends { goc: Diem[] }>(ds: C[], p: Diem, dungSai = 350): C | null {
+/**
+ * Căn chứa điểm (mm) theo hình thật (`hinhCan`: căn góc V / chữ L theo khung, không theo ô bao); không căn nào chứa thì căn gần nhất
+ * trong `dungSai` mm (tường ngoài nhô khỏi khung căn), không thì null.
+ */
+export function canTaiDiem<C extends { goc: Diem[]; hinh?: Diem[] }>(ds: C[], p: Diem, dungSai = 350): C | null {
   let tot: C | null = null, dTot = dungSai;
   for (const c of ds) {
-    if (trongDaGiac(p, c.goc)) return c;
-    const d = cachBien(p, c.goc);
+    const P = hinhCan(c);
+    if (trongDaGiac(p, P)) return c;
+    const d = cachBien(p, P);
     if (d < dTot) { dTot = d; tot = c; }
   }
   return tot;
@@ -151,42 +211,55 @@ export function tiaVaoLangTru(o: V3, d: V3, P: Diem[], y0: number, y1: number): 
   return tot;
 }
 
+/** Đối tượng khối đế của 3D Công trình (một tòa). */
+export const DE_TOA: DoiTuong3D = { loai: 'de', id: 'de', toaIds: [] };
+
 /**
- * Bấm / rê trong 3D Công trình: tia → căn (hoặc tầng nếu trúng lõi / hành lang / sàn) của tầng điển hình đầu tiên tia chạm.
- * Khối đế che trước thân tháp thì không chọn gì. `catY` = cao độ mặt cắt ngang (m): phần trên mặt cắt đã ẩn nên tia đi qua.
+ * Bấm / rê trong 3D Công trình: tia → căn (hoặc tầng nếu trúng lõi / hành lang / sàn) của tầng điển hình đầu tiên tia chạm, hoặc
+ * khối đế (`DE_TOA`) nếu khối đế che trước. Mỗi tầng dò theo nét bao của chính nó (`chanTang`: tầng tự chỉnh / tầng riêng bớt căn
+ * thì tia đi qua chỗ trống tới tầng / căn phía sau); căn theo hình thật (căn góc V / chữ L không chiếm chỗ căn bên cạnh bằng ô bao).
+ * `catY` = cao độ mặt cắt ngang (m): phần trên mặt cắt đã ẩn nên tia đi qua.
  * Điểm chạm lùi vào trong 0,15 m theo tia để trúng mặt tường ngoài vẫn ra căn sau tường.
  */
 export function chonTiaToa(bd: BanDoChonToa, o: V3, d: V3, catY = Infinity): DoiTuong3D | null {
   const L = Math.hypot(d[0], d[1], d[2]) || 1, u: V3 = [d[0] / L, d[1] / L, d[2] / L];
-  const top = Math.min(bd.hDe + bd.nDH * bd.caoTang, catY);
-  if (top <= bd.hDe) return null;
-  const tThan = tiaVaoLangTru(o, u, bd.chan, bd.hDe, top);
-  if (!Number.isFinite(tThan)) return null;
-  if (bd.hDe > 0 && tiaVaoLangTru(o, u, bd.chan, 0, Math.min(bd.hDe, catY)) < tThan - 1e-6) return null;
-  const t = tThan + 0.15, p: V3 = [o[0] + u[0] * t, o[1] + u[1] * t, o[2] + u[2] * t];
-  const tang = tangTaiCao(Math.min(p[1], top - 1e-3), bd.hDe, bd.caoTang, bd.nDH);
+  let tThan = Infinity, tang = 0;
+  for (let k = 1; k <= bd.nDH; k++) {
+    const y0 = bd.hDe + (k - 1) * bd.caoTang, y1 = Math.min(y0 + bd.caoTang, catY);
+    if (y1 <= y0) break;
+    const t = tiaVaoLangTru(o, u, chanCua(bd, k), y0, y1);
+    if (t < tThan - 1e-9) { tThan = t; tang = k; }
+  }
+  const tDe = bd.hDe > 0 && catY > 0 ? tiaVaoLangTru(o, u, bd.chanDe ?? bd.chan, 0, Math.min(bd.hDe, catY)) : Infinity;
+  if (tDe < tThan - 1e-6) return DE_TOA;
   if (!tang) return null;
+  const t = tThan + 0.15, p: V3 = [o[0] + u[0] * t, o[1] + u[1] * t, o[2] + u[2] * t];
   const c = canTaiDiem(bd.canTang(tang), [p[0] * 1000, -p[2] * 1000]);
   return c ? { loai: 'can', id: c.khoa, tang, canId: c.canId, no: c.no } : { loai: 'tang', id: `t${tang}`, tang };
 }
 
-/** Hình tô nhấn của đối tượng Công trình: chân (mét, bản vẽ) + cao độ đáy / đỉnh. Căn tầng null = cả cột căn mọi tầng. */
-export function hinhNhanToa(bd: BanDoChonToa, d: DoiTuong3D, caoThongThuy: number): { chan: Diem[]; y0: number; y1: number; xuyen: true } | null {
+/**
+ * Hình tô nhấn của đối tượng Công trình: chân (mét, bản vẽ) + cao độ đáy / đỉnh; `theTich` = khối thể tích (Khung3D chỉ tô các mặt
+ * nhìn thấy nằm trong khối, theo chiều sâu — không xuyên vật che). Căn tầng null = cả cột căn mọi tầng; căn góc V / chữ L theo hình thật.
+ */
+export function hinhNhanToa(bd: BanDoChonToa, d: DoiTuong3D, caoThongThuy: number): { chan: Diem[]; y0: number; y1: number; theTich: true } | null {
+  if (d.loai === 'de') return bd.hDe > 0 ? { chan: bd.chanDe ?? bd.chan, y0: 0, y1: bd.hDe, theTich: true } : null;
   if (d.loai === 'tang') {
     const y0 = bd.hDe + (d.tang - 1) * bd.caoTang;
-    return { chan: bd.chan, y0, y1: y0 + bd.caoTang, xuyen: true };
+    return { chan: chanCua(bd, d.tang), y0, y1: y0 + bd.caoTang, theTich: true };
   }
   if (d.loai !== 'can') return null;
   const c = (d.tang ? bd.canTang(d.tang) : bd.canChung()).find((x) => x.khoa === d.id);
   if (!c) return null;
-  const chan = c.goc.map((q): Diem => [q[0] / 1000, q[1] / 1000]);
-  if (d.tang === null) return { chan, y0: bd.hDe, y1: bd.hDe + bd.nDH * bd.caoTang, xuyen: true };
+  const chan = hinhCan(c).map((q): Diem => [q[0] / 1000, q[1] / 1000]);
+  if (d.tang === null) return { chan, y0: bd.hDe, y1: bd.hDe + bd.nDH * bd.caoTang, theTich: true };
   const y0 = bd.hDe + (d.tang - 1) * bd.caoTang;
-  return { chan, y0, y1: y0 + caoThongThuy, xuyen: true };
+  return { chan, y0, y1: y0 + caoThongThuy, theTich: true };
 }
 
-/** Đối tượng Công trình ứng với state chọn: căn (tầng đang xem hoặc cột căn bố cục chung) hoặc tầng; không có → null. */
+/** Đối tượng Công trình ứng với state chọn: khối đế, căn (tầng đang xem hoặc cột căn bố cục chung) hoặc tầng; không có → null. */
 export function doiTuongDangChonToa(bd: BanDoChonToa, c: DangChon3D): DoiTuong3D | null {
+  if (c.de) return bd.hDe > 0 ? DE_TOA : null;
   const tang = c.tang ?? null;
   if (c.canKhoa) {
     const x = (tang ? bd.canTang(tang) : bd.canChung()).find((q) => q.khoa === c.canKhoa);

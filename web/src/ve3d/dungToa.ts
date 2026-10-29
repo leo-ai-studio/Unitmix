@@ -6,7 +6,7 @@
  */
 import type * as THREE from 'three';
 import type { Diem, ThuVien, ToaDat } from '../tinh/kieu';
-import { boCucTang, canDangDung, congNangTai, soCanChuVi, tangCoRieng, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from '../tinh/matBang';
+import { boCucTang, canDangDung, congNangTai, khungTaiO, soCanChuVi, tangCoRieng, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from '../tinh/matBang';
 import { nguongLod, type BanDoChonToa, type CanChon } from './chon3d';
 import { dungCan, hinhDaiCua, nhomMoi, type Khoi3d, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
 
@@ -265,8 +265,11 @@ function ranhLoi(bt: [number, number, number, number], q: { x: number; y: number
   return veLoiTaiViTri([{ cat: 'bao', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] }], q)[0].pts;
 }
 
-/** Một bố cục tầng đã dựng: hình gộp (nhớ được), số căn, căn để chọn trong 3D (tính lười), nét nhân tầng đã nối. */
-type TangDung = { hinh: HinhGop<KhoaVL>; so: number; can: () => CanChon[]; nhoNet: Map<string, THREE.BufferGeometry[]> };
+/**
+ * Một bố cục tầng đã dựng: hình gộp (nhớ được), số căn, căn để chọn trong 3D (tính lười, hình thật), nét bao của tầng (m, để dò tia),
+ * nét nhân tầng đã nối.
+ */
+type TangDung = { hinh: HinhGop<KhoaVL>; so: number; can: () => CanChon[]; chan: Diem[]; nhoNet: Map<string, THREE.BufferGeometry[]> };
 
 /**
  * Dựng 3D cả tòa. Hình học tầng / khối ngoài nhớ giữa các lần dựng (khoá theo mặt bằng tầng, bố cục, khối 3D căn, tham số đứng —
@@ -340,10 +343,15 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
       let ds: CanChon[] | null = null;
       const so = vts.filter((vt) => congNangTai(vt.khoa, bc) === 'can' && du.khoi3d.get(canDangDung(vt, bc))).length;
       return {
-        hinh: r.v.hinh, nhoNet: r.v.nhoNet, so,
+        hinh: r.v.hinh, nhoNet: r.v.nhoNet, so, chan: mauT.duong_bao.map((p) => [p[0] * K, p[1] * K] as Diem),
         can: () => (ds ??= (() => {
           const no = soCanChuVi(mauT.duong_bao, vts);
-          return vts.filter((vt) => congNangTai(vt.khoa, bc) === 'can').map((vt) => ({ khoa: vt.khoa, canId: canDangDung(vt, bc), no: no.get(vt.khoa) ?? 0, goc: vt.goc }));
+          return vts.filter((vt) => congNangTai(vt.khoa, bc) === 'can').map((vt) => {
+            // căn góc V / chữ L: hình bao thật đặt vào ô như khối 3D (chiều sâu gốc của mẫu căn), để dò tia / tô nhấn đúng hình
+            const canId = canDangDung(vt, bc), cm = tv.can.get(canId);
+            const hinh = khungTaiO(mauT, vt.matIdx, vt.a0, vt.a1, cm?.sau_mm ?? vt.sau, vt.guong, cm?.khung) ?? undefined;
+            return { khoa: vt.khoa, canId, no: no.get(vt.khoa) ?? 0, goc: vt.goc, hinh };
+          });
         })()),
       };
     });
@@ -409,9 +417,10 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
   xa.visible = false; // trước lượt vẽ đầu (LOD.update theo camera) hiện mức gần
   goc.add(lod);
 
+  const chanChon = foot.map((p) => [p[0] * K, p[1] * K] as [number, number]);
   const chon: BanDoChonToa = {
-    chan: foot.map((p) => [p[0] * K, p[1] * K] as [number, number]), hDe: hDe * K, caoTang: P.tang * K, nDH,
-    canTang: (tang) => tangCua(tang).can(), canChung: () => chung.can(),
+    chan: chanChon, chanDe: chanChon, hDe: hDe * K, caoTang: P.tang * K, nDH,
+    canTang: (tang) => tangCua(tang).can(), canChung: () => chung.can(), chanTang: (tang) => tangCua(tang).chan,
   };
   return { canh: { tam: [cx * K, cao * 0.45, -cy * K] as [number, number, number], coCanh, cao }, soCan, chon };
 }
