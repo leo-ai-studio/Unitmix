@@ -18,8 +18,8 @@
  */
 import { LOAI_CAN, type BaoCaoGiamCan, type BaoCaoKhitKep, type BaoCaoTuChinh, type CongNangO, type Diem, type DoanHanhLangMB, type KetQuaTuChinh, type LoaiCan, type MatBangSua, type SanhMB, type ThangBoMB, type ThangTay, type ThangTayThem, type ThayDoiTuDong, type ThuVien, type ToaDat } from './kieu';
 import { KHE_HL_THEM_MM, KHE_TUONG_MM, kheTrenMat, tongKhe, TUONG_CHUNG_LOI_MM } from './khe';
-import { netBaoTheoO, NOI_MAT_MM } from './netBao';
-import { boCucTang, canDangDung, chenhRong, congNangTai, doanCan, donKhit, ghiDeTang, KHIT_MM, matDaDon, tangCoRieng, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from './matBang';
+import { netBaoTheoO, NOI_MAT_MM, soChongKhung } from './netBao';
+import { boCucTang, canDangDung, chenhRong, congNangTai, doanCan, donKhit, ghiDeTang, KHIT_MM, khungTaiO, matDaDon, tangCoRieng, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from './matBang';
 import { dtHanhLangTang } from './phanChung';
 import { chieuCaoPCCC, cuaTrenMat, dungDoThi, gioiHanThoatNan, thoatNan, TIM_CUA_THANG_MM, type MatToa, type PhanTuMat, type ToaPCCC } from './pccc';
 import { maBienThe, ST_BUOC as ST_BUOC_MM, ST_MAX, tachMa } from './stretch';
@@ -422,13 +422,19 @@ function gotDauThua(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined,
 }
 
 /** Ô đặc của mặt bằng (căn đã dồn khít theo bố cục, ô thang) và phần giữ (dải hành lang tim ± nửa bề rộng, lõi), mm thế giới. */
-function oDacMB(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc?: BoCuc): { o: Diem[][]; hl: Diem[][] } {
-  const hd = dung(mau, mb, dl), o: Diem[][] = [];
+function oDacMB(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc?: BoCuc): { o: Diem[][]; hl: Diem[][]; khung: number[] } {
+  const hd = dung(mau, mb, dl), o: Diem[][] = [], khung: number[] = [];
   const hcn = (mi: number, a0: number, a1: number, sau: number): Diem[] => {
     const m = mau.mat[mi], B = coSo(m.goc_deg, m.truc_mm);
     return [B.pt(a0, 0), B.pt(a1, 0), B.pt(a1, sau), B.pt(a0, sau)];
   };
-  for (const v of viTriCan(hd, tv, bc)) o.push(hcn(v.matIdx, v.a0, v.a1, (bc ? tv.can.get(canDangDung(v, bc))?.sau_mm : undefined) ?? v.sau ?? BAY_MM));
+  // căn góc V: hình bao thật (CanMau.khung) — ô chữ nhật để nét bao thừa / thiếu cả cái nêm góc khi căn dời / xoá (app cũ bienCan)
+  for (const v of viTriCan(hd, tv, bc)) {
+    const cm = tv.can.get(bc ? canDangDung(v, bc) : v.canGocId), sau = (bc ? cm?.sau_mm : undefined) ?? v.sau ?? BAY_MM;
+    const kh = khungTaiO(mau, v.matIdx, v.a0, v.a1, sau, v.guong, cm?.khung);
+    if (kh) khung.push(o.length);
+    o.push(kh ?? hcn(v.matIdx, v.a0, v.a1, sau));
+  }
   for (const t of mb.thangBo) o.push(hcn(t.matIdx, t.a0, t.a0 + t.rong, BAY_MM));
   // khung tường lõi: ô đặc cố định — chỉ trừ khỏi phần sàn mất, không kéo nét bao ra ngoài (dải lõi chữ nhật cả bay thì quá thô:
   // mặt kề có thể chồng bay lên dải lõi)
@@ -438,7 +444,7 @@ function oDacMB(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv:
     const dx = s.p1[0] - s.p0[0], dy = s.p1[1] - s.p0[1], L = Math.hypot(dx, dy) || 1, nx = (-dy / L) * r, ny = (dx / L) * r;
     return [[s.p0[0] + nx, s.p0[1] + ny], [s.p1[0] + nx, s.p1[1] + ny], [s.p1[0] - nx, s.p1[1] - ny], [s.p0[0] - nx, s.p0[1] - ny]];
   });
-  return { o, hl: [...hl, ...loi] };
+  return { o, hl: [...hl, ...loi], khung };
 }
 
 /**
@@ -451,7 +457,7 @@ function baoTheoO(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, t
   // chỗ trống, ô lòi ra ngoài) mới dựng lại bằng phép boolean như app cũ
   const P1 = mb.duongBao ?? mau.duong_bao;
   if (!baoHong(P1, mau, a, b)) return mb.duongBao;
-  const P = netBaoTheoO(mau.duong_bao, a.o, b.o, b.hl);
+  const P = netBaoTheoO(mau.duong_bao, a.o, b.o, b.hl, a.hl);
   if (!P) return null;
   return P === mau.duong_bao ? undefined : gonDaGiac(P);
 }
@@ -1968,6 +1974,15 @@ function loiTheoMat(hd: ToaMB, tv: ThuVien, bc: BoCuc, san: SanHo[]): LoiMat[] {
   });
 }
 /** Đè / khe (mm, trừ khe tường và sân hở QT-69) / sân hở không khớp (mm) của một mặt bằng — để kiểm / quét. */
+/**
+ * Số cặp đè của căn góc V theo hình bao thật (`CanMau.khung`) với ô / lõi khác (app cũ p20b `vaCham` theo khung): đè / khe theo ô
+ * chữ nhật (`doDeKhe`) không thấy cái nêm của căn V khi căn đó bị đổi chỗ / lật sang vị trí không phải góc.
+ */
+export function deKhung(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc): number {
+  const { o, khung } = oDacMB(mau, mb, dl, tv, bc);
+  return khung.length ? soChongKhung(khung.map((i) => o[i]), [...o.filter((_, i) => !khung.includes(i)), ...daGiacCacLoi(mau, dl)]) : 0;
+}
+
 export function doDeKhe(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc): { de: number; mm: number; san: number } {
   const ls = loiTheoMat(apMatBang(mau, mb, dl), tv, bc, sanHo(mau, dl, tv));
   return { de: ls.reduce((a, l) => a + l.de, 0), mm: ls.reduce((a, l) => a + l.kheMm + l.hlMm, 0), san: ls.reduce((a, l) => a + l.sanMm, 0) };

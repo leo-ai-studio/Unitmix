@@ -31,8 +31,8 @@ def _ghi(p: Path, obj, gon=True):
 
 
 def ghi_can(ds: list, f: Path) -> None:
-    """can.json: indent=1 như _ghi(gon=False), riêng mỗi phòng (`phong`, do boc_cad/boc_phong.py bóc) và đường cắt STRETCH
-    (`stretch`) nằm gọn MỘT dòng."""
+    """can.json: indent=1 như _ghi(gon=False), riêng mỗi phòng (`phong`, do boc_cad/boc_phong.py bóc) đường cắt STRETCH
+    (`stretch`) và hình bao căn góc (`khung`) nằm gọn MỘT dòng."""
     the, ban = {}, []
     for c in ds:
         c2 = dict(c)
@@ -40,6 +40,10 @@ def ghi_can(ds: list, f: Path) -> None:
             key = f"@@STRETCH_{c['id']}@@"
             the[json.dumps(key)] = json.dumps(c2["stretch"], ensure_ascii=False, separators=(",", ":"))
             c2["stretch"] = key
+        if c2.get("khung"):
+            key = f"@@KHUNG_{c['id']}@@"
+            the[json.dumps(key)] = json.dumps(c2["khung"], ensure_ascii=False, separators=(",", ":"))
+            c2["khung"] = key
         if c2.get("phong"):
             ph = []
             for i, p in enumerate(c2["phong"]):
