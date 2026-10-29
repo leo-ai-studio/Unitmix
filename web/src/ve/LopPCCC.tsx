@@ -346,5 +346,12 @@ export function ChuGiaiPCCC({ kq }: { kq: KetQuaPCCCTang | null }) {
   );
 }
 
+/** Tủ / cửa ngăn cháy đang thấy trên mặt bằng tòa (kết quả gần nhất, theo lớp đang bật) — cho xuất `.dxf` (như app cũ: lớp MDI-PCCC-*). */
+export function pcccDangVe(toaId: string) {
+  const kq = cuoiTheoToa.get(toaId);
+  if (!kq || !(cai.tu || cai.cnc)) return undefined;
+  return { tu: cai.tu ? kq.tu.tu : [], cua: cai.cnc ? kq.hanhLang.cua : [] };
+}
+
 /** Bộ tủ tay hiện tại (lần sửa đầu chép bộ tự đặt) — cho nút ngoài lớp. */
 export const tuTayHienTai = (kq: KetQuaPCCCTang, toa: ToaDat) => tuTayTuKq(kq.tu, toa.tuPCCCTay);

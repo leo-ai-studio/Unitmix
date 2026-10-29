@@ -11,6 +11,7 @@ import type { ToaVe } from '../ve/MatBangTang';
 import { asciiHoa, danhSachChen, taoDxf, taoScr, tenTepAn, THU_VIEN_XREF_MAC_DINH } from '../xuat/xuatCad';
 import { chuKyMatBang } from '../tinh/loiThang';
 import { fmtSo } from '../ui/so';
+import { pcccDangVe } from '../ve/LopPCCC';
 
 /** Phạm vi xuất: bố cục chung, một tầng có bố cục riêng, hoặc mỗi nhóm tầng một tệp. */
 type PhamVi = 'chung' | 'tat' | number;
@@ -63,7 +64,7 @@ export function HopXuatCad({ toa, mau, mauTang, tv, ten, dong }: Props) {
   const xuat = (kieu: 'scr' | 'dxf') => dsTang().forEach((tg, i) => setTimeout(() => {
     const d = du(tg), ten1 = tg === null && pv === 'chung' ? ten0 : duoiTen(tg);
     if (kieu === 'scr') taiVe(taoScr({ ...d, ten: ten1 }), `${ten1}.scr`, 'text/plain;charset=us-ascii');
-    else taiVe(taoDxf({ ...d, ten: ten1 }), `${ten1}.dxf`, 'application/dxf');
+    else taiVe(taoDxf({ ...d, ten: ten1, pccc: tg === null ? pcccDangVe(toa.id) : undefined }), `${ten1}.dxf`, 'application/dxf');
   }, i * 300)); // tải nhiều tệp: cách nhau để trình duyệt không chặn
   return (
     <LopNoi>
