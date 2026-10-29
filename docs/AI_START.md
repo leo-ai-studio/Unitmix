@@ -5,7 +5,7 @@ Tệp này để AI (Claude Code, C2, agent) bắt đầu nhanh. Đọc xong t�
 ## Dự án
 
 - App lập cơ cấu căn hộ: lô đất → xếp mẫu tòa (TMB) → tầng, căn → hầm → 3D → chi phí → so sánh PA. Web Preact + TypeScript + Vite (`web/`), API Cloudflare Worker + D1 (`worker/`), thư viện mẫu tòa / căn chép từ app cũ `E:\Projects\MDI_Unitmix_v4` (chỉ đọc).
-- Phiên bản hiện ở chân trang Dự án và khi rê logo (`web/src/phienBan.ts`, `define` trong `web/vite.config.ts`): `vX.Y.Z · mã commit(+ nếu có sửa chưa commit) · ngày build`. Đợt lớn thì nâng số trong `package.json`, `web/package.json`, `package-lock.json` (3 chỗ).
+- Phiên bản hiện ở thanh trên trang Dự án (`TacGiaBan` cạnh VI / EN: NghiaVT · vX · ngày, bấm → lịch sử), dưới logo màn soạn và khi rê logo (`web/src/phienBan.ts`, `define` trong `web/vite.config.ts`): `vX.Y.Z · mã commit(+ nếu có sửa chưa commit) · ngày build`. Đợt lớn thì nâng số trong `package.json`, `web/package.json`, `package-lock.json` (3 chỗ).
 - Remote: `https://github.com/leo-ai-studio/Unitmix.git`, nhánh `main`. Chỉ push khi người dùng bảo.
 
 ## Chạy và kiểm

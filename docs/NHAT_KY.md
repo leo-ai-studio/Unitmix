@@ -502,3 +502,20 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 **Kiểm:** `node scripts/kiem.mjs` ĐẠT (tsc, web 709, worker 9, pytest 15, build); `kiem_man_hep.mjs --chi 390` ĐẠT; `node --check dist/sw.js`; header kiểm qua `wrangler dev` cổng 8811. Số trước / sau: `docs/de_xuat_hieu_nang.md` mục 14 (mở lại từ biểu tượng 1.116 → 558 ms, TBT mở lại 134 → 28 ms, mở 3D TBT 402 → 264 ms, canvas 3D −44 % điểm ảnh).
 
 **Chưa làm / chưa chắc:** không có iPhone / WebKit để đo thật; Chromium không giả lập được `display-mode: standalone`, không thấy vòng resize / rAF chạy nền. Người dùng phải XOÁ biểu tượng cũ trên màn hình chính rồi thêm lại (iOS chỉ đọc manifest / icon lúc thêm). Chưa tách chunk chính 747 KB.
+
+## 2026-10-29 · Trang "Dự án của tôi" gọn kiểu Architechtures · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** đầu trang Dự án rườm, chữ mảnh và thưa; sắp lại gọn như bảng dự án Architechtures; nút thành biểu tượng; chép đường dẫn chọn link xem / link sửa; bỏ được dự án người khác chia sẻ khỏi danh sách; logo to hơn; người tạo + phiên bản + ngày một chỗ cạnh VI / EN.
+
+**Quyền sửa (đã có, không đổi):** server chỉ lưu bản băm mã sửa (`du_an.bam_ma_sua`), lệnh ghi gửi header `X-Ma-Sua`. Máy có quyền sửa khi `localStorage['unitmix.maSua.<mã>']` có mã — cất lúc tạo dự án, mở link `?sua=` (`nhanMaTuLink` cất rồi gỡ khỏi thanh địa chỉ) hoặc dán link sửa ở ô "Dán link". Danh sách trang = `unitmix.duAnDaMo` (ghi khi mở dự án).
+
+**Mã:**
+- `kho/maSua.ts`: `taoLinkXem` / `taoLinkSua` thuần, `linkChiaSe(goc, ma, 'xem' | 'sua', maSua)` (link sửa = `null` khi máy không có mã), `quyenDuAn`, `boMa` / `chenLai` thuần + `boKhoiDanhSach` / `hoanTacBo` (chỉ sửa danh sách trên máy, KHÔNG gọi server, giữ mã sửa).
+- `man/DuAn.tsx` viết lại: đầu trang (tiêu đề trái + số dự án, nút "+ Tạo dự án" phải), thanh lọc (tìm không dấu, sắp xếp mở gần đây / PA sửa gần đây / tên, dán link + Mở), thẻ dự án (tên, nhãn "Sửa được" / "Được chia sẻ · chỉ xem", địa điểm · số PA · mã), nút biểu tượng So sánh PA · Đổi tên · Chép đường dẫn · Bỏ khỏi danh sách · Mở; bảng PA một lưới (tiêu đề cột một lần, số canh phải tabular), nút Đổi tên · Nhân bản · Xoá · Mở. Chép đường dẫn: máy có mã sửa → menu "Link chỉ xem" / "Link có thể sửa" (kèm mã sửa); không có → chép link xem luôn. Báo nhỏ `.bao-nho` (đã chép / đã bỏ + Hoàn tác). Bỏ dự án sửa được thì hỏi lại trước.
+- `man/locDuAn.ts` (lọc / sắp thuần). `ui/ThanhTren.tsx`: tách `useLichSu` / `BangLichSu`, `ThuongHieu anBan`, `TacGiaBan` (NghiaVT · vX · ngày từ `LICH_SU_PHIEN_BAN`, cả khối là nút mở lịch sử). Bỏ chân trang "Người tạo · phiên bản" ở trang này.
+- Biểu tượng nét mới (tự vẽ): `moDuAn`, `soSanh`, `doiTen`, `chepLink`, `boDs`, `tim`; `NutBieuTuong` thêm `nhan`, `moRong`.
+- `styles/du-an.css` (mới, import sau `man-hinh-chinh.css`): logo 40 px (điện thoại 34 / 30), tiêu đề 22 px 600, chữ khít; bỏ luật `.bang-du-an` / `.hang` cũ ở `unitmix.css`, `dien-thoai.css`.
+
+**Kiểm:** `node scripts/kiem.mjs` ĐẠT (tsc, web 737, worker 9, pytest 15, build); test mới `kho/chiaSe.test.ts`, `man/locDuAn.test.ts`; `kiem_man_hep.mjs` 390 ĐẠT (trang-du-an, tao-du-an, so-sanh). Trên app (Edge headless): link sửa chép ra `…/du-an/2mlg1a2l?sua=…`, dự án chia sẻ chỉ có "Chép link xem", bỏ khỏi danh sách + Hoàn tác trả đúng chỗ. Ảnh trước / sau: `docs/anh/du-an/`.
+
+**Chưa làm:** không có API xoá cả dự án trên server (chỉ xoá PA) — dự án của mình cũng chỉ "bỏ khỏi danh sách"; chưa có ảnh thu nhỏ mặt bằng trên thẻ (Architechtures có).

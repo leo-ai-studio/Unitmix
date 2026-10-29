@@ -184,23 +184,11 @@
   .ban-phim .khung-soan .ngan-keo { bottom: var(--vv-duoi, 0px); max-height: calc(var(--vv-h, 100dvh) - 8px); }
 }
 
-/* Trang Dự án của tôi trên điện thoại: hàng PA không còn rộng 980 px phải vuốt ngang (nút Mở PA / So sánh / Đổi tên nằm
-   ngoài mép) — xuống dòng, nút chạm 44 px; ô nhập 16 px để iOS không tự phóng. */
+/* Trang Dự án của tôi trên điện thoại: ô nhập 16 px để iOS không tự phóng, nút chạm 44 px (bố cục thẻ ở styles/du-an.css). */
 @media (max-width: 760px) {
   .trang input, .trang select { font-size: 16px; }
   .khung > .thanh-tren .chon-lang button { min-width: 44px; min-height: 40px; }
   .trang form .nut-phu, .trang > div > .nut-chinh { min-height: 44px; }
-  .bang-du-an { overflow-x: visible; }
-  .bang-du-an .hang { min-width: 0; flex-wrap: wrap; gap: 6px 12px; padding: 10px 12px; }
-  .bang-du-an .hang > span[style]:empty { display: none; } /* khoảng đệm flex: 1 */
-  .bang-du-an .hang > span[style*="width"], .bang-du-an .hang > b[style*="width"], .bang-du-an .hang > form[style*="width"] { width: auto !important; }
-  .bang-du-an .hang > b { flex: 1 1 60%; }
-  .bang-du-an .hang .so { font-size: 12px; }
-  .bang-du-an .hang code { flex: 1 1 160px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bang-du-an .hang .nut-phu, .bang-du-an .hang .nut-chinh { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
-  .bang-du-an .hang > a.nut-chinh { flex: 1 1 100%; }
-  .bang-du-an .sua-ten { flex-wrap: wrap; }
-  .bang-du-an .sua-ten input { flex: 1 1 100%; }
 }
 
 /* Điện thoại dọc: hộp thoại thành tấm trượt từ đáy (sheet), trải hết bề ngang, nút chân hộp chia đều cho ngón cái. */
@@ -255,7 +243,6 @@
 @media (pointer: coarse) {
   .khung > .thanh-tren .chon-lang button { min-width: 44px; min-height: 40px; }
   .trang form .nut-phu, .trang > div > .nut-chinh { min-height: 44px; }
-  .bang-du-an .hang .nut-phu, .bang-du-an .hang .nut-chinh { min-height: 40px; display: inline-flex; align-items: center; }
   .nut-bt { min-width: 40px; height: 40px; }
   .thanh-tren .cap-do > button, .tab-buoc button, .tab-xem button, .nhom-nut button { min-height: 36px; }
 }
