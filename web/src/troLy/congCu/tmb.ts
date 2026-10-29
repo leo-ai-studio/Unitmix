@@ -43,12 +43,13 @@ async function sauSuaTmb(ng: NguCanh, loIds: string[], toaIds: string[] = []) {
 const tomGoiY = (g: GoiYXep, i: number) => ({
   option: i, mau: g.mau, so_toa: g.toa.length, tang_dh: g.soTangDH, so_can: g.soCan, so_can_muc_tieu: g.soCanMuc, lech_co_cau: tron(g.lech, 1),
   ty_le_san: tron(g.tyLeSan, 3), mat_do: tron(g.matDo, 1), dan_so: tron(g.danSo, 0), loi_qh: g.loiQH, pccc_vuot: g.pcccVuot, huong_tot: g.huongTot, canh_bao: g.canhBao,
+  view_tb: g.view === null || g.view === undefined ? null : tron(g.view, 1), view_pct_tot: g.viewTot === null || g.viewTot === undefined ? null : tron(g.viewTot, 0),
 });
 
 /** Nhớ phương án gợi ý theo lô (như ui/GoiYXepToa giữ theo `khoaLo`). */
 const nhoGoiY = new Map<string, { khoa: string; ds: GoiYXep[] }>();
 const khoaLo = (pa: TrangThaiPA, lo: Lo) => lo.id + '|' + JSON.stringify([lo.ranh, lo.chiGioi, lo.canhDuong ?? null, lo.temDat.chucNang, lo.temDat.chiTieu, lo.temDat.coCauMucTieu,
-  pa.toa.filter((x) => x.loId !== lo.id).map((x) => [x.mauId, x.x, x.y, x.gocDo, x.soTangDH])]);
+  pa.toa.filter((x) => x.loId !== lo.id).map((x) => [x.mauId, x.x, x.y, x.gocDo, x.soTangDH]), pa.huongView ?? null]);
 
 async function goiYLo(ng: NguCanh, lo: Lo): Promise<GoiYXep[]> {
   const pa = ng.kho.lay(), tv = canTV(ng);
@@ -76,7 +77,7 @@ const layToaChon = (pa: TrangThaiPA, ids: string[]) => {
 export const CONG_CU_TMB: CongCu[] = [
   {
     ten: 'suggest_arrangements', nhom: 'tmb',
-    moTa: 'Chạy gợi ý tự xếp tòa (MT-05) cho một lô như nút Gợi ý ở TMB: trả tối đa 5 phương án (mẫu × số tòa, tầng, số căn, lệch cơ cấu, MĐXD, tỷ lệ sàn/trần, dân số, cảnh báo). Không sửa PA — dùng apply_arrangement để áp.',
+    moTa: 'Chạy gợi ý tự xếp tòa (MT-05) cho một lô như nút Gợi ý ở TMB: trả tối đa 5 phương án (mẫu × số tòa, tầng, số căn, lệch cơ cấu, MĐXD, tỷ lệ sàn/trần, dân số, điểm view TB 0–100, cảnh báo; trọng số view theo PA huongView.trongSoXep). Không sửa PA — dùng apply_arrangement để áp.',
     schema: S.doiTuong({ lot_id: S.chu('id hoặc ký hiệu lô') }, ['lot_id']),
     chay: async (v, ng) => {
       const lo = timLo(ng.kho.lay(), v.lot_id as string);

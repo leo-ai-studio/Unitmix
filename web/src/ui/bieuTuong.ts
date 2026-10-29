@@ -42,6 +42,7 @@ export const BIEU_TUONG = {
   datToa: '▣', // đặt tòa đang chọn
   moTang: '⧈', // mở mặt bằng tầng của tòa
   hangLoat: '▦', // xếp hàng loạt
+  view: '◐', // điểm view căn hộ (hướng · thoáng · cảnh quan · nắng)
   canhBao: '⚠︎', // vi phạm khoảng lùi / khoảng cách
   bongDo: '☼',
   nenBanDo: '▧',

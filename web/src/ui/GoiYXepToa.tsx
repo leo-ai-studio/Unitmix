@@ -8,7 +8,7 @@ import { t } from '../i18n/i18n';
 import { chanToa } from '../tinh/hinhHoc';
 import type { Lo, ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { taiQuyTac, traLuat } from '../tinh/quyTac';
-import { goiYXepToaNen, type GoiYXep } from '../tinh/xepToa';
+import { goiYXepToaNen, TRONG_SO_VIEW_XEP, type GoiYXep } from '../tinh/xepToa';
 import { sPoly } from '../ve/BanVe';
 import { taiCuaCan } from '../ve/hinhHocThuVien';
 import { fmtSo } from './so';
@@ -26,9 +26,11 @@ function useTT(): TrangThai {
 }
 const daChay = new Set<string>(); // lô đã tự chạy (không tự chạy lại sau khi người dùng xoá hết tòa)
 
-/** Chữ ký đầu vào của lô: đổi ranh, chỉ giới, chỉ tiêu, cơ cấu mục tiêu hay tòa lô bên cạnh thì gợi ý cũ hết hiệu lực. */
+/** Chữ ký đầu vào của lô: đổi ranh, chỉ giới, chỉ tiêu, cơ cấu mục tiêu, tòa lô bên cạnh hay cài đặt view thì gợi ý cũ hết hiệu lực. */
 const khoaLo = (pa: TrangThaiPA, lo: Lo) =>
-  lo.id + '|' + JSON.stringify([lo.ranh, lo.chiGioi, lo.canhDuong ?? null, lo.temDat.chucNang, lo.temDat.chiTieu, lo.temDat.coCauMucTieu, pa.toa.filter((x) => x.loId !== lo.id).map((x) => [x.mauId, x.x, x.y, x.gocDo, x.soTangDH])]);
+  lo.id + '|' + JSON.stringify([lo.ranh, lo.chiGioi, lo.canhDuong ?? null, lo.temDat.chucNang, lo.temDat.chiTieu, lo.temDat.coCauMucTieu, pa.toa.filter((x) => x.loId !== lo.id).map((x) => [x.mauId, x.x, x.y, x.gocDo, x.soTangDH]), pa.huongView ?? null]);
+/** Trọng số view khi xếp hạng (%), lưu ở PA (`huongView.trongSoXep`). */
+const trongSoView = (pa: TrangThaiPA) => pa.huongView?.trongSoXep ?? TRONG_SO_VIEW_XEP;
 
 const coChiTieu = (lo: Lo) => lo.temDat.chucNang !== 'khac' && lo.ranh.length >= 3 && lo.temDat.chiTieu.matDoMax > 0 && lo.temDat.chiTieu.hssddMax > 0;
 
@@ -80,6 +82,18 @@ export function GoiYXepToa({ pa, lo, tv, sua, chiXem, chonToa }: { pa: TrangThai
         </button>
         {s.chay && cuaLo && <span class="muted goi-y-tien-do"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" />{fmtSo(s.tienDo * 100, { donVi: '%' })}</span>}
       </div>
+      <label class="goi-y-trong-so" title={t('gt.xep.goiYTrongSoView')}>
+        <span>{t('xep.goiYTrongSoView')}</span>
+        <input type="range" min={0} max={100} step={10} value={trongSoView(pa)} disabled={chiXem || s.chay} aria-valuetext={`${trongSoView(pa)} %`}
+          onChange={(e) => {
+            const v = Number(e.currentTarget.value);
+            if (!Number.isFinite(v) || v === trongSoView(pa)) return;
+            const pa2: TrangThaiPA = { ...pa, huongView: { ...(pa.huongView ?? {}), trongSoXep: v } };
+            sua((p) => ({ ...p, huongView: { ...(p.huongView ?? {}), trongSoXep: v } }));
+            if (tv && cuaLo && s.ds) void chay(pa2, lo, tv); // đang có danh sách thì xếp lại theo trọng số mới
+          }} />
+        <b>{fmtSo(trongSoView(pa), { donVi: '%' })}</b>
+      </label>
       {!coChiTieu(lo) && <p class="dong muted">{t('xep.goiYCanChiTieu')}</p>}
       {cuaLo && s.loi && <p class="dong vuot">{s.loi}</p>}
       {cuaLo && s.ds && !s.ds.length && <p class="dong muted">{t('xep.goiYRong')}</p>}
@@ -100,6 +114,7 @@ export function GoiYXepToa({ pa, lo, tv, sua, chiXem, chonToa }: { pa: TrangThai
                   <span title={t('xep.matDo')}>{t('xep.goiYMatDo')} {fmtSo(g.matDo, { thapPhan: 1, donVi: '%' })}</span>
                   <span title={t('gt.xep.goiYPccc')} class={g.pcccVuot ? 'canh-bao' : g.pcccVuot === 0 ? 'ok' : ''}>{t('xep.goiYPccc')} {g.pcccVuot ?? '—'}</span>
                   <span title={t('gt.xep.goiYHuong')}>{t('xep.goiYHuong')} {fmtSo(g.huongTot, { thapPhan: 0, donVi: '%' })}</span>
+                  <span title={t('gt.xep.goiYView')} class={g.view === null || g.view === undefined ? '' : 'goi-y-view'}>{t('xep.goiYView')} {fmtSo(g.view ?? null, { thapPhan: 0 })}{g.viewTot != null ? ` · ${t('view.tot')} ${fmtSo(g.viewTot, { thapPhan: 0, donVi: '%' })}` : ''}</span>
                 </div>
                 {g.canhBao.length > 0 && <p class="goi-y-cb canh-bao">{g.canhBao.join(' · ')}</p>}
                 <button type="button" class="nut-phu" disabled={chiXem} title={t('gt.xep.goiYApDung')} onClick={() => apDung(g)}>{t('xep.goiYApDung')}</button>

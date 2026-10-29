@@ -33,6 +33,8 @@ import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
 import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, useCaiPCCC, usePCCCTang } from '../ve/LopPCCC';
 import { KhoiPCCC } from '../ui/KpiPCCC';
+import { LopViewTang } from '../ve/LopViewTang';
+import { gocBacPA, nutLopView } from './lopView';
 
 export type ChungTang = {
   pa: TrangThaiPA;
@@ -328,7 +330,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         </div>
       )}
       <div class="boc-ve" ref={boc} onPointerDownCapture={(e) => { keoTay.batDau(e); batDauKhung(e); }} onClickCapture={(e) => { if (nuotClick.current) { e.stopPropagation(); e.preventDefault(); } }}>
-        <BanVe khung={khung} nhan={t('tang.banVe')} onDieuKhien={setDk} gocBac={toa.gocDo}>
+        <BanVe khung={khung} nhan={t('tang.banVe')} onDieuKhien={setDk} gocBac={toa.gocDo - gocBacPA(pa)}>
           <MatBangTang mau={mauVe} toa={bcVe} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa}
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
@@ -336,6 +338,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
             thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} dichLoi={keoTay.dichLoi} oKeo={keoTay.oKeo} hienHanhLang={hienHL} choSang={choSang} canVuot={canVuot} />
           <g transform="scale(0.001 -0.001)"><LopPCCC kq={pccc} chiXem={chiXem} datTuTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, tuPCCCTay: ds ?? undefined })))} /></g>
           {!chiXem && !tam && <g transform="scale(0.001 -0.001)"><TayHanhLang mau={mauVe} hanhLangTay={toa.hanhLangTay} onKeo={keoHL} /></g>}
+          <LopViewTang pa={pa} tv={tv} toa={toa} mau={mauVe} bc={bcVe} tang={k0} />
         </BanVe>
       </div>
       <ThanhCongCuTang {...ccProps} />
@@ -366,6 +369,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         { khoa: 'cham', nhan: t('tang.chamMau'), bat: cai.chamMau, onClick: () => datCaiTang({ chamMau: !cai.chamMau }) },
         ...nutLopPhong(pa.nguong),
         ...nutLopPCCC(),
+        nutLopView(),
       ]} chuGiai={batLopPCCC() ? <ChuGiaiPCCC kq={pccc} /> : undefined} />
     </>
   );

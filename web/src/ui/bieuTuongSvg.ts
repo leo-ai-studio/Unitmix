@@ -39,6 +39,8 @@ export const SVG_BT: Record<string, string> = {
   tuDat: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
   datToa: '<rect x="6" y="3" width="12" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/>',
   hangLoat: '<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>',
+  // điểm view: mặt căn (vạch đáy) nhìn ra một cung tầm nhìn có mặt trời
+  view: '<path d="M3 20h18"/><path d="M12 20L5 9M12 20l7-11"/><path d="M5 9a9 9 0 0114 0"/><circle cx="17" cy="5" r="1.8"/>',
   canhBao: '<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17v.5"/>',
   bongDo: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   nenBanDo: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',

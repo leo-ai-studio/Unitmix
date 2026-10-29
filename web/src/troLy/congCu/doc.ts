@@ -13,6 +13,8 @@ import { coCauRiengTang, ungVienDoi, ungVienKhacRong } from '../../tinh/matBang'
 import { kiemQCVN04 } from '../../tinh/qcvn04';
 import { QUY_TAC_DAN_SO } from '../../tinh/quyTacDanSo';
 import { hinhToa, kiemViPham } from '../../tinh/thaoTacToa';
+import { caiDatView, danhGiaViewPA, danhGiaViewTang, tongHopView, type KcTheoH, type TongHopView } from '../../tinh/huongView';
+import { kcToa261 } from '../../tinh/xepToa';
 import { tomTatPA } from '../../tinh/tomTat';
 import { chieuCaoPCCC } from '../../tinh/pccc';
 import { phanTichPCCCTang, soLieuToaPCCC } from '../../tinh/pcccTang';
@@ -183,6 +185,56 @@ export const CONG_CU_DOC: CongCu[] = [
           ...(luat ? {} : { ghi_chu: 'chưa tải luật LO-01/02' }),
         },
         toa,
+      };
+    },
+  },
+  {
+    ten: 'get_view_scores', nhom: 'doc',
+    moTa: 'Điểm VIEW căn hộ 0–100 (heuristic thiết kế, KHÔNG phải quy chuẩn; học QT-111 app cũ): hướng (nhóm tốt Đ·ĐN·N / kém TN·T·TB) · khoảng thoáng tới tòa cao hơn mắt trong nón ±30° · cảnh quan (lô cây xanh, mặt nước, quảng trường, đường lộ giới ≥ 20 m; tòa đối diện) · nắng Đông chí. Trả điểm TB, % Tốt/Khá/Kém, số căn nhìn Tây, số căn bị che gần, theo dự án / lô / tòa. Có tower_id thì kèm từng căn (CH-xx) của một tầng (floor; bỏ trống = tầng điển hình giữa).',
+    schema: S.doiTuong({
+      lot_id: S.chu('id hoặc ký hiệu lô — chỉ trả lô này'),
+      tower_id: S.chu('id tòa — kèm điểm từng căn của một tầng'),
+      floor: { ...S.nguyen('tầng điển hình 1..soTangDH (mắt ở tầng đó); bỏ trống = tầng giữa', 1), nullable: true },
+      limit: S.nguyen('số căn tối đa khi liệt kê (mặc định 40)', 1),
+    }),
+    chay: async (v, ng) => {
+      const pa = ng.kho.lay(), tv = canTV(ng);
+      const luat = await ng.luat();
+      const kc: KcTheoH | undefined = luat ? (H) => kcToa261(luat.lo02, H).dai : undefined;
+      const cai = caiDatView(pa.huongView);
+      const kq = danhGiaViewPA(pa, tv, { cai, kc });
+      const gon = (th: TongHopView | undefined) => th && th.soCan ? {
+        tb: tron(th.tb ?? 0, 1), so_can: th.soCan, pct_tot: tron(th.pctTot, 1), pct_kha: tron(th.pctKha, 1), pct_kem: tron(th.pctKem, 1),
+        so_huong_tay: th.soTay, so_che_gan: th.soGan,
+        thanh_phan: th.thanhPhan ? { huong: tron(th.thanhPhan.huong, 0), thoang: tron(th.thanhPhan.thoang, 0), canh_quan: tron(th.thanhPhan.canh, 0), nang: tron(th.thanhPhan.nang, 0) } : null,
+      } : null;
+      const lo = v.lot_id ? timLo(pa, v.lot_id as string) : null;
+      const H8 = ['B', 'ĐB', 'Đ', 'ĐN', 'N', 'TN', 'T', 'TB'];
+      let can: unknown = undefined;
+      if (v.tower_id) {
+        const toa = timToa(pa, v.tower_id as string);
+        const k = tangHopLe(toa, v.floor)?.[0] ?? null;
+        const dl = await ng.dl(pa);
+        const { mau, bc, sl } = dungTang(tv, dl, toa, k);
+        const ds = danhGiaViewTang(pa, tv, toa, mau, bc, k, { cai, kc });
+        const no = new Map(sl.can.map((c) => [c.vt.khoa, c.no]));
+        const th = tongHopView(ds);
+        can = {
+          toa: toa.id, tang: k ?? 'giua', tong_hop: gon(th),
+          ds: ds.slice().sort((a, b) => b.tong - a.tong).slice(0, (v.limit as number | undefined) ?? 40).map((d) => ({
+            ch: `CH-${String(no.get(d.khoa) ?? 0).padStart(2, '0')}`, key: d.khoa, diem: tron(d.tong, 0), xep: d.xep, huong: H8[d.h8],
+            thoang: tron(d.thoang, 0), canh_quan: tron(d.canh, 0), nang: tron(d.nang, 0), gio_nang: d.gioNang,
+            che_m: d.kcCan === null ? null : tron(d.kcCan, 1), nhin: d.nhin,
+          })),
+        };
+      }
+      return {
+        ghi_chu: 'Heuristic thiết kế (quy ước MDI), không phải quy chuẩn. Trọng số / ngưỡng sửa ở TMB › Điểm view căn hộ › Cài đặt.',
+        cai_dat: { goc_bac: cai.gocBac, vi_do: cai.viDo, trong_so: cai.trongSo, nguong_che_gan_m: cai.nguongGan, xep_loai: { tot: cai.nguongTot, kha: cai.nguongKha } },
+        ...(lo ? {} : { du_an: gon(kq.tong) }),
+        lo: Object.fromEntries(pa.lo.filter((l) => (!lo || l.id === lo.id) && kq.theoLo.has(l.id)).map((l) => [l.id, gon(kq.theoLo.get(l.id))])),
+        toa: pa.toa.filter((x) => (!lo || x.loId === lo.id) && kq.theoToa.has(x.id)).map((x) => ({ id: x.id, lo: x.loId, ...gon(kq.theoToa.get(x.id)) })),
+        ...(can ? { can } : {}),
       };
     },
   },

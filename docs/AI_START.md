@@ -79,6 +79,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | Phím tắt trình soạn (Ctrl+Z/Y/S, cảnh báo đóng tab), màn tải lười | `kho/phimSoan.ts`, `kho/luu.ts`; `ui/Luoi.tsx` |
 | Chi phí, tài chính | `tinh/duToan.ts`, `tinh/taiChinh.ts`, `man/ManChiPhi.tsx`, số tạm `CHI_PHI_MAC_DINH` trong `tinh/macDinh.ts` |
 | Trợ lý **Leo AI** (Claude): khung chat, vòng tác tử, 45 công cụ đi qua kho thật, giọng nói, gợi ý mô hình 0 token, cổng khoá chung | `troLy/LeoAI.tsx`, `troLy/vongLap.ts`, `troLy/congCu/*` (thêm công cụ: định nghĩa ở `doc` / `tmb` / `tang` / `khac` + ca thử trong `congCu.test.ts` — test "phủ đủ" bắt buộc), `troLy/nguCanhSoan.ts` (nối SoanThao), lõi kho `kho/khoLoi.ts`, Worker `worker/src/ai.ts` + `migrations/0002_ai_luot.sql`; tài liệu `docs/tro_ly_ai.md`; E2E `scripts/leo_ai_e2e.mjs` (mô hình giả) |
+| Điểm **view** căn hộ (hướng · thoáng · cảnh quan · nắng Đông chí — heuristic thiết kế, học QT-111 `diemView` app cũ), góc Bắc dự án `TrangThaiPA.huongView`, tiêu chí view trong gợi ý xếp tòa | thuần `tinh/huongView.ts` (`BoDemView` tăng dần, `danhGiaViewPA`, `danhGiaViewTang`, `viewXoayMau`), TMB `man/lopView.tsx` (lớp + chú giải + bảng + cài đặt), màn Tầng `ve/LopViewTang.tsx`, xếp hạng `tinh/xepToa.ts` (`trongSoView`), Leo AI `get_view_scores`; test `tinh/huongView.test.ts`, `tinh/xepToaView.test.ts`; đo CT-2 `tinh/doViewCT2.test.ts` (UNITMIX_DO_VIEW=1) |
 
 ## Tài liệu khác
 
