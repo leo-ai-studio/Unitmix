@@ -6,6 +6,7 @@ import { LOAI_HINH } from '../tinh/quyTacDanSo';
 import { MucGap } from './MucGap';
 import { fmtSo } from './so';
 import './dan-so.css';
+import { nhanToa } from './nhanToa';
 
 const so1 = { thapPhan: 1 };
 /** Người / căn: số nguyên hiện không lẻ, số lẻ (1,5 · S ÷ 32) hiện 2 chữ số. */
@@ -218,7 +219,7 @@ export function DashDanSo({ pa, tv, lo, sua, chiXem, moCan }: {
           <div class="ds-toa">
             <small class="muted">{t('ds.theoToa')}</small>
             {Object.entries(k.theoToa).map(([id, v], i) => (
-              <div class="dong" key={id}><span>{`${i + 1}. ${tv.toa.get(pa.toa.find((x) => x.id === id)?.mauId ?? '')?.ten_vi.split(' · ')[0] ?? id}`}</span><span>{fmtSo(v.so)} {t('sc.can')} · <b>{fmtSo(v.nguoi)}</b> {t('ds.nguoi')}</span></div>
+              <div class="dong" key={id}><span>{nhanToa(pa, tv, id, { lo: true })}</span><span>{fmtSo(v.so)} {t('sc.can')} · <b>{fmtSo(v.nguoi)}</b> {t('ds.nguoi')}</span></div>
             ))}
           </div>
         )}

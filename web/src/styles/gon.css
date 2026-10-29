@@ -1,0 +1,145 @@
+/* =====================================================================================================================
+   GỌN GIAO DIỆN (đợt "Bố cục quá kém, làm gọn lại" 2026-10-30) — nạp SAU mọi tệp CSS khác (main.tsx).
+   Thang khoảng cách 4 / 8 / 12 / 16 px; chữ 12–13 px thân, 11 px phụ; nút chạm ≥ 40 px trên điện thoại.
+   Kit LEO (leo-ui.css) cho MỌI `label` xếp dọc (nhãn trên, ô dưới, chữ 11 px xám) và MỌI ô nhập `min-width: 100px` + đệm 8×10 —
+   hợp với form trang trắng của kit nhưng làm vỡ các hàng gọn trong panel / thanh công cụ. Không đổi luật gốc (hộp thoại tạo dự án,
+   form-card còn dựa vào nó) mà sửa theo thành phần ở đây.
+   ===================================================================================================================== */
+
+/* ---------- Hàng số / hàng chọn (.o-so / .o-chon): nhãn trái, ô phải, một dòng ----------
+   unitmix.css đã viết `display:flex; justify-content: space-between` nhưng thiếu flex-direction nên kit LEO vẫn xếp dọc
+   (nhãn căn giữa phía trên, ô 100 px tràn panel 4 px) — gốc của phần lớn "label chồng lên ô" trong panel trái / phải. */
+.o-so, .o-chon { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; color: var(--ink); font-size: 12px; line-height: 1.3; }
+.o-so > span:first-child, .o-chon > span:first-child { flex: 1 1 auto; min-width: 0; }
+.o-so input, .o-so-nho, .o-chon input, .o-chon select { min-width: 0; }
+.o-so input { width: 72px; padding: 3px 6px; font-variant-numeric: tabular-nums; }
+.o-so-nhap { flex: none; }
+.o-so-nhap small { min-width: 16px; font-size: 11px; }
+.o-chon select, .o-chon input { flex: 0 1 auto; max-width: 60%; padding: 3px 6px; }
+/* Lưới hai cột .luoi-o: trước đây nhãn trên / ô dưới (nhãn bị cắt "MĐXD khối tháp tố…", ô tràn). Nay mỗi ô một hàng nhãn-trái;
+   panel 270–300 px ra một cột, hộp thoại rộng tự ra hai cột. */
+.luoi-o { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.luoi-o .o-so { flex-direction: row; align-items: center; gap: 8px; padding: 3px 12px; }
+.luoi-o .o-so input { width: 72px; }
+
+/* ---------- Thanh 3D một hàng (ve3d/Khung3D.tsx) ----------
+   Trước: 3 hàng chữ (phạm vi + Hầm + Phân tích + tên + 5 góc + 3 kiểu + 2 thanh trượt; Góc đã lưu / Prompt / Xuất PNG; ô tích).
+   Nay: nhóm biểu tượng nổi như thanh TMB, bảng chọn là lớp nổi (ui/MenuNut). Dải trống giữa các nhóm không chặn kéo 3D. */
+.noi-tren > .thanh-3d { flex-wrap: nowrap; gap: 6px; padding: 8px 8px 0; background: none; border: 0; pointer-events: none; max-width: calc(100% - 64px); }
+.noi-tren > .thanh-3d > * { pointer-events: auto; flex: none; }
+.thanh-3d .nhom-3d.chon-che { height: 32px; box-sizing: border-box; background: var(--panel); }
+.thanh-3d .chon-che button { height: 100%; padding: 0 10px; }
+.chu-ngan { display: none; }
+.thanh-3d .bao-3d { align-self: center; font-size: 12px; padding: 4px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); color: var(--green); }
+.noi-tren > .tham-so-3d { margin: 6px 8px 0; align-self: flex-start; max-width: min(520px, calc(100% - 80px)); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / .08); padding: 6px 4px; }
+.tham-so-3d .tham-so-dau { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 4px; font-size: 12px; }
+.noi-tren > .tham-so-3d { width: min(460px, calc(100% - 80px)); box-sizing: border-box; }
+.tham-so-3d .luoi-tham-so { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 4px; padding: 0; }
+.tham-so-3d .luoi-tham-so label.o-so, .tham-so-3d .luoi-tham-so label.o-chon { flex-direction: row; align-items: center; gap: 8px; }
+.tham-so-3d .luoi-tham-so .o-so, .tham-so-3d .luoi-tham-so .o-chon { padding: 3px 8px; }
+.tham-so-3d .luoi-tham-so > .nut-phu { justify-self: start; margin: 4px 8px; }
+
+/* nút biểu tượng mở menu: mũi ▾ nhỏ, chữ phụ (nếu có) */
+.nut-bt .mui-menu { font-size: 8px; color: var(--muted-text); margin-left: 1px; }
+.nut-bt .nut-bt-chu { font-size: 12px; font-weight: 600; color: var(--ink); }
+/* bảng nổi của MenuNut */
+.menu-nut-bang { position: fixed; z-index: 60; min-width: 168px; max-width: min(320px, calc(100vw - 8px)); overflow: auto; display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgb(0 0 0 / .14); padding: 4px;
+  animation: the-vao var(--dur-1, .16s) var(--ease-out, ease-out); font-size: 12px; }
+.menu-nut-bang > button, .menu-nut-dong > button:first-child { border: 0; background: none; text-align: left; padding: 6px 10px; font-size: 12px; color: var(--ink); border-radius: 4px; white-space: nowrap; cursor: pointer; }
+.menu-nut-bang > button:not(:disabled):hover, .menu-nut-dong > button:hover { background-color: var(--hover); }
+.menu-nut-bang > button[role=menuitemradio] { padding-left: 26px; position: relative; }
+.menu-nut-bang > button[aria-checked=true] { color: var(--green); font-weight: 700; }
+.menu-nut-bang > button[aria-checked=true]::before { content: '✓'; position: absolute; left: 9px; }
+.menu-nut-nhom { padding: 6px 10px 2px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted-text); }
+.menu-nut-nhom:empty { padding: 0; margin: 4px 6px; border-top: 1px solid var(--line); }
+.menu-nut-dong { display: flex; align-items: stretch; }
+.menu-nut-dong > button:first-child { flex: 1; }
+.menu-nut-dong .xoa { border: 0; background: none; color: var(--muted-text); padding: 0 10px; border-radius: 4px; cursor: pointer; }
+.menu-nut-dong .xoa:hover { background: var(--hover); color: var(--warn); }
+.menu-nut-trong { padding: 4px 10px; color: var(--muted-text); }
+.menu-nut-them { color: var(--green) !important; font-weight: 600; }
+.menu-nut-tich { padding: 5px 10px; }
+.menu-nut-truot { display: grid; grid-template-columns: 52px 1fr 40px; align-items: center; gap: 8px; padding: 6px 10px; font-size: 12px; color: var(--ink); }
+.menu-nut-truot input[type=range] { min-width: 0; width: 100%; padding: 0; margin: 0; border: 0; background: none; accent-color: var(--green); }
+.menu-nut-truot b { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.menu-nang-3d { min-width: 260px; }
+
+@media (max-width: 1024px) {
+  .noi-tren > .thanh-3d { max-width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; touch-action: pan-x; }
+  .noi-tren > .thanh-3d::-webkit-scrollbar { display: none; }
+  .thanh-3d .nhom-3d.chon-che { height: 40px; }
+  .thanh-3d .chon-che button { min-height: 0; min-width: 0; }
+  .menu-nut-bang > button, .menu-nut-dong > button:first-child, .menu-nut-tich, .menu-nut-truot { min-height: 40px; font-size: 14px; }
+  .menu-nut-dong .xoa { min-width: 40px; }
+  .noi-tren > .tham-so-3d { max-width: calc(100% - 16px); }
+  .tham-so-3d .o-so input { font-size: 16px; min-height: 36px; }
+  .tham-so-3d .o-chon select { font-size: 16px; min-height: 36px; }
+}
+@media (max-width: 600px) {
+  .thanh-3d .chu-dai { display: none; }
+  .thanh-3d .chu-ngan { display: inline; }
+  .thanh-3d .nut-bt { min-width: 40px; height: 40px; padding: 0 6px; }
+  .thanh-3d .nut-bt .mui-menu { display: none; }
+  /* Hầm đã có trong menu Lớp (góc phải dưới) → bỏ khỏi thanh trên điện thoại để thanh vừa 390 px cùng nút Nắng · Gió */
+  .thanh-3d .nut-bt.an-dt { display: none; }
+}
+
+/* ---------- Panel trái: hàng nút nhập, thẻ mẫu tòa, preset ---------- */
+/* DXF / Bảng QH / Đề bài KD / ＋: chia theo độ dài chữ thay vì chia đều (trước: "Bảng …", "Đề bài…") */
+.hang-nhap-tmb .nut-nho { flex: 1 1 auto; padding: 5px 6px; white-space: nowrap; }
+.hang-nhap-tmb .nut-nho:last-child { flex: 0 0 32px; }
+/* label.nut-nho (DXF, ⤒ nhập tệp): kit LEO xếp label dọc → chữ lệch, nút cao hơn nút bên cạnh */
+label.nut-nho { display: inline-flex; flex-direction: row; align-items: center; justify-content: center; font-size: 12px; color: var(--ink); }
+/* thẻ mẫu tòa: tên một dòng, "n căn/tầng · m² · ✓ Hợp lô" một dòng (3 dòng → 2 dòng, thư viện 25 mẫu ngắn đi ~500 px) */
+.the-mau > div { flex-direction: row; flex-wrap: wrap; column-gap: 6px; row-gap: 1px; align-items: baseline; }
+.the-mau > div > b { flex: 1 0 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.the-mau > div > span { font-size: 11px; white-space: nowrap; }
+.the-mau .nut-phu { padding: 4px 8px; }
+/* thư viện: nhóm Thương mại / Nhà ở xã hội + nút so sánh (biểu tượng) một hàng */
+.nhom-nut button { white-space: nowrap; }
+.dong > .nut-so-sanh-mau { flex: none; }
+/* preset: nhãn · ô chọn co giãn · nút gọn */
+.preset { gap: 4px; }
+.preset select { flex: 1 1 70px; max-width: none; }
+.preset .nut-nho, .preset .nut-nho:last-child { flex: 0 0 auto; padding: 3px 6px; min-width: 24px; }
+/* ---------- Panel phải: thẻ số, bảng ---------- */
+/* thẻ KPI: chip Đạt / Vượt đã sang hàng số (ui/TheSo.tsx) → nhãn một dòng, không chừa sẵn 2 dòng */
+.the-so-nhan { min-height: 0; }
+.the-so-nhan > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+.the-so-gt .chip-tt { margin-left: auto; align-self: center; }
+/* bảng chỉ tiêu (Chỉ tiêu / Đạt / Mục tiêu…): cột chữ co giãn, cột số không bẻ dòng, số thẳng cột */
+.bang-ct { grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 10px; font-variant-numeric: tabular-nums; }
+.bang-ct > :nth-child(n+2) { white-space: nowrap; text-align: right; }
+.bang-cc { font-variant-numeric: tabular-nums; }
+.nhom-view-dau { flex-wrap: wrap; row-gap: 0; }
+.nhom-view-dau > span { white-space: nowrap; }
+/* PCCC màn Tầng: giá trị (2 · 18 · 0 · 1, 1 cửa · 58,4 / 60 m) không bẻ dòng; nhãn dài tự xuống dòng */
+.pc-dong { align-items: baseline; }
+.pc-dong > b { flex: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* hàng "nhãn … số" chung (.dong): số cuối hàng không bẻ "2,70 / m" */
+.dong > span:first-child + b:last-child { flex: none; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* So sánh PA: bảng theo nội dung (trước: 100 % bề ngang hộp → cột "Chỉ số" rộng ~ nửa bảng, số cách nhãn rất xa) */
+.so-sanh .ss-bang { width: auto; min-width: min(100%, 560px); }
+.so-sanh .ss-bang th:first-child { white-space: nowrap; }
+.so-sanh .ss-bang td, .so-sanh .ss-bang thead th:not(:first-child) { min-width: 96px; }
+
+/* Leo AI: ô chọn mô hình đủ chỗ cho "Sonnet 5.5 · Cân bằng" (trước cắt "Cân bằn") */
+@media (min-width: 1025px) { .leo-chon-mh { max-width: 190px; min-width: 0; } }
+
+/* Hộp Vị trí · Nắng · Gió (nangGio/HopNangGio.tsx, CSS gốc nang-gio.css): kit LEO ép ô số ≥ 100 px nên hàng Góc Bắc
+   [ô] −1° −0,1° +0,1° +1° vỡ hai dòng; nút ngày nhanh 2 hàng; nhãn "Nguồn ảnh" nằm trên ô chọn */
+.hop-nang-gio input, .hop-nang-gio select { min-width: 0; }
+.hop-nang-gio .hng-luoi2 input { width: 100%; box-sizing: border-box; }
+.hop-nang-gio .hng-luoi2 > label { min-width: 0; }
+.hop-nang-gio .hng-chinh { flex-wrap: nowrap; gap: 4px; }
+.hop-nang-gio .hng-chinh input[type='number'] { width: 64px; padding: 4px 6px; }
+.hop-nang-gio .hng-chinh .nut-phu { padding: 4px 6px; font-size: 12px; }
+.hop-nang-gio .hng-boc .nut-phu { padding: 4px 8px; font-size: 12px; }
+.hop-nang-gio label.hng-o:has(> select) { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+.hop-nang-gio label.hng-o:has(> select) > select { flex: 0 1 auto; max-width: 68%; }
+
+/* ô số: chừa cột đơn vị để mọi ô thẳng hàng (có / không có "%", "m²") */
+.o-so-nhap { min-width: 96px; justify-content: flex-start; }

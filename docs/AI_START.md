@@ -42,6 +42,9 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 
 ## Bẫy đã gặp (đừng lặp lại)
 
+- **Kit LEO xếp MỌI `label` dọc + ô `min-width: 100px`** (`leo-ui.css`): hàng nhãn-ô mới phải dùng `.o-so` / `.o-chon` (đã ép một hàng ở `styles/gon.css`) hoặc tự đặt `flex-direction: row` + `min-width: 0`; ô tích trong label đã có luật chung (`unitmix.css`). `kiem_man_hep.mjs` báo LỖI khi ô tích lệch dòng hoặc thanh công cụ xuống dòng ở ≥ 1280 px.
+- **Script CDP tự viết**: dùng `--remote-debugging-port=0` + đọc `<user-data-dir>/DevToolsActivePort`; cổng cố định từng nối nhầm trình duyệt headless của agent khác (đo sai khung).
+
 - **Xuống dòng**: repo trộn LF và CRLF; `web/src/i18n/*.json`, `package.json`, `package-lock.json`, nhiều tệp `.tsx` là CRLF trong cây làm việc. `sed -i` / `json.dump` / ghi lại cả tệp sẽ đổi hết dòng → diff phình, gộp nhánh xung đột cả tệp. Sửa bằng Edit hoặc Python đọc/ghi `newline=''` và giữ kiểu dòng gốc. Kiểm bằng `git diff --stat`.
 - **Gộp nhánh agent bị xung đột cả tệp**: do khác kiểu dòng giữa hai bên. Cách gộp: lấy 3 bản (`git show HEAD:f`, merge-base, nhánh) → bỏ `\r` → `git merge-file` → giải khối thật → ghi lại theo kiểu dòng của HEAD.
 - **Worktree của agent** (`isolation: worktree`) tách từ `main`, không từ nhánh đang làm → trong lời giao việc luôn bắt agent `git reset --hard <nhánh tích hợp>` (hoặc `merge --ff-only`) trước.
@@ -69,6 +72,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | **Mở 3D không giật** (đo `node scripts/do_mo_3d.mjs`): vẽ theo pha xem trước → đủ chất lượng, shader dịch nền song song (`ve3d/dichShader.ts`: mặt cắt `catY` thay `clippingPlanes`, `vaShader` gộp khoá chương trình, `dichDan` / `dichBong` / `locMoiTruong`), dựng chia mẩu generator (`ve3d/chiaNho.ts`, `dungDuAnTung`, `dungToaTung`), phần cảnh riêng Khung3D `phan` (hầm, tum) | `ve3d/Khung3D.tsx` (`veThat`, `dungLai`, `dungPhanDoi`), `ve3d/MoHinh3D.tsx` |
 | 3D Vật liệu (PBR, trời thủ tục PMREM, tone mapping Neutral, sương, AO chân tường), bậc chất lượng cảm ứng; lớp 3D (tum, hầm, trục thang, mương gió, cây, đường, ranh — `userData.lop`, nhớ `unitmix.lop-3d.v1`) | `ve3d/dungCan.ts` `taoVatLieu`, `ve3d/moiTruong.ts`, `ve3d/lop3d.ts`, `ve3d/dungDuAn.ts`, `ve3d/MoHinh3D.tsx` |
 | Màn hẹp (điện thoại / máy tính bảng ≤ 1024 px): ngăn kéo đáy, dock, menu ⋯; hộp thoại mở từ ngăn phải bọc `ui/LopNoi.tsx` (portal) + hàng nút `.chan-hop` (dính đáy, cao theo `--vv-h` visualViewport) | `ui/manHep.ts`, `ui/LopNoi.tsx`, `ui/KhungSoan.tsx`, `styles/dien-thoai.css`; kiểm `node scripts/kiem_man_hep.mjs --url … --du-an … --ma-sua …` (đo cả nút chính mọi hộp thoại) |
+| **Gọn giao diện**: hàng nhãn-ô `.o-so` / `.o-chon` một dòng, thanh 3D một hàng biểu tượng (bảng chọn nổi `ui/MenuNut.tsx`; Khung3D `nutPhanTich` + `moRong` cắm nút phân tích), tên tòa trùng mẫu "V4 · 1" (`ui/nhanToa.ts` — dùng cho mọi bảng / danh sách tòa); kiểm ô tích lệch dòng + thanh xuống dòng ở `kiem_man_hep.mjs`; ảnh `docs/anh/gon/` | `styles/gon.css` (nạp sau cùng) |
 | Khung soạn, thanh trên | `ui/KhungSoan.tsx`, `ui/ThanhTren.tsx`, `man/SoanThao.tsx` |
 | Preset, lưu | `kho/preset.ts`, `kho/kho.ts`, `kho/luu.ts` |
 | Xuất | `xuat/xuatCad.ts`, `xuat/xuatXls.ts`, `man/HopXuatCad.tsx` |

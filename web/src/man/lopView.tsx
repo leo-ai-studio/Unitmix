@@ -22,6 +22,7 @@ import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { fmtSo } from '../ui/so';
 import type { NutHienThi } from '../ui/ThanhHienThi';
 import { useLuatTMB } from './tmbThaoTac';
+import { nhanToa } from '../ui/nhanToa';
 
 // ---- trạng thái lớp (cấp module, không lưu vào PA): bật, lọc khoảng điểm, tia view ----
 type TrangThaiLop = { bat: boolean; loc: [number, number] | null; tia: boolean };
@@ -445,7 +446,6 @@ export function KpiView({ pa, tv, lo, sua, chiXem, toaId, chonToa }: {
   const luu = (p: CaiDatViewLuu) => sua((q) => ({ ...q, huongView: { ...(q.huongView ?? {}), ...p } }));
   const luuW = (k: keyof TrongSoView, v: number) => luu({ trongSo: { ...(pa.huongView?.trongSo ?? {}), [k]: Math.max(0, v) } });
   const toaLo = pa.toa.filter((x) => (caDuAn || x.loId === lo.id) && kq.theoToa.has(x.id));
-  const ten = (mauId: string) => tv?.toa.get(mauId)?.ten_vi.split(' · ')[0] ?? mauId;
   const tim = (v: VanDe) => {
     if (!v.toa.length || !chonToa) return;
     const i = (buocVD[v.khoa] ?? 0) % v.toa.length;
@@ -492,7 +492,7 @@ export function KpiView({ pa, tv, lo, sua, chiXem, toaId, chonToa }: {
                 const r = kq.theoToa.get(x.id)!;
                 return (
                   <button type="button" class={`dong-toa-view${x.id === toaId ? ' chon' : ''}`} role="row" key={x.id} onClick={() => chonToa?.(x.id)} disabled={!chonToa}>
-                    <span class="ten">{ten(x.mauId)} <small>{x.soTangDH} T</small></span>
+                    <span class="ten">{nhanToa(pa, tv, x.id, { lo: caDuAn })} <small>{x.soTangDH} T</small></span>
                     <span class="chip-view" style={{ background: mauViewCss(r.tb ?? 0), color: chuTrenView(r.tb ?? 0) }}>{fmtSo(r.tb, { thapPhan: 0 })}</span>
                     <ThanhHang th={r} nho />
                     <DuongTang ys={tbTheoTang(tang.kq, x.id)} />
@@ -506,7 +506,7 @@ export function KpiView({ pa, tv, lo, sua, chiXem, toaId, chonToa }: {
           <p class="dong muted ghi-heuristic">{t('view.heuristic')}</p>
           <div class="luoi-o">
             <OSo nhan={t('view.gocBac')} tip={t('gt.view.gocBac')} gt={c.gocBac} buoc={1} min={-360} max={360} donVi="°" tat={chiXem} onDoi={(v) => luu({ gocBac: ((v % 360) + 360) % 360 })} />
-            <OSo nhan={t('view.viDo')} tip={t('gt.view.viDo')} gt={c.viDo} buoc={0.1} min={-66} max={66} donVi="°" tat={chiXem} onDoi={(v) => luu({ viDo: v })} />
+            <OSo nhan={t('view.viDo')} tip={pa.viTri ? t('ng.vt.viDoTheoViTri') : t('gt.view.viDo')} gt={c.viDo} buoc={0.1} min={-66} max={66} donVi="°" tat={chiXem || !!pa.viTri} onDoi={(v) => luu({ viDo: v })} />
             <OSo nhan={t('view.nguongGan')} tip={t('gt.view.nguongGan')} gt={c.nguongGan} buoc={1} min={1} max={200} donVi="m" tat={chiXem} onDoi={(v) => luu({ nguongGan: v })} />
             <OSo nhan={t('view.nguongTot')} tip={t('gt.view.nguong')} gt={c.nguongTot} buoc={5} min={0} max={100} tat={chiXem} onDoi={(v) => luu({ nguongTot: v })} />
             <OSo nhan={t('view.nguongKha')} tip={t('gt.view.nguong')} gt={c.nguongKha} buoc={5} min={0} max={100} tat={chiXem} onDoi={(v) => luu({ nguongKha: v })} />
