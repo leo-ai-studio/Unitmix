@@ -325,6 +325,24 @@ export type TrangThaiPA = {
   cauTao?: CauTao;
   /** Đơn giá dự toán và giá bán (số tạm, chờ chủ nhiệm / QS chốt). Thiếu = PA cũ; `chuanHoaPA` điền mặc định. */
   chiPhi?: ChiPhiPA;
+  /** Cài đặt điểm view căn hộ + góc Bắc dự án (tinh/huongView.ts); thiếu = mặc định (+Y bản vẽ là Bắc). */
+  huongView?: CaiDatViewLuu;
+};
+
+/**
+ * Cài đặt điểm view (tinh/huongView.ts `caiDatView`): mọi trường tuỳ chọn, thiếu = mặc định. `gocBac` = góc (°, chiều kim đồng hồ) từ
+ * Bắc thật tới trục +Y bản vẽ; `trongSoXep` = trọng số view (0–100 %) khi xếp hạng gợi ý xếp tòa.
+ */
+export type CaiDatViewLuu = {
+  gocBac?: number;
+  viDo?: number;
+  trongSo?: Partial<Record<'huong' | 'thoang' | 'canh' | 'nang', number>>;
+  nhomHuong?: number[];
+  nguongGan?: number;
+  nguongTot?: number;
+  nguongKha?: number;
+  rongDuongLon?: number;
+  trongSoXep?: number;
 };
 
 /* ---------- Chi phí (dự toán sơ bộ + hiệu quả tài chính). Mọi số mặc định là SỐ TẠM, chờ chủ nhiệm / QS chốt. ---------- */
