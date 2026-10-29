@@ -244,7 +244,9 @@ export function doiThangTay(toa: ToaDat, khoa: string, mat: number, sau: string,
   const r = chotSua(toa, { ...toa, thangTay: tt }, [null], c);
   if (!r.ok) return r;
   const sauT = matBangCua(r.toa, mauToa(c.tv, r.toa) as ToaMB, c.dl).thangBo.find((t) => t.khoa === khoa);
-  if (!sauT || (truoc && Math.abs(sauT.a0 - truoc.a0) < 1 && sauT.matIdx === truoc.matIdx)) return { ok: false, lyDo: 'khong_dat_thang' };
+  if (!sauT) return { ok: false, lyDo: 'khong_dat_thang' };
+  // thả ngay chỗ cũ (sau đúng ô đứng trước nó): không có gì đổi — không báo "không đặt được"
+  if (truoc && Math.abs(sauT.a0 - truoc.a0) < 1 && sauT.matIdx === truoc.matIdx) return { ok: false, lyDo: 'khong_doi' };
   return r;
 }
 
