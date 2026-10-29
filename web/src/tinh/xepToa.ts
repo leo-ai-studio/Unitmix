@@ -331,8 +331,58 @@ export function goiYXepToa(v: DauVaoXep): GoiYXep[] {
   for (;;) { const r = g.next(); if (r.done) return r.value; }
 }
 
-/** Chạy trên trình duyệt: nhả luồng sau mỗi mẫu (setTimeout 0) để giao diện không treo; `huy()` true thì dừng, trả null. */
+/** Thư gửi worker gợi ý (tinh/goiYXep.worker.ts): `tv` chỉ gửi khi worker chưa có đúng thư viện này. */
+export type ThuGoiY = { id: number; v: Omit<DauVaoXep, 'tv'>; tv?: ThuVien };
+export type ThuGoiYVe = { id: number; xong?: number; tong?: number; ds?: GoiYXep[]; loi?: string };
+
+let workerGoiY: Worker | null = null, tvCuaWorker: ThuVien | null = null, soIdGoiY = 0;
+let huyLuotGoiY: (() => void) | null = null;
+const taoWorkerGoiY = (): Worker | null => {
+  if (typeof Worker === 'undefined') return null;
+  try {
+    return new Worker(new URL('./goiYXep.worker.ts', import.meta.url), { type: 'module' });
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Chạy trên trình duyệt. Có Worker: chạy hẳn trong worker (lô lớn như CT-2 36 000 m² mỗi mẫu tốn hàng trăm ms – vài giây,
+ * nhả luồng giữa các mẫu vẫn đứng giao diện); `huy()` được hỏi mỗi lần nhận tiến độ và mỗi 100 ms — true thì terminate worker, trả null.
+ * Không có Worker (vitest / node): chạy trên luồng chính, nhả luồng sau mỗi mẫu như cũ.
+ */
 export async function goiYXepToaNen(v: DauVaoXep, tienDo?: (xong: number, tong: number) => void, huy?: () => boolean): Promise<GoiYXep[] | null> {
+  huyLuotGoiY?.(); // lượt cũ còn chạy: giết worker, lượt cũ trả null — chỉ giữ lượt mới nhất
+  if (!workerGoiY) { workerGoiY = taoWorkerGoiY(); tvCuaWorker = null; }
+  const w = workerGoiY;
+  if (w) {
+    const id = ++soIdGoiY;
+    const { tv, ...con } = v;
+    const thu: ThuGoiY = { id, v: con };
+    if (tvCuaWorker !== tv) { thu.tv = tv; tvCuaWorker = tv; }
+    return new Promise((xong, hong) => {
+      const ket = (giet: boolean) => {
+        clearInterval(hoi);
+        w.onmessage = null;
+        w.onerror = null;
+        huyLuotGoiY = null;
+        if (giet) { w.terminate(); if (workerGoiY === w) workerGoiY = null; }
+      };
+      const huyNgay = () => { ket(true); xong(null); };
+      huyLuotGoiY = huyNgay;
+      const hoi = setInterval(() => { if (huy?.()) huyNgay(); }, 100);
+      w.onmessage = (e: MessageEvent<ThuGoiYVe>) => {
+        const m = e.data;
+        if (m.id !== id) return;
+        if (huy?.()) return huyNgay();
+        if (m.loi !== undefined) { ket(true); hong(new Error(m.loi.split('\n')[0])); return; }
+        if (m.ds) { ket(false); xong(m.ds); return; }
+        if (m.xong !== undefined) tienDo?.(m.xong, m.tong ?? 0);
+      };
+      w.onerror = () => { ket(true); hong(new Error('goiYXep worker')); };
+      w.postMessage(thu);
+    });
+  }
   const g = sinhGoiY(v);
   for (;;) {
     const r = g.next();
