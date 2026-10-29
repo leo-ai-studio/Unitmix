@@ -78,7 +78,7 @@ export function Md({ chu }: { chu: string }) {
 }
 
 /** Logo LEO hai lớp: vòng O quay khi đang chạy, dừng đúng vị trí khi xong (hết vòng hiện tại mới dừng — như initBrandSpin của kit). */
-function MarkLeo({ quay, nho = false }: { quay: boolean; nho?: boolean }) {
+function MarkLeo({ quay, nho = false, vuong = false }: { quay: boolean; nho?: boolean; vuong?: boolean }) {
   const ref = useRef<HTMLImageElement>(null);
   useEffect(() => {
     const o = ref.current;
@@ -91,12 +91,14 @@ function MarkLeo({ quay, nho = false }: { quay: boolean; nho?: boolean }) {
   }, [quay]);
   const quayRef = useRef(quay);
   quayRef.current = quay;
-  return (
+  const mark = (
     <span class={`mark leo-mark${nho ? ' nho' : ''}`} aria-hidden="true">
-      <img src="/brand/leo_ai_mark_base.png" alt="" />
+      <img class="brand-nen" src="/brand/leo_ai_mark_base.png" alt="" />
       <img ref={ref} class="brand-o" src="/brand/leo_ai_o.png" alt="" />
     </span>
   );
+  // ảnh đại diện: logo nằm giữa ô vuông bo góc (logo 1041 × 682 không méo, vòng O giữ đúng tỉ lệ 1 : 1)
+  return vuong ? <span class={`leo-o-vuong${nho ? ' nho' : ''}`} aria-hidden="true">{mark}</span> : mark;
 }
 
 function NutNho({ k, nhan, onClick, tat, bat }: { k: KhoaBieuTuong; nhan: string; onClick: () => void; tat?: boolean; bat?: boolean }) {
@@ -358,7 +360,7 @@ export function LeoAI(p: PropsLeo) {
     const chu = chuTraLoi(m);
     tin.push(
       <div key={i} class="leo-tin may" title={luc ? gio(luc) : undefined}>
-        <MarkLeo quay={false} nho />
+        <MarkLeo quay={false} nho vuong />
         <div class="leo-noi-dung">
           {ks.map((b, j) => b.type === 'thinking' ? (b.thinking.trim() ? <details key={j} class="leo-nghi"><summary>{t('leo.tienTrinh')}</summary><Md chu={b.thinking} /></details> : null)
             : b.type === 'text' ? <Md key={j} chu={b.text} />
@@ -380,7 +382,7 @@ export function LeoAI(p: PropsLeo) {
   return (
     <aside class="leo-ai" role="dialog" aria-label={t('leo.ten')} data-lang={lang}>
       <header class="leo-dau">
-        <MarkLeo quay={chay} />
+        <MarkLeo quay={chay} vuong />
         <div class="leo-ten"><strong>{t('leo.ten')}</strong><small>{khoaApi ? t('leo.nguon.rieng') : t('leo.nguon.chung')} · {mhHien.ten.replace('Claude ', '')}</small></div>
         <span class="gian" />
         <NutNho k="leoLichSu" nhan={t('leo.lichSu')} bat={man === 'lichSu'} onClick={() => setMan(man === 'lichSu' ? 'chat' : 'lichSu')} />
@@ -456,7 +458,7 @@ export function LeoAI(p: PropsLeo) {
           {tin}
           {dang && (
             <div class="leo-tin may dang">
-              <MarkLeo quay nho />
+              <MarkLeo quay nho vuong />
               <div class="leo-noi-dung">
                 {dang.nghi.trim() && <details class="leo-nghi" open><summary>{t('leo.tienTrinh')}</summary><Md chu={dang.nghi} /></details>}
                 {dang.chu && <Md chu={dang.chu} />}

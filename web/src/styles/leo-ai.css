@@ -6,13 +6,21 @@
 .nut-leo-ai:hover { background: var(--soft); }
 .nut-leo-ai.mo { background: var(--selected); border-color: var(--green); }
 .nut-leo-ai .mark, .leo-mark { position: relative; display: inline-block; height: 22px; flex: none; }
-.nut-leo-ai .mark img, .leo-mark img { height: 22px; width: auto; display: block; }
+.nut-leo-ai .mark img, .leo-mark img { display: block; }
+.nut-leo-ai .mark img:not(.brand-o), .leo-mark .brand-nen { height: 22px; width: auto; }
 .khung-soan.hep .thanh-tren .nut-leo-ai { display: none; } /* màn hẹp: nút ở dock dưới (KhungSoan) */
 .nut-leo-dock .mark { position: relative; display: inline-block; height: 22px; flex: none; }
-.nut-leo-dock .mark img { height: 22px; width: auto; display: block; }
-.nut-leo-dock .mark .brand-o { position: absolute; left: 52.93%; top: .88%; width: 46.11%; height: auto; }
+.nut-leo-dock .mark img { display: block; }
+.nut-leo-dock .mark img:not(.brand-o) { height: 22px; width: auto; }
+.nut-leo-dock .mark .brand-o { position: absolute; left: 52.93%; top: .88%; width: 46.11%; height: auto; aspect-ratio: 1; }
 .nut-leo-dock.mo { background: var(--selected); }
-.nut-leo-ai .mark .brand-o, .leo-mark .brand-o { position: absolute; left: 52.93%; top: .88%; width: 46.11%; height: auto; }
+.nut-leo-ai .mark .brand-o, .leo-mark .brand-o { position: absolute; left: 52.93%; top: .88%; width: 46.11%; height: auto; aspect-ratio: 1; }
+/* Ảnh đại diện Leo AI: ô vuông bo góc, logo căn giữa theo bề ngang (chỉ đặt bề ngang — bề cao theo tỉ lệ ảnh, không méo) */
+.leo-o-vuong { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: var(--soft); border: 1px solid var(--line); }
+.leo-o-vuong .leo-mark { height: auto; width: 26px; }
+.leo-o-vuong .leo-mark .brand-nen { width: 100%; height: auto; }
+.leo-o-vuong.nho { width: 28px; height: 28px; border-radius: 8px; }
+.leo-o-vuong.nho .leo-mark { width: 21px; }
 
 .leo-ai {
   position: fixed; z-index: 75; top: 53px; right: 0; bottom: 0; width: min(440px, 100vw);
@@ -25,7 +33,7 @@
 .leo-ai .muted { color: var(--muted); }
 
 .leo-dau { display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
-.leo-dau > .leo-mark, .leo-dau > .leo-mark img { height: 28px; }
+
 .leo-ten { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
 .leo-ten strong { color: var(--logo-ink); font-size: 15px; letter-spacing: .02em; }
 .leo-ten small { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -40,7 +48,7 @@
 
 .leo-than { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
 .leo-chao { margin: auto 0; text-align: center; padding: 18px 6px; }
-.leo-chao .leo-mark, .leo-chao .leo-mark img { height: 46px; }
+.leo-chao .leo-mark .brand-nen { height: 46px; }
 .leo-chao h2 { font-size: 20px; font-weight: 500; margin: 12px 0 4px; color: var(--logo-ink); }
 .leo-chao p { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
 .leo-goi-y-mo { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
@@ -51,7 +59,7 @@
 .leo-tin.nguoi { flex-direction: column; align-items: flex-end; }
 .leo-bong { max-width: 88%; background: var(--soft); border: 1px solid var(--line); border-radius: 14px 14px 4px 14px; padding: 8px 12px; }
 .leo-chu-nguoi { white-space: pre-wrap; overflow-wrap: anywhere; }
-.leo-tin.may > .leo-mark, .leo-tin.may > .leo-mark img { height: 22px; margin-top: 2px; }
+.leo-tin.may > .leo-o-vuong { margin-top: 1px; }
 .leo-noi-dung { flex: 1; min-width: 0; }
 .leo-hanh-dong { display: flex; gap: 2px; opacity: .55; transition: opacity .15s; }
 .leo-tin:hover .leo-hanh-dong, .leo-hanh-dong:focus-within { opacity: 1; }
