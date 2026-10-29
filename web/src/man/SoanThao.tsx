@@ -27,6 +27,8 @@ import { luoi } from '../ui/Luoi';
 import { chonTangToa, TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
 import { taoNguCanhSoan, type PhuSoan } from '../troLy/nguCanhSoan';
+import { HopSoSanhMau } from '../ui/SoSanhMau';
+import { oDungCan } from '../tinh/soSanhMau';
 
 // Màn nặng ít dùng: chunk riêng, tải khi mở (vòng O giữ chỗ) — de_xuat_hieu_nang P5.
 const napHam = () => import('./ManHam');
@@ -121,7 +123,9 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const [moXuat, setMoXuat] = useState(false);
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
-  const chungXep = { ...chung, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); } };
+  const chungXep = { ...chung, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); },
+    // căn sát mốc dải dân số → màn Tầng của tòa, chọn ô dùng mẫu căn đó
+    moCan: (id: string, canId: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (!x) return; setLoId(x.loId); setToaId(id); setCanKhoa(tv ? oDungCan(tv, x, canId) : null); setBuoc('tang'); } };
   const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };
   const chungHam = { ...chung, tv, tangHam, chonTangHam: setTangHam };
   // chọn trong 3D đi qua đúng state chọn của 2D; bấm đúp tòa → mặt bằng tầng (như bấm đúp ở TMB) và về khung 2D
@@ -187,6 +191,8 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const thongBao = (
     <>
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}
+      <HopSoSanhMau pa={kho.pa} tv={tv} sua={kho.sua} chiXem={chiXem} loId={loId}
+        daDat={(lo, id) => { setLoId(lo); setToaId(id); setCanKhoa(null); setBuoc('tmb'); setXemGiua('mat_bang'); }} />
       {moXuat && xemXuat && tv && <HopXuatCad toa={xemXuat.toa} mau={xemXuat.mauTang(null)} mauTang={xemXuat.mauTang} tv={tv} ten={da.ten} dong={() => setMoXuat(false)} />}
       {coNhap && (
         <div class="thong-bao canh" role="status">

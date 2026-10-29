@@ -35,7 +35,13 @@ export type GiaiDoan = 'qh' | 'cp';
  * `cach` 'bq' = bình quân người / căn mà QĐ cho phép thay bảng. `khuVuc` đô thị / nông thôn — chỉ có tác dụng khi QĐ ghi trị
  * số riêng hai khu vực (VD Đồng Nai QĐ 09/2025 Điều 4 khoản 1: 31,0 / 28,5 m² sàn/người); thiếu (PA cũ) = đô thị.
  */
-export type KhaiDanSo = { tinh: string; giaiDoan: GiaiDoan; loaiHinh?: LoaiHinh; cach?: 'bang' | 'bq'; khuVuc?: KhuVuc };
+export type KhaiDanSo = { tinh: string; giaiDoan: GiaiDoan; loaiHinh?: LoaiHinh; cach?: 'bang' | 'bq'; khuVuc?: KhuVuc; lamTron?: LamTronDT };
+/**
+ * Làm tròn DT căn khi tính dân (tinh/danSo.ts `satMoc`): căn có DT trên một mốc dải của bảng QĐ không quá `dungSai` m² (VD 70,18 m²,
+ * mốc 70) được đếm như căn ở đúng mốc dải dưới (70,00 khi mốc "≤", 69,99 khi mốc "đến dưới") — DT thật phải sửa trong thiết kế.
+ * `bat` false vẫn giữ `dungSai` để danh sách "Căn sát mốc" dùng. Thiếu = tắt, dung sai mặc định 0,5 m².
+ */
+export type LamTronDT = { bat: boolean; dungSai: number };
 /** Khu vực khu đất để tra chỉ tiêu m² sàn/người khi QĐ tỉnh phân biệt đô thị / nông thôn. */
 export type KhuVuc = 'doThi' | 'nongThon';
 

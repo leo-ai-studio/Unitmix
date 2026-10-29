@@ -46,6 +46,9 @@ export const BIEU_TUONG = {
   bongDo: '☼',
   nenBanDo: '▧',
   khoaCG: '⊟', // giữ tòa trong chỉ giới khi kéo / xoay (LO-05)
+  soSanhMau: '◰', // so sánh mẫu tòa (không đặt lên TMB)
+  goiYHinh: '✧', // gợi ý dạng tòa theo yêu cầu (tiêu chí bằng lời)
+  satMoc: '⊥', // căn sát mốc dải dân số
   // màn hẹp (điện thoại / máy tính bảng)
   nganTrai: '◧', // mở ngăn Nhập liệu (panel trái)
   nganPhai: '◨', // mở ngăn Số liệu (panel phải)

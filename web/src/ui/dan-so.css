@@ -30,3 +30,21 @@
 .ds-du-an { margin-top: 4px; font-size: 12px; }
 .khai-dan-so { display: grid; gap: 4px; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--line); }
 .ds-khai-ghi { margin: 0; font-size: 11px; }
+/* Làm tròn DT khi tính dân + căn sát mốc dải (KhaiDanSo, DashDanSo `SatMocDS`) */
+.ds-lam-tron { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.ds-lam-tron .o-so { flex: 0 1 auto; flex-direction: row; align-items: center; gap: 6px; }
+.ds-lam-tron .o-tg { padding-left: 0; padding-right: 0; }
+.ds-lam-tron .o-so input { width: 64px; min-width: 0; }
+.ds-sat-moc summary { display: flex; align-items: center; gap: 4px; }
+.ds-sat-moc summary .bt-svg { width: 16px; height: 16px; flex: none; }
+.ds-sm-giam { margin-left: auto; color: var(--green); font-variant-numeric: tabular-nums; }
+.ds-bang-sm .ds-hang { grid-template-columns: 1.3fr .8fr .8fr 1fr .6fr .7fr 28px; }
+.ds-bang-sm .ds-hang.da-ap { background: color-mix(in srgb, var(--green) 7%, transparent); }
+.ds-sm-xem { width: 26px; height: 26px; min-width: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.ds-sm-xem .bt-svg { width: 16px; height: 16px; }
+.ds-ghi.ok { color: var(--green); }
+@media (max-width: 1024px) {
+  .ds-sm-xem { width: 40px; height: 40px; }
+  .ds-bang-sm .ds-hang { grid-template-columns: 1.2fr .8fr .8fr 1fr .5fr .6fr 42px; }
+  .ds-lam-tron .o-so input { font-size: 16px; width: 72px; }
+}
