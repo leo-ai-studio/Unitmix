@@ -16,7 +16,8 @@ import { tenTang } from '../ui/ChonTang';
 import { fmtSo } from '../ui/so';
 import { Khung3D } from './Khung3D';
 import { khoi3dTheoId } from './stretch3d';
-import { caiDatView } from '../tinh/huongView'; // góc Bắc dự án (TMB › Điểm view › Cài đặt): mặt trời 3D cả dự án quay theo
+import { caiDatView } from '../tinh/huongView';
+import { HopNangGioCho, NutNangGio3D, useMoRongNangGio } from '../nangGio'; // vị trí · ảnh nền · nắng · gió (gói riêng, cắm qua moRong) // góc Bắc dự án (TMB › Điểm view › Cài đặt): mặt trời 3D cả dự án quay theo
 
 type Nap = { khoi3d: Map<string, Khoi3d | null>; loi: Map<string, LoiHinh>; xong: boolean };
 
@@ -119,6 +120,7 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   const [che, setChe] = useState<'du_an' | 'toa'>('du_an');
   const [hienHam, setHienHam] = useState(true);
   const vHam = useNgheHam('3d'); // hầm rải trong Web Worker: có kết quả mới thì dựng lại (khoaNhe)
+  const moRong = useMoRongNangGio(pa);
   const xem = che === 'toa' && toa && mau ? 'toa' : 'du_an';
   const gocLuu = (pa.gocNhin ?? []).filter((g) => g.che === xem && (xem === 'du_an' || g.toaId === toa?.id));
   const luu: LuuGoc = {
@@ -141,9 +143,10 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   if (xem === 'toa' && toa && mau) return <MoHinhToa pa={pa} tv={tv} toa={toa} mau={mau} mauTang={mauTang} dauThanh={nut} chon3d={chon3d} {...luu} />;
   // tòa đang xem không vào khoá: đổi tòa (kể cả bấm chọn trong 3D) chỉ dựng lại nhẹ, giữ góc nhìn (góc "Cận tòa chọn" theo tòa mới)
   const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';')].join('|');
-  return (
-    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '')} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
+  return (<>
+    <Khung3D khoa={khoa} moRong={moRong} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '')} toaNguyen dauThanh={<>{nut}{nutHam}<NutNangGio3D /></>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
       gocBac={caiDatView(pa.huongView).gocBac} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, hienHam)} />
-  );
+    <HopNangGioCho pa={pa} tv={tv} sua={sua} chiXem={chiXem} la3D />
+  </>);
 }

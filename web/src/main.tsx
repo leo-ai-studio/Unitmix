@@ -25,6 +25,7 @@ import './styles/man-hinh-chinh.css';
 import './styles/du-an.css';
 import './styles/leo-ai.css';
 import './styles/pccc.css';
+import './styles/nang-gio.css'; // vị trí · ảnh nền · nắng · gió (nangGio/*) + thang màu dùng chung
 import { langHienTai } from './i18n/i18n';
 import { dangKySW } from './pwa/dangKySW';
 import { DuAn } from './man/DuAn';

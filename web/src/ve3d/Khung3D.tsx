@@ -7,6 +7,7 @@ import type { GocNhin } from '../tinh/kieu';
 import { GocBanVe } from '../ui/GocBanVe';
 import { coDaGiac } from '../tinh/matBang';
 import { dangChon, doiTuongTrung, khoaDoiTuong, laBam, laBamDup, trungRo, type DangChon3D, type DiemBam, type DoiTuong3D } from './chon3d';
+import type { GanMoRong, MoRong3D } from './moRong3D';
 import { DS_KIEU_3D, nhomMoi, taoVatLieu, THAM_SO_MAC, type KieuVe3D, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
 
 type V3 = [number, number, number];
@@ -53,6 +54,8 @@ type Props = {
   onMo?: (d: DoiTuong3D) => void;
   /** Lớp phủ chữ trong khung 3D (vd. thông tin căn / tầng đang chọn), không chiếm chỗ khung. */
   chuThich?: ComponentChildren;
+  /** Gói mở rộng cảnh (ve3d/moRong3D.ts) — vd. ảnh nền, đường mặt trời, lớp phân tích nắng / gió. Đọc lúc tạo khung. */
+  moRong?: MoRong3D;
 };
 
 // kiểu 3D: khoá mới (v2) để mặc định Vật liệu áp cho cả máy đã lưu 'brand' từ trước (trước đây khung luôn ghi kiểu đang xem)
@@ -81,7 +84,7 @@ export function gocMacDinh(c: Pick<CanhDung, 'tam' | 'coCanh' | 'cao'>): GocDeXu
 }
 
 /** Khung WebGL: xoay / di / phóng, mặt trời theo giờ, cắt ngang, kiểu Brand / mô hình trắng, góc đề xuất, lưu góc, xuất ảnh. Three.js nạp lười. */
-export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich }: Props) {
+export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich, moRong }: Props) {
   useLang();
   const hop = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -99,6 +102,8 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
   tr.current = { ts, hien, gio, cat, gocBac, kieu };
   const dungRef = useRef(dung);
   dungRef.current = dung;
+  const moRongRef = useRef(moRong);
+  moRongRef.current = moRong;
   const chonRef = useRef({ chon, onChon, onMo });
   chonRef.current = { chon, onChon, onMo };
   const kt = useMemo(() => JSON.stringify(ts), [ts]);
@@ -152,7 +157,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         // Cảm ứng: một ngón xoay, hai ngón chụm phóng + dời (canvas touch-action: none nên trang không phóng theo).
         ctl.touches = { ONE: T.TOUCH.ROTATE, TWO: T.TOUCH.DOLLY_PAN };
         ctl.enablePan = true; ctl.screenSpacePanning = true;
-        let canh: CanhDung | null = null, G = nhomMoi(), cho = 0;
+        let canh: CanhDung | null = null, G = nhomMoi(), cho = 0, mr: GanMoRong | null = null;
         // --- chọn trong 3D: mesh / nét có userData.chon; tô nhấn bằng cách đổi vật liệu (nhớ vật liệu gốc), không dựng lại ---
         type VL = import('three').Material;
         let dsChon: import('three').Object3D[] = [], ro: DoiTuong3D | null = null;
@@ -254,7 +259,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         const datNang = () => {
           if (!canh) return;
           const h = new Date(); // giờ Việt Nam (UTC+7) của ngày hôm nay
-          const { gocCao, phuongVi } = viTriMatTroi(21.03, 105.85, new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate(), 0, 0, 0) + (tr.current.gio - 7) * 3600e3));
+          const { gocCao, phuongVi } = mr?.nang?.(tr.current.gio) ?? viTriMatTroi(21.03, 105.85, new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate(), 0, 0, 0) + (tr.current.gio - 7) * 3600e3));
           const el = Math.max(8, gocCao) * (Math.PI / 180), az = (phuongVi - tr.current.gocBac) * (Math.PI / 180); // Bắc = +Y bản vẽ = −Z three
           const c = canh.coCanh, [tx, ty, tz] = canh.tam;
           sun.position.set(tx + c * 1.6 * Math.sin(az) * Math.cos(el), ty + c * 1.6 * Math.sin(el), tz - c * 1.6 * Math.cos(az) * Math.cos(el));
@@ -374,6 +379,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
             setDeXuat(ds);
             if (!giuGoc) { ctl.target.set(x, y, z); datGoc(ds[0]); }
             apHien(); datNang();
+            mr?.canhMoi?.(canh);
           }
           setDang(false); ve();
           requestAnimationFrame(() => hop.current?.classList.add('da-dung')); // hiện dần canvas sau lượt dựng
@@ -381,6 +387,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         const ob = new ResizeObserver(kichCo);
         ob.observe(hop.current);
         kichCo();
+        try { mr = moRongRef.current?.gan({ T, R, scene, cam, sun, ve, capNang: () => datNang(), datGio: (g) => setGio(g), dom: R.domElement }) ?? null; } catch { mr = null; }
         dungLai(false);
         he.current = { ve: () => { dungLai(true); }, datGoc, layGoc, anh };
         const hopEl = hop.current as HTMLDivElement & { _cap?: () => void; _nhan?: () => void; _chieuDoiTuong?: () => { loai: string; id: string; x: number; y: number }[] };
@@ -431,6 +438,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
           return kq;
         };
         don = () => {
+          mr?.huy(); mr = null;
           huyBay(); cancelAnimationFrame(vong); cancelAnimationFrame(choRo); ob.disconnect(); cancelAnimationFrame(cho);
           cv0.removeEventListener('pointerdown', onDown); cv0.removeEventListener('pointerup', onUp); cv0.removeEventListener('pointermove', onMove);
           cv0.removeEventListener('pointerleave', onLeave); cv0.removeEventListener('pointercancel', onCancel);

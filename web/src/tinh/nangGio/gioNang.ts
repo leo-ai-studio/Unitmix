@@ -194,6 +194,24 @@ export function tinhGioNang(dv: DauVaoNang, moiBuoc?: (kq: KetQuaNang) => void, 
   return kq;
 }
 
+/** Bóng của các khối trên mặt đất (z = h) theo hướng tới mặt trời: nắp + hình bình hành từng cạnh (vẽ chồng trong một nhóm mờ = phép hợp). */
+export function daGiacBong(khoi: KhoiLang[], huong: [number, number, number], h = 0): Diem[][] {
+  const [hx, hy, hz] = huong, ngang = Math.hypot(hx, hy);
+  if (hz <= 0.017 || ngang < 1e-9) return []; // mặt trời dưới ~1°: không vẽ bóng
+  const ux = hx / ngang, uy = hy / ngang, tanA = hz / ngang, kq: Diem[][] = [];
+  for (const k of khoi) {
+    if (k.z1 <= h) continue;
+    const L0 = Math.max(0, k.z0 - h) / tanA, L1 = (k.z1 - h) / tanA;
+    const v0: Diem = [-ux * L0, -uy * L0], v1: Diem = [-ux * L1, -uy * L1], p = k.chan;
+    kq.push(p.map(([x, y]) => [x + v1[0], y + v1[1]] as Diem));
+    for (let i = 0; i < p.length; i++) {
+      const a = p[i], c = p[(i + 1) % p.length];
+      kq.push([[a[0] + v0[0], a[1] + v0[1]], [c[0] + v0[0], c[1] + v0[1]], [c[0] + v1[0], c[1] + v1[1]], [a[0] + v1[0], a[1] + v1[1]]]);
+    }
+  }
+  return kq;
+}
+
 /** Thống kê cho chú giải: tỷ lệ diện tích theo khoảng giờ (mặc định mỗi giờ), TB, % ô ≥ `nguong` giờ. */
 export function thongKeGio(gio: ArrayLike<number>, tongGio: number, nguong = 2, chon?: (i: number) => boolean): { tb: number; datNguong: number; cot: number[]; dem: number } {
   const soCot = Math.max(1, Math.ceil(tongGio)), cot = new Array(soCot).fill(0);

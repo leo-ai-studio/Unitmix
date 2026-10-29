@@ -30,6 +30,7 @@ import { HopHangLoat, LopHangLoat } from './xepHangLoat';
 import { ThangMayLo } from '../ui/ThangMayLo';
 import { moSoSanhMau } from '../ui/SoSanhMau';
 import { ChuGiaiView, KpiView, LopViewTmb, TheViewToa, gocBacPA, nutLopView, useLopView } from './lopView';
+import { HopNangGioCho, LopNangGio2D, useNutNangGio } from '../nangGio'; // ảnh vệ tinh nền + nắng / gió (gói riêng, lớp phủ)
 
 type Chung = {
   pa: TrangThaiPA;
@@ -218,6 +219,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   const tc = useTuyChon();
   const luat = useLuatTMB();
   useLopView(); // nút Lớp › Điểm view vẽ lại khi bật / tắt
+  const nutNG = useNutNangGio(); // nút Lớp › Ảnh vệ tinh, Vị trí · Nắng · Gió
   const lo = loDangXep(pa, loId);
   const sel = luaChon(pa, dsNhieu, toaId);
   const toaChon = pa.toa.filter((x) => sel.includes(x.id));
@@ -479,6 +481,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
           bat: tc.khung,
           onXong: (a, b, them) => { const ids = toaTrongKhung(hinh, a, b); chon(them ? [...new Set([...sel, ...ids])] : ids); },
         }}>
+        <LopNangGio2D pa={pa} tv={tv} />
         {pa.lo.flatMap((l) => l.xungQuanh).map((d, i) => (
           <polyline key={`xq${i}`} points={sPoly(d)} fill="none" stroke="var(--muted)" stroke-width="1" vector-effect="non-scaling-stroke" />
         ))}
@@ -607,9 +610,10 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         {tc.do && <p class="tmb-goi-y">{diemDo.length === 2 ? `${t('tmb.do.ketQua')} ${m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1]))} · Δx ${m1(Math.abs(diemDo[1][0] - diemDo[0][0]))} · Δy ${m1(Math.abs(diemDo[1][1] - diemDo[0][1]))}` : t('tmb.do.huongDan')}</p>}
         {hien?.chan && <p class="tmb-goi-y canh">{t('tmb.chanCG')}</p>}
         <ChuGiaiView pa={pa} />
+        <HopNangGioCho pa={pa} tv={tv} sua={sua} chiXem={chiXem} />
       </div>
       <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null}
-        lop={[nutLopView()]} chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
+        lop={[nutLopView(), ...nutNG]} chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
       {menuToa && (() => {
         const dong = () => setMenuToa(null);
         const muc = (k: string, nhan: string, tat: boolean, lam: () => void) => (
