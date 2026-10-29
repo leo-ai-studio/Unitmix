@@ -18,7 +18,7 @@ export const nguongRun = (kieu: KieuTro) => (kieu === 'touch' ? 10 : kieu === 'p
 /** Giữ yên quá chừng này (ms) = nhấn giữ (mở menu ngữ cảnh). */
 export const MS_GIU = 520;
 /** Hai lần chạm cách nhau tối đa (ms, px) = chạm hai lần. */
-export const MS_DUP = 320, PX_DUP = 28;
+export const MS_DUP = 400, PX_DUP = 28;
 
 export type CuChiCham = 'cham' | 'keo' | 'chum' | 'giu';
 

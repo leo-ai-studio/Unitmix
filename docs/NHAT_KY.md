@@ -2,6 +2,42 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · Giao diện điện thoại / máy tính bảng + cảm ứng 2D / 3D · agent Opus
+
+- Yêu cầu: tối ưu cho điện thoại; thao tác mượt, không che công cụ; zoom hai ngón; chạm chọn tòa, lô; tương tác được.
+- Đã làm:
+  - Bố cục ≤ 1024 px (`ui/manHep.ts`, `styles/dien-thoai.css`, `ui/KhungSoan.tsx`, `ui/ThanhTren.tsx`). Bản vẽ / 3D chiếm gần trọn màn: 390×844 có khung giữa 390×740, 768×1024 có 768×920.
+  - Panel trái / phải thành ngăn kéo trượt từ đáy. Dock dưới có Nhập · ↶ ↷ · Số liệu. Kéo tay cầm xuống để đóng (`ui/nganKeo.ts`), Esc cũng đóng. Ngăn đang đóng có `inert`.
+  - Thanh trên một hàng 48 px: logo · TMB / Tầng / Hầm (nhãn ngắn `buoc.ngan.*`) · 2D / 3D / Chi phí · ⋯. Dải cấp, chế độ sửa, trạng thái lưu, XLS / CAD, VI / EN gom vào menu ⋯.
+  - Điện thoại nằm ngang (cao ≤ 520): dock thành cột phải. Máy tính bảng: ngăn rộng 440 px, Nhập bám trái, Số liệu bám phải.
+  - Né tai thỏ bằng `viewport-fit=cover` + `env(safe-area-inset-*)`. Nút ≥ 40–44 px, ô nhập 16 px. Thanh TMB và thanh 3D một hàng, vuốt ngang trong thanh. Màn Tầng: nhãn tầng một dòng, thanh công cụ tay xuống hàng dưới, không đè hoa gió. Thông báo, thanh ô chọn, chip 3D xuống đáy khung giữa.
+  - Cảm ứng 2D (`ve/camUng.ts` thuần + `ve/BanVe.tsx`):
+    - Đang kéo / chụm chỉ đổi CSS `transform` của SVG trong rAF. Nhấc tay mới đặt viewBox, vẽ lại một lần. Quán tính cũng chạy bằng transform.
+    - Chạm hai lần = phát `dblclick`, nhấn giữ 520 ms = phát `contextmenu` lên phần tử dưới ngón, nên tòa / ô căn / lõi dùng lại handler chuột. Bản gốc trình duyệt tự phát bị chặn để menu không mở hai lần. Click khi nhấc tay sau nhấn giữ bị nuốt, vì nó trúng mục menu vừa mở.
+    - Ngưỡng run tay khi chạm là 10 px (chuột 4 px).
+  - TMB (`man/ManXepToa.tsx`):
+    - Ngón đặt lên tòa CHƯA chọn thì kéo là dời bản vẽ; chỉ tòa đã chọn mới kéo bằng một ngón.
+    - Chạm tòa / lô chọn bằng hit-test trong `bamNen` (`data-toa`, `data-lo`). Chạm nền bỏ chọn.
+    - Menu ngữ cảnh tòa (chuột phải / nhấn giữ): mở mặt bằng tầng, xoay 90°, lật, nhân bản, khoá, xoá (`HopNoi` export từ `ve/MenuO.tsx`).
+  - 3D (`ve3d/Khung3D.tsx`, chỉ phần điều khiển): `touches` ONE = xoay, TWO = chụm phóng + dời, `screenSpacePanning`. Đặt ngón thứ hai thì cả lượt không còn là chạm, nên ngón đầu đứng yên khi chụm không chọn nhầm.
+- Kiểm:
+  - `npm run kiem` ĐẠT (web 505/505; mới `ve/camUng.test.ts` 11 ca: chạm / kéo / chụm / giữ, chạm hai lần, phóng quanh tâm, chụm + dời, transform khớp vẽ lại).
+  - `scripts/kiem_man_hep.mjs` (mới, cần vite + API): đo tràn ngang, nút bị che, nút < 40 px, thanh trên ra ngoài mép. Chạy ở 390×844, 430×932, 844×390, 768×1024, 1024×768, 1440×900 qua TMB, Tầng, Hầm, 3D, Chi phí, hai ngăn, menu ⋯: ĐẠT. Cỡ 1440×900 khung giữa vẫn 270,52,870×848 như trước.
+  - Edge headless + CDP (`mobile: true`, dpr 3; máy tính bảng 768×1024), chạm qua `Input.dispatchTouchEvent`, vite 5426, API 8787, dự án thử `12alnif0` (chép PA 16 lô / 3 tòa của `xhwv7fzo`):
+    - TMB 12/12: chụm 80 → 280 px phóng đúng ×3,5, tâm lệch 0 px; đang chụm viewBox đứng yên; chạm chọn tòa / lô / bỏ chọn; kéo tòa đã chọn; kéo từ tòa chưa chọn thì dời bản vẽ; nhấn giữ mở menu; chạm hai lần mở Tầng.
+    - 3D 8/8. Ngăn / Tầng 6/6: kéo tay cầm đóng ngăn, chụm MB tầng, nhấn giữ ô căn mở menu công năng.
+    - Ảnh ở `docs/anh/mobile/` (đã giảm còn 256 màu cho nhẹ).
+- Bẫy:
+  - Sau kéo nhanh, quán tính còn chạy khoảng 1 s. Đo toạ độ phần tử ngay lúc đó sẽ lệch (chạm đầu tiên dừng trôi).
+  - Menu mở tại điểm nhấn giữ nên click khi nhấc tay trúng mục đầu → phải nuốt ở `window`, không chỉ trong `.ban-ve`.
+  - `Set-Content -Encoding utf8` của PowerShell 5 thêm BOM.
+- Còn dở:
+  - Chưa thử trên máy thật iOS / Android. iOS chặn phóng trang bằng `gesturestart` + `touch-action`, chưa kiểm.
+  - Màn Tầng: chế độ ✥ kéo đổi chỗ (`man/CongCuTang.tsx`, không thuộc phạm vi) chặn lan truyền `pointerdown` trên ô, nên khi bật ✥ thì chụm bắt đầu trên ô không phóng được.
+  - Màn Hầm vẽ ranh bằng chạm chưa thử.
+  - Ngăn kéo chưa có nấc nửa / đầy.
+  - Hộp thoại lớn (Nhập bảng QH) trên điện thoại mới chỉ cuộn được, chưa tối ưu.
+
 ## 2026-10-29 · 3D: chọn lô kiểm trên app, chọn căn / tầng ở Công trình, nhớ hình tầng, FPS · agent Opus
 
 - Yêu cầu: (1) kiểm bấm chọn lô trên app thật (phần lô trống ngoài chân tòa); (2) chế độ Công trình bấm chọn căn / tầng, rê thì tô nhấn, bấm đúp căn mở màn Tầng đúng tầng + căn; (3) dựng lại tòa không đổi hình < 20 ms, giảm lần đầu; (4) đo FPS khi xoay camera.

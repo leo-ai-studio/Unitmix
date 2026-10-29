@@ -76,7 +76,6 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
   const rafTay = useRef(0);
   const luotCham = useRef<LuotCham | null>(null);
   const chamTruoc = useRef<DiemCham | null>(null); // lần chạm trước (nhận chạm hai lần)
-  const nuotClickDen = useRef(0); // sau nhấn giữ: nuốt click khi nhấc tay
   const kieuTro = useRef('mouse');
   const diem = useRef(new Map<number, { x: number; y: number }>());
   const cuChi = useRef<CuChi | null>(null);
@@ -224,7 +223,13 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
     l.giu = true;
     cuChi.current = null; mau.current = [];
     chot();
-    nuotClickDen.current = performance.now() + 1500;
+    // nhấc tay sau nhấn giữ trình duyệt vẫn phát click — trúng mục menu vừa mở ngay dưới ngón. Nuốt đúng một click đó (ở cửa sổ),
+    // bỏ nuốt khi có lần đặt ngón mới hoặc quá 1,5 s.
+    const thoi = () => { removeEventListener('click', nuot, true); removeEventListener('pointerdown', thoi, true); clearTimeout(hen); };
+    const nuot = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); thoi(); };
+    const hen = window.setTimeout(thoi, 1500);
+    addEventListener('click', nuot, true);
+    addEventListener('pointerdown', thoi, true);
     chamTruoc.current = null;
     navigator.vibrate?.(12);
     phatChuot('contextmenu', l.cx, l.cy);
@@ -238,8 +243,7 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
   const pxMoiMet = kt.r && v.w ? kt.r / v.w : 0;
   const doDai = tyLeM * pxMoiMet;
   return (
-    <div class="ban-ve" ref={hop} onContextMenuCapture={chanGoc} onDblClickCapture={chanGoc}
-      onClickCapture={(e) => { if (performance.now() < nuotClickDen.current) { nuotClickDen.current = 0; e.stopPropagation(); e.preventDefault(); } }}>
+    <div class="ban-ve" ref={hop} onContextMenuCapture={chanGoc} onDblClickCapture={chanGoc}>
       {daDo && (
         <svg
           ref={svgRef}
@@ -259,7 +263,6 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
           onPointerDownCapture={(e) => {
             huyDong();
             kieuTro.current = e.pointerType;
-            nuotClickDen.current = 0;
             const p = viTri(e);
             diem.current.set(e.pointerId, p);
             if (diem.current.size === 1) {
