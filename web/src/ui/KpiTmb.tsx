@@ -6,6 +6,7 @@ import { kpiTmb, loDuAn } from '../tinh/kpi';
 import { MucGap } from './MucGap';
 import { fmtSo } from './so';
 import { LuoiSo, TheSo, pct1, useHieuSuatMin } from './TheSo';
+import { nhanToa } from './nhanToa';
 
 const m2 = 'm²';
 
@@ -19,7 +20,7 @@ export function KpiTmb({ pa, tv, lo, kq }: { pa: TrangThaiPA; tv: ThuVien | null
   const dsLo = useMemo(() => loDuAn(pa), [pa.lo]);
   const k = useMemo(() => (tv && kq ? kpiTmb(pa, tv, kq, caDuAn ? dsLo : [lo.id], hsMin) : null), [pa, tv, kq, caDuAn, dsLo, lo.id, hsMin]);
   if (!k) return null;
-  const tenToa = (id: string) => tv?.toa.get(pa.toa.find((x) => x.id === id)?.mauId ?? '')?.ten_vi.split(' · ')[0] ?? '?';
+  const tenToa = (id: string) => nhanToa(pa, tv, id, { lo: caDuAn });
   const kyHieu = (id: string) => pa.lo.find((l) => l.id === id)?.temDat.kyHieu ?? '';
   const soToa = k.toa.length;
   return (

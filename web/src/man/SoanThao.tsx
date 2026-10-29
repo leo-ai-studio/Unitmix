@@ -297,7 +297,8 @@ function dungCapDo(v: DauVaoCap): CapDo {
   const trungTen = new Set(dsToa.map((x) => tenMau(tv, x))).size < dsToa.length;
   const nhanToa = (x: ToaDat) => { const i = dsToa.indexOf(x); return trungTen && i >= 0 ? `${i + 1} · ${tenMau(tv, x)}` : tenMau(tv, x); };
   const toa: MenuCap | undefined = buoc !== 'ham' && dsToa.length ? {
-    nhan: toaDangChon ? nhanToa(toaDangChon) : t('cap.chonToa'),
+    // ô trên thanh: mã ngắn ("1 · V4"), tên đầy đủ ở tooltip + menu — tên dài bị cắt "1 · V4 · Chữ …"
+    nhan: toaDangChon ? nhanToa(toaDangChon).split(' · ').slice(0, trungTen ? 2 : 1).join(' · ') : t('cap.chonToa'),
     tieuDe: toaDangChon ? nhanToa(toaDangChon) : t('cap.chonToa'),
     dangO: cap === 'toa',
     ds: dsToa.map((x) => ({ khoa: x.id, nhan: nhanToa(x), phu: `${x.soTangDe} + ${x.soTangDH} T`, nhom: loToa ? `${t('cap.toa')} ${loToa.temDat.kyHieu}` : undefined, chon: x.id === toaDangChon?.id })),

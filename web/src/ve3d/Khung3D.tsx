@@ -5,6 +5,7 @@ import { t, useLang } from '../i18n/i18n';
 import { chayRaf, easeInOut, giamChuyenDong, tron } from '../ui/chuyenDong';
 import type { GocNhin } from '../tinh/kieu';
 import { GocBanVe } from '../ui/GocBanVe';
+import { MenuNut } from '../ui/MenuNut';
 import { coDaGiac } from '../tinh/matBang';
 import { dangChon, doiTuongTrung, khoaDoiTuong, laBam, laBamDup, trungRo, type DangChon3D, type DiemBam, type DoiTuong3D } from './chon3d';
 import type { GanMoRong, MoRong3D } from './moRong3D';
@@ -88,6 +89,10 @@ type Props = {
   lopAn?: string[];
   /** Lớp phân tích view phủ lên cảnh. */
   phanTich?: PhanTich3D;
+  /** Nút bật / tắt phân tích (Hầm, Phân tích view, Vị trí · Nắng · Gió…) — nhóm biểu tượng thứ hai của thanh một hàng. */
+  nutPhanTich?: ComponentChildren;
+  /** Giờ nắng do công cụ khác điều khiển (hộp Vị trí · Nắng · Gió có ngày + thanh giờ + chạy, đồng bộ qua `moRong.datGio`): menu ☀ chỉ còn mặt cắt — một thanh giờ duy nhất. */
+  gioNgoai?: boolean;
 };
 
 // kiểu 3D: khoá mới (v2) để mặc định Vật liệu áp cho cả máy đã lưu 'brand' từ trước (trước đây khung luôn ghi kiểu đang xem)
@@ -116,7 +121,7 @@ export function gocMacDinh(c: Pick<CanhDung, 'tam' | 'coCanh' | 'cao'>): GocDeXu
 }
 
 /** Khung WebGL: xoay / di / phóng, mặt trời theo giờ, cắt ngang, kiểu Brand / mô hình trắng, góc đề xuất, lưu góc, xuất ảnh. Three.js nạp lười. */
-export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich, lop, lopAn, phanTich, moRong }: Props) {
+export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich, lop, lopAn, phanTich, nutPhanTich, gioNgoai, moRong }: Props) {
   useLang();
   const hop = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -130,6 +135,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
   const [cat, setCat] = useState(1);
   const [deXuat, setDeXuat] = useState<GocDeXuat[]>([]);
   const [baoChep, setBaoChep] = useState('');
+  const [moTs, setMoTs] = useState(false); // bảng kích thước đứng (mở từ menu ⋯)
   const tr = useRef({ ts, hien, gio, cat, gocBac, kieu, lopAn, viDo });
   tr.current = { ts, hien, gio, cat, gocBac, kieu, lopAn, viDo };
   const dungRef = useRef(dung);
@@ -660,50 +666,63 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
   return (
     <div class="khung-3d">
       <div class="noi-tren">
-      <div class="thanh-3d">
+      {/* Một hàng kiểu Forma: phạm vi (dauThanh) · nhóm xem (góc, kiểu, nắng / cắt) · nhóm phân tích (Hầm, view, nắng / gió) · ⋯ (xuất ảnh, prompt,
+          kích thước). Bảng chọn là lớp nổi `position: fixed` (ui/MenuNut) — thanh không xuống dòng, khung 3D không bị bóp. */}
+      <div class="thanh-3d" role="toolbar" aria-label={tieuDe ?? t('m3d.che')}>
         {dauThanh}
-        {tieuDe && <b class="tieu-de-3d">{tieuDe}</b>}
-        <span class="nhom-3d" role="group" aria-label={t('m3d.gocDeXuat')}>
-          {deXuat.map((g) => <button type="button" key={g.ten} onClick={() => apGoc(g)}>{g.ten}</button>)}
+        <span class="nhom-bt">
+          <MenuNut k="gocMay" nhan={t('bt.gocMay')} lop="menu-goc-3d">
+            {(dong) => (
+              <>
+                <div class="menu-nut-nhom">{t('m3d.gocDeXuat')}</div>
+                {deXuat.map((g) => <button type="button" role="menuitem" key={g.ten} onClick={() => apGoc(g)}>{g.ten}</button>)}
+                <div class="menu-nut-nhom">{t('m3d.gocLuu').replace(/:$/, '')}</div>
+                {(gocLuu ?? []).map((g) => (
+                  <span class="menu-nut-dong" key={g.id}>
+                    <button type="button" role="menuitem" onClick={() => apGoc(g)}>{g.ten}</button>
+                    {onXoaGoc && <button type="button" class="xoa" aria-label={t('m3d.xoaGoc')} title={t('m3d.xoaGoc')} onClick={() => onXoaGoc(g.id)}>×</button>}
+                  </span>
+                ))}
+                {!gocLuu?.length && <span class="menu-nut-trong">—</span>}
+                {onLuuGoc && <button type="button" role="menuitem" class="menu-nut-them" onClick={() => { dong(); luuGoc(); }}>＋ {t('m3d.luuGoc')}</button>}
+              </>
+            )}
+          </MenuNut>
+          <MenuNut k="kieuVe" nhan={`${t('bt.kieuVe')}: ${t(`m3d.kieu.${kieu}`)}`} dongKhiChon={toaNguyen}>
+            {DS_KIEU_3D.map((k) => <button type="button" role="menuitemradio" aria-checked={kieu === k} key={k} onClick={() => setKieu(k)}>{t(`m3d.kieu.${k}`)}</button>)}
+            {!toaNguyen && <div class="menu-nut-nhom" />}
+            {!toaNguyen && dsHien.map(([k, n]) => <label class="menu-nut-tich" key={k}><input type="checkbox" checked={hien[k]} onChange={(e) => setHien({ ...hien, [k]: e.currentTarget.checked })} /><span>{t(n)}</span></label>)}
+          </MenuNut>
+          <MenuNut k="nangCat" nhan={gioNgoai ? t('m3d.cat') : t('bt.nangCat')} dongKhiChon={false} lop="menu-nang-3d">
+            {!gioNgoai && <label class="menu-nut-truot"><span>{t('m3d.gio')}</span><input type="range" min="6" max="18" step="0.5" value={gio} onInput={(e) => setGio(+e.currentTarget.value)} /><b>{gio}h</b></label>}
+            <label class="menu-nut-truot"><span>{t('m3d.cat')}</span><input type="range" min="0.05" max="1" step="0.01" value={cat} onInput={(e) => setCat(+e.currentTarget.value)} /><b>{Math.round(cat * 100)}%</b></label>
+          </MenuNut>
         </span>
-        <span class="gian" />
-        <span class="nhom-3d" role="group" aria-label={t('m3d.kieu')}>
-          {DS_KIEU_3D.map((k) => <button type="button" key={k} aria-pressed={kieu === k} onClick={() => setKieu(k)}>{t(`m3d.kieu.${k}`)}</button>)}
+        {nutPhanTich && <span class="nhom-bt nhom-phan-tich">{nutPhanTich}</span>}
+        <span class="nhom-bt">
+          <MenuNut k="khac" nhan={t('bt.khac')}>
+            <button type="button" role="menuitem" onClick={taiAnh}>{t('m3d.xuatAnh')}</button>
+            <button type="button" role="menuitem" title={t('m3d.aiGiaiThich')} onClick={chepPrompt}>{t('m3d.promptNut')}</button>
+            {chinhThamSo && <button type="button" role="menuitemradio" aria-checked={moTs} onClick={() => setMoTs(!moTs)}>{t('m3d.thamSo')}</button>}
+          </MenuNut>
         </span>
-        <label class="o-tg"><span>{t('m3d.gio')} {gio}h</span><input type="range" min="6" max="18" step="0.5" value={gio} onInput={(e) => setGio(+e.currentTarget.value)} /></label>
-        <label class="o-tg"><span>{t('m3d.cat')}</span><input type="range" min="0.05" max="1" step="0.01" value={cat} onInput={(e) => setCat(+e.currentTarget.value)} /></label>
+        {baoChep && <span class="bao-3d" role="status">{baoChep}</span>}
       </div>
-      <div class="thanh-3d thanh-3d-phu">
-        <span class="muted">{t('m3d.gocLuu')}</span>
-        {(gocLuu ?? []).map((g) => (
-          <span class="chip-goc" key={g.id}>
-            <button type="button" onClick={() => apGoc(g)}>{g.ten}</button>
-            {onXoaGoc && <button type="button" class="xoa" aria-label={t('m3d.xoaGoc')} onClick={() => onXoaGoc(g.id)}>×</button>}
-          </span>
-        ))}
-        {!gocLuu?.length && <span class="muted">—</span>}
-        {onLuuGoc && <button type="button" class="nut-phu" onClick={luuGoc}>＋ {t('m3d.luuGoc')}</button>}
-        <span class="gian" />
-        {!toaNguyen && dsHien.map(([k, n]) => <label class="o-tg" key={k}><input type="checkbox" checked={hien[k]} onChange={(e) => setHien({ ...hien, [k]: e.currentTarget.checked })} /><span>{t(n)}</span></label>)}
-        <button type="button" class="nut-phu" onClick={chepPrompt} title={t('m3d.aiGiaiThich')}>{t('m3d.promptNut')}</button>
-        <button type="button" class="nut-chinh" onClick={taiAnh}>⤓ {t('m3d.xuatAnh')}</button>
-        {baoChep && <span class="ok" role="status">{baoChep}</span>}
-      </div>
-      {chinhThamSo && (
-        <details class="tham-so-3d">
-          <summary>{t('m3d.thamSo')}</summary>
+      {chinhThamSo && moTs && (
+        <div class="tham-so-3d">
+          <div class="tham-so-dau"><b>{t('m3d.thamSo')}</b><button type="button" class="nut-dong-view" aria-label={t('view.dong')} onClick={() => setMoTs(false)}>×</button></div>
           <div class="luoi-tham-so">
             {NHAN_TS.map(([k, n]) => (
-              <label key={k}><span>{t(n)}</span><input type="number" min="50" max="9000" step="10" value={ts[k] as number} onChange={(e) => { const v = +e.currentTarget.value; if (v >= 50 && v <= 9000) setTs({ ...ts, [k]: v }); }} /></label>
+              <label class="o-so" key={k}><span>{t(n)}</span><input type="number" min="50" max="9000" step="10" value={ts[k] as number} onChange={(e) => { const v = +e.currentTarget.value; if (v >= 50 && v <= 9000) setTs({ ...ts, [k]: v }); }} /></label>
             ))}
-            <label><span>{t('m3d.kieuLanCan')}</span>
+            <label class="o-chon"><span>{t('m3d.kieuLanCan')}</span>
               <select value={ts.kieuLC} onChange={(e) => setTs({ ...ts, kieuLC: e.currentTarget.value as ThamSo3D['kieuLC'] })}>
                 <option value="thep">{t('m3d.thep')}</option><option value="kinh">{t('m3d.kinh')}</option>
               </select>
             </label>
             <button type="button" class="nut-phu" onClick={() => setTs({ ...THAM_SO_MAC })}>{t('m3d.macDinh')}</button>
           </div>
-        </details>
+        </div>
       )}
       </div>
       <div class="vung-3d" ref={hop}>

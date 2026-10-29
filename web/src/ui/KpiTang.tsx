@@ -7,6 +7,7 @@ import { fmtSo } from './so';
 import { LuoiSo, TheSo, VongKpi, pct1, useHieuSuatMin } from './TheSo';
 import { NutBieuTuong } from './NutBieuTuong';
 import { moSoSanhMau } from './SoSanhMau';
+import { nhanToa } from './nhanToa';
 
 const m2 = 'm²';
 const so1 = { thapPhan: 1 };
@@ -25,7 +26,7 @@ export function KpiTang({ pa, tv, toa, lo, tang, can, mucTieu, nguongLech, tenTa
 }) {
   const hsMin = useHieuSuatMin();
   const k = useMemo(() => kpiTang(pa, tv, toa, lo, tang, can, mucTieu, hsMin), [pa, tv, toa, lo, tang, can, mucTieu, hsMin]);
-  const ten = tv.toa.get(toa.mauId)?.ten_vi.split(' · ')[0] ?? '?';
+  const ten = nhanToa(pa, tv, toa.id); // "V4 · 2" khi lô có hai tòa cùng mẫu
   const dsLoai = LOAI_CAN.filter((l) => k.theoLoai[l].nToa > 0 || k.theoLoai[l].mucTieu > 0);
   const tenCan = (id: string) => tv.can.get(id)?.ten_vi ?? id;
   const tenNgan = (id: string) => tenCan(id).split(' · ')[0];
