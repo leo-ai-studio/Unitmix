@@ -100,9 +100,16 @@ const GOC_TIA = [-30, -15, 0, 15, 30];
 /** Sâu dải màu ngoài mặt căn (m): theo cỡ chữ bản vẽ (≈ 18 px trên màn ở mọi mức phóng), tối thiểu 4 m. */
 const sauDai = (coChu: number) => Math.max(4, coChu * 1.4);
 
+/** Số mức màu khi gộp nét / dải theo màu (thang liên tục lượng tử 40 mức ≈ 2,5 điểm / mức — mắt không phân biệt được). */
+const MUC = 40;
+/** Độ mờ 4 lớp dải (gần mặt → xa): giả gradient theo pháp tuyến mà không cần mỗi mặt một <linearGradient>. */
+const LOP_DAI = [0.55, 0.32, 0.16, 0.06];
+
 /**
- * Lớp TMB: mỗi mặt căn một dải màu mờ dần ra ngoài (gradient theo pháp tuyến) + nét mặt có viền sáng; nhãn chip "View nn" dưới
+ * Lớp TMB: mỗi mặt căn một dải màu mờ dần ra ngoài (4 lớp độ mờ theo pháp tuyến) + nét mặt có viền sáng; nhãn chip "View nn" dưới
  * tên tòa; tòa đang chọn: 5 tia view mỗi căn tới vật cản (mờ dần, chấm cuối khi bị che). Chỉ hiện khi bật lớp.
+ * Gộp theo mức màu: mỗi mức một <path> cho mỗi lớp dải + một <path> nét — dự án 50 tòa / 1 300 mặt căn còn ~200 phần tử SVG
+ * (trước: 1 300 gradient + 4 000 phần tử, bật lớp ~150 ms).
  */
 export function LopViewTmb({ pa, tv, coChu, toaId }: { pa: TrangThaiPA; tv: ThuVien | null; coChu: number; toaId?: string | null }) {
   const s = useTT();
@@ -111,23 +118,28 @@ export function LopViewTmb({ pa, tv, coChu, toaId }: { pa: TrangThaiPA; tv: ThuV
   return <LopTmbTrong pa={pa} kq={kq} coChu={coChu} toaId={toaId ?? null} loc={s.loc} tia={s.tia} />;
 }
 function LopTmbTrong({ pa, kq, coChu, toaId, loc, tia }: { pa: TrangThaiPA; kq: KetQuaViewPA; coChu: number; toaId: string | null; loc: [number, number] | null; tia: boolean }) {
-  const dai = useMemo(() => kq.can.map((d, i) => {
-    const M: Diem = [(d.A[0] + d.B[0]) / 2, (d.A[1] + d.B[1]) / 2];
-    const ra = (p: Diem, k: number): Diem => [p[0] + d.n[0] * k, p[1] + d.n[1] * k];
-    const sd = sauDai(coChu), A2 = ra(d.A, sd), B2 = ra(d.B, sd), N = ra(M, sd);
-    return { i, d, M, N, P: `${d.A[0]},${-d.A[1]} ${d.B[0]},${-d.B[1]} ${B2[0]},${-B2[1]} ${A2[0]},${-A2[1]}`, mau: mauViewCss(d.tong) };
-  }), [kq, coChu]);
+  const nhom = useMemo(() => {
+    const sd = sauDai(coChu), f = (v: number) => v.toFixed(2);
+    // khoá = mức màu (0..MUC) hoặc -1 = ngoài bộ lọc
+    const g = new Map<number, { dai: string[]; net: string }>();
+    let vien = '';
+    for (const d of kq.can) {
+      const k = trongLoc(d.tong, loc) ? Math.round((d.tong / 100) * MUC) : -1;
+      let o = g.get(k);
+      if (!o) g.set(k, (o = { dai: LOP_DAI.map(() => ''), net: '' }));
+      const seg = `M${f(d.A[0])},${f(-d.A[1])}L${f(d.B[0])},${f(-d.B[1])}`;
+      o.net += seg; vien += seg;
+      LOP_DAI.forEach((_, j) => {
+        const a = (sd * j) / LOP_DAI.length, b = (sd * (j + 1)) / LOP_DAI.length, nx = d.n[0], ny = d.n[1];
+        o!.dai[j] += `M${f(d.A[0] + nx * a)},${f(-(d.A[1] + ny * a))}L${f(d.B[0] + nx * a)},${f(-(d.B[1] + ny * a))}L${f(d.B[0] + nx * b)},${f(-(d.B[1] + ny * b))}L${f(d.A[0] + nx * b)},${f(-(d.A[1] + ny * b))}Z`;
+      });
+    }
+    return { g: [...g].sort((p, q) => p[0] - q[0]), vien };
+  }, [kq, coChu, loc]);
   const tiaToa = tia && toaId ? kq.can.filter((d) => d.toaId === toaId) : [];
   return (
     <g class="lop-view" pointer-events="none">
       <defs>
-        {dai.map(({ i, M, N, mau }) => (
-          <linearGradient key={i} id={`gv${i}`} gradientUnits="userSpaceOnUse" x1={M[0]} y1={-M[1]} x2={N[0]} y2={-N[1]}>
-            <stop offset="0" stop-color={mau} stop-opacity="0.9" />
-            <stop offset="0.55" stop-color={mau} stop-opacity="0.35" />
-            <stop offset="1" stop-color={mau} stop-opacity="0" />
-          </linearGradient>
-        ))}
         {tiaToa.flatMap((d, i) => d.tiaL.map((L, j) => {
           const dv = xoay(d.n, GOC_TIA[j]), E: Diem = [d.O[0] + dv[0] * L, d.O[1] + dv[1] * L];
           return (
@@ -151,19 +163,12 @@ function LopTmbTrong({ pa, kq, coChu, toaId, loc, tia }: { pa: TrangThaiPA; kq: 
           }))}
         </g>
       )}
-      {dai.map(({ i, d, P }) => {
-        const vao = trongLoc(d.tong, loc);
-        return <polygon key={i} points={P} fill={vao ? `url(#gv${i})` : 'var(--line)'} fill-opacity={vao ? 1 : 0.35} />;
-      })}
-      {dai.map(({ i, d, mau }) => {
-        const vao = trongLoc(d.tong, loc);
-        return (
-          <g key={`n${i}`} opacity={vao ? 1 : 0.3}>
-            <line x1={d.A[0]} y1={-d.A[1]} x2={d.B[0]} y2={-d.B[1]} stroke="var(--panel)" stroke-width="5.5" stroke-linecap="round" vector-effect="non-scaling-stroke" />
-            <line x1={d.A[0]} y1={-d.A[1]} x2={d.B[0]} y2={-d.B[1]} stroke={vao ? mau : 'var(--secondary)'} stroke-width="3.5" stroke-linecap="round" vector-effect="non-scaling-stroke" />
-          </g>
-        );
-      })}
+      {nhom.g.map(([k, o]) => (k < 0 ? null : o.dai.map((d, j) => <path key={`d${k}-${j}`} d={d} fill={mauViewCss((k / MUC) * 100)} fill-opacity={LOP_DAI[j]} />)))}
+      <path d={nhom.vien} fill="none" stroke="var(--panel)" stroke-width="5.5" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      {nhom.g.map(([k, o]) => (
+        <path key={`n${k}`} d={o.net} fill="none" stroke={k < 0 ? 'var(--secondary)' : mauViewCss((k / MUC) * 100)} stroke-opacity={k < 0 ? 0.45 : 1}
+          stroke-width="3.5" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      ))}
       {pa.toa.map((x) => {
         const th = kq.theoToa.get(x.id);
         if (th?.tb == null) return null;

@@ -2,6 +2,7 @@
  * Đo thời gian đánh giá view cả PA, tầng giữa vs theo dải tầng (3D phân tích view), trên PA cỡ CT-2 tổng hợp: 6 lô × 8 tòa tm-i1
  * 30 tầng. Chỉ chạy khi UNITMIX_DO_VIEW=1 (không nằm trong cổng kiểm).
  */
+import { writeFileSync } from 'node:fs';
 import { it } from 'vitest';
 import { napThuVien } from '../thu/thuVienThat';
 import { taoToaTrenLo } from './hopLo';
@@ -23,6 +24,7 @@ it.skipIf(!process.env.UNITMIX_DO_VIEW)('PA 48 tòa: view tầng giữa / theo d
     for (let k = 0; k < 8; k++) toa.push({ ...taoToaTrenLo(mau, L, `t${i}-${k}`), x: x0 + 60 + (k % 2) * 120, y: y0 + 40 + Math.floor(k / 2) * 65, gocDo: (k % 3) * 15, soTangDH: 28 + (k % 4) * 3, soTangDe: 2, caoDe: 4.5, caoDH: 3.3 });
   }
   const pa = { ...taoPAMoi(), lo, toa };
+  if (process.env.UNITMIX_DO_VIEW_RA) writeFileSync(process.env.UNITMIX_DO_VIEW_RA, JSON.stringify(pa)); // PA thử để nạp API local, đo trên app
   for (const nt of [0, 40, 0, 40, 40]) {
     const t0 = performance.now();
     const k = danhGiaViewPA(pa, tv, { nhieuTang: nt });
