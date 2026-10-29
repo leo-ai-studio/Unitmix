@@ -255,7 +255,7 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
     </span>
   );
   const nutHam = (
-    <NutBieuTuong k="ham3d" nhan={t('m3d.ham')} ghiChu={t('m3d.hamGiaiThich')} bat={hienHam} onClick={() => doiLop('ham')}>
+    <NutBieuTuong k="ham3d" lop="an-dt" nhan={t('m3d.ham')} ghiChu={t('m3d.hamGiaiThich')} bat={hienHam} onClick={() => doiLop('ham')}>
       {hienHam && dieuPhoiHam.dangChoKenh('3d') && <img class="spin-o" src="/brand/leo_ai_o.png" alt={t('ham.dangRai')} title={t('ham.dangRai')} style={{ width: '12px', height: '12px' }} />}
     </NutBieuTuong>
   );
@@ -274,7 +274,7 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   // tòa đang xem không vào khoá: đổi tòa (kể cả bấm chọn trong 3D) chỉ dựng lại nhẹ, giữ góc nhìn (góc "Cận tòa chọn" theo tòa mới)
   const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';')].join('|');
   return (<>
-    <Khung3D khoa={khoa} moRong={moRong} khoaNhe={JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '') + '|' + napLoi.xong + '|' + loiDA.join()} toaNguyen dauThanh={nut} nutPhanTich={<>{nutHam}<NutPhanTich /><NutNangGio /></>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
+    <Khung3D khoa={khoa} moRong={moRong} khoaNhe={JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '') + '|' + napLoi.xong + '|' + loiDA.join()} toaNguyen dauThanh={nut} nutPhanTich={<>{nutHam}<NutPhanTich /><NutNangGio /></>} gioNgoai {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
       lop={[...nutLop(['tum', 'ham', 'thang', 'gio', 'cay', 'duong', 'ranh'], lopAn, doiLop), ...nutNG3D]} lopAn={lopAn}
       gocBac={vtDA.gocBac} viDo={vtDA.lat} dung={({ T, goc, M, kieu, capDo }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa })} />

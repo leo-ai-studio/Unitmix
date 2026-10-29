@@ -82,6 +82,8 @@
   .thanh-3d .chu-ngan { display: inline; }
   .thanh-3d .nut-bt { min-width: 40px; height: 40px; padding: 0 6px; }
   .thanh-3d .nut-bt .mui-menu { display: none; }
+  /* Hầm đã có trong menu Lớp (góc phải dưới) → bỏ khỏi thanh trên điện thoại để thanh vừa 390 px cùng nút Nắng · Gió */
+  .thanh-3d .nut-bt.an-dt { display: none; }
 }
 
 /* ---------- Panel trái: hàng nút nhập, thẻ mẫu tòa, preset ---------- */
@@ -126,6 +128,18 @@ label.nut-nho { display: inline-flex; flex-direction: row; align-items: center; 
 
 /* Leo AI: ô chọn mô hình đủ chỗ cho "Sonnet 5.5 · Cân bằng" (trước cắt "Cân bằn") */
 @media (min-width: 1025px) { .leo-chon-mh { max-width: 190px; min-width: 0; } }
+
+/* Hộp Vị trí · Nắng · Gió (nangGio/HopNangGio.tsx, CSS gốc nang-gio.css): kit LEO ép ô số ≥ 100 px nên hàng Góc Bắc
+   [ô] −1° −0,1° +0,1° +1° vỡ hai dòng; nút ngày nhanh 2 hàng; nhãn "Nguồn ảnh" nằm trên ô chọn */
+.hop-nang-gio input, .hop-nang-gio select { min-width: 0; }
+.hop-nang-gio .hng-luoi2 input { width: 100%; box-sizing: border-box; }
+.hop-nang-gio .hng-luoi2 > label { min-width: 0; }
+.hop-nang-gio .hng-chinh { flex-wrap: nowrap; gap: 4px; }
+.hop-nang-gio .hng-chinh input[type='number'] { width: 64px; padding: 4px 6px; }
+.hop-nang-gio .hng-chinh .nut-phu { padding: 4px 6px; font-size: 12px; }
+.hop-nang-gio .hng-boc .nut-phu { padding: 4px 8px; font-size: 12px; }
+.hop-nang-gio label.hng-o:has(> select) { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+.hop-nang-gio label.hng-o:has(> select) > select { flex: 0 1 auto; max-width: 68%; }
 
 /* ô số: chừa cột đơn vị để mọi ô thẳng hàng (có / không có "%", "m²") */
 .o-so-nhap { min-width: 96px; justify-content: flex-start; }

@@ -91,6 +91,8 @@ type Props = {
   phanTich?: PhanTich3D;
   /** Nút bật / tắt phân tích (Hầm, Phân tích view, Vị trí · Nắng · Gió…) — nhóm biểu tượng thứ hai của thanh một hàng. */
   nutPhanTich?: ComponentChildren;
+  /** Giờ nắng do công cụ khác điều khiển (hộp Vị trí · Nắng · Gió có ngày + thanh giờ + chạy, đồng bộ qua `moRong.datGio`): menu ☀ chỉ còn mặt cắt — một thanh giờ duy nhất. */
+  gioNgoai?: boolean;
 };
 
 // kiểu 3D: khoá mới (v2) để mặc định Vật liệu áp cho cả máy đã lưu 'brand' từ trước (trước đây khung luôn ghi kiểu đang xem)
@@ -119,7 +121,7 @@ export function gocMacDinh(c: Pick<CanhDung, 'tam' | 'coCanh' | 'cao'>): GocDeXu
 }
 
 /** Khung WebGL: xoay / di / phóng, mặt trời theo giờ, cắt ngang, kiểu Brand / mô hình trắng, góc đề xuất, lưu góc, xuất ảnh. Three.js nạp lười. */
-export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich, lop, lopAn, phanTich, nutPhanTich, moRong }: Props) {
+export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich, lop, lopAn, phanTich, nutPhanTich, gioNgoai, moRong }: Props) {
   useLang();
   const hop = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -691,8 +693,8 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
             {!toaNguyen && <div class="menu-nut-nhom" />}
             {!toaNguyen && dsHien.map(([k, n]) => <label class="menu-nut-tich" key={k}><input type="checkbox" checked={hien[k]} onChange={(e) => setHien({ ...hien, [k]: e.currentTarget.checked })} /><span>{t(n)}</span></label>)}
           </MenuNut>
-          <MenuNut k="nangCat" nhan={t('bt.nangCat')} dongKhiChon={false} lop="menu-nang-3d">
-            <label class="menu-nut-truot"><span>{t('m3d.gio')}</span><input type="range" min="6" max="18" step="0.5" value={gio} onInput={(e) => setGio(+e.currentTarget.value)} /><b>{gio}h</b></label>
+          <MenuNut k="nangCat" nhan={gioNgoai ? t('m3d.cat') : t('bt.nangCat')} dongKhiChon={false} lop="menu-nang-3d">
+            {!gioNgoai && <label class="menu-nut-truot"><span>{t('m3d.gio')}</span><input type="range" min="6" max="18" step="0.5" value={gio} onInput={(e) => setGio(+e.currentTarget.value)} /><b>{gio}h</b></label>}
             <label class="menu-nut-truot"><span>{t('m3d.cat')}</span><input type="range" min="0.05" max="1" step="0.01" value={cat} onInput={(e) => setCat(+e.currentTarget.value)} /><b>{Math.round(cat * 100)}%</b></label>
           </MenuNut>
         </span>
