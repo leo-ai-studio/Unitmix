@@ -130,6 +130,8 @@ export type ToaDat = {
   latO?: Record<string, boolean>;
   /** Căn thêm tay (công cụ "Thêm căn" · QT-69): chèn ngay sau ô `sau` trên mặt `mat`, dãy dài ra ở đầu tự do. Mọi tầng. */
   canThem?: CanThem[];
+  /** Vị trí tủ họng nước chữa cháy đặt tay trên tầng điển hình (mm, hệ toạ độ mẫu tòa; QT-77 app cũ `S.tccTay`). Thiếu = tự đặt. */
+  tuPCCCTay?: Diem[];
 };
 /**
  * Thang bộ thêm tay: chèn ô 3.000 mm ngay sau vật thể `sau` (khoá căn / thang) — hoặc ngay trước vật thể `truoc` (thang đầu dãy) —

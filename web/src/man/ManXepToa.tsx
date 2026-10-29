@@ -27,6 +27,7 @@ import { mauToa } from '../tinh/canThem';
 import { canhGan } from '../tinh/thaoTacToa';
 import { HopCanhLo, NhanCanhLo, datCanhChon } from './loGioiCanh';
 import { HopHangLoat, LopHangLoat } from './xepHangLoat';
+import { ThangMayLo } from '../ui/ThangMayLo';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -755,6 +756,7 @@ export function TmbPhai(p: Chung & { kq: KetQuaChiTieu | null }) {
     <>
       <KpiTmb pa={p.pa} tv={p.tv} lo={lo} kq={p.kq} />
       <XepPhai {...p} />
+      <ThangMayLo pa={p.pa} tv={p.tv} lo={lo} chonToa={p.chonToa} toaId={p.toaId} />
       <SucChuaLo lo={lo} />
     </>
   );

@@ -1348,7 +1348,7 @@
     "QT-104c"
    ],
    "thay_the_boi": null,
-   "ham": null,
+   "ham": "chiaHanhLang.ts · chiaHanhLang / doKhoang (pcccTang.ts)",
    "yaml": {
     "tep": "rules/04_qcvn06.yaml",
     "nhom": "qcvn06",
@@ -1385,7 +1385,7 @@
     "QT-98"
    ],
    "thay_the_boi": null,
-   "ham": "pccc.ts · kiemTraPCCC (báo mạng hành lang liền chưa chia)",
+   "ham": "chiaHanhLang.ts · chiaHanhLang (tự đặt cửa) · pccc.ts kiemTraPCCC",
    "yaml": {
     "tep": "rules/04_qcvn06.yaml",
     "nhom": "qcvn06",
@@ -1402,23 +1402,23 @@
    "bat_buoc": true,
    "ten_vi": "Thang máy chữa cháy",
    "ten_en": "Firefighting lift",
-   "nguon": "QCVN 06:2022 §6.13 + 1.4.9",
+   "nguon": "QCVN 06:2022 (SĐ1:2023) 6.13 · QCVN 04:2021 2.4.3",
    "nguong": [
     {
      "gia_tri": 1,
      "don_vi": "thang",
      "chieu": ">=",
-     "dieu_kien": "khi H PCCC > 50 m hoặc hầm sâu > 9 m"
+     "dieu_kien": "khi H PCCC > 50 m (nhóm F1.3) hoặc hầm sâu > 9 m"
     }
    ],
    "ap_dung": "ca_hai",
    "ma_kiem": "thang_chua_chay",
-   "cach_tinh": "H PCCC ≤ 50 m thì không đòi; trên 50 m phải ≥ 1 thang chữa cháy",
+   "cach_tinh": "H PCCC ≤ 50 m thì không đòi; trên 50 m mỗi khoang cháy ≥ 1 thang chữa cháy. App cũ chỉ có ô số; app mới chỉ định giếng theo luật (phủ nhiều điểm nhất trong bán kính, hoà thì gần thang N3)",
    "ma_cu": [
     "qcvn06_613_firelift"
    ],
    "thay_the_boi": null,
-   "ham": null,
+   "ham": "thangMay.ts · canTMCC / chonThangChuaChay",
    "yaml": {
     "tep": "rules/04_qcvn06.yaml",
     "nhom": "qcvn06",
@@ -1481,7 +1481,7 @@
     "QT-77f"
    ],
    "thay_the_boi": null,
-   "ham": "pccc.ts · tuPCCC (phủ tham lam, chưa ưu tiên lõi / HKT)",
+   "ham": "pccc.ts · tuPCCC (phủ tham lam, chưa ưu tiên lõi / HKT) · lớp kéo tay ve/LopPCCC.tsx",
    "yaml": {
     "tep": "rules/04_qcvn06.yaml",
     "nhom": "qcvn06",
@@ -1521,6 +1521,140 @@
     "trich": "Nhà F1.3 75-150 m thuộc sheet 4"
    },
    "thay_cho": []
+  },
+  {
+   "ma": "PC-15",
+   "id": "qcvn06_613_ban_kinh_tmcc",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Bán kính phục vụ thang máy chữa cháy",
+   "ten_en": "Firefighting lift service radius",
+   "nguon": "QCVN 06:2022 (SĐ1:2023) 6.13 · A.2.12 (nhà > 75 m)",
+   "nguong": [
+    {
+     "gia_tri": 60,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H PCCC ≤ 75 m"
+    },
+    {
+     "gia_tri": 45,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "H PCCC > 75 m"
+    }
+   ],
+   "ma_kiem": "ban_kinh_tmcc",
+   "cach_tinh": "từ tâm giếng thang chữa cháy tới cửa căn + 4 góc trong căn, ĐO THẲNG (6.13 không ghi theo đường đi — cách đo chờ chủ nhiệm chốt); điểm ngoài bán kính báo cảnh báo",
+   "ham": "thangMay.ts · chonThangChuaChay",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "bo_sung": true,
+   "ma_cu": []
+  },
+  {
+   "ma": "PC-16",
+   "id": "qcvn04_253_hong_cho_45",
+   "buoc": "pccc",
+   "nhom": "qcvn04",
+   "bat_buoc": true,
+   "ten_vi": "Họng chờ chữa cháy tới cửa căn xa nhất",
+   "ten_en": "Landing valve to farthest unit door",
+   "nguon": "QCVN 04:2021/BXD 2.5.3",
+   "nguong": [
+    {
+     "gia_tri": 45,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "nhà có chiều cao PCCC > 50 m, tính theo đường di chuyển"
+    }
+   ],
+   "ma_kiem": "hong_cho_45",
+   "cach_tinh": "nguồn = cửa buồng thang N3 (khoang đệm) + giếng thang chữa cháy; đo dọc tim hành lang tới cửa căn",
+   "ham": "pcccTang.ts · phanTichPCCCTang",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "bo_sung": true,
+   "ma_cu": []
+  },
+  {
+   "ma": "PC-17",
+   "id": "qcvn06_cua_ngan_chay",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Cửa ngăn cháy trên tầng căn hộ",
+   "ten_en": "Fire-rated doors on apartment floors",
+   "nguon": "QCVN 06:2022 3.2.11 · 3.3.5 · 6.13 · Bảng 2 · Bảng 3 · 4.24 · A.3.1.12 · A.2.30.2",
+   "nguong": [
+    {
+     "gia_tri": "EI 60",
+     "don_vi": "",
+     "chieu": "=",
+     "dieu_kien": "cửa buồng thang bộ — cửa ngăn cháy loại 1 (bậc chịu lửa I, II)"
+    },
+    {
+     "gia_tri": "EI 30",
+     "don_vi": "",
+     "chieu": "=",
+     "dieu_kien": "cửa căn hộ mở ra hành lang (≥ vách hành lang EI 30)"
+    },
+    {
+     "gia_tri": "EI 30",
+     "don_vi": "",
+     "chieu": "=",
+     "dieu_kien": "cửa sảnh thang máy chữa cháy (khoang đệm loại 1 → chèn bịt loại 2)"
+    },
+    {
+     "gia_tri": "EI 60",
+     "don_vi": "",
+     "chieu": "=",
+     "dieu_kien": "phòng ống đổ rác, nhà > 75 m (A.2.30.2)"
+    }
+   ],
+   "ma_kiem": "cua_ngan_chay",
+   "cach_tinh": "đánh dấu trên lớp Cửa ngăn cháy; nhà > 75 m: cửa khoang đệm → buồng thang N, sảnh thang máy, phòng rác loại 2 (A.3.1.12 b), cửa giếng thang máy kín khói (A.3.1.12 c)",
+   "ham": "pcccTang.ts · cuaNC",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "bo_sung": true,
+   "ma_cu": []
+  },
+  {
+   "ma": "PC-18",
+   "id": "qcvn06_D2_hut_khoi_hl",
+   "buoc": "pccc",
+   "nhom": "qcvn06",
+   "bat_buoc": true,
+   "ten_vi": "Hút khói hành lang nhà > 28 m",
+   "ten_en": "Corridor smoke extraction > 28 m",
+   "nguon": "QCVN 06:2022 Phụ lục D.2 a) · D.4 a)",
+   "nguong": [
+    {
+     "gia_tri": 28,
+     "don_vi": "m",
+     "chieu": ">",
+     "dieu_kien": "chiều cao PCCC từ đó phải hút khói hành lang (trừ hành lang bên)"
+    },
+    {
+     "gia_tri": 60,
+     "don_vi": "m",
+     "chieu": "<=",
+     "dieu_kien": "mỗi đoạn hành lang tính lưu lượng"
+    }
+   ],
+   "ma_kiem": "hut_khoi_hl",
+   "cach_tinh": "chỉ ghi chú ở khối PCCC (chưa thiết kế hệ thống)",
+   "ham": null,
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "bo_sung": true,
+   "ma_cu": []
   },
   {
    "ma": "PC-10",
@@ -2057,6 +2191,38 @@
    "thay_cho": []
   },
   {
+   "ma": "CT-08",
+   "id": "qcvn04_241_thang_toi_thieu",
+   "buoc": "chi_tieu",
+   "nhom": "qcvn04",
+   "bat_buoc": true,
+   "ten_vi": "Số thang máy tối thiểu theo số tầng",
+   "ten_en": "Minimum lifts by storeys",
+   "nguon": "QCVN 04:2021/BXD 2.4.1",
+   "nguong": [
+    {
+     "gia_tri": 1,
+     "don_vi": "thang",
+     "chieu": ">=",
+     "dieu_kien": "nhà từ 5 tầng"
+    },
+    {
+     "gia_tri": 2,
+     "don_vi": "thang",
+     "chieu": ">=",
+     "dieu_kien": "nhà từ 10 tầng"
+    }
+   ],
+   "ma_kiem": "thang_toi_thieu",
+   "cach_tinh": "số tầng = tầng đế + tầng căn hộ; số cần = max(2.4.1, min(⌈căn / 70⌉, ⌈người / 200⌉) theo 2.4.2); số có = giếng trong lõi (QT-64)",
+   "ham": "thangMay.ts · thangMayCan",
+   "ap_dung": "ca_hai",
+   "thay_the_boi": null,
+   "thay_cho": [],
+   "bo_sung": true,
+   "ma_cu": []
+  },
+  {
    "ma": "CT-05",
    "id": "mdi_lift_provided",
    "buoc": "chi_tieu",
@@ -2064,7 +2230,7 @@
    "bat_buoc": false,
    "ten_vi": "Số thang máy bố trí",
    "ten_en": "Lifts provided",
-   "nguon": "QCVN 04:2021 · bảng chuẩn Viện · QT-76 · QT-94",
+   "nguon": "QCVN 04:2021/BXD 2.4.2 · QT-76 · QT-94",
    "nguong": [
     {
      "gia_tri": "min(⌈căn / 70⌉, ⌈dân / 200⌉)",
@@ -2084,7 +2250,7 @@
     "QT-75b"
    ],
    "thay_the_boi": null,
-   "ham": null,
+   "ham": "thangMay.ts · giengThangMay / kiemThangMay",
    "yaml": {
     "tep": "rules/05_mdi.yaml",
     "nhom": "mdi",
@@ -2101,7 +2267,7 @@
    "bat_buoc": false,
    "ten_vi": "Thang máy theo số căn",
    "ten_en": "Lifts by unit count",
-   "nguon": "Bảng chuẩn Viện Thiết Kế",
+   "nguon": "QCVN 04:2021/BXD 2.4.2 (app cũ ghi bảng chuẩn Viện)",
    "nguong": [
     {
      "gia_tri": 70,
@@ -2133,7 +2299,7 @@
    "bat_buoc": false,
    "ten_vi": "Thang máy theo dân số",
    "ten_en": "Lifts by population",
-   "nguon": "Bảng chuẩn Viện Thiết Kế",
+   "nguon": "QCVN 04:2021/BXD 2.4.2 (app cũ ghi bảng chuẩn Viện)",
    "nguong": [
     {
      "gia_tri": 200,
@@ -3151,7 +3317,7 @@
   "qt_goc": 132,
   "qt_giu": 90,
   "qt_bo": 42,
-  "luat_moi": 57,
+  "luat_moi": 62,
   "bo_theo_loai": {
    "thay_the": 8,
    "trung": 0,

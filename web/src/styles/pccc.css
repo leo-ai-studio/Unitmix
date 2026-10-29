@@ -1,0 +1,60 @@
+/* Lớp PCCC màn Tầng (web/src/ve/LopPCCC.tsx), khối PCCC panel phải (ui/KpiPCCC.tsx), thang máy TMB (ui/ThangMayLo.tsx). Màu từ biến :root. */
+.lop-pccc {
+  --pc-do: var(--vuot);
+  --pc-cam: var(--canh-bao);
+  --pc-xanh: var(--ok);
+  --pc-lam: var(--thua);
+  --pc-muc: #132132;
+}
+.lop-pccc .pc-chu {
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 600;
+  fill: var(--pc-muc);
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.lop-pccc .pc-chu-tn.vuot { fill: var(--pc-do); font-weight: 700; }
+.lop-pccc .pc-thang-bo { fill: none; stroke: var(--pc-cam); stroke-width: 2; pointer-events: none; }
+.lop-pccc .pc-gieng { fill: #fff; fill-opacity: .6; stroke: var(--pc-lam); stroke-width: 1.5; pointer-events: none; }
+.lop-pccc .pc-gieng.tmcc { fill: var(--pc-do); fill-opacity: .85; stroke: var(--pc-do); }
+.lop-pccc .pc-chu-tmcc { fill: var(--pc-do); }
+.lop-pccc .pc-vong-tmcc { fill: var(--pc-do); fill-opacity: .04; stroke: var(--pc-do); stroke-width: 1.5; stroke-dasharray: 10 5; pointer-events: none; }
+.lop-pccc .pc-ngoai { stroke: var(--pc-do); stroke-width: 2.5; fill: none; pointer-events: none; }
+.lop-pccc .pc-vong-tu { fill: var(--pc-xanh); fill-opacity: .05; stroke: var(--pc-xanh); stroke-width: 1.2; stroke-dasharray: 6 4; pointer-events: none; }
+.lop-pccc .pc-tu-o rect { fill: var(--pc-do); stroke: #fff; stroke-width: 1.5; }
+.lop-pccc .pc-tu-o.keo { cursor: grab; }
+.lop-pccc .pc-tu-o.keo:active { cursor: grabbing; }
+.lop-pccc .pc-chu-tu { fill: var(--pc-do); }
+.lop-pccc .pc-thieu { fill: none; stroke: var(--pc-do); stroke-width: 2.5; pointer-events: none; }
+.lop-pccc .pc-cua rect { stroke-width: 1.5; fill-opacity: .85; pointer-events: none; }
+.lop-pccc .pc-cua-thang rect { fill: var(--pc-do); stroke: var(--pc-do); }
+.lop-pccc .pc-cua-can rect { fill: var(--pc-cam); stroke: var(--pc-cam); fill-opacity: .7; }
+.lop-pccc .pc-cua-tmcc rect { fill: #fff; stroke: var(--pc-do); stroke-width: 2.5; }
+.lop-pccc .pc-cua-rac rect { fill: var(--pc-lam); stroke: var(--pc-lam); }
+.lop-pccc .pc-chu-cua { fill: var(--pc-do); font-weight: 700; }
+.lop-pccc .pc-cnc path { stroke: var(--pc-lam); stroke-linecap: butt; fill: none; pointer-events: none; }
+.lop-pccc .pc-chu-cnc { fill: var(--pc-lam); }
+
+/* chú giải (nút Chú giải góc bản vẽ) */
+.chu-giai-pccc { font-size: 12px; line-height: 1.5; max-width: 300px; }
+.chu-giai-pccc ul { list-style: none; margin: 4px 0 0; padding: 0; }
+.chu-giai-pccc li { display: flex; align-items: center; gap: 6px; }
+.chu-giai-pccc .pc-ky { flex: 0 0 14px; height: 10px; border-radius: 2px; border: 1.5px solid transparent; }
+.pc-ky.ky-tn { border-radius: 50%; height: 12px; border-color: var(--canh-bao); }
+.pc-ky.ky-gieng { border-color: var(--thua); background: #fff; }
+.pc-ky.ky-tmcc { background: var(--vuot); border-color: var(--vuot); }
+.pc-ky.ky-tu { background: var(--vuot); height: 6px; }
+.pc-ky.ky-cua-thang { background: var(--vuot); }
+.pc-ky.ky-cua-can { background: var(--canh-bao); opacity: .75; }
+.pc-ky.ky-cua-tmcc { background: #fff; border-color: var(--vuot); border-width: 2px; }
+.pc-ky.ky-cua-rac { background: var(--thua); }
+.pc-ky.ky-cnc { background: var(--thua); height: 4px; }
+
+/* khối PCCC panel phải */
+.pc-dong b.muted { color: var(--muted-text); font-weight: 500; }
+.pc-canh-bao { margin: 4px 12px; padding-left: 1.1em; font-size: 12px; }
+.pc-canh-bao li.vuot { color: var(--vuot); }
+.pc-canh-bao li.canh-bao { color: var(--canh-bao); }
+.pc-tmb .bang-cc { grid-template-columns: 1.3fr .6fr .6fr .9fr .8fr; }

@@ -14,6 +14,8 @@ import { kiemQCVN04 } from '../../tinh/qcvn04';
 import { QUY_TAC_DAN_SO } from '../../tinh/quyTacDanSo';
 import { hinhToa, kiemViPham } from '../../tinh/thaoTacToa';
 import { tomTatPA } from '../../tinh/tomTat';
+import { chieuCaoPCCC } from '../../tinh/pccc';
+import { phanTichPCCCTang, soLieuToaPCCC } from '../../tinh/pcccTang';
 import { S, type CongCu } from './dinhNghia';
 import { canTV, LoiCongCu, timLo, timToa, tron, type NguCanh } from './nguCanh';
 import { dungTang, tangHopLe, timO, tomTatTang } from './tangChung';
@@ -139,7 +141,7 @@ export const CONG_CU_DOC: CongCu[] = [
   },
   {
     ten: 'check_rules', nhom: 'doc',
-    moTa: 'Kiểm tuân thủ: chỉ tiêu QH từng lô (MĐXD, HSSDĐ, tầng cao, số căn, dân số, chỗ đỗ, cây xanh), TMB (LO-01 khoảng lùi theo lộ giới, LO-02 / QCVN 01 §2.6.1 khoảng cách giữa tòa, LO-05 tòa ra ngoài chỉ giới), QCVN 04 từng tòa, quy tắc thang bộ (≥ 2 thang, một N2 + một N3, tối đa 3). Chỉ trả mục chưa đạt khi only_problems = true.',
+    moTa: 'Kiểm tuân thủ: chỉ tiêu QH từng lô (MĐXD, HSSDĐ, tầng cao, số căn, dân số, chỗ đỗ, cây xanh), TMB (LO-01 khoảng lùi theo lộ giới, LO-02 / QCVN 01 §2.6.1 khoảng cách giữa tòa, LO-05 tòa ra ngoài chỉ giới), QCVN 04 từng tòa, quy tắc thang bộ (≥ 2 thang, một N2 + một N3, tối đa 3), PCCC tầng điển hình (số thang máy QCVN 04 2.4.1–2.4.2, thang máy chữa cháy + bán kính 60 / 45 m QCVN 06 6.13 / A.2.12, họng chờ 45 m QCVN 04 2.5.3, tủ họng nước R 18 m, chia khoang hành lang 60 / 30 m, thoát nạn — chỉ cảnh báo). Chỉ trả mục chưa đạt khi only_problems = true.',
     schema: S.doiTuong({ only_problems: S.bool('mặc định true') }),
     chay: async (v, ng) => {
       const pa = ng.kho.lay(), tv = canTV(ng);
@@ -152,10 +154,26 @@ export const CONG_CU_DOC: CongCu[] = [
         const m = mauToa(tv, x);
         const q4 = m ? kiemQCVN04(pa, x, m, tv).filter((r) => !loi || (r.trangThai !== 'dat' && r.trangThai !== 'bo_qua')).map((r) => ({ id: r.id, tt: r.trangThai, can_cu: r.canCu, ...r.tham })) : [];
         let thang: { so: number; n2: number; n3: number } | null = null;
-        try { const t = dungTang(tv, dl, x, null).thang; thang = { so: t.length, n2: t.filter((q) => q.loai === 'N2').length, n3: t.filter((q) => q.loai === 'N3').length }; } catch { /* mẫu không có mặt bằng */ }
+        let pccc: { id: string; muc: string; [k: string]: unknown }[] = [];
+        try {
+          const dt = dungTang(tv, dl, x, null), t = dt.thang;
+          thang = { so: t.length, n2: t.filter((q) => q.loai === 'N2').length, n3: t.filter((q) => q.loai === 'N3').length };
+          // PCCC + thang máy tầng điển hình (tinh/pcccTang.ts): mọi mục chỉ cảnh báo
+          const sl = soLieuToaPCCC(pa, tv, x);
+          const p = phanTichPCCCTang({ mau: dt.mau, bc: dt.bc, tv, dl, H: chieuCaoPCCC(x.soTangDe, x.caoDe, x.soTangDH, x.caoDH), soTangDH: x.soTangDH,
+            soTangNoi: x.soTangDe + x.soTangDH, soCanToa: sl.soCan, danToa: sl.dan, tuTay: x.tuPCCCTay ?? null });
+          pccc = [
+            { id: 'thang_may_QCVN04_2.4.1_2.4.2', muc: p.thangMay.muc, co: p.thangMay.co, can: p.thangMay.can, theo_can: p.thangMay.theoCan, theo_dan: p.thangMay.theoDan },
+            { id: `thang_chua_chay_${p.tmcc.canCu.replace('QCVN 06:2022 ', 'QCVN06_')}`, muc: p.tmcc.muc, ban_kinh_m: p.tmcc.r, so_chon: p.tmcc.chon.length, xa_nhat_m: tron(p.tmcc.xaNhat ?? 0), diem_ngoai: p.tmcc.ngoai.length },
+            { id: 'hong_cho_45m_QCVN04_2.5.3', muc: p.hongCho.muc, xa_nhat_m: tron(p.hongCho.xaNhat ?? 0), can_vuot: p.hongCho.vuot },
+            { id: 'tu_hong_nuoc_R18_QT77', muc: p.tu.muc, so_tu: p.tu.viTri.length, can_chua_phu: p.tu.thieu },
+            { id: `chia_hanh_lang_${p.hanhLang.gioiHan}m`, muc: p.hanhLang.muc, can_cu: p.hanhLang.canCu, so_cua: p.hanhLang.cua.length, khoang_max_m: tron(Math.max(0, ...p.hanhLang.khoang)) },
+            { id: 'thoat_nan', muc: p.thoatNan.soVuot ? 'canh_bao' : 'ok', can_vuot: p.thoatNan.soVuot, cut_m: p.thoatNan.cut, doi_m: p.thoatNan.doi },
+          ].filter((r) => !loi || (r.muc !== 'ok' && r.muc !== 'khong_ap'));
+        } catch { /* mẫu không có mặt bằng */ }
         const thangLoi = thang ? thang.so < 2 || thang.so > 3 || !thang.n2 || !thang.n3 : false;
-        return { id: x.id, qcvn04: q4, ...(thang && (!loi || thangLoi) ? { thang_bo: { ...thang, dat: !thangLoi } } : {}) };
-      }).filter((x) => !loi || x.qcvn04.length || x.thang_bo);
+        return { id: x.id, qcvn04: q4, ...(thang && (!loi || thangLoi) ? { thang_bo: { ...thang, dat: !thangLoi } } : {}), ...(pccc.length ? { pccc } : {}) };
+      }).filter((x) => !loi || x.qcvn04.length || x.thang_bo || x.pccc);
       return {
         chi_tieu_lo: Object.fromEntries(Object.entries(kq.theoLo).map(([id, r]) => [id, r.dong.filter((d) => !loi || d.muc !== 'ok').map((d) => ({ k: d.khoa, dat: tron(d.dat), gioi_han: tron(d.mucTieu), chieu: d.chieu, muc: d.muc }))])),
         tmb: {
