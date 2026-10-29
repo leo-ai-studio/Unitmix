@@ -169,13 +169,14 @@ export async function dichBong(T: T3, R: THREE.WebGLRenderer, canh: THREE.Scene,
   });
   if (!bienThe.size) return;
   const rt = new T.WebGLRenderTarget(1, 1);
-  let suong: THREE.Fog | THREE.FogExp2 | null = null, cu: THREE.WebGLRenderTarget | null = null;
+  let suong: THREE.Fog | THREE.FogExp2 | null = null, cu: THREE.WebGLRenderTarget | null = null, bong = false;
   try {
     await dichDan(T, R, [...bienThe.values()], canh, cam, {
       huy,
       datTrangThai: (bat) => {
-        if (bat) { suong = canh.fog; canh.fog = null; cu = R.getRenderTarget(); R.setRenderTarget(rt); }
-        else { canh.fog = suong; R.setRenderTarget(cu); }
+        // chỉ đổi trạng thái trong một tác vụ đồng bộ (không giữ qua `await`: lượt vẽ xem trước chen giữa sẽ dịch sai khoá)
+        if (bat) { suong = canh.fog; canh.fog = null; cu = R.getRenderTarget(); R.setRenderTarget(rt); bong = R.shadowMap.enabled; R.shadowMap.enabled = true; }
+        else { canh.fog = suong; R.setRenderTarget(cu); R.shadowMap.enabled = bong; }
       },
     });
   } finally {

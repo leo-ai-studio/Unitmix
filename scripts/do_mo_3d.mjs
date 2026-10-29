@@ -11,7 +11,7 @@
  *   · quy tác vụ dài về hàm: CPU profile (Profiler, lấy mẫu 200 µs) → các đoạn bận liên tục > 50 ms, mỗi đoạn top hàm (self) và
  *     top hàm của app (tổng, gồm con) — biết tác vụ nào do dịch shader (getProgramParameter / linkProgram…), PMREM, dựng hình, tải ảnh.
  *   node scripts/do_mo_3d.mjs --url http://localhost:5180 --du-an 2mlg1a2l --ma-sua <mã> [--pa pa-1] [--chi may|dt] [--ca du_an,toa]
- *        [--lan 1] [--ra .cache/do_mo_3d] [--nhan truoc] [--chi-tiet]
+ *        [--lan 1] [--ra .cache/do_mo_3d] [--nhan truoc] [--chi-tiet] [--anh]   (--anh: chụp khung khi đã yên — so chất lượng trước / sau)
  * Ngưỡng đạt (người dùng): máy bàn không tác vụ > 100 ms; điện thoại (CPU 4×) không tác vụ > 200 ms. Mã thoát 0 đạt · 1 không đạt · 2 hạ tầng.
  */
 import { spawn } from 'node:child_process';
@@ -21,7 +21,7 @@ import { join, resolve } from 'node:path';
 const arg = (k, md) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : md; };
 const URL0 = arg('--url', 'http://localhost:5180'), MA = arg('--du-an'), PA = arg('--pa', 'pa-1'), MA_SUA = arg('--ma-sua', '');
 const RA = resolve(arg('--ra', '.cache/do_mo_3d')), CHI = arg('--chi'), CA = arg('--ca', 'du_an,toa').split(','), LAN = +arg('--lan', '1');
-const NHAN = arg('--nhan', 'do'), YEN = +arg('--yen', '4000'), CHI_TIET = process.argv.includes('--chi-tiet');
+const NHAN = arg('--nhan', 'do'), YEN = +arg('--yen', '4000'), CHI_TIET = process.argv.includes('--chi-tiet'), ANH = process.argv.includes('--anh');
 if (!MA) { console.error('Thiếu --du-an'); process.exit(2); }
 const cho = (ms) => new Promise((r) => setTimeout(r, ms));
 const exe = [process.env.CHROME_PATH, 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
@@ -139,6 +139,7 @@ async function mot(k, ca) {
         `(() => { const v = document.querySelector('.vung-3d.da-dung'); return !!v && document.querySelector('.chon-che button:nth-child(2)')?.getAttribute('aria-pressed') === 'true'; })()`);
     }
     r.ve = await js(`document.querySelector('.vung-3d')?._doVe?.() ?? null`);
+    if (ANH) { const a = await gui('Page.captureScreenshot', { format: 'png' }); writeFileSync(join(RA, `${NHAN}-${k.ten}-${ca}.png`), Buffer.from(a.data, 'base64')); }
     r.loiJs = b.loiJs.splice(0);
     r.ve3d = await js('JSON.stringify(window.__ve3d ?? null)');
     return r;
