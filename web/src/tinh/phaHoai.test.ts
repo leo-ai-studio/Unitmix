@@ -24,7 +24,7 @@ import { doiChoTay, doiLoaiThangTay, doiThangTay, latTay, mauThem, thangTuDongLa
 
 const { tv, dl, toaDs } = napThuVien();
 const c = { tv, dl };
-const SO_BUOC = NHANH ? 8 : 14;
+const SO_BUOC = Number(process.env.PHA_HOAI_BUOC) || (NHANH ? 8 : 14);
 
 /** PRNG hạt cố định (mulberry32). */
 function rng(hat: number) {
@@ -162,7 +162,7 @@ describe('thử phá hoại công cụ tay màn Tầng (thu_pha_hoai.js app cũ)
     if (process.env.PHA_HOAI_DUMP) writeFileSync(process.env.PHA_HOAI_DUMP, JSON.stringify(dump, null, 1));
   });
   it.each(MAU)('%s: chuỗi thao tác ngẫu nhiên, 0 vi phạm bất biến', (id) => {
-    const r = rng(hatCua(id));
+    const r = rng(hatCua(id) + (Number(process.env.PHA_HOAI_HAT) || 0));
     let toa = tuChinhToa(toaThu(id), tv.toa.get(id) as unknown as ToaMB, tv, dl);
     const nen = kiem(id, 0, 'nền', toa, doTrangThai(toa), tong.vi);
     const lichSu: ToaDat[] = [];

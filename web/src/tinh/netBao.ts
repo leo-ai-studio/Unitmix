@@ -35,6 +35,8 @@ type Hop = [number, number, number, number];
 const hopBao = (p: Path): Hop => [Math.min(...p.map((q) => q.X)), Math.min(...p.map((q) => q.Y)), Math.max(...p.map((q) => q.X)), Math.max(...p.map((q) => q.Y))];
 const cham = (a: Hop, b: Hop) => a[0] <= b[2] + 10 && b[0] <= a[2] + 10 && a[1] <= b[3] + 10 && b[1] <= a[3] + 10;
 
+/** Nửa khe được đóng khi gom nét bao (mm): khe tường ≤ 400 mm giữa hai ô vẫn là một khối sàn. */
+const DONG_KHE_MM = 250;
 /** Nới phần sàn mất (mm) — dung sai "tường nhô" app cũ dùng ở mọi kiểm nét bao. */
 export const NOI_MAT_MM = 700;
 
@@ -64,7 +66,8 @@ export function netBaoTheoO(P0: Diem[], o0: Diem[][], o1: Diem[][], hl: Diem[][]
       if (mo.some((m) => cham(m, b))) { chon.push(p); mo.push(b); doi = true; }
     }
   }
-  const kq = hop([...nen, ...moi, ...chon]);
+  // đóng khe ≤ 2 × 250 mm (khe tường giữa ô thang và căn, XC-02 ≤ 400 mm): không để nét bao tách rời một ô thang / căn
+  const kq = no(no(hop([...nen, ...moi, ...chon]), DONG_KHE_MM), -DONG_KHE_MM);
   // đa giác lớn nhất (lỗ thủng / mảnh rời bỏ như app cũ)
   const ngoaiCung = [...kq].sort((a, b) => dt(b) - dt(a))[0];
   if (!ngoaiCung || ngoaiCung.length < 3) return null;
