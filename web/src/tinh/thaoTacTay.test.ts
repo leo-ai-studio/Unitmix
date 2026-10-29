@@ -72,14 +72,15 @@ describe('Công cụ tay màn Tầng — mẫu thật', () => {
 
   it('Xoá thang bộ: giữ ≥ 2 thang như app cũ — còn 2 thì chặn', () => {
     let t = toaThu('tm-t2');
-    const n0 = hien(t).mb.thangBo.length;
+    const n0 = hien(t).mb.thangBo.length, de0 = hien(t).deKhe.de;
     expect(n0).toBe(3);
     let xoa = false;
     for (const th of hien(t).mb.thangBo) { const r = xoaThangTay(t, th.khoa, c); if (r.ok) { t = r.toa; xoa = true; break; } }
     expect(xoa).toBe(true);
     const h = hien(t);
     expect(h.mb.thangBo.length).toBe(2);
-    expect(h.deKhe.de).toBe(0);
+    // không thêm đè (tm-t2 tự chỉnh sẵn có 1 chỗ căn chồng lõi 215 mm khi không bật tự gỡ căn vượt cự ly)
+    expect(h.deKhe.de).toBeLessThanOrEqual(de0);
     const r2 = xoaThangTay(t, h.mb.thangBo[0].khoa, c);
     expect(r2.ok).toBe(false);
     if (!r2.ok) expect(r2.lyDo).toBe('it_thang');

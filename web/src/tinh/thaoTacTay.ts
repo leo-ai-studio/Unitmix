@@ -27,11 +27,11 @@ function doTang(toa: ToaDat, tang: number | null, { tv, dl }: Ctx) {
 }
 
 /** Chạy tự chỉnh sau phép sửa tay `sau` rồi kiểm không đè / khe mới trên các tầng `ks`. */
-function chotSua(truoc: ToaDat, sau0: ToaDat, ks: (number | null)[], c: Ctx): KetQuaTay {
+function chotSua(truoc: ToaDat, sau0: ToaDat, ks: (number | null)[], c: Ctx, thangTuDat = false): KetQuaTay {
   const mau = mauToa(c.tv, sau0) as ToaMB | undefined;
   // sửa tay KHÔNG tự dời / thêm / bớt thang (app cũ: thang là một ô trong dãy, chỉ người dùng dời): chưa có thang tay thì chụp tập
   // thang đang có → PC-11 chạy `coDinh`. Thang về tự động chỉ khi người dùng bấm ⟲ (thangTuDongLai bỏ `thangTay`).
-  const sau = sau0.thangTay || !mau ? sau0 : { ...sau0, thangTay: thangTayCua(truoc, c) };
+  const sau = sau0.thangTay || !mau || thangTuDat ? sau0 : { ...sau0, thangTay: thangTayCua(truoc, c) };
   const r = tuChinhSauSua(truoc, sau, mau, c.tv, c.dl);
   for (const k of ks) {
     const a = doTang(truoc, k, c), b = doTang(r.toa, k, c);
@@ -252,5 +252,5 @@ export function doiThangTay(toa: ToaDat, khoa: string, mat: number, sau: string,
 export const thangTuDongLai = (toa: ToaDat, c: Ctx): KetQuaTay => {
   if (!toa.thangTay) return { ok: false, lyDo: 'khong_doi' };
   const tangRieng = toa.tangRieng && Object.fromEntries(Object.entries(toa.tangRieng).map(([k, g]) => { const { matBang: _b, ...con } = g; void _b; return [k, con]; }));
-  return chotSua(toa, { ...toa, thangTay: undefined, matBang: undefined, ...(tangRieng ? { tangRieng } : {}) }, [null], c);
+  return chotSua(toa, { ...toa, thangTay: undefined, matBang: undefined, ...(tangRieng ? { tangRieng } : {}) }, [null], c, true);
 };

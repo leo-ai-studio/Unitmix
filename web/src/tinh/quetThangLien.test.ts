@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { layMau } from '../thu/layMau';
 import { existsSync, readFileSync } from 'node:fs';
 import { taoThuVien, type CanMau, type ToaDat, type ToaMau } from './kieu';
-import { apMatBang, doDeKhe, matBangRiengTang, tuChinhSauSua, tuChinhToa, type DuLieuMB, type HinhLoiMB, type ToaMB } from './loiThang';
+import { apMatBang, doDeKhe, hocLogia, matBangRiengTang, tuChinhSauSua, tuChinhToa, type DuLieuMB, type HinhLoiMB, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, viTriCan, type BoCuc } from './matBang';
 import { tinhCuaCan } from './pccc';
 import { themBienThe } from './stretch';
@@ -121,9 +121,11 @@ describe('QT-69 · tm-u1 đầu dãy hở ra sân trong', () => {
     expect(canDangDung(vt, bc)).toBe(den.id);
     expect(mb.baoCao?.daiSan).toEqual({ so: 1, mm: dai });
     expect(mb.baoCao?.khitKep).toBeUndefined(); // không phải đổi / bỏ căn nào
-    // DTXD tăng đúng phần dãy dài ra (bề sâu bay 8,5 m)
+    // DTXD tăng đúng phần dãy dài ra (bề sâu bay 8,5 m) trừ phần hốc logia đổi theo căn (QT-59b: căn 2PN mới có hốc logia)
     const dt0 = t0.matBang!.baoCao!.dtxdM2, dt1 = mb.baoCao!.dtxdM2;
-    expect(dt1 - dt0).toBeCloseTo((dai * 8500) / 1e6, 0);
+    const dtHoc = (x: NonNullable<ToaDat['matBang']>, b: BoCuc) => hocLogia(m, x, dl, tv, b).reduce((a, R) => a + Math.abs(R.reduce((t, p, i) => { const q = R[(i + 1) % R.length]; return t + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2 / 1e6, 0);
+    const hocMoi = dtHoc(mb, bc) - dtHoc(t0.matBang!, boCucTang(t0, null));
+    expect(dt1 - dt0).toBeCloseTo((dai * 8500) / 1e6 - hocMoi, 0);
     if (tang === null) expect(r.toa.dtxdM2).toBeCloseTo(dt1, 1);
     const k = doDeKhe(m, mb, dl, tv, bc), kb = doDeKhe(m, t0.matBang!, dl, tv, boCucTang(t0, null));
     expect(k).toEqual({ de: kb.de, mm: kb.mm, san: 0 });
