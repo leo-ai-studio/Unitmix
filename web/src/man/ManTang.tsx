@@ -35,6 +35,7 @@ import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, useCaiPCCC, usePCCCTang }
 import { KhoiPCCC } from '../ui/KpiPCCC';
 import { ChuGiaiViewTang, LopViewTang } from '../ve/LopViewTang';
 import { gocBacPA, nutLopView } from './lopView';
+import { nhanToa } from '../ui/nhanToa';
 
 export type ChungTang = {
   pa: TrangThaiPA;
@@ -135,10 +136,10 @@ export function TangTrai(p: ChungTang) {
     <>
       <MucGap tieuDe={`${t('tang.toa')} · ${pa.toa.length}`} giaiThich={t('gt.tang.toa')} mo>
         {pa.toa.map((x) => {
-          const m = mauToa(tv, x), l = pa.lo.find((q) => q.id === x.loId);
+          const m = mauToa(tv, x);
           return (
             <button type="button" key={x.id} class={`muc-lo${x.id === toa.id ? ' chon' : ''}`} aria-pressed={x.id === toa.id} onClick={() => { chonToa(x.id); chonCan(null); setGhiChu(''); }}>
-              <b>{tenNgan(m?.ten_vi)} · {l?.temDat.kyHieu ?? '—'}</b>
+              <b>{nhanToa(pa, tv, x.id, { lo: true })}</b>
               {/* Số căn/tầng theo mặt bằng đã tự chỉnh (căn bị gỡ vì thoát nạn không còn tính), không theo mẫu thư viện. */}
               <span>{x.soTangDe} + {x.soTangDH} T · {t('xep.canTang').replace('{n}', String(m && coMat(m) ? soLieuTang(mauCuaToa(x, m as ToaVe), boCucTang(x, null), tv).can.filter((c) => c.cn === 'can').length : 0))}</span>
             </button>

@@ -934,7 +934,7 @@
   "view.canNgan": "units",
   "view.tia": "View rays",
   "gt.view.tia": "Selected building: 5 rays from each unit (±30°) to the nearest building taller than eye level; end dot = obstructed",
-  "view.tanSuat": "Score distribution (20 bins)",
+  "view.tanSuat": "Score distribution",
   "view.tangGiua": "mid typical floor",
   "view.thanhPhan": "Components",
   "view.trongSoNgan": "small number = weight",

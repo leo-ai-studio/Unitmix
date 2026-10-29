@@ -108,9 +108,10 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
                 <button type="button" title={t('gt.xep.nhom')} aria-pressed={nhomXem === k} onClick={() => setNhom(k)}>{t(k === 'tm' ? 'xep.nhomTm' : 'xep.nhomXh')}</button>
               ))}
             </div>
-            <button type="button" class="nut-phu nut-so-sanh-mau" title={t('gt.ssm.moNut')} disabled={!tv}
+            {/* chỉ biểu tượng: hàng Thương mại / Nhà ở xã hội + nút chữ cũ vượt panel 270 px, xuống hai dòng */}
+            <button type="button" class="nut-bt nut-so-sanh-mau" title={`${t('ssm.moNut')} — ${t('gt.ssm.moNut')}`} aria-label={t('ssm.moNut')} disabled={!tv}
               onClick={() => moSoSanhMau({ tv, nhom: nhomXem, hinh: (toa && tv?.toa.get(toa.mauId)?.nhom === nhomXem ? tv.toa.get(toa.mauId)?.hinh : null) ?? 'l' })}>
-              <BieuTuong k="soSanhMau" /> {t('ssm.moNut')}
+              <BieuTuong k="soSanhMau" />
             </button>
           </div>
           {!tv && <p class="dong muted">{t('lo.dangTaiThuVien')}</p>}

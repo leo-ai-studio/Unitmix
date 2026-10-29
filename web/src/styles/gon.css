@@ -81,3 +81,41 @@
   .thanh-3d .nut-bt { min-width: 40px; height: 40px; padding: 0 6px; }
   .thanh-3d .nut-bt .mui-menu { display: none; }
 }
+
+/* ---------- Panel trái: hàng nút nhập, thẻ mẫu tòa, preset ---------- */
+/* DXF / Bảng QH / Đề bài KD / ＋: chia theo độ dài chữ thay vì chia đều (trước: "Bảng …", "Đề bài…") */
+.hang-nhap-tmb .nut-nho { flex: 1 1 auto; padding: 5px 6px; white-space: nowrap; }
+.hang-nhap-tmb .nut-nho:last-child { flex: 0 0 32px; }
+/* label.nut-nho (DXF, ⤒ nhập tệp): kit LEO xếp label dọc → chữ lệch, nút cao hơn nút bên cạnh */
+label.nut-nho { display: inline-flex; flex-direction: row; align-items: center; justify-content: center; font-size: 12px; color: var(--ink); }
+/* thẻ mẫu tòa: tên một dòng, "n căn/tầng · m² · ✓ Hợp lô" một dòng (3 dòng → 2 dòng, thư viện 25 mẫu ngắn đi ~500 px) */
+.the-mau > div { flex-direction: row; flex-wrap: wrap; column-gap: 6px; row-gap: 1px; align-items: baseline; }
+.the-mau > div > b { flex: 1 0 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.the-mau > div > span { font-size: 11px; white-space: nowrap; }
+.the-mau .nut-phu { padding: 4px 8px; }
+/* thư viện: nhóm Thương mại / Nhà ở xã hội + nút so sánh (biểu tượng) một hàng */
+.nhom-nut button { white-space: nowrap; }
+.dong > .nut-so-sanh-mau { flex: none; }
+/* preset: nhãn · ô chọn co giãn · nút gọn */
+.preset { gap: 4px; }
+.preset select { flex: 1 1 70px; max-width: none; }
+.preset .nut-nho, .preset .nut-nho:last-child { flex: 0 0 auto; padding: 3px 6px; min-width: 24px; }
+/* ---------- Panel phải: thẻ số, bảng ---------- */
+/* thẻ KPI: chip Đạt / Vượt đã sang hàng số (ui/TheSo.tsx) → nhãn một dòng, không chừa sẵn 2 dòng */
+.the-so-nhan { min-height: 0; }
+.the-so-nhan > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+.the-so-gt .chip-tt { margin-left: auto; align-self: center; }
+/* bảng chỉ tiêu (Chỉ tiêu / Đạt / Mục tiêu…): cột chữ co giãn, cột số không bẻ dòng, số thẳng cột */
+.bang-ct { grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 10px; font-variant-numeric: tabular-nums; }
+.bang-ct > :nth-child(n+2) { white-space: nowrap; text-align: right; }
+.bang-cc { font-variant-numeric: tabular-nums; }
+.nhom-view-dau { flex-wrap: wrap; row-gap: 0; }
+.nhom-view-dau > span { white-space: nowrap; }
+/* PCCC màn Tầng: giá trị (2 · 18 · 0 · 1, 1 cửa · 58,4 / 60 m) không bẻ dòng; nhãn dài tự xuống dòng */
+.pc-dong { align-items: baseline; }
+.pc-dong > b { flex: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* hàng "nhãn … số" chung (.dong): số cuối hàng không bẻ "2,70 / m" */
+.dong > span:first-child + b:last-child { flex: none; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ô số: chừa cột đơn vị để mọi ô thẳng hàng (có / không có "%", "m²") */
+.o-so-nhap { min-width: 96px; justify-content: flex-start; }
