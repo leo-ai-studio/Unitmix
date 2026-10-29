@@ -2,7 +2,7 @@ import { useMemo } from 'preact/hooks';
 import { t, useLang } from '../i18n/i18n';
 import { trongTam } from '../tinh/hinhHoc';
 import type { KetQuaHam, KetQuaTangHam } from '../tinh/ham';
-import type { Diem } from '../tinh/kieu';
+import type { Diem, Lo } from '../tinh/kieu';
 import { fmtSo } from '../ui/so';
 import { s, sPoly } from './BanVe';
 
@@ -13,13 +13,24 @@ const gocDoc = (g: number) => {
   return a > 90 ? a - 180 : a <= -90 ? a + 180 : a;
 };
 /** Nhiều đa giác → một chuỗi `d` (mỗi đa giác một subpath; các ô không chồng nhau nên tô như từng polygon). */
-const duong = (ds: Diem[][]) => ds.filter((p) => p.length >= 3).map((p) => `M${p.map(s).join(' L')} Z`).join(' ');
+const duong = (ds: Diem[][]) => ds.filter((p) => p && p.length >= 3).map((p) => `M${p.map(s).join(' L')} Z`).join(' ');
+/** Nhãn hai dòng (tên + DT) tại trọng tâm mảnh lớn nhất. */
+function NhanPhong({ poly, ten, dt, coChu }: { poly: Diem[][]; ten: string; dt?: number; coChu: number }) {
+  const p = poly.filter((x) => x.length >= 3).sort((a, b) => b.length - a.length)[0];
+  if (!p) return null;
+  const [x, y] = trongTam(p);
+  return (
+    <text x={x} y={-y} text-anchor="middle" font-size={coChu * 0.45} class="nhan-phong">
+      <tspan x={x} dy={0}>{ten}</tspan>
+      {dt !== undefined && <tspan x={x} dy={coChu * 0.5}>{fmtSo(dt, { donVi: 'm²' })}</tspan>}
+    </text>
+  );
+}
 
 /**
- * Mặt bằng một tầng hầm (trong `BanVe`): ranh, làn, chỗ đỗ, xe lăn, khu sạc, xe máy, kho, kỹ thuật, lõi, cột, ram.
- * Lớp TĨNH: mỗi loại ô (chỗ đỗ, xe lăn, kho, lõi, cột, từng nửa màu khu sạc) gộp thành MỘT `path` thay vì mỗi chỗ một
- * `polygon`. Cây vnode nhớ theo (kết quả, tầng, cỡ chữ, ngôn ngữ): cùng vnode thì Preact bỏ qua so khác, nên
- * pan / zoom / vẽ ranh (lớp tương tác `VeRanh` nằm riêng bên trên) không dựng lại lớp này. Không có chọn / rê từng chỗ đỗ.
+ * Mặt bằng một tầng hầm (trong `BanVe`): ranh, làn + đường ngang, chỗ đỗ, xe lăn, khu sạc, xe máy, kho, phòng kỹ thuật (tên + DT),
+ * khoang cháy (tường + rèm), thang thoát nạn, hộp gió, lõi, cột, ram, đầu làn cụt.
+ * Lớp TĨNH: mỗi loại ô gộp thành MỘT `path`. Cây vnode nhớ theo (kết quả, tầng, cỡ chữ, ngôn ngữ).
  */
 export function MatBangHam({ kq, tang, coChu }: { kq: KetQuaHam; tang: KetQuaTangHam; coChu: number }) {
   const [lang] = useLang();
@@ -28,7 +39,8 @@ export function MatBangHam({ kq, tang, coChu }: { kq: KetQuaHam; tang: KetQuaTan
 
 function LopTinhHam({ kq, tang, coChu }: { kq: KetQuaHam; tang: KetQuaTangHam; coChu: number }) {
   const ram = kq.ram;
-  const docRam = kq.ts.ram.dai > 0 ? (kq.ts.caoTang / kq.ts.ram.dai) * 100 : null;
+  const cao = kq.ts.caoTang, c = kq.ts.ram.doanChuyen ?? 0;
+  const docRam = kq.ts.ram.dai - c > 0 ? (cao / (kq.ts.ram.dai - c)) * 100 : null;
   const nhanVung = (ds: Diem[][], chu: string, key: string) =>
     ds.filter((p) => p.length >= 3).map((p, i) => {
       const [x, y] = trongTam(p);
@@ -37,12 +49,17 @@ function LopTinhHam({ kq, tang, coChu }: { kq: KetQuaHam; tang: KetQuaTangHam; c
   // Khu sạc: vùng chẵn / lẻ khác độ đậm → hai path.
   const sacChan = tang.vungSac.filter((_, v) => v % 2 === 0).flat();
   const sacLe = tang.vungSac.filter((_, v) => v % 2 === 1).flat();
+  const phongDai = tang.phong ?? [];
+  const thangThem = kq.thang?.filter((x) => x.nguon === 'them') ?? [];
+  const r = coChu * 0.45;
   return (
     <g class="ham-ve">
       <polygon class="ranh-ham" points={sPoly(kq.ranh)} {...vNS} />
       <path class="lan" d={duong(tang.lan)} />
       <path class="ky-thuat" d={duong(tang.kyThuat)} fill-rule="evenodd" {...vNS} />
+      {phongDai.length > 0 && <path class="phong" d={duong(phongDai.flatMap((p) => p.poly))} {...vNS} />}
       <path class="xe-may" d={duong(tang.xeMay)} fill-rule="evenodd" {...vNS} />
+      {tang.choXeMay?.length > 0 && <path class="cho-xe-may" d={duong(tang.choXeMay)} {...vNS} />}
       {tang.cho.length > 0 && <path class="cho" d={duong(tang.cho)} {...vNS} />}
       {tang.xeLan.length > 0 && <path class="xe-lan" d={duong(tang.xeLan)} {...vNS} />}
       {sacChan.length > 0 && <path class="sac" d={duong(sacChan)} fill="var(--ham-sac)" fill-opacity={1} {...vNS} />}
@@ -53,19 +70,40 @@ function LopTinhHam({ kq, tang, coChu }: { kq: KetQuaHam; tang: KetQuaTangHam; c
         return <text key={`sv${v}`} x={x} y={-y} text-anchor="middle" font-size={coChu * 0.75} font-weight="700">{`${t('ham.vungSac')} ${v + 1}`}</text>;
       })}
       {tang.kho.length > 0 && <path class="kho" d={duong(tang.kho)} {...vNS} />}
+      {(kq.ongGio?.length ?? 0) > 0 && <path class="ong-gio" d={duong(kq.ongGio.map((g) => g.poly))} {...vNS} />}
+      {thangThem.length > 0 && <path class="thang-thoat" d={duong(thangThem.map((x) => x.poly))} {...vNS} />}
       {kq.loi.length > 0 && <path class="loi" d={duong(kq.loi)} />}
       {kq.cot.length > 0 && <path class="cot" d={duong(kq.cot)} />}
       {ram && (
         <g>
           <polygon class="ram" points={sPoly(ram.poly)} {...vNS} />
+          {tang.ramThang && <polygon class="ram-thang" points={sPoly(tang.ramThang)} {...vNS} />}
           <text x={ram.x} y={-ram.y} text-anchor="middle" font-size={coChu * 0.8} font-weight="700"
             transform={`rotate(${-gocDoc(ram.gocDo)} ${ram.x} ${-ram.y})`}>
             {`${t('ham.ram')} ${docRam === null ? '' : fmtSo(docRam, { thapPhan: 1, donVi: '%' })} →`}
           </text>
         </g>
       )}
-      {nhanVung(tang.xeMay, t('ham.xeMay'), 'nm')}
-      {nhanVung(tang.kyThuat, t('ham.kyThuat'), 'nk')}
+      {(kq.tuongChay ?? []).map(([a, b], i) => <line key={`tc${i}`} class="tuong-chay" x1={a[0]} y1={-a[1]} x2={b[0]} y2={-b[1]} {...vNS} />)}
+      {(tang.remChay ?? []).length > 0 && <path class="rem-chay" d={duong(tang.remChay)} {...vNS} />}
+      {phongDai.map((p) => <NhanPhong key={p.ma} poly={p.poly} ten={t(`ham.phongNgan.${p.loai}`)} dt={p.dt} coChu={coChu} />)}
+      {thangThem.map((x, i) => <text key={`tb${i}`} x={x.tam[0]} y={-x.tam[1]} text-anchor="middle" dominant-baseline="middle" font-size={coChu * 0.55} font-weight="700" class="nhan-thang">{x.chung ? 'TB*' : 'TB'}</text>)}
+      {(kq.ongGio ?? []).map((g, i) => { const [x, y] = trongTam(g.poly); return <text key={`og${i}`} x={x} y={-y} text-anchor="middle" dominant-baseline="middle" font-size={coChu * 0.5} font-weight="700">{g.loai === 'thai' ? 'GT' : 'GC'}</text>; })}
+      {(kq.khoang ?? []).map((k) => {
+        const p = k.manh.filter((x) => x.length >= 3).sort((a, b) => b.length - a.length)[0];
+        if (!p) return null;
+        const [x, y] = trongTam(p);
+        return <text key={`kc${k.so}`} x={x} y={-y} text-anchor="middle" font-size={coChu * 1.1} font-weight="700" class="nhan-khoang">{`${t('ham.khoangNgan')} ${k.so + 1} · ${fmtSo(k.dt, { donVi: 'm²' })}`}</text>;
+      })}
+      {(tang.cutDuong ?? []).map((p, i) => (
+        <g key={`cd${i}`} class="cut-duong">
+          <circle cx={p[0]} cy={-p[1]} r={r} {...vNS} />
+          <line x1={p[0] - r * 0.6} y1={-p[1] - r * 0.6} x2={p[0] + r * 0.6} y2={-p[1] + r * 0.6} {...vNS} />
+          <line x1={p[0] - r * 0.6} y1={-p[1] + r * 0.6} x2={p[0] + r * 0.6} y2={-p[1] - r * 0.6} {...vNS} />
+        </g>
+      ))}
+      {nhanVung(tang.xeMay, `${t('ham.xeMay')} ${tang.soXeMay ? fmtSo(tang.soXeMay) : ''}`, 'nm')}
+      {!(tang.phong?.length) && nhanVung(tang.kyThuat, t('ham.kyThuat'), 'nk')}
     </g>
   );
 }
@@ -78,9 +116,61 @@ export function ChuGiaiHam({ coSac }: { coSac: boolean }) {
     ...(coSac ? [['var(--ham-sac)', 'var(--ok)', 'ham.choSac'] as [string, string, string]] : []),
     ['var(--ham-xe-may)', '#c7aa76', 'ham.xeMay'],
     ['var(--ham-kho)', '#8f7bb0', 'ham.kho'],
-    ['var(--ham-ky-thuat)', 'var(--muted)', 'ham.kyThuat'],
+    ['var(--ham-phong)', 'var(--muted)', 'ham.kyThuat'],
+    ['var(--ham-thang)', 'var(--vuot)', 'ham.thangThoat'],
+    ['var(--ham-gio)', '#3b6ea8', 'ham.ongGio'],
+    ['transparent', 'var(--vuot)', 'ham.tuongChay'],
     ['var(--ham-loi)', 'var(--ham-loi)', 'ham.loiCot'],
     ['var(--ham-ram)', '#a15c1d', 'ham.ram'],
+  ];
+  return (
+    <div class="chu-giai-dat" aria-label={t('ham.chuGiai')}>
+      {ds.map(([nen, vien, k]) => <span key={k}><i style={{ background: nen, borderColor: vien }} />{t(k)}</span>)}
+    </div>
+  );
+}
+
+/**
+ * Mặt bằng TẦNG 1 (cốt 0) phía trên hầm: ranh lô, đế / chân tháp, ranh hầm (nét đứt), miệng ram + đoạn thẳng + đường vào,
+ * miệng gió (louver) của hộp gió hầm, lối ra thang thoát nạn hầm, phần còn lại = sân / cảnh quan.
+ */
+export function MatBangT1({ kq, lo, coChu }: { kq: KetQuaHam; lo: Lo; coChu: number }) {
+  const [lang] = useLang();
+  return useMemo(() => {
+    const t1 = kq.t1;
+    return (
+      <g class="ham-ve t1-ve">
+        <polygon class="t1-lo" points={sPoly(lo.ranh)} {...vNS} />
+        <polygon class="t1-ranh-ham" points={sPoly(kq.ranh)} {...vNS} />
+        {t1.de.length > 0 && <path class="t1-de" d={duong(t1.de)} fill-rule="evenodd" {...vNS} />}
+        {t1.chan.length > 0 && <path class="t1-thap" d={duong(t1.chan)} {...vNS} />}
+        {t1.duongVao && (
+          <line class="t1-duong-vao" x1={t1.duongVao[0][0]} y1={-t1.duongVao[0][1]} x2={t1.duongVao[1][0]} y2={-t1.duongVao[1][1]}
+            stroke-width={(kq.ts.ram.rong || 6)} />
+        )}
+        {t1.ramThang && <polygon class="ram-thang" points={sPoly(t1.ramThang)} {...vNS} />}
+        {t1.ramMo && <polygon class="ram" points={sPoly(t1.ramMo)} {...vNS} />}
+        {t1.miengGio.length > 0 && <path class="ong-gio" d={duong(t1.miengGio.map((g) => g.poly))} {...vNS} />}
+        {t1.thangRa.length > 0 && <path class="thang-thoat" d={duong(t1.thangRa)} {...vNS} />}
+        {kq.loi.length > 0 && <path class="loi" d={duong(kq.loi)} />}
+        {t1.chan.map((p, i) => { const [x, y] = trongTam(p); return <text key={`th${i}`} x={x} y={-y} text-anchor="middle" font-size={coChu} font-weight="700">{t('ham.t1.thap')}</text>; })}
+        {t1.miengGio.map((g, i) => { const [x, y] = trongTam(g.poly); return <text key={`lv${i}`} x={x} y={-y} text-anchor="middle" dominant-baseline="middle" font-size={coChu * 0.5} font-weight="700">LV</text>; })}
+        {t1.thangRa.map((p, i) => { const [x, y] = trongTam(p); return <text key={`tr${i}`} x={x} y={-y} text-anchor="middle" dominant-baseline="middle" font-size={coChu * 0.5} font-weight="700" class="nhan-thang">↑TB</text>; })}
+        {t1.ramMo && (() => { const [x, y] = trongTam(t1.ramMo); return <text x={x} y={-y} text-anchor="middle" font-size={coChu * 0.8} font-weight="700">{t('ham.t1.ramXuong')}</text>; })()}
+      </g>
+    );
+  }, [kq, lo, coChu, lang]);
+}
+
+/** Chú giải tầng 1. */
+export function ChuGiaiT1() {
+  const ds: [string, string, string][] = [
+    ['var(--ham-t1-thap)', 'var(--ink)', 'ham.t1.thap'],
+    ['var(--ham-t1-de)', 'var(--muted)', 'ham.t1.de'],
+    ['var(--ham-t1-xanh)', 'var(--ok)', 'ham.t1.canhQuan'],
+    ['var(--ham-ram)', '#a15c1d', 'ham.t1.ramXuong'],
+    ['var(--ham-gio)', '#3b6ea8', 'ham.t1.louver'],
+    ['var(--ham-thang)', 'var(--vuot)', 'ham.t1.thangRa'],
   ];
   return (
     <div class="chu-giai-dat" aria-label={t('ham.chuGiai')}>

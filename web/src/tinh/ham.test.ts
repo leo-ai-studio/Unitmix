@@ -52,16 +52,27 @@ describe('DT chỗ để xe yêu cầu (QCVN 04:2021 2.2.17.1)', () => {
 
 describe('ram (QCVN 13:2018 2.2.1.28)', () => {
   it('ram thẳng có mái: 3,3 m / 22 m = 15% ≤ 18% đạt; 3,3 / 15 = 22% vượt', () => {
-    const d = kiemRam({ ...RAM_MAC_DINH, dai: 22 }, 3.3).find((k) => k.khoa === 'ramDoc')!;
+    const d = kiemRam({ ...RAM_MAC_DINH, dai: 22, doanChuyen: 0 }, 3.3).find((k) => k.khoa === 'ramDoc')!;
     expect(d.dat).toBeCloseTo(15);
     expect(d.mucTieu).toBe(18);
     expect(d.muc).toBe('ok');
     expect(kiemRam({ ...RAM_MAC_DINH, dai: 15 }, 3.3).find((k) => k.khoa === 'ramDoc')!.muc).toBe('vuot');
   });
   it('ram cong ≤ 13%, ram hở ≤ 10%', () => {
-    expect(kiemRam({ ...RAM_MAC_DINH, loai: 'cong', dai: 22 }, 3.3)[0].muc).toBe('vuot');
-    expect(kiemRam({ ...RAM_MAC_DINH, loai: 'ho', dai: 33 }, 3.3)[0].dat).toBeCloseTo(10);
-    expect(kiemRam({ ...RAM_MAC_DINH, loai: 'ho', dai: 30 }, 3.3)[0].muc).toBe('vuot');
+    expect(kiemRam({ ...RAM_MAC_DINH, loai: 'cong', dai: 22, doanChuyen: 0 }, 3.3)[0].muc).toBe('vuot');
+    expect(kiemRam({ ...RAM_MAC_DINH, loai: 'ho', dai: 33, doanChuyen: 0 }, 3.3)[0].dat).toBeCloseTo(10);
+    expect(kiemRam({ ...RAM_MAC_DINH, loai: 'ho', dai: 30, doanChuyen: 0 }, 3.3)[0].muc).toBe('vuot');
+  });
+  it('đoạn chuyển dốc: dốc chính = cao / (dài − c); đổi dốc ở hai đầu = nửa dốc ≤ 12,5% (dự thảo QCVN 07-11 2.4.3.8.3)', () => {
+    // 3,3 / (24 − 3,6) = 16,18%; đổi dốc 8,09% ≤ 12,5%
+    const k = kiemRam({ ...RAM_MAC_DINH, dai: 24, doanChuyen: 3.6 }, 3.3);
+    expect(k.find((x) => x.khoa === 'ramDoc')!.dat).toBeCloseTo(16.176, 2);
+    expect(k.find((x) => x.khoa === 'ramDoiDoc')!.dat).toBeCloseTo(8.088, 2);
+    expect(k.find((x) => x.khoa === 'ramDoiDoc')!.duThao).toBe(true);
+    // không có đoạn chuyển: đổi dốc = cả dốc 15% > 12,5% → cảnh báo (dự thảo)
+    expect(kiemRam({ ...RAM_MAC_DINH, dai: 22, doanChuyen: 0 }, 3.3).find((x) => x.khoa === 'ramDoiDoc')!.muc).toBe('canh_bao');
+    // ram cong: bán kính ≥ 6 m (dự thảo 2.4.7.4.3)
+    expect(kiemRam({ ...RAM_MAC_DINH, loai: 'cong', banKinh: 5 }, 3.3).find((x) => x.khoa === 'ramBanKinh')!.muc).toBe('canh_bao');
   });
   it('dốc ngang ≤ 6%; có người đi bộ thì vỉa hè ≥ 0,8 m', () => {
     expect(kiemRam({ ...RAM_MAC_DINH, docNgang: 7 }, 3.3).find((k) => k.khoa === 'ramNgang')!.muc).toBe('vuot');
@@ -122,7 +133,9 @@ describe('ranh hầm, rải tầng', () => {
     expect(kq.tong.dtXeMay).toBeGreaterThan(1200 * 0.85); // trừ phần cột / lõi rơi vào dải
     expect(kq.tang[0].soKho).toBe(10);
     expect(kq.tang[0].soCho).toBeGreaterThan(50);
-    expect(kq.tang[0].soXeLan).toBe(2);
+    // xe lăn: QCVN 10:2024 Bảng 1 trên tổng chỗ, ưu tiên tầng trên (B1)
+    expect(kq.tong.soXeLan).toBe(kq.yeuCauCho.xeLan);
+    expect(kq.tang[0].soXeLan).toBe(Math.min(kq.yeuCauCho.xeLan, kq.tang[0].soXeLan + kq.tang[1].soXeLan));
     expect(kq.tyLe.doXe).toBeGreaterThan(0.5);
     expect(kq.tyLe.doXe + kq.tyLe.kyThuat).toBeLessThanOrEqual(1);
     const dong = kq.kiem.find((k) => k.khoa === 'dtDoXe')!;
