@@ -80,6 +80,13 @@ export const BIEU_TUONG = {
   // xuất
   xuatCad: '◫',
   xuatXls: '▥',
+  // thanh 3D gọn một hàng (ve3d/Khung3D.tsx)
+  gocMay: '⎔', // góc nhìn: đề xuất + đã lưu
+  kieuVe: '◑', // kiểu hiển thị Vật liệu / Brand / Mô hình trắng
+  nangCat: '☀︎', // giờ nắng + mặt cắt ngang
+  ham3d: '⊔', // hiện hầm
+  khac: '…', // menu thêm (xuất ảnh, prompt render, tham số)
+  xuatAnh: '⇩',
 } as const;
 
 export type KhoaBieuTuong = keyof typeof BIEU_TUONG;

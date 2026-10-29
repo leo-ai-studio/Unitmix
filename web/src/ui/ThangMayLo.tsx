@@ -7,6 +7,7 @@ import { thangMayToa } from '../tinh/pcccTang';
 import { layDuLieuMB, mauCuaToa, useDuLieuMB } from '../man/tuChinhTang';
 import { MucGap } from './MucGap';
 import { fmtSo } from './so';
+import { nhanToa } from './nhanToa';
 
 /**
  * TMB · panel phải: thang máy từng tòa của lô — có (giếng trong lõi, QT-64) / cần (QCVN 04:2021 2.4.1 · 2.4.2, QT-94 lấy cách cho
@@ -19,7 +20,7 @@ export function ThangMayLo({ pa, tv, lo, chonToa, toaId }: { pa: TrangThaiPA; tv
   const ds = pa.toa.filter((x) => x.loId === lo.id && tv.toa.has(x.mauId)).map((x) => {
     const m = mauToa(tv, x);
     const mau = m && coMat(m) ? mauCuaToa(x, m as unknown as ToaMB) : null;
-    return { x, ten: m?.ten_vi.split(' · ')[0] ?? '?', k: thangMayToa(pa, tv, x, mau, dl) };
+    return { x, ten: nhanToa(pa, tv, x.id), k: thangMayToa(pa, tv, x, mau, dl) };
   });
   if (!ds.length) return null;
   const thieu = ds.filter((d) => d.k.muc !== 'ok').length;

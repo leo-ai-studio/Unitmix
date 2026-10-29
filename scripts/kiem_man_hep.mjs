@@ -20,7 +20,7 @@
  * Mã thoát: 0 đạt · 1 có lỗi · 2 lỗi hạ tầng.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -102,13 +102,17 @@ const DO_HOP = `((SEL, NUT, MOBILE, BAN_PHIM) => {
 async function main() {
   const exe = timTrinhDuyet();
   if (!exe) throw new Error('Không thấy Edge / Chrome — đặt CHROME_PATH');
-  const port = 19700 + (process.pid % 200), hoSo = join(RA, `ho-so-${process.pid}`);
+  // cổng 0: trình duyệt tự chọn cổng trống, ghi vào DevToolsActivePort — cổng cố định theo pid từng nối nhầm trình duyệt headless
+  // của tiến trình khác (agent khác) đang giữ cổng đó → đo nhầm khung 768 khi tưởng 1440.
+  let port = 0; const hoSo = join(RA, `ho-so-${process.pid}`);
   mkdirSync(hoSo, { recursive: true });
   const tr = spawn(exe, ['--headless=new', '--inprivate', '--disable-sync', '--disable-extensions', '--no-first-run', '--hide-scrollbars',
-    `--remote-debugging-port=${port}`, `--user-data-dir=${hoSo}`, 'about:blank'], { stdio: 'ignore' });
+    '--remote-debugging-port=0', `--user-data-dir=${hoSo}`, 'about:blank'], { stdio: 'ignore' });
   let loi = 0;
   try {
     let ds;
+    for (let i = 0; i < 80 && !port; i++) { const f = join(hoSo, 'DevToolsActivePort'); if (existsSync(f)) port = +readFileSync(f, 'utf8').split(/\r?\n/)[0]; else await cho(150); }
+    if (!port) throw new Error('Trình duyệt không mở cổng gỡ lỗi');
     for (let i = 0; i < 80 && !ds?.some((x) => x.type === 'page'); i++) { try { ds = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json(); } catch { await cho(250); } }
     const ws = new WebSocket(ds.find((x) => x.type === 'page').webSocketDebuggerUrl);
     await new Promise((r) => ws.addEventListener('open', r, { once: true }));

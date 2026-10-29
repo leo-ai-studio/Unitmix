@@ -30,6 +30,7 @@ import { HopHangLoat, LopHangLoat } from './xepHangLoat';
 import { ThangMayLo } from '../ui/ThangMayLo';
 import { moSoSanhMau } from '../ui/SoSanhMau';
 import { ChuGiaiView, KpiView, LopViewTmb, TheViewToa, gocBacPA, nutLopView, useLopView } from './lopView';
+import { nhanToa } from '../ui/nhanToa';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -133,10 +134,9 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
         <MucGap tieuDe={`${t('xep.toaTrenLo')} · ${toaLo.length}`} giaiThich={t('gt.xep.toaTrenLo')} mo>
           {!toaLo.length && <p class="dong muted">{t('xep.chuaCoToa')}</p>}
           {toaLo.map((x) => {
-            const m = tv?.toa.get(x.mauId);
             return (
               <button type="button" key={x.id} class={`muc-lo${x.id === toaId ? ' chon' : ''}`} aria-pressed={x.id === toaId} onClick={() => chonToa(x.id)}>
-                <b>{m?.ten_vi ?? x.mauId}{x.khoa ? ` · ${t('xep.daKhoa')}` : ''}</b>
+                <b>{nhanToa(pa, tv, x.id, { day: true })}{x.khoa ? ` · ${t('xep.daKhoa')}` : ''}</b>
                 <span>{x.soTangDe} + {x.soTangDH} T · {fmtSo(x.gocDo, { donVi: '°' })}</span>
               </button>
             );
@@ -701,7 +701,7 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq, sua, chiXem, moCan }
             const d = dem[x.id] ?? { stu: 0, '1pn': 0, '2pn': 0, '2pnp': 0, '3pn': 0 };
             return (
               <button type="button" class={`dong bang-cc${x.id === toaId ? ' chon' : ''}`} style={cot} role="row" key={x.id} onClick={() => chonToa(x.id)}>
-                <span>{tenNgan(tv?.toa.get(x.mauId))}</span>
+                <span>{nhanToa(pa, tv, x.id)}</span>
                 {LOAI_CAN.map((k) => <span key={k}>{fmtSo(d[k])}</span>)}
                 <b>{fmtSo(LOAI_CAN.reduce((a, k) => a + d[k], 0))}</b>
               </button>

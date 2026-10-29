@@ -1,0 +1,83 @@
+/* =====================================================================================================================
+   GỌN GIAO DIỆN (đợt "Bố cục quá kém, làm gọn lại" 2026-10-30) — nạp SAU mọi tệp CSS khác (main.tsx).
+   Thang khoảng cách 4 / 8 / 12 / 16 px; chữ 12–13 px thân, 11 px phụ; nút chạm ≥ 40 px trên điện thoại.
+   Kit LEO (leo-ui.css) cho MỌI `label` xếp dọc (nhãn trên, ô dưới, chữ 11 px xám) và MỌI ô nhập `min-width: 100px` + đệm 8×10 —
+   hợp với form trang trắng của kit nhưng làm vỡ các hàng gọn trong panel / thanh công cụ. Không đổi luật gốc (hộp thoại tạo dự án,
+   form-card còn dựa vào nó) mà sửa theo thành phần ở đây.
+   ===================================================================================================================== */
+
+/* ---------- Hàng số / hàng chọn (.o-so / .o-chon): nhãn trái, ô phải, một dòng ----------
+   unitmix.css đã viết `display:flex; justify-content: space-between` nhưng thiếu flex-direction nên kit LEO vẫn xếp dọc
+   (nhãn căn giữa phía trên, ô 100 px tràn panel 4 px) — gốc của phần lớn "label chồng lên ô" trong panel trái / phải. */
+.o-so, .o-chon { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; color: var(--ink); font-size: 12px; line-height: 1.3; }
+.o-so > span:first-child, .o-chon > span:first-child { flex: 1 1 auto; min-width: 0; }
+.o-so input, .o-so-nho, .o-chon input, .o-chon select { min-width: 0; }
+.o-so input { width: 72px; padding: 3px 6px; font-variant-numeric: tabular-nums; }
+.o-so-nhap { flex: none; }
+.o-so-nhap small { min-width: 16px; font-size: 11px; }
+.o-chon select, .o-chon input { flex: 0 1 auto; max-width: 60%; padding: 3px 6px; }
+/* Lưới hai cột .luoi-o: trước đây nhãn trên / ô dưới (nhãn bị cắt "MĐXD khối tháp tố…", ô tràn). Nay mỗi ô một hàng nhãn-trái;
+   panel 270–300 px ra một cột, hộp thoại rộng tự ra hai cột. */
+.luoi-o { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.luoi-o .o-so { flex-direction: row; align-items: center; gap: 8px; padding: 3px 12px; }
+.luoi-o .o-so input { width: 72px; }
+
+/* ---------- Thanh 3D một hàng (ve3d/Khung3D.tsx) ----------
+   Trước: 3 hàng chữ (phạm vi + Hầm + Phân tích + tên + 5 góc + 3 kiểu + 2 thanh trượt; Góc đã lưu / Prompt / Xuất PNG; ô tích).
+   Nay: nhóm biểu tượng nổi như thanh TMB, bảng chọn là lớp nổi (ui/MenuNut). Dải trống giữa các nhóm không chặn kéo 3D. */
+.noi-tren > .thanh-3d { flex-wrap: nowrap; gap: 6px; padding: 8px 8px 0; background: none; border: 0; pointer-events: none; max-width: calc(100% - 64px); }
+.noi-tren > .thanh-3d > * { pointer-events: auto; flex: none; }
+.thanh-3d .nhom-3d.chon-che { height: 32px; box-sizing: border-box; background: var(--panel); }
+.thanh-3d .chon-che button { height: 100%; padding: 0 10px; }
+.chu-ngan { display: none; }
+.thanh-3d .bao-3d { align-self: center; font-size: 12px; padding: 4px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); color: var(--green); }
+.noi-tren > .tham-so-3d { margin: 6px 8px 0; align-self: flex-start; max-width: min(520px, calc(100% - 80px)); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / .08); padding: 6px 4px; }
+.tham-so-3d .tham-so-dau { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 4px; font-size: 12px; }
+.tham-so-3d .luoi-tham-so { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 4px; padding: 0; }
+.tham-so-3d .luoi-tham-so .o-so, .tham-so-3d .luoi-tham-so .o-chon { padding: 3px 8px; }
+.tham-so-3d .luoi-tham-so > .nut-phu { justify-self: start; margin: 4px 8px; }
+
+/* nút biểu tượng mở menu: mũi ▾ nhỏ, chữ phụ (nếu có) */
+.nut-bt .mui-menu { font-size: 8px; color: var(--muted-text); margin-left: 1px; }
+.nut-bt .nut-bt-chu { font-size: 12px; font-weight: 600; color: var(--ink); }
+/* bảng nổi của MenuNut */
+.menu-nut-bang { position: fixed; z-index: 60; min-width: 168px; max-width: min(320px, calc(100vw - 8px)); overflow: auto; display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgb(0 0 0 / .14); padding: 4px;
+  animation: the-vao var(--dur-1, .16s) var(--ease-out, ease-out); font-size: 12px; }
+.menu-nut-bang > button, .menu-nut-dong > button:first-child { border: 0; background: none; text-align: left; padding: 6px 10px; font-size: 12px; color: var(--ink); border-radius: 4px; white-space: nowrap; cursor: pointer; }
+.menu-nut-bang > button:not(:disabled):hover, .menu-nut-dong > button:hover { background-color: var(--hover); }
+.menu-nut-bang > button[role=menuitemradio] { padding-left: 26px; position: relative; }
+.menu-nut-bang > button[aria-checked=true] { color: var(--green); font-weight: 700; }
+.menu-nut-bang > button[aria-checked=true]::before { content: '✓'; position: absolute; left: 9px; }
+.menu-nut-nhom { padding: 6px 10px 2px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted-text); }
+.menu-nut-nhom:empty { padding: 0; margin: 4px 6px; border-top: 1px solid var(--line); }
+.menu-nut-dong { display: flex; align-items: stretch; }
+.menu-nut-dong > button:first-child { flex: 1; }
+.menu-nut-dong .xoa { border: 0; background: none; color: var(--muted-text); padding: 0 10px; border-radius: 4px; cursor: pointer; }
+.menu-nut-dong .xoa:hover { background: var(--hover); color: var(--warn); }
+.menu-nut-trong { padding: 4px 10px; color: var(--muted-text); }
+.menu-nut-them { color: var(--green) !important; font-weight: 600; }
+.menu-nut-tich { padding: 5px 10px; }
+.menu-nut-truot { display: grid; grid-template-columns: 52px 1fr 40px; align-items: center; gap: 8px; padding: 6px 10px; font-size: 12px; color: var(--ink); }
+.menu-nut-truot input[type=range] { min-width: 0; width: 100%; padding: 0; margin: 0; border: 0; background: none; accent-color: var(--green); }
+.menu-nut-truot b { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.menu-nang-3d { min-width: 260px; }
+
+@media (max-width: 1024px) {
+  .noi-tren > .thanh-3d { max-width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; touch-action: pan-x; }
+  .noi-tren > .thanh-3d::-webkit-scrollbar { display: none; }
+  .thanh-3d .nhom-3d.chon-che { height: 40px; }
+  .thanh-3d .chon-che button { min-height: 0; min-width: 0; }
+  .menu-nut-bang > button, .menu-nut-dong > button:first-child, .menu-nut-tich, .menu-nut-truot { min-height: 40px; font-size: 14px; }
+  .menu-nut-dong .xoa { min-width: 40px; }
+  .noi-tren > .tham-so-3d { max-width: calc(100% - 16px); }
+  .tham-so-3d .o-so input { font-size: 16px; min-height: 36px; }
+  .tham-so-3d .o-chon select { font-size: 16px; min-height: 36px; }
+}
+@media (max-width: 600px) {
+  .thanh-3d .chu-dai { display: none; }
+  .thanh-3d .chu-ngan { display: inline; }
+  .thanh-3d .nut-bt { min-width: 40px; height: 40px; padding: 0 6px; }
+  .thanh-3d .nut-bt .mui-menu { display: none; }
+}
