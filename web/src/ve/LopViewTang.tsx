@@ -32,7 +32,7 @@ function LopTrong({ pa, tv, toa, mau, bc, tang }: Props) {
       // pháp tuyến vào trong căn (ngược phía ngoài): từ mặt ngoài về hành lang
       const vao: [number, number] = [vt.goc[0][0] - vt.goc[3][0], vt.goc[0][1] - vt.goc[3][1]];
       const lv = Math.hypot(vao[0], vao[1]) || 1;
-      const nhan: [number, number] = [M[0] + (vao[0] / lv) * 1100, M[1] + (vao[1] / lv) * 1100];
+      const nhan: [number, number] = [M[0] + (vao[0] / lv) * 1500, M[1] + (vao[1] / lv) * 1500];
       return [{ khoa: vt.khoa, A, B, nhan, d, rong: L }];
     });
   }, [pa, tv, toa, mau, bc, tang, luat]);
@@ -43,8 +43,8 @@ function LopTrong({ pa, tv, toa, mau, bc, tang }: Props) {
           <line x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} stroke={MAU_XEP[d.xep]} stroke-width="5" vector-effect="non-scaling-stroke" />
           <g transform={`translate(${Math.round(nhan[0])} ${Math.round(nhan[1])}) scale(1 -1)`}>
             <title>{`${fmtSo(d.tong, { thapPhan: 0 })} · ${TEN_HUONG(d.h8)}`}</title>
-            <rect x="-760" y="-430" width="1520" height="860" rx="430" fill={MAU_XEP[d.xep]} fill-opacity="0.92" />
-            <text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="600" font-weight="700" fill="#fff">{fmtSo(d.tong, { thapPhan: 0 })}</text>
+            <rect x="-1100" y="-620" width="2200" height="1240" rx="620" fill={MAU_XEP[d.xep]} fill-opacity="0.92" stroke="var(--panel)" stroke-width="120" />
+            <text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="900" font-weight="700" fill="#fff">{fmtSo(d.tong, { thapPhan: 0 })}</text>
           </g>
         </g>
       ))}

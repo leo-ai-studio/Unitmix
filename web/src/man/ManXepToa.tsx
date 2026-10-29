@@ -572,7 +572,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         {/* đo khoảng cách */}
         {diemDo.map((p, i) => <circle key={`do${i}`} cx={p[0]} cy={-p[1]} r={buocM * 0.015} fill="var(--green)" style={{ pointerEvents: 'none' }} />)}
         {diemDo.length === 2 && nhanDoan(diemDo[0], diemDo[1], m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1])), 'var(--green)', 'do')}
-        <LopViewTmb pa={pa} tv={tv} coChu={coChu} />
+        {!hien && <LopViewTmb pa={pa} tv={tv} coChu={coChu} />}
         <LopGoiY loId={lo?.id ?? null} tv={tv} />
         <LopHangLoat tv={tv} />
         {pa.lo.map((l) => {
