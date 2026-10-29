@@ -94,10 +94,14 @@ async function main() {
         await moi(urlDA);
         const ok = await doiCo(`!!document.querySelector('.panel-giua .ban-ve-svg')`, 90000);
         const tVe = Date.now() - t0;
-        await cho(3000); // cho SW cài / precache, tác vụ sau tải
+        const mangVe = { ...mang }; // byte tới lúc vẽ xong TMB (không tính lượt SW tải trước sau đó)
+        await cho(3000); // tác vụ sau tải
+        // có SW: chờ cài + tải trước xong (≤ 90 s) để lần "mở lại" đo đúng như bấm biểu tượng lần sau
+        const swSan = await js(`(async () => { const r = await navigator.serviceWorker?.getRegistration(); if (!r) return false; await Promise.race([navigator.serviceWorker.ready, new Promise((x) => setTimeout(x, 90000))]); return !!r.active; })()`);
+        mang = mangVe;
         const d = await js(`({ lcp: __do.lcp, fcp: __do.fcp, lt: __do.lt, sw: !!navigator.serviceWorker?.controller, sa: matchMedia('(display-mode: standalone)').matches })`);
         bang.push({ cheDo: cd, buoc: lan, veTMB_ms: ok ? tVe : -1, lcp: Math.round(d.lcp), fcp: Math.round(d.fcp), tbt: Math.round(tbt(d.lt, d.fcp)), dai: d.lt.length,
-          jsKB: Math.round(mang.js / 1024), tongKB: Math.round(mang.tong / 1024), req: mang.req, tuSW: mang.tuSW, tuCache: mang.tuCache, swDieuKhien: d.sw, standalone: d.sa });
+          jsKB: Math.round(mang.js / 1024), tongKB: Math.round(mang.tong / 1024), req: mang.req, tuSW: mang.tuSW, tuCache: mang.tuCache, swDieuKhien: d.sw, swSan, standalone: d.sa });
         console.log(JSON.stringify(bang.at(-1)));
         if (lan === 'mo-lai') {
           // NGỒI YÊN 5 s: mọi bộ đếm phải gần 0 (rAF / ResizeObserver / layout chạy liên tục = hao pin + giật)

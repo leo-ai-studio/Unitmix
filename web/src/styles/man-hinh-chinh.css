@@ -1,0 +1,16 @@
+/*
+ * App mở từ biểu tượng màn hình chính (display-mode: standalone — PWA / iOS web app) và máy cảm ứng.
+ * Chỉ đổi hành vi chạm / cuộn; không đổi cỡ khung giữa (TMB / MB tầng / 3D). Né tai thỏ / thanh home: styles/dien-thoai.css.
+ */
+@media (display-mode: standalone) {
+  /* không có thanh Safari để kéo-tải-lại: chặn cả trang bị kéo dãn / nảy khi vuốt bản vẽ */
+  html, body { overscroll-behavior: none; }
+  body { -webkit-tap-highlight-color: transparent; }
+  /* giữ lâu trên bản vẽ không bật menu chép / kính lúp của iOS */
+  .panel-giua svg, .panel-giua canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+}
+
+/* iOS giữ :hover sau khi chạm: bộ lọc sáng của nút (leo-ui.css) dính lại, mỗi nút thêm một lớp ghép thừa */
+@media (hover: none) {
+  button:hover:not(:disabled) { filter: none; }
+}
