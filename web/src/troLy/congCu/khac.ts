@@ -12,6 +12,9 @@ const HAM_SO: Record<string, { min?: number; max?: number; nguyen?: boolean; pha
   soTang: { min: 1, max: 6, nguyen: true }, caoTang: { min: 2 }, dayKetCau: { min: 0 }, lui: { min: 0 }, choDai: { min: 5 }, choRong: { min: 2.3 },
   rongLan: { min: 1 }, choXeLan: { min: 0, nguyen: true }, nhip: { min: 3 }, cotRong: { min: 0 }, tangXeMay: { min: 1, nguyen: true },
   khoMoiTang: { min: 0, nguyen: true }, dtKho: { min: 1 }, rongKho: { min: 1 }, lanKho: { min: 0 }, tyLeKyThuat: { min: 0, max: 50, phanTram: true },
+  // đợt 2 (bố trí hầm)
+  dtKhoangMax: { min: 300 }, cuLyThoat: { min: 10 }, thangRong: { min: 2.4 }, thangDai: { min: 4 },
+  qSinhHoat: { min: 80 }, ngayDuTru: { min: 0.5 }, kvaMoiCan: { min: 0 }, xeMayRong: { min: 0.75 }, xeMayDai: { min: 2 }, xeMayLan: { min: 1.5 },
 };
 
 const suaCP = (ng: NguCanh, f: (c: ChiPhiPA) => ChiPhiPA) => suaPA(ng, (p) => ({ ...p, chiPhi: f(chuanHoaChiPhi(p.chiPhi)) }));
@@ -19,11 +22,16 @@ const suaCP = (ng: NguCanh, f: (c: ChiPhiPA) => ChiPhiPA) => suaPA(ng, (p) => ({
 export const CONG_CU_KHAC: CongCu[] = [
   {
     ten: 'update_basement', nhom: 'khac', sua: true,
-    moTa: 'Sửa thông số hầm (màn Hầm), một bước hoàn tác: soTang (1–6), caoTang, dayKetCau, lui, choDai, choRong, rongLan, choXeLan, nhip, cotRong, tangXeMay, khoMoiTang, dtKho, rongKho, lanKho, tyLeKyThuat (%), dtXeMay (m² hoặc null = tự), garaCoKhi; ram {loai thang_mai|cong|ho, dai, rong, docNgang %, coNguoiDi, viaHe}; apply_measured_ratios = true áp tỷ lệ đỗ xe / kỹ thuật đo từ hầm đã rải vào phần hầm không tính HSSDĐ.',
+    moTa: 'Sửa thông số hầm (màn Hầm), một bước hoàn tác: soTang (1–6), caoTang, dayKetCau, lui, choDai, choRong, rongLan, choXeLan, nhip, cotRong, tangXeMay, khoMoiTang, dtKho, rongKho, lanKho, tyLeKyThuat (%), dtXeMay (m² hoặc null = tự), dtKhoangMax (m², khoang cháy QCVN 13 Bảng 4), cuLyThoat (m, Bảng 3), thangRong, thangDai (thang thoát nạn thêm), qSinhHoat (L/người/ngày, ≥ 80), ngayDuTru, kvaMoiCan, xeMayRong, xeMayDai, xeMayLan, garaCoKhi, auto_rooms (bật / tắt tự bố trí phòng kỹ thuật), auto_accessible (chỗ xe lăn theo QCVN 10:2024 Bảng 1), rooms {loại phòng: {dt m² | null, bo}} (loại: beSH, bomSH, bePCCC, bomPCCC, xlnt, vanHanhXlnt, tba, mayPhat, baoVe, trucPCCC, dienNhe, khoVatTu, quatHut, quatCap, rac); ram {loai thang_mai|cong|ho, dai, rong, docNgang %, coNguoiDi, viaHe, doanChuyen, doanThangDuoi, doanThangTren, banKinh}; ev {bat, tang, choOto, tyLeOto %}; apply_measured_ratios = true áp tỷ lệ đỗ xe / kỹ thuật đo từ hầm đã rải vào phần hầm không tính HSSDĐ.',
     schema: S.doiTuong({
       fields: { type: 'object', additionalProperties: { type: 'number', nullable: true }, description: 'trường số → giá trị' },
       garaCoKhi: S.bool(),
-      ram: S.doiTuong({ loai: S.chon(['thang_mai', 'cong', 'ho']), dai: S.so(undefined, 1), rong: S.so(undefined, 2), docNgang: S.so(), coNguoiDi: S.bool(), viaHe: S.so(undefined, 0) }),
+      ram: S.doiTuong({ loai: S.chon(['thang_mai', 'cong', 'ho']), dai: S.so(undefined, 1), rong: S.so(undefined, 2), docNgang: S.so(), coNguoiDi: S.bool(), viaHe: S.so(undefined, 0),
+        doanChuyen: S.so(undefined, 0), doanThangDuoi: S.so(undefined, 0), doanThangTren: S.so(undefined, 0), banKinh: S.so(undefined, 1) }),
+      auto_rooms: S.bool(),
+      auto_accessible: S.bool(),
+      rooms: { type: 'object', additionalProperties: { type: 'object', properties: { dt: { type: 'number', nullable: true }, bo: { type: 'boolean' } } }, description: 'loại phòng → {dt, bo}' },
+      ev: S.doiTuong({ bat: S.bool(), tang: S.so(undefined, 1), choOto: S.so(undefined, 0), tyLeOto: S.so(undefined, 0, 100) }),
       apply_measured_ratios: S.bool(),
     }),
     chay: async (v, ng) => {
@@ -40,6 +48,11 @@ export const CONG_CU_KHAC: CongCu[] = [
         (moi as Record<string, number>)[k] = g.phanTram ? x / 100 : x;
       }
       if (v.garaCoKhi !== undefined) moi.garaCoKhi = v.garaCoKhi as boolean;
+      if (v.auto_rooms !== undefined) moi.tuDongPhong = v.auto_rooms as boolean;
+      if (v.auto_accessible !== undefined) moi.xeLanTuDong = v.auto_accessible as boolean;
+      const LOAI_PHONG = ['beSH', 'bomSH', 'bePCCC', 'bomPCCC', 'xlnt', 'vanHanhXlnt', 'tba', 'mayPhat', 'baoVe', 'trucPCCC', 'dienNhe', 'khoVatTu', 'quatHut', 'quatCap', 'rac'];
+      const rooms = (v.rooms ?? null) as Record<string, { dt?: number | null; bo?: boolean }> | null;
+      if (rooms) for (const k of Object.keys(rooms)) if (!LOAI_PHONG.includes(k)) throw new LoiCongCu(`Loại phòng "${k}" không có. Có: ${LOAI_PHONG.join(', ')}.`);
       let tyLe: { doXe: number; kyThuat: number } | null = null;
       if (v.apply_measured_ratios) {
         const { raiHam } = await import('../../tinh/ham');
@@ -53,7 +66,9 @@ export const CONG_CU_KHAC: CongCu[] = [
       suaPA(ng, (p) => {
         const h = chuanHoaHam(p.ham);
         const ram = v.ram ? { ...h.ram, ...(v.ram as object) } : h.ram;
-        return { ...p, ham: { ...h, ...moi, ram, tangXeMay: Math.min(moi.tangXeMay ?? h.tangXeMay, moi.soTang ?? h.soTang) }, ...(tyLe ? { phanHam: tyLe } : {}) };
+        const xeDien = v.ev ? { ...h.xeDien, ...(v.ev as object) } : h.xeDien;
+        const phong = rooms ? { ...h.phong, ...Object.fromEntries(Object.entries(rooms).map(([k, x]) => [k, { ...h.phong?.[k], ...x }])) } : h.phong;
+        return { ...p, ham: { ...h, ...moi, ram, xeDien, phong, tangXeMay: Math.min(moi.tangXeMay ?? h.tangXeMay, moi.soTang ?? h.soTang) }, ...(tyLe ? { phanHam: tyLe } : {}) };
       });
       const h = chuanHoaHam(ng.kho.lay().ham);
       if (ng.ui.lay().tangHam > h.soTang) ng.ui.dat({ tangHam: h.soTang });

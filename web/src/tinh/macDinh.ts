@@ -20,10 +20,16 @@ export const CHI_TIEU_MAC_DINH: ChiTieuQH = {
 export const CO_CAU_MAC_DINH: Record<LoaiCan, number> = { stu: 5, '1pn': 20, '2pn': 45, '2pnp': 15, '3pn': 15 };
 
 /** Ram vào hầm mặc định (tự đặt dọc cạnh dài nhất ranh hầm). Kích thước tạm, chờ chủ nhiệm chốt. */
-export const RAM_MAC_DINH: RamHam = { x: null, y: null, gocDo: null, dai: 22, rong: 5.5, loai: 'thang_mai', docNgang: 2, coNguoiDi: false, viaHe: 0 };
-/** Khu xe điện theo dự thảo SĐ 01:2026 QCVN 04: mặc định tắt. */
+/** Đợt 2: ram hai chiều rộng 6,5 m (≥ 6 m đường hai chiều thẳng — QCVN 07-11:2025 dự thảo 2.4.3.4; tham khảo Đông Quan ≈ 6,5 m),
+ *  dài 24 m gồm hai đoạn chuyển dốc 3,6 m (tham khảo M1 / Đông Quan 21–25 m), đoạn thẳng 6 m hai đầu (tạm). */
+export const RAM_MAC_DINH: RamHam = {
+  x: null, y: null, gocDo: null, dai: 24, rong: 6.5, loai: 'thang_mai', docNgang: 2, coNguoiDi: false, viaHe: 0,
+  doanChuyen: 3.6, doanThangDuoi: 6, doanThangTren: 6, banKinh: 6,
+};
+/** Khu xe điện theo dự thảo SĐ 01:2026 QCVN 04 / QCVN 07-11:2025 (chỉ cảnh báo). Đợt 2: PA mới bật sẵn, số chỗ = 10% tổng chỗ (`tyLeOto`); PA cũ giữ giá trị đã lưu. */
 export const XE_DIEN_MAC_DINH: KhuXeDien = {
-  bat: false, tang: 1, choOto: 0, choXeMay: 0, vungOto: 25, vungXeMay: 50, dtXeMayMoiCho: 2.5, khoangCach: 2, tuongNgan: false, tuDoiPinTang: null,
+  bat: true, tang: 1, choOto: 0, choXeMay: 0, vungOto: 25, vungXeMay: 50, dtXeMayMoiCho: 2.5, khoangCach: 2, tuongNgan: false, tuDoiPinTang: null,
+  tyLeOto: 10,
 };
 /** Thông số hầm mặc định (giá trị tạm, chờ chủ nhiệm chốt). Chỗ đỗ 2,5 × 5 m ≥ tối thiểu 2,3 × 5 m của QCVN 13:2018 2.2.1.25. */
 export const HAM_MAC_DINH: Required<Omit<ThongSoHam, 'dtXeMay'>> & Pick<ThongSoHam, 'dtXeMay'> = {
@@ -31,6 +37,10 @@ export const HAM_MAC_DINH: Required<Omit<ThongSoHam, 'dtXeMay'>> & Pick<ThongSoH
   lui: 3, caoTang: 3.3, dayKetCau: 0.6, cotRong: 0.6, choXeLan: 2, rongKho: 2, lanKho: 1.2, khoMoiTang: 0,
   tangXeMay: 1, dtXeMay: null, tyLeKyThuat: 0.1, garaCoKhi: false,
   ram: RAM_MAC_DINH, xeDien: XE_DIEN_MAC_DINH,
+  // Đợt 2 (bố trí hầm): số tạm ghi căn cứ ở tinh/hamPhong.ts, tinh/hamBoTri.ts, docs/ham_tham_khao.md.
+  tuDongPhong: true, phong: {}, qSinhHoat: 150, ngayDuTru: 1.5, kvaMoiCan: 3,
+  dtKhoangMax: 3000, cuLyThoat: 40, thangRong: 3, thangDai: 6.6,
+  xeLanTuDong: true, xeMayRong: 0.8, xeMayDai: 2, xeMayLan: 1.8,
 };
 
 /**

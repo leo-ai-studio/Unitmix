@@ -2,6 +2,115 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 (tối) · xếp căn như app cũ: cự ly thoát nạn chỉ cảnh báo · thang trượt theo căn · hốc logia đi theo căn · co kéo đầu hành lang · agent Opus
+
+Người dùng (M7 PA1 CT-1, tòa Z3 xh-z3, 19 căn/tầng, ảnh có 4 ô "KỸ THUẬT", khe trắng, nét bao không bo căn): "app cũ rất mượt… đảo qua lại thoải mái, di chuyển thang thoải mái, cự ly thoát nạn chỉ CẢNH BÁO không được chặn, đầu hành lang chưa co kéo được".
+- **Nguyên nhân chính** (tái hiện bằng kịch bản Edge trên bản trước, ảnh `docs/anh/xep-can/truoc-12-z3-*.png`): dời một thang bộ → tự chỉnh gỡ căn vượt cự ly (`giamCanThoatNan`, bật mặc định) → 23 → 15 căn, ô thành "KỸ THUẬT" / bỏ, dãy đứt, nét bao trôi; thang là MỐC dồn khít nên dãy kẹp giữa lõi và thang đổi mẫu căn / chặn `khong_vua`; hốc logia của nét bao CAD nằm cố định khi căn dời.
+- **Đã làm** (commit ad8e184, 0627b6c, 5926576, fd0afc4 + gộp `nang-cap/architechtures` f5ecda7):
+  - Cự ly thoát nạn CHỈ cảnh báo: `ToaDat.giamCanTN` thành tuỳ chọn (true = gỡ căn như cũ; mặc định không gỡ) — `tuChinhToaKq`, ô ở panel phải màn Tầng. Câu báo sau mỗi phép tay thêm "⚠ N căn vượt cự ly … chỉ cảnh báo, không chặn" (`cc.canhBaoTN`); lớp PCCC · Thoát nạn (của agent PCCC) bật thì căn vượt tô viền `--warn` (`MatBangTang` prop `canVuot`). Không còn phép nào bị chặn / trả về vì thoát nạn.
+  - Sửa tay không tự dời thang (app cũ: thang là một ô trong dãy): `chotSua` chụp tập thang hiện có (`thangTay`) → PC-11 `coDinh`; ⟲ vẫn tự đặt lại (`thangTuDongLai` không chụp).
+  - Thang không là mốc (app cũ `donKhitMat` + QT-48): `loiThang.donQuaThang` — dãy có thang mà căn CHỌN TAY đổi bề ngang thì cả dãy (căn + thang) dồn lại từ đầu neo (lõi / đầu không tự do), đầu tự do dài ra / ngắn lại (`gianMat`), ghi `MatBangSua.neo` cho donKhit; bỏ qua dãy kẹp, đầu hở sân trong (QT-69 xử lý), tầng riêng / thang ép (thang liền). Khít đoạn kẹp không đụng đoạn đã dồn (`refTheoNeo`). Xoá căn: thang giữa căn bỏ và đầu tự do trượt theo (`boCanTren`).
+  - Nét bao bo căn: hốc logia theo căn như app cũ QT-59b `hocDay` (`hocLogia`: ghép cặp trọn 1.250, đứng lẻ chừa 150 mm, cạnh thang 85 mm) — `netBao.suaHocLogia` lấp hốc cũ / chỗ ô lọt ra ngoài, khoét hốc mới, mọi đa giác cùng chiều (hợp NonZero hai đa giác ngược chiều từng tạo hốc giả), mở / đóng 100 mm bỏ gai, khe nứt; `netBaoTheoO` không khoét vào sàn chung không thuộc ô (sảnh hub Y / T).
+  - Co kéo đầu hành lang (app cũ p14 `startAxDrag` / `apDungAxAdj` / `baoTheoTay`, QT-38 · QT-39 · QT-55): `ToaDat.hanhLangTay` {chỉ số đoạn: [dời p0, dời p1]} so với tự động, áp sau XC-07 (`apHanhLangTay`), giới hạn cửa căn xa nhất + 500 mm / đoạn ≥ 3 m / dài thêm ≤ 20 m, chỉ đầu NGOÀI (`dauHanhLangNgoai`: không đoạn khác chạm, 1 m ra ngoài là ngoài nét bao); nét bao dựng lại theo dải hành lang. Tay nắm `ve/TayHanhLang.tsx` (bước 100 mm, hít về tự động trong 400 mm, bóng + số "± m" bám tay, bấm đúp về tự động), phép nền `keoHanhLangTay` / `hanhLangTuDong` trong `BANG_TAY`. Căn không xê dịch khi kéo hành lang (như app cũ).
+  - Thả thang đúng chỗ cũ báo "Không có gì thay đổi" thay vì "không đặt được".
+- **Phá hoại**: `phaHoaiChay` thêm phép kéo đầu hành lang; `moTaPhaHoai(hạt, bước, { mau, diVe })`; tệp mới `phaHoaiXepCan.test.ts` hạt 404 × 30 bước trên Z / V / T / L (gồm tm-z3, xh-z3) — mỗi lần đổi chỗ được nhận thì đổi VỀ ngay, phải trả đúng mặt bằng trước. Góc ô đo theo hình logia thật, đỉnh nét bao trên nét CAD gốc / chỗ gập hành lang không tính. Kết quả đủ mẫu (không lấy mẫu): hạt 0 / 101 / 202 / 303 × 33 mẫu + 404 × 21 mẫu Z/V/T/L = **153 / 153 ca, 0 vi phạm**.
+- **Trên app** (vite 5481 bản mới, 5482 bản trước dựng từ `git archive 59ee54d`, API 8787, dự án thử `2mlg1a2l` PA `pa-z3-truoc` / `pa-z3-sau` tòa xh-z3, 1440×900, Edge headless + CDP, kịch bản `scratchpad/xc/kb.mjs`): bản trước dời thang → 23 → 15 căn + 2 ô KỸ THUẬT, nét bao trôi; bản mới dời thang 2 lần, đổi chỗ đi / về, đổi chỗ khác mặt, xoá căn, kéo đầu hành lang +8,4 m — số căn 23 → 23 (xoá: 22), cảnh báo cự ly ở câu báo, không ô KỸ THUẬT, không khe. Long task luồng chính trong mỗi phép (PerformanceObserver): bản trước 0 ms, bản mới 0–74 ms (lượt vẽ lại SVG, như trước). Ảnh `docs/anh/xep-can/{truoc,sau}-12-z3-*.png`.
+- Test sửa theo luật mới: giamCanThangLien / khitLoiKep / themCho bật `giamCanTN` khi thử chính tính năng gỡ căn; DTXD trừ hốc logia khi căn đổi (quetThangLien QT-69, loiThang STRETCH); xoá thang tm-t2 không thêm đè.
+- Còn dở: tm-t2 (2 căn) / tm-u1 (1 căn) mặc định giờ còn căn vượt cự ly (chỉ cảnh báo; bật `giamCanTN` thì gỡ như cũ) và tm-t2 còn XC-05 lệch lõi 215 mm khi không gỡ; gợi ý giữ số căn (`goiYGiuCan`) chỉ chạy khi bật gỡ căn; kéo đầu hành lang không dồn lại căn (app cũ cũng không); hốc logia lẻ app cũ trừ thêm tường căn bên cạnh khi căn bên cạnh không có hốc — đã làm, nhưng căn góc V (`khung`) không có hốc; nhãn câu báo hành lang ghi độ dời yêu cầu (đã kẹp theo giới hạn thì số thật có thể nhỏ hơn).
+## 2026-10-29 · Hầm đợt 2: phòng kỹ thuật theo dự án, khoang cháy + thang thoát nạn, làn không cụt, ram có đoạn thẳng, xe lăn QCVN 10, xe máy / sạc, hộp gió, mặt bằng tầng 1 · agent Opus
+
+**Yêu cầu:** cải tiến bộ rải hầm và màn Hầm, tham khảo các hồ sơ bản vẽ đã có. Gồm:
+- chương trình phòng kỹ thuật theo dự án;
+- thứ tự đỗ: ô tô → xe máy → sạc → xe lăn;
+- làn xe không cụt;
+- ram thẳng có đoạn thẳng ở hai đầu;
+- khoang cháy và thang thoát nạn dùng chung;
+- hộp gió và louver;
+- mặt bằng tầng 1.
+
+Vẫn chạy trong Web Worker. 3D, chi phí và Leo AI phải chạy theo.
+
+**Tham khảo và căn cứ:** xem `docs/ham_tham_khao.md`.
+- Hồ sơ đã đọc: M1 Đan Phượng, Đông Quan B2/B3, KDAS Dream City, chuẩn đỗ xe Vinhomes, M&E Đại An.
+- Quy chuẩn: QCVN 13:2018, 06:2022 + SĐ1:2023, 04:2021, 10:2024, 01:2021. Dự thảo (chỉ cảnh báo): QCVN 07-11:2025, SĐ 01:2026 QCVN 04.
+- Không có trong kho: QCVN 13:2023, QCVN 10:2014, bề rộng làn theo góc đỗ, TCVN 2622 / 7336 / 9206 / 5687. Các số thiếu căn cứ để **tạm**.
+
+**Mã:**
+- `tinh/hamHinh.ts` (mới): hình học Clipper chung, hệ trục u/v. Tách ra từ `ham.ts`.
+- `tinh/hamPhong.ts` (mới): `chuongTrinhPhong`.
+  - Nước: bể SH = dân số × q × ngày ÷ 2,7 m (≥ 80 L/người/ngày đêm, QCVN 01 2.10.2). Bể PCCC = ngoài nhà max(Bảng 8 F1.3, Bảng 9 F5 hạng C) × 3 h + Bảng 11 × 2,5 L/s × 3 h + sprinkler (tạm). Bơm, XLNT + phòng vận hành.
+  - Điện: TBA khô + máy phát ở B1 (QCVN 13 2.2.2 b, QCVN 06 A.2.10).
+  - Phòng khác: bảo vệ, trực PCCC, điện nhẹ, kho; quạt hút / cấp mỗi khoang mỗi tầng; rác cạnh lõi ở B1 (QCVN 04 2.7.3).
+  - Chỉnh sửa: `ThongSoHam.phong[loai] = { dt, bo }` ghi đè DT hoặc bỏ phòng.
+- `tinh/hamBoTri.ts` (mới):
+  - `chiaKhoang`: các ô gần vuông ≤ `dtKhoangMax` 3 000 m² (QCVN 13 Bảng 4). Đường cắt v bắt vào lưng hai dãy chỗ.
+  - `datThang`: thang lõi tòa + thang thêm. Mỗi khoang ≥ 2 lối ra, cự ly ≤ 40 m đo Manhattan (QCVN 13 2.2.1.14, Bảng 3). Thang trên tường ngăn cháy (TB*) dùng cho hai khoang. Phạt vị trí dưới tháp (QCVN 06 3.2.2 a).
+  - `timChoSatTuong`: cụm quạt + hộp gió, không nằm dưới tháp. `timChoCanhLoi`.
+  - `demCutDuong`, `soXeLanQCVN10`, `chonXeLan` (gần lõi), `chonSac` (gần TBA).
+  - Hình học nhanh `dtTrongHcn` / `hcnTrong`: lô 400 × 400 từ 2,1 s xuống 0,25–0,4 s.
+- `tinh/raiCho.ts`:
+  - `yeuCauLan`: chỗ chỉ nhận khi ô làn trước mặt hợp lệ. Trước đây có chỗ xe không vào được.
+  - `vatCanCho`: tường ngăn cháy và cột tòa chỉ chặn chỗ, không chặn làn.
+  - `phatLan`: điểm phạt đầu cụt khi chọn lưới. `lanTai` / `lechV`: một lưới dãy chung mọi tầng, có một làn sát mép ram.
+- `tinh/ham.ts` `raiHamTinh` viết lại:
+  - Ram: chọn góc hầm gần đường. Ram thẳng gồm đoạn thẳng dưới + dốc (`doanChuyen` 3,6 m, đổi dốc ≤ 12,5% theo dự thảo 07-11) + đoạn thẳng trên.
+  - Dải lớn trên tầng: phòng → xe máy → kho. Xe máy đủ số theo chỉ tiêu và ≥ 6 m²/căn, khu riêng.
+  - Khu ô tô: đường ngang ở hai đầu, dải chỗ quay đầu hầm. Đầu cụt (lõi, thang chắn) mở đoạn nối sang làn kề.
+  - Rèm ngăn cháy ở chỗ làn cắt tường.
+  - Xe lăn theo QCVN 10:2024 Bảng 1, gần lõi, ưu tiên B1. Sạc 10% (dự thảo) gần TBA.
+  - Thông gió: 9 lần/h × thể tích khoang (QCVN 04 2.6.5), ống riêng từng tầng. Vận tốc gió là số tạm.
+  - Tầng 1 `t1`: tháp / đế, miệng ram + đoạn thẳng + đường vào, louver, thang ra, cảnh quan.
+  - Kiểm mới: cutDuong, ramNoi, khoangDt / LoiRa / CuLy, gioKhoang, soLanRam (QCVN 13 2.2.1.11), rongLan, ramDoiDoc, ramBanKinh, soXeMay, xeLan (QCVN 10), qSinhHoat, sacOto.
+- `kieu.ts`, `macDinh.ts`:
+  - Trường mới: `tuDongPhong`, `phong`, `qSinhHoat`, `ngayDuTru`, `kvaMoiCan`, `dtKhoangMax`, `cuLyThoat`, `thangRong/Dai`, `xeLanTuDong`, `xeMayRong/Dai/Lan`; ram `doanChuyen` / `doanThangDuoi` / `doanThangTren` / `banKinh`; `xeDien.tyLeOto`.
+  - Ram mặc định 24 × 6,5 m. Xe điện bật cho PA mới; PA cũ giữ giá trị đã lưu.
+- Màn Hầm (`man/ManHam.tsx`, `ve/MatBangHam.tsx`, `styles/ham.css`):
+  - Nút **T1** (mặt bằng tầng 1, lớp phủ, khung giữa không đổi) cạnh B1 / B2.
+  - Bản vẽ thêm: phòng (tên ngắn + DT), tường / rèm ngăn cháy, thang TB / TB*, hộp gió GT / GC, đầu cụt ⊗, ô xe máy.
+  - Panel phải thêm: "Đỗ xe: có / yêu cầu", "Phòng kỹ thuật" (sửa DT / bỏ), "Khoang cháy, thoát nạn, thông gió", "Tầng 1".
+  - Panel trái thêm: khoang, phòng tự động, xe máy, ram, tỷ lệ sạc.
+  - i18n VI / EN.
+- Leo AI:
+  - `get_basement` trả thêm chỗ có / yêu cầu, phòng, khoang, thang, thông gió, tầng 1.
+  - `update_basement` nhận trường mới, `rooms`, `auto_rooms`, `auto_accessible`, `ev`, và các trường ram mới.
+- Phần khác:
+  - 3D: thang thêm và hộp gió nhô lên cốt 0.
+  - Dự toán: số xe máy lấy từ số đã rải.
+  - Chữ ký đối chiếu `__mau__/hamDoiChieu.json` sinh lại (kết quả đổi có chủ đích).
+
+**Số đo trước → sau** (mã `59ee54d` → nhánh này; ô tô theo tầng):
+
+| Lô | Ô tô | Xe lăn | Xe máy | Đầu cụt | Khoang | Thời gian rải |
+|---|---|---|---|---|---|---|
+| Dự án thử `2mlg1a2l` pa-2 (NO-01, 2 tầng) | 713 → 503 | 4 → 9 / 9 | 5 879 m² → 2 249 chỗ / 2 016 (6 078 m²) | ≈ 78 → 0 | 6 (≤ 2 452 m², ≥ 3 lối, ≤ 38,6 m) | 71 → 183 ms |
+| 200 × 120 (1 tòa) | 1 680 → 1 275 | — | — | ≈ 112 → 0 | — | — |
+| 400 × 400 (2 tầng) | 13 173 → 11 506 | 4 → 120 | — | ≈ 268 → 0 | 63 | 0,10 → 0,28 s |
+| 311 × 293 (222 đỉnh) | — | — | — | 9 (đã báo trên bản vẽ) | — | — |
+
+- Ô tô giảm là có chủ đích:
+  - chỗ không có làn trước mặt (trước được tính) bị bỏ;
+  - thêm đường ngang hai đầu, đoạn nối quanh lõi;
+  - thêm thang thoát nạn (pa-2: 9 thang thêm), cụm quạt + hộp gió từng khoang;
+  - chuyển 9 chỗ thành chỗ xe lăn (gộp hai chỗ thành một);
+  - dải xe máy đủ 6 m²/căn.
+- Mở màn Hầm: longtask luồng chính = 0 (PerformanceObserver). Rải xong sau khoảng 0,2–0,45 s (worker).
+- Khung giữa 1440 × 900: `270,52,870,848`; điện thoại 390 × 844: `0,48,390,740`. Không đổi khi chuyển T1 / B1 / B2.
+
+**Kiểm:**
+- Test mới `tinh/hamBoTri.test.ts` (11 ca tính tay).
+- `ham.test.ts`: cập nhật ram có đoạn chuyển, xe lăn QCVN 10.
+- `congCu.test.ts`: update / get_basement.
+- `node scripts/kiem.mjs` ĐẠT.
+- Ảnh trước / sau trong `docs/anh/ham/`: `truoc-ham-*`, `sau-ham-*`, `sau-b2-*`, `sau-tang1-*`, `sau-phong-desktop`, `sau-khoang-desktop`. Chụp bằng vite 5473 + API 8787, PA thử `pa-ham2` (bản sao pa-2 bật xe điện, đã xoá sau khi chụp).
+
+**Còn dở / chờ chủ nhiệm chốt:**
+- Thang trên tường ngăn cháy phục vụ hai khoang. QCVN 06 3.2.4 không tính lối ra sang khoang F5 kề, nhưng buồng thang không thuộc khoang (H.6.2). Cần chốt có được tính cho cả hai khoang.
+- Cột tòa chỉ chặn chỗ, không chặn làn. Đây là giả định lưới cột hầm đi theo dãy đỗ hoặc chuyển tại sàn đế.
+- Vận tốc gió, sprinkler, kVA/căn, DT phòng rác / TBA / máy phát, đoạn thẳng ram 6 m, ngày dự trữ bể đều là số tạm.
+- Đọc chung "> 200: 5 + 1 cho mỗi 100 xe thêm" là lấy tròn lên (201 → 6).
+- Thang thêm vẫn có thể rơi dưới đế khi hết chỗ. Panel Tầng 1 có đếm "thang dưới tháp / đế".
+- Lô ranh nhiều đỉnh (311 × 293) còn 9 đầu cụt.
+
 ## 2026-10-29 · Dân số: ô Khu vực đô thị / nông thôn · Đồng Nai phòng ở + mốc biên · tỉnh trọng điểm sau sáp nhập · agent Opus
 
 **Chủ nhiệm đã chốt:** Hà Nội TĐC = mặc định quốc gia 32 m²/người; Đồng Nai thêm ô "Khu vực"; phòng ở theo QĐ địa phương, không có thì QCVN; Phú Yên bỏ qua; tỉnh trọng điểm HN, TP.HCM, An Giang (Kiên Giang, Phú Quốc), Hưng Yên.

@@ -31,8 +31,9 @@ for (const c of canDs) dl.cuaCan[c.ma_goc] = tinhCuaCan(doc<{ ve: { cat: string;
 const mau = (id: string) => tv.toa.get(id) as unknown as ToaMB;
 const trong: BoCuc = { canTheo: {} };
 const H24 = chieuCaoPCCC(1, 4.5, 24, 3.3); // 81,8 m: ngưỡng cụt 15 / đôi 20 m
+// gỡ căn vượt cự ly giờ là tuỳ chọn (`giamCanTN: true`; mặc định chỉ cảnh báo) — các ca ở đây thử chính tính năng đó nên bật sẵn
 const toaThu = (m: ToaMB, them: Partial<ToaDat> = {}): ToaDat =>
-  ({ id: 't', loId: 'l', mauId: m.id, x: 0, y: 0, gocDo: 0, soTangDH: 24, soTangDe: 1, caoDe: 4.5, caoDH: 3.3, coApMai: false, deOffset: 0, canTheo: {}, ...them });
+  ({ id: 't', loId: 'l', mauId: m.id, x: 0, y: 0, gocDo: 0, soTangDH: 24, soTangDe: 1, caoDe: 4.5, caoDH: 3.3, coApMai: false, deOffset: 0, canTheo: {}, giamCanTN: true, ...them });
 /** Đo lại độc lập số căn vượt (bỏ ô phòng kỹ thuật / trống / căn bỏ — không phải cửa căn hộ). */
 const vuotDoc = (m: ToaMB, mb: NonNullable<ToaDat['matBang']>, bc: BoCuc) => {
   const hd = apMatBang(m, mb, dl);
@@ -41,7 +42,7 @@ const vuotDoc = (m: ToaMB, mb: NonNullable<ToaDat['matBang']>, bc: BoCuc) => {
 };
 const khe = (m: ToaMB, mb: NonNullable<ToaDat['matBang']>, bc: BoCuc) => tongKhe(apMatBang(m, mb, dl), tv, bc);
 
-describe('Việc 1 · gỡ căn vượt cự ly sau PC-11 (app cũ: tự sinh + giamCanThoatNan), bật mặc định', () => {
+describe('Việc 1 · gỡ căn vượt cự ly sau PC-11 (app cũ: tự sinh + giamCanThoatNan), bật bằng giamCanTN', () => {
   it.each([
     ['tm-t2', 2, 2, 42, 40],
     ['tm-u1', 1, 1, 33, 32],
@@ -100,7 +101,7 @@ describe('Việc 1 · gỡ căn vượt cự ly sau PC-11 (app cũ: tự sinh + 
     expect(tat.matBang!.baoCao!.vuotSau).toBe(2);
     expect(tat.matBang!.baoCao!.giamCan).toMatchObject({ bat: false, vuotSau: 2, bo: 0, doi: 0, soCanSau: 42 });
     expect(tat.matBang!.baoCao!.quyTac.find((x) => x.ma === 'PC-11')!.muc).toBe('vuot');
-    const lai = tuChinhToa({ ...tat, giamCanTN: undefined }, m, tv, dl);
+    const lai = tuChinhToa({ ...tat, giamCanTN: true }, m, tv, dl);
     expect(lai.congNang).toEqual(bat.congNang);
     expect(lai.matBang!.baoCao!.vuotSau).toBe(0);
   });

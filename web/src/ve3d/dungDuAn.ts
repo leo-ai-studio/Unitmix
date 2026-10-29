@@ -111,6 +111,8 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     const vlHam = new T.MeshStandardMaterial({ color: trang ? 0xdfe6e3 : 0x2f7d79, roughness: 0.9, transparent: true, opacity: 0.3, depthWrite: false });
     const vlRam = new T.MeshStandardMaterial({ color: 0xe0933a, roughness: 0.9, transparent: true, opacity: 0.6, depthWrite: false });
     const vlLoi = new T.MeshStandardMaterial({ color: trang ? 0xb9bdba : 0x5c6662, roughness: 0.9 });
+    const vlThang = new T.MeshStandardMaterial({ color: 0xd9776b, roughness: 0.9 });
+    const vlGio = new T.MeshStandardMaterial({ color: 0x6f9bd1, roughness: 0.8 });
     const vienHam = new T.LineBasicMaterial({ color: 0x174f52 }), sanHam = new T.LineBasicMaterial({ color: 0x174f52, transparent: true, opacity: 0.45 });
     for (const l of pa.lo) {
       if (!laCaoTang(l) || !pa.toa.some((x) => x.loId === l.id)) continue;
@@ -124,6 +126,9 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
       for (const y of kh.yTang.slice(1, -1)) duong(kh.ranh, y, sanHam, true);
       for (const p of kq?.loi ?? []) if (p.length >= 3) khoi(p, -kh.yDuoi, vlLoi, kh.yDuoi);
       if (kq?.ram && kq.ram.poly.length >= 3) { const r = khoi(kq.ram.poly, h.caoTang, vlRam, -h.caoTang); r.castShadow = false; }
+      // Đợt 2: thang thoát nạn hầm đặt thêm (lên tới tầng 1 thành chòi thang cao 3 m), hộp gió + miệng louver nhô 1,2 m trên cốt 0.
+      for (const x of kq?.thang ?? []) if (x.nguon === 'them' && x.poly.length >= 3) khoi(x.poly, -kh.yDuoi + 3, vlThang, kh.yDuoi);
+      for (const g of kq?.ongGio ?? []) if (g.poly.length >= 3) khoi(g.poly, -kh.yDuoi + 1.2, vlGio, kh.yDuoi);
     }
   }
 

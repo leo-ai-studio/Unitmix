@@ -132,7 +132,11 @@ describe('công cụ đọc', () => {
   });
   thu('get_cost', async () => { expect((await chay('get_cost', {})).json.du_toan.tong_muc).toBeGreaterThan(0); });
   thu('get_population', async () => { expect((await chay('get_population', {})).json.tinh.length).toBeGreaterThan(3); });
-  thu('get_basement', async () => { expect((await chay('get_basement', { lot_id: 'A' })).json.lo).toBe('A'); });
+  thu('get_basement', async () => {
+    const j = (await chay('get_basement', { lot_id: 'A' })).json;
+    expect(j.lo).toBe('A');
+    if (j.tong) { expect(j.yeu_cau_cho).toBeTruthy(); expect(Array.isArray(j.khoang_chay)).toBe(true); expect(Array.isArray(j.phong_ky_thuat)).toBe(true); }
+  });
   thu('compare_pas', async () => { expect((await chay('compare_pas', {})).json[0].so_can).toBeGreaterThan(0); });
   thu('navigate', async () => {
     await chay('navigate', { screen: 'tang', tower_id: 't1', floor: 2, view: '3d' });
@@ -325,6 +329,12 @@ describe('công cụ khác', () => {
     expect(kho.lay().ham).toMatchObject({ soTang: 3, tyLeKyThuat: 0.12 });
     await loi('update_basement', { fields: { soTang: 9 } }, /khoảng/);
     await loi('update_basement', { fields: { khong: 1 } }, /không có/);
+    // đợt 2: khoang cháy, phòng kỹ thuật, xe lăn tự động, ram có đoạn thẳng, xe điện
+    await motBuoc('update_basement', { fields: { dtKhoangMax: 2500, qSinhHoat: 120 }, auto_rooms: true, auto_accessible: true, rooms: { xlnt: { bo: true }, bomSH: { dt: 60 } }, ram: { doanThangTren: 8 }, ev: { bat: true, tyLeOto: 20 } });
+    expect(kho.lay().ham).toMatchObject({ dtKhoangMax: 2500, qSinhHoat: 120, tuDongPhong: true, xeLanTuDong: true, phong: { xlnt: { bo: true }, bomSH: { dt: 60 } } });
+    expect(kho.lay().ham.ram?.doanThangTren).toBe(8);
+    expect(kho.lay().ham.xeDien?.tyLeOto).toBe(20);
+    await loi('update_basement', { rooms: { phongLa: { bo: true } } }, /không có/);
   });
   thu('update_cost', async () => {
     await motBuoc('update_cost', { unit_prices: { ketCau: 5_000_000 }, rates: { qlda: 2 }, sale: { can: { '2pn': 60_000_000 } } });

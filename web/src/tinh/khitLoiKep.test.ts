@@ -27,7 +27,7 @@ for (const c of canDs) dl.cuaCan[c.ma_goc] = tinhCuaCan(doc<{ ve: { cat: string;
 const mau = (id: string) => tv.toa.get(id) as unknown as ToaMB;
 const H24 = chieuCaoPCCC(1, 4.5, 24, 3.3);
 const toaThu = (m: ToaMB, them: Partial<ToaDat> = {}): ToaDat =>
-  ({ id: 't', loId: 'l', mauId: m.id, x: 0, y: 0, gocDo: 0, soTangDH: 24, soTangDe: 1, caoDe: 4.5, caoDH: 3.3, coApMai: false, deOffset: 0, canTheo: {}, ...them });
+  ({ id: 't', loId: 'l', mauId: m.id, x: 0, y: 0, gocDo: 0, soTangDH: 24, soTangDe: 1, caoDe: 4.5, caoDH: 3.3, coApMai: false, deOffset: 0, canTheo: {}, giamCanTN: true, ...them });
 /** Chỗ căn hở / đè nét bao lõi > 200 mm, đo độc lập trên mặt bằng đã tự chỉnh. */
 const lechLoi = (m: ToaMB, mb: NonNullable<ToaDat['matBang']>, bc: BoCuc) => {
   const hd = apMatBang(m, mb, dl);
