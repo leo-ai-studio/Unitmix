@@ -47,6 +47,13 @@ export const SVG_BT: Record<string, string> = {
   nganTrai: '<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M9 4v16M5.5 8h1.5M5.5 11h1.5M5.5 14h1.5"/>',
   nganPhai: '<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M15 4v16M17 8h1.5M17 11h1.5M17 14h1.5"/>',
   dongNgan: '<path d="M6 9l6 6 6-6"/>',
+  // màn Dự án của tôi
+  moDuAn: '<path d="M13 4h7v7M20 4l-9 9"/><path d="M18 14v4.5a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 014 18.5v-11A1.5 1.5 0 015.5 6H10"/>',
+  soSanh: '<rect x="3" y="5" width="7" height="14" rx="1"/><rect x="14" y="5" width="7" height="14" rx="1"/><path d="M5.5 9h2M5.5 12h2M16.5 9h2M16.5 12h2M16.5 15h2"/>',
+  doiTen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4M13 20h7"/>',
+  chepLink: '<path d="M10 14a4 4 0 005.7 0l3.5-3.5a4 4 0 00-5.7-5.7L12 6.3"/><path d="M14 10a4 4 0 00-5.7 0l-3.5 3.5a4 4 0 005.7 5.7l1.5-1.5"/>',
+  boDs: '<path d="M4 6h10M4 11h10M4 16h6"/><circle cx="17.5" cy="16.5" r="4"/><path d="M15.5 16.5h4"/>',
+  tim: '<circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L20 20"/>',
   // xuất
   xuatCad: '<path d="M4 20L20 4M4 20h6M4 20v-6"/><path d="M14 4h6v6"/>',
   xuatXls: '<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 9h16M4 15h16M10 3v18"/>',

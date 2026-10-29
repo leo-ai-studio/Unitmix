@@ -67,7 +67,6 @@ body { font-size: 13px; line-height: 1.45; }
 .thanh-hien-thi button:last-child { border-right: 0; }
 .thanh-hien-thi button[aria-pressed="true"] { font-weight: 700; }
 
-.chan-trang { padding: 10px 24px; font-size: 12px; color: var(--muted-text); }
 
 /* Thông báo dưới thanh trên (chỉ xem, có nháp, lỗi) */
 .thong-bao { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 14px; font-size: 12px; border-bottom: 1px solid var(--line); background: var(--soft); color: var(--ink); }
@@ -82,10 +81,6 @@ button:disabled { cursor: not-allowed; }
 .trang h1 { margin: 0; text-align: center; font-weight: 300; font-size: 40px; letter-spacing: .06em; color: var(--green); }
 .nut-chinh { background: var(--green); color: #fff; border: 1px solid var(--green); border-radius: 6px; padding: 8px 14px; font-weight: 600; text-decoration: none; }
 .nut-phu { background: var(--panel); color: var(--ink); border: 1px solid var(--secondary); border-radius: 6px; padding: 8px 12px; }
-.bang-du-an { border: 1px solid var(--line); border-radius: 4px; overflow-x: auto; background: var(--panel); }
-.hang { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); min-width: 980px; }
-.hang.dau { background: var(--band); font-weight: 600; }
-.hang .so { color: var(--muted-text); } .hang .so b { color: var(--ink); }
 .hop-thoai { position: fixed; inset: 0; background: rgba(41,45,45,.35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
 .hop-thoai > div, .hop-thoai > form { background: var(--panel); border-radius: 10px; padding: 22px; width: min(560px, 100%); display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
 .hop-thoai h2 { margin: 0; font-size: 18px; color: var(--green); font-weight: 600; }
