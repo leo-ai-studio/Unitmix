@@ -87,10 +87,14 @@ button:disabled { cursor: not-allowed; }
 .hang.dau { background: var(--band); font-weight: 600; }
 .hang .so { color: var(--muted-text); } .hang .so b { color: var(--ink); }
 .hop-thoai { position: fixed; inset: 0; background: rgba(41,45,45,.35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
-.hop-thoai > div { background: var(--panel); border-radius: 10px; padding: 22px; width: min(560px, 100%); display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+.hop-thoai > div, .hop-thoai > form { background: var(--panel); border-radius: 10px; padding: 22px; width: min(560px, 100%); display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
 .hop-thoai h2 { margin: 0; font-size: 18px; color: var(--green); font-weight: 600; }
 .hop-thoai label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .hop-thoai input { padding: 8px; border: 1px solid var(--line); border-radius: 5px; font-size: 14px; }
+/* thân hộp cuộn khi cao quá: con không bị bóp (bảng xem trước từng co còn 2 dòng, dòng chữ đè nhau) */
+.hop-thoai > div > *, .hop-thoai > form > * { flex-shrink: 0; }
+/* hàng nút chân hộp (Huỷ · Áp / Tạo) — màn hẹp thì dính đáy hộp (styles/dien-thoai.css) */
+.chan-hop { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .dong-link { display: flex; gap: 8px; align-items: center; }
 .dong-link code { flex: 1; overflow-x: auto; white-space: nowrap; background: var(--band); padding: 6px 8px; border-radius: 4px; font-size: 12px; }
 .giua-man { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--muted-text); padding: 40px; }
@@ -128,9 +132,13 @@ button:disabled { cursor: not-allowed; }
 .hop-thoai > div.hop-rong { width: min(1180px, 100%); max-height: calc(100vh - 32px); overflow: auto; }
 .hop-thoai textarea { width: 100%; box-sizing: border-box; resize: vertical; }
 .bang-nhap { border: 1px solid var(--line); border-radius: 4px; overflow-x: auto; font-size: 12px; }
-.hang-nhap { display: grid; grid-template-columns: 70px 92px minmax(220px, 2fr) 92px 70px repeat(9, minmax(52px, 1fr)); gap: 6px; align-items: center; padding: 5px 8px; border-bottom: 1px solid var(--line); min-width: 1060px; }
+.hang-nhap { display: grid; grid-template-columns: 70px 92px minmax(220px, 2fr) 92px 70px repeat(9, minmax(52px, 1fr)); gap: 6px; align-items: center; padding: 5px 8px; border-bottom: 1px solid var(--line); min-width: 1120px; } /* ≥ tổng cột + khe: nền dòng tiêu đề phủ hết cột cuối */
 .hang-nhap > span:nth-child(2), .hang-nhap > span:nth-child(n+4) { text-align: right; }
-.hang-nhap.dau { background: var(--band); font-weight: 600; color: var(--muted-text); position: sticky; top: 0; }
+.hang-nhap.dau { background: var(--band); font-weight: 600; color: var(--muted-text); position: sticky; top: 0; z-index: 2; }
+/* cột ký hiệu lô dính trái khi vuốt ngang bảng: nền đặc + bóng phủ khe cột để chữ cột sau không lộ qua */
+.hang-nhap > :first-child { position: sticky; left: 0; z-index: 1; align-self: stretch; display: flex; align-items: center; background: var(--panel); box-shadow: 6px 0 0 var(--panel); }
+.hang-nhap.dau > :first-child { background: var(--band); box-shadow: 6px 0 0 var(--band); }
+.hang-nhap.hang-db > :first-child { position: static; box-shadow: none; }
 .hang-nhap select { width: 100%; max-width: 280px; padding: 3px; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; background: var(--panel); }
 .hang-nhap.hang-db { grid-template-columns: 1.6fr 1fr 1fr 1fr; min-width: 0; }
 .hop-thoai select { padding: 6px; border: 1px solid var(--line); border-radius: 5px; font-size: 13px; background: var(--panel); }

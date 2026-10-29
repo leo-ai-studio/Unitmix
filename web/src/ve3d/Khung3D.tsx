@@ -114,16 +114,19 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         if (huy || !cv.current || !hop.current) return;
         let R: import('three').WebGLRenderer;
         // stencil: tô nhấn khối căn / tầng / đế chỉ trên mặt nhìn thấy (veNhan); three r163+ mặc định không có bộ đệm stencil
-        try { R = new T.WebGLRenderer({ canvas: cv.current, antialias: true, preserveDrawingBuffer: true, stencil: true }); } catch { setLoi(t('m3d.khongWebGL')); setDang(false); return; }
+        // không giữ bộ đệm vẽ (preserveDrawingBuffer): xuất ảnh vẽ lại rồi đọc ngay trong cùng lượt (anh); giữ thì iOS tốn thêm một bộ đệm cỡ màn hình + chép mỗi khung
+        try { R = new T.WebGLRenderer({ canvas: cv.current, antialias: true, stencil: true }); } catch { setLoi(t('m3d.khongWebGL')); setDang(false); return; }
         const kieuVe = tr.current.kieu, N = NEN[kieuVe];
-        R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        // máy cảm ứng (điện thoại / máy tính bảng, màn @3x): mật độ điểm ảnh ≤ 1,5 và bản đồ bóng 2048 — đỡ 2–4 lần điểm ảnh tô, GPU / pin
+        const camUng = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+        R.setPixelRatio(Math.min(window.devicePixelRatio || 1, camUng ? 1.5 : 2));
         R.shadowMap.enabled = true; R.shadowMap.type = T.PCFSoftShadowMap; R.localClippingEnabled = true;
         const scene = new T.Scene();
         scene.background = new T.Color(N.troi);
         const vatLieu = kieuVe === 'vatlieu';
         scene.add(new T.HemisphereLight(N.hemi[0], N.hemi[1], kieuVe === 'trang' ? 2.4 : vatLieu ? 1.25 : 2.1));
         const sun = new T.DirectionalLight(0xfff6e8, vatLieu ? 2.1 : 2.6);
-        sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+        sun.castShadow = true; sun.shadow.mapSize.setScalar(camUng ? 2048 : 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
         if (vatLieu) {
           sun.shadow.intensity = 0.55; // bóng đổ nhẹ
           // môi trường phòng sáng dịu cho kính / nhôm phản chiếu; vật liệu mờ chỉ nhận một phần

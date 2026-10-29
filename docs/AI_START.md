@@ -61,7 +61,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | Phòng (bóc CAD) | `scripts/boc_cad/boc_phong.py` → `web/public/lib/can.json` (`phong`), `tinh/phong.ts`, `ve/LopPhong.tsx` |
 | Hầm (rải trong Web Worker: giao diện đọc qua `tinh/hamNen.ts`, không gọi `raiHam` đồng bộ) | `tinh/ham.ts`, `tinh/hamNen.ts`, `tinh/raiHam.worker.ts`, `tinh/raiCho.ts`, `man/ManHam.tsx`, `ve/MatBangHam.tsx`, `ve/VeRanh.tsx` |
 | Bản vẽ 2D, zoom / pan, cảm ứng (chụm, chạm, chạm hai lần, nhấn giữ; ✥ kéo căn nhường chụm qua `khongDiBanVe`) | `ve/BanVe.tsx`, thuần `ve/camUng.ts`; 3D `ve3d/*` |
-| Màn hẹp (điện thoại / máy tính bảng ≤ 1024 px): ngăn kéo đáy, dock, menu ⋯ | `ui/manHep.ts`, `ui/KhungSoan.tsx`, `styles/dien-thoai.css`; kiểm `node scripts/kiem_man_hep.mjs --url … --du-an …` |
+| Màn hẹp (điện thoại / máy tính bảng ≤ 1024 px): ngăn kéo đáy, dock, menu ⋯; hộp thoại mở từ ngăn phải bọc `ui/LopNoi.tsx` (portal) + hàng nút `.chan-hop` (dính đáy, cao theo `--vv-h` visualViewport) | `ui/manHep.ts`, `ui/LopNoi.tsx`, `ui/KhungSoan.tsx`, `styles/dien-thoai.css`; kiểm `node scripts/kiem_man_hep.mjs --url … --du-an … --ma-sua …` (đo cả nút chính mọi hộp thoại) |
 | Khung soạn, thanh trên | `ui/KhungSoan.tsx`, `ui/ThanhTren.tsx`, `man/SoanThao.tsx` |
 | Preset, lưu | `kho/preset.ts`, `kho/kho.ts`, `kho/luu.ts` |
 | Xuất | `xuat/xuatCad.ts`, `xuat/xuatXls.ts`, `man/HopXuatCad.tsx` |

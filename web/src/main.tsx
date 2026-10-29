@@ -20,11 +20,15 @@ import './styles/cong-cu-tang.css';
 import './styles/cap-do.css';
 import './styles/tai-luoi.css';
 import './styles/dien-thoai.css';
+import './styles/man-hinh-chinh.css';
 import { langHienTai } from './i18n/i18n';
+import { dangKySW } from './pwa/dangKySW';
 import { DuAn } from './man/DuAn';
 import { SoanThao } from './man/SoanThao';
+import { theoDoiKhungNhin } from './ui/manHep';
 
 document.documentElement.lang = langHienTai();
+theoDoiKhungNhin();
 
 function App() {
   return (
@@ -38,3 +42,4 @@ function App() {
 }
 
 render(<App />, document.getElementById('app')!);
+dangKySW();

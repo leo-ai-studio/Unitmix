@@ -83,8 +83,12 @@ export function ChonLang() {
   );
 }
 
-/** Nhóm tab có nền trượt: `<b>` tuyệt đối lấy vị trí / rộng của nút đang chọn. Lần đo đầu không trượt. */
-function TabTruot({ lop, nhan, children }: { lop: string; nhan: string; children: ComponentChildren }) {
+/**
+ * Nhóm tab có nền trượt: `<b>` tuyệt đối lấy vị trí / rộng của nút đang chọn. Lần đo đầu không trượt.
+ * Chỉ đo khi đổi tab (`chon`), đổi ngôn ngữ hoặc đổi cỡ (trước đây đo sau MỌI lần vẽ lại thanh trên): đọc offsetLeft
+ * trong useLayoutEffect ép trình duyệt tính bố cục cả trang (gồm bản vẽ SVG) ngay giữa lượt vẽ — ~0,3 s CPU trên điện thoại.
+ */
+function TabTruot({ lop, nhan, chon, children }: { lop: string; nhan: string; chon?: string; children: ComponentChildren }) {
   const nav = useRef<HTMLElement>(null);
   const [vt, setVt] = useState({ l: 0, w: 0, san: false });
   const [lang] = useLang();
@@ -93,7 +97,9 @@ function TabTruot({ lop, nhan, children }: { lop: string; nhan: string; children
     const l = b?.offsetLeft ?? 0, w = b?.offsetWidth ?? 0;
     setVt((o) => (o.l === l && o.w === w ? o : { l, w, san: o.w > 0 }));
   };
-  useLayoutEffect(do_);
+  // lần gắn đầu: để ResizeObserver đo (chạy sau bố cục của khung hình, không ép tính sớm); sau đó đo khi đổi tab
+  const daGan = useRef(false);
+  useLayoutEffect(() => { if (daGan.current) do_(); daGan.current = true; }, [chon, lang]);
   useEffect(() => {
     if (typeof ResizeObserver === 'undefined' || !nav.current) return;
     const ob = new ResizeObserver(do_);
@@ -223,7 +229,7 @@ function BangCap({ m, nut, dong }: { m: MenuCap; nut: HTMLElement; dong: (traFoc
   let nhom: string | undefined;
   return (
     <div class={`bang-cap${lop}`} role="menu" aria-label={m.tieuDe} ref={bang} onKeyDown={phim}
-      style={{ top: `${vt.top}px`, left: `${vt.left}px`, maxHeight: `calc(100vh - ${Math.round(vt.top) + 12}px)` }}>
+      style={{ top: `${vt.top}px`, left: `${vt.left}px`, maxHeight: `calc(var(--vv-h, 100dvh) - ${Math.round(vt.top) + 12}px)` }}>
       {m.ds.length === 0 && <div class="bang-cap-trong">{t('cap.trong')}</div>}
       {m.ds.map((x) => {
         const dau = x.nhom !== undefined && x.nhom !== nhom;
@@ -279,7 +285,7 @@ export function ThanhTren(p: Props) {
       <button class="nut-chu nut-hoan" type="button" aria-label={t('nut.hoanTac')} title={t('nut.hoanTac')} disabled={!p.onHoanTac || p.cheDo === 'chi_xem'} onClick={p.onHoanTac}>↶</button>
       <button class="nut-chu nut-hoan" type="button" aria-label={t('nut.lamLai')} title={t('nut.lamLai')} disabled={!p.onLamLai || p.cheDo === 'chi_xem'} onClick={p.onLamLai}>↷</button>
       {p.buoc && (
-        <TabTruot lop="tab-buoc" nhan={t('buoc.nhom')}>
+        <TabTruot lop="tab-buoc" nhan={t('buoc.nhom')} chon={p.buoc.chon}>
           {p.buoc.ds.map(([k, nhan]) => (
             <button type="button" key={k} aria-pressed={p.buoc!.chon === k} title={nhan} onClick={() => p.buoc!.onChon(k)}>
               <span class="nhan-dai">{nhan}</span><span class="nhan-ngan" aria-hidden="true">{nhanNgan(k, nhan)}</span>
@@ -287,7 +293,7 @@ export function ThanhTren(p: Props) {
           ))}
         </TabTruot>
       )}
-      <TabTruot lop="tab-xem" nhan={t('xem.nhom')}>
+      <TabTruot lop="tab-xem" nhan={t('xem.nhom')} chon={p.cheDoXem}>
         {xem.map(([k, nhan]) => (
           <button type="button" key={k} aria-pressed={p.cheDoXem === k} onClick={() => p.onCheDoXem?.(k)}>{t(nhan)}</button>
         ))}

@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "LEO Unitmix",
+  "short_name": "LEO Unitmix",
+  "description": "Lập cơ cấu căn hộ từ chỉ tiêu quy hoạch — LEO AI",
+  "lang": "vi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#174F52",
+  "background_color": "#F1F0EA",
+  "icons": [
+    { "src": "/brand/pwa_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/pwa_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/pwa_512_maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
