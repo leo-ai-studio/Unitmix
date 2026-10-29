@@ -6,7 +6,7 @@ import {
   type CanMau, type ChiTieuQH, type KhaiDanSo, type Lo, type ToaDat, type ToaMau, type TrangThaiPA,
 } from './kieu';
 import { chuanHoaPA } from './macDinh';
-import { QUY_TAC_DAN_SO, timQuyTac, type BangDanSo, type PhuongPhap } from './quyTacDanSo';
+import { FALLBACK_QG, FALLBACK_QG_LH, QUY_TAC_DAN_SO, timQuyTac, type BangDanSo, type PhuongPhap } from './quyTacDanSo';
 
 const can = (id: string, loai: CanMau['loai'], dt: number, nhom: 'tm' | 'xh' = 'tm'): CanMau =>
   ({ id, ma_goc: id, nhom, loai, vi_tri: 'giua', vi_tri_ma: 'm1', sau_mm: 8500, rong_mm: 7000, ten_vi: id, ten_en: id, dt_tt_m2: dt, dt_tim_m2: dt + 4 });
@@ -68,12 +68,14 @@ describe('5 kiểu quyết định A–E', () => {
     expect(nguoiMotCan(60, 'notm', pp).nguoi).toBe(2);
     expect(nguoiMotCan(60, 'noxh', pp).nguoi).toBe(2.5);
   });
-  it('C — Hà Nội: TĐC áp bảng NOTM', () => {
-    const pp = timQuyTac('hn')!.phuongPhap!.cp;
+  it('C — Hà Nội: NOTM, NOXH theo QĐ 34/2024 Điều 4 khoản 1, 2; TĐC QĐ không quy định → mặc định quốc gia S / 32', () => {
+    const q = quyTacApDung(lo({ tinh: 'hn', giaiDoan: 'cp' }))!;
     expect(timQuyTac('hn')!.kieu).toBe('C');
-    expect(nguoiMotCan(76, 'tdc', pp).nguoi).toBe(nguoiMotCan(76, 'notm', pp).nguoi);
-    expect(nguoiMotCan(76, 'noxh', pp).nguoi).toBe(4);
-    expect(nguoiMotCan(76, 'notm', pp).nguoi).toBe(3);
+    expect(q.theoLoaiHinh.notm.rieng && q.theoLoaiHinh.noxh.rieng).toBe(true);
+    expect(q.theoLoaiHinh.tdc).toMatchObject({ rieng: false, pp: FALLBACK_QG_LH });
+    expect(nguoiMotCan(76, 'notm', q.theoLoaiHinh.notm.pp).nguoi).toBe(3);
+    expect(nguoiMotCan(76, 'noxh', q.theoLoaiHinh.noxh.pp).nguoi).toBe(4);
+    expect(nguoiMotCan(76, 'tdc', q.theoLoaiHinh.tdc.pp).nguoi).toBeCloseTo(76 / 32); // 2,375
   });
   it('D — một bảng chung cho mọi loại hình', () => {
     const pp: PhuongPhap = { kieu: 'bang', bang: { chung: bang([{ den: 60, nguoi: 2 }, { den: Infinity, nguoi: 3 }]) } };
@@ -97,14 +99,54 @@ describe('5 kiểu quyết định A–E', () => {
   });
 });
 
+describe('Hải Dương QĐ 11/2024 · Đồng Nai QĐ 09/2025 (đối chiếu toàn văn vbpl.vn)', () => {
+  it('Hải Dương Điều 3 khoản 2: 45 → 1, 45,01 → 2, 80 → 2, 100 → 3, 120 → 3, 150 → 4, 180 → 5, 181 → 6; NOXH, TĐC cùng bảng', () => {
+    const pp = timQuyTac('hd')!.phuongPhap!.cp;
+    expect([45, 45.01, 80, 100, 120, 150, 180, 181].map((dt) => nguoiMotCan(dt, 'notm', pp).nguoi)).toEqual([1, 2, 2, 3, 3, 4, 5, 6]);
+    expect(nguoiMotCan(100, 'noxh', pp).nguoi).toBe(3);
+    const q = quyTacApDung(lo({ tinh: 'hd', giaiDoan: 'cp' }))!;
+    expect(q).toMatchObject({ fallback: false, tam: false, bq: null }); // 3,0 người/hộ chỉ ở giai đoạn lập quy hoạch
+    expect(q.theoLoaiHinh.tdc.rieng).toBe(true);
+  });
+  it('Hải Dương lập quy hoạch (khoản 1): 71 m² / 35,5 = 2 người; bình quân 3,0 người/hộ', () => {
+    const q = quyTacApDung(lo({ tinh: 'hd', giaiDoan: 'qh' }))!;
+    expect(nguoiMotCan(71, 'notm', q.pp).nguoi).toBeCloseTo(2);
+    expect(q.bq?.so).toBe(3);
+  });
+  it('Hải Dương lô cấp phép: 10 × (2×68→2 + 45→1 + 101→3) = 80', () => {
+    const p = pa(lo({ tinh: 'hd', giaiDoan: 'cp' }));
+    expect(danSoLo(p, p.lo[0], tv).tong).toBe(80);
+  });
+  it('Đồng Nai Điều 4 khoản 3: cùng DT, khác số phòng ở → khác số người', () => {
+    const pp = timQuyTac('dnai')!.phuongPhap!.cp;
+    const n = (dt: number, l: CanMau['loai']) => nguoiMotCan(dt, 'notm', pp, l).nguoi;
+    expect([n(40, '1pn'), n(60, '1pn'), n(60, '2pn'), n(85, '2pn'), n(85, '3pn'), n(110, '3pn'), n(130, '3pn'), n(125, '2pn'), n(130, '2pnp')])
+      .toEqual([1.5, 2, 2.5, 3, 3.5, 4, 5, 3.5, 4.5]);
+    expect(nguoiMotCan(80, 'noxh', pp, '1pn')).toMatchObject({ nguoi: 2, ngoaiBang: 'tren' }); // 1 phòng ở chỉ tới 70 m²
+  });
+  it('Đồng Nai lô cấp phép: 10 × (2×68→2,5 + 45 1PN→1,5 + 101 3PN→4) = 105; lập quy hoạch 62 / 31 = 2', () => {
+    const p = pa(lo({ tinh: 'dnai', giaiDoan: 'cp' }));
+    const k = danSoLo(p, p.lo[0], tv);
+    expect(k.tong).toBeCloseTo(105);
+    expect(k.phuongPhap).toBe('bangPhong');
+    expect(nguoiMotCan(62, 'notm', timQuyTac('dnai')!.phuongPhap!.qh).nguoi).toBeCloseTo(2);
+    expect(quyTacApDung(lo({ tinh: 'dnai', giaiDoan: 'qh' }))!.bq?.so).toBe(3.53);
+  });
+});
+
 describe('fallback và tỉnh chưa có trị số', () => {
   it('tỉnh chưa có QĐ → P = S / 32, không gắn cờ tạm', () => {
     const q = quyTacApDung(lo({ tinh: 'khac', giaiDoan: 'cp' }))!;
     expect(q).toMatchObject({ fallback: true, tam: false });
     expect(nguoiMotCan(96, 'notm', q.pp).nguoi).toBeCloseTo(3);
   });
-  it('tỉnh có số hiệu QĐ nhưng chưa có bảng (Hải Dương) → fallback + cờ tạm', () => {
-    expect(quyTacApDung(lo({ tinh: 'hd', giaiDoan: 'cp' }))).toMatchObject({ fallback: true, tam: true });
+  it('tỉnh chưa có QĐ → mọi loại hình theo mặc định quốc gia, không "theo QĐ tỉnh"', () => {
+    const q = quyTacApDung(lo({ tinh: 'khac', giaiDoan: 'cp' }))!;
+    for (const lh of ['notm', 'noxh', 'tdc'] as const) expect(q.theoLoaiHinh[lh]).toMatchObject({ rieng: false, pp: FALLBACK_QG });
+  });
+  it('Phú Yên: QĐ 05/2025 có công thức nhưng không ghi S_tb → không fallback, vẫn cờ tạm', () => {
+    expect(quyTacApDung(lo({ tinh: 'py', giaiDoan: 'cp' }))).toMatchObject({ fallback: false, tam: true });
+    expect(timQuyTac('py')!.phuongPhap!.cp).toMatchObject({ kieu: 'sTb', tam: true, dieu: expect.stringMatching(/Điều 4/) });
   });
   it('Bà Rịa – Vũng Tàu cũ → quy tắc TP.HCM (QĐ 43/2023 hết hiệu lực theo QĐ 32/2025 Điều 2)', () => {
     const q = quyTacApDung(lo({ tinh: 'brvt', giaiDoan: 'cp' }))!;
@@ -116,6 +158,7 @@ describe('fallback và tỉnh chưa có trị số', () => {
       if (q.id !== 'khac') expect(q.qd).toBeTruthy();
       for (const pp of Object.values(q.phuongPhap ?? {})) {
         if (pp.kieu === 'bang') for (const b of Object.values(pp.bang)) expect(b!.dieu).toMatch(/QĐ/);
+        else if (pp.kieu === 'bangPhong') for (const b of Object.values(pp.phong)) expect(b.dieu).toMatch(/QĐ.*Điều/);
         else expect(pp.dieu).toMatch(/QĐ/);
       }
     }
@@ -153,11 +196,27 @@ describe('dân số từng căn → loại, tòa, lô, dự án', () => {
     expect(k.theoToa.T2.nguoi).toBe(45);
     expect(danSoDuAn(p, tv).tong).toBe(135);
   });
-  it('lô NOXH tự lấy bảng NOXH; khai loại hình TĐC ghi đè', () => {
+  it('Hà Nội lô NOXH tự lấy bảng NOXH (Điều 4 khoản 2): 10 × (2×68→3 + 45→2 + 101→4 ngoài bảng) = 120', () => {
     const p = pa(lo({ tinh: 'hn', giaiDoan: 'cp' }, 'xh'));
-    expect(danSoLo(p, p.lo[0], tv).dong.every((d) => d.loaiHinh === 'noxh')).toBe(true);
-    const p2 = pa(lo({ tinh: 'hn', giaiDoan: 'cp', loaiHinh: 'tdc' }, 'xh'));
-    expect(danSoLo(p2, p2.lo[0], tv).tong).toBe(90);
+    const k = danSoLo(p, p.lo[0], tv);
+    expect(k.dong.every((d) => d.loaiHinh === 'noxh')).toBe(true);
+    expect(k.tong).toBe(120);
+    expect(k.soNgoaiBang).toBe(10);
+    expect(k.theoLoaiHinh.noxh).toMatchObject({ so: 40, nguoi: 120, phuongPhap: 'bang', rieng: true });
+    expect(k.theoLoaiHinh.noxh!.dieu[0]).toMatch(/Điều 4 khoản 2/);
+  });
+  it('Hà Nội khai TĐC → mặc định quốc gia: 10 × (2×68 + 45 + 101) / 32 = 88,125', () => {
+    const p = pa(lo({ tinh: 'hn', giaiDoan: 'cp', loaiHinh: 'tdc' }, 'xh'));
+    const k = danSoLo(p, p.lo[0], tv);
+    expect(k.tong).toBeCloseTo(88.125);
+    expect(k.theoLoaiHinh.tdc).toMatchObject({ so: 40, phuongPhap: 'sTb', rieng: false });
+    expect(k.theoLoaiHinh.tdc!.dieu[0]).toMatch(/2161.*mặc định quốc gia/);
+  });
+  it('Hà Nội bình quân 3,6 chỉ cho nhà ở thương mại: khai NOXH + cách bq vẫn tra bảng NOXH', () => {
+    const p = pa(lo({ tinh: 'hn', giaiDoan: 'cp', cach: 'bq', loaiHinh: 'noxh' }));
+    const k = danSoLo(p, p.lo[0], tv);
+    expect(k.tong).toBe(120);
+    expect(k.dong.every((d) => d.phuongPhap === 'bang')).toBe(true);
   });
   it('cách bình quân người / căn của QĐ (Hà Nội 3,6)', () => {
     const p = pa(lo({ tinh: 'hn', giaiDoan: 'cp', cach: 'bq' }));

@@ -1,7 +1,7 @@
 import { mauToa } from './canThem';
 import { LOAI_CAN, type LoaiCan, type LoaiHinh, type Lo, type ThuVien, type TrangThaiPA } from './kieu';
 import { canCaToa } from './matBang';
-import { FALLBACK_QG, timQuyTac, type BangDanSo, type PhuongPhap, type QuyTacTinh } from './quyTacDanSo';
+import { FALLBACK_QG, FALLBACK_QG_LH, LOAI_HINH, SO_PHONG_O, timQuyTac, type BangDanSo, type PhuongPhap, type QuyTacTinh, type SoPhongO } from './quyTacDanSo';
 
 /**
  * Dân số theo TỪNG CĂN (tài liệu nguồn `quy-tac-tinh-dan-so-chung-cu.md` app cũ, 4 bước): tỉnh cũ → QĐ tỉnh → loại hình +
@@ -12,7 +12,7 @@ import { FALLBACK_QG, timQuyTac, type BangDanSo, type PhuongPhap, type QuyTacTin
  */
 
 export type NgoaiBang = 'duoi' | 'tren' | null;
-export type PhuongPhapApDung = 'bang' | 'sTb' | 'qd83' | 'bq' | 'heSoChung';
+export type PhuongPhapApDung = PhuongPhap['kieu'] | 'bq' | 'heSoChung';
 export type MotCan = { nguoi: number; dieu: string; ngoaiBang: NgoaiBang };
 
 const EPS = 1e-9;
@@ -28,10 +28,21 @@ export function traBang(b: BangDanSo, dt: number): MotCan {
 export const bangTheoLoaiHinh = (pp: Extract<PhuongPhap, { kieu: 'bang' }>, lh: LoaiHinh): BangDanSo =>
   (pp.bang[lh] ?? pp.bang.chung ?? pp.bang.notm)!;
 
-/** Số người của một căn DT `dt` (m² sử dụng) theo phương pháp `pp`. */
-export function nguoiMotCan(dt: number, lh: LoaiHinh, pp: PhuongPhap): MotCan {
+/**
+ * Cột số phòng ở cho `bangPhong`: theo loại căn; không biết loại căn → cột ít phòng nhất có thang chứa DT (cùng tinh thần
+ * "theo DT" khi DT và số phòng không thống nhất).
+ */
+function cotPhong(pp: Extract<PhuongPhap, { kieu: 'bangPhong' }>, dt: number, loai?: LoaiCan): BangDanSo {
+  if (loai) return pp.phong[SO_PHONG_O[loai]];
+  const so = ([1, 2, 3, 4] as SoPhongO[]).find((n) => traBang(pp.phong[n], dt).ngoaiBang === null) ?? 1;
+  return pp.phong[so];
+}
+
+/** Số người của một căn DT `dt` (m² sử dụng) theo phương pháp `pp`; `loai` cần cho bảng theo số phòng ở. */
+export function nguoiMotCan(dt: number, lh: LoaiHinh, pp: PhuongPhap, loai?: LoaiCan): MotCan {
   const duoi: NgoaiBang = dt < 25 - EPS ? 'duoi' : null;
   if (pp.kieu === 'bang') return traBang(bangTheoLoaiHinh(pp, lh), dt);
+  if (pp.kieu === 'bangPhong') return traBang(cotPhong(pp, dt, loai), dt);
   if (pp.kieu === 'sTb') return { nguoi: dt / pp.sTb, dieu: pp.dieu, ngoaiBang: duoi };
   // QĐ 83/2026: ≤ 45 m² → 1 (dưới 25 m² cũng 1, như app cũ); NOXH > 45 → S ÷ 32; NOTM / TĐC > 45–160 → S ÷ 32, > 160 → 5
   if (dt <= 45 + EPS) return { nguoi: 1, dieu: pp.dieu, ngoaiBang: duoi };
@@ -48,7 +59,13 @@ export type QuyTacApDung = {
   fallback: boolean;
   /** Trị số chưa có căn cứ đủ: giá trị tạm, chờ chủ nhiệm chốt. */
   tam: boolean;
-  bq: { so: number; dieu: string; tam?: boolean } | null;
+  /** Bình quân người / căn của QĐ ở giai đoạn đang khai (null nếu QĐ không cho ở giai đoạn này). */
+  bq: { so: number; dieu: string; tam?: boolean; loaiHinh?: LoaiHinh[] } | null;
+  /**
+   * Phương pháp thực áp cho từng loại hình: QĐ tỉnh có quy định cho loại hình đó (`rieng`) thì theo QĐ; không thì mặc định
+   * quốc gia `FALLBACK_QG_LH` (VD TĐC ở Hà Nội).
+   */
+  theoLoaiHinh: Record<LoaiHinh, { pp: PhuongPhap; rieng: boolean }>;
 };
 
 export function quyTacApDung(lo: Lo): QuyTacApDung | null {
@@ -61,7 +78,13 @@ export function quyTacApDung(lo: Lo): QuyTacApDung | null {
   const fallback = pp0 === null;
   // tỉnh có số hiệu QĐ mà chưa có trị số → tạm; tỉnh chưa có QĐ → fallback đúng tài liệu nguồn §3 (không tạm)
   const tam = (fallback && !!ap?.qd) || (pp.kieu === 'sTb' && !!pp.tam) || !ap;
-  return { khai, ap, pp, fallback, tam, bq: ap?.bqCan ?? null };
+  const bq0 = ap?.bqCan ?? null;
+  const bq = bq0 && (!bq0.giaiDoan || bq0.giaiDoan === k.giaiDoan) ? bq0 : null;
+  const theoLoaiHinh = Object.fromEntries(LOAI_HINH.map((lh) => {
+    const rieng = !fallback && (!ap?.loaiHinh || ap.loaiHinh.includes(lh));
+    return [lh, { pp: rieng || fallback ? pp : FALLBACK_QG_LH, rieng }];
+  })) as QuyTacApDung['theoLoaiHinh'];
+  return { khai, ap, pp, fallback, tam, bq, theoLoaiHinh };
 }
 
 /** Loại hình một căn: khai ở lô thì theo khai; không thì căn nhóm XH hoặc lô NOXH → NOXH, còn lại NOTM. */
@@ -78,7 +101,13 @@ export type DongDanSo = {
   nguoi: number;
   dieu: string;
   ngoaiBang: NgoaiBang;
+  /** Phương pháp thực áp cho căn này (theo loại hình). */
+  phuongPhap: PhuongPhapApDung;
+  /** true = theo QĐ tỉnh; false = mặc định quốc gia (QĐ không quy định loại hình này) hoặc hệ số chung. */
+  rieng: boolean;
 };
+/** Tóm tắt theo loại hình: số căn, dân, phương pháp + căn cứ đã áp (không trùng). */
+export type LoaiHinhDanSo = { so: number; nguoi: number; phuongPhap: PhuongPhapApDung; rieng: boolean; dieu: string[] };
 export type NhomDanSo = { so: number; nguoi: number; dtMin: number | null; dtMax: number | null };
 export type KetQuaDanSo = {
   coKhai: boolean;
@@ -87,6 +116,8 @@ export type KetQuaDanSo = {
   /** Từng mẫu căn trên lô (cộng mọi tòa), xếp theo loại rồi DT. */
   dong: DongDanSo[];
   theoLoai: Record<LoaiCan, NhomDanSo>;
+  /** Theo loại hình NOTM / NOXH / TĐC có căn trên lô. */
+  theoLoaiHinh: Partial<Record<LoaiHinh, LoaiHinhDanSo>>;
   theoToa: Record<string, { so: number; nguoi: number }>;
   soCan: number;
   tong: number;
@@ -117,11 +148,18 @@ export function danSoLo(pa: TrangThaiPA, lo: Lo, tv: ThuVien): KetQuaDanSo {
       let d = theoMau.get(id);
       if (!d) {
         const lh = loaiHinhCan(lo, can.nhom);
+        // bình quân người / căn chỉ cho loại hình QĐ ghi (Hà Nội 3,6 chỉ nhà ở thương mại); còn lại theo DT từng căn
+        const dungBq = cach === 'bq' && (!qt!.bq!.loaiHinh || qt!.bq!.loaiHinh.includes(lh));
+        const ppLh = qt?.theoLoaiHinh[lh];
         const mc: MotCan = !qt
           ? { nguoi: heSo, dieu: '', ngoaiBang: null }
-          : cach === 'bq' ? { nguoi: qt.bq!.so, dieu: qt.bq!.dieu, ngoaiBang: null }
-          : nguoiMotCan(can.dt_tt_m2, lh, qt.pp);
-        d = { canId: id, loai: can.loai, loaiHinh: lh, dt: can.dt_tt_m2, so: 0, nguoiMoiCan: mc.nguoi, nguoi: 0, dieu: mc.dieu, ngoaiBang: mc.ngoaiBang };
+          : dungBq ? { nguoi: qt.bq!.so, dieu: qt.bq!.dieu, ngoaiBang: null }
+          : nguoiMotCan(can.dt_tt_m2, lh, ppLh!.pp, can.loai);
+        const pp: PhuongPhapApDung = !qt ? 'heSoChung' : dungBq ? 'bq' : ppLh!.pp.kieu;
+        d = {
+          canId: id, loai: can.loai, loaiHinh: lh, dt: can.dt_tt_m2, so: 0, nguoiMoiCan: mc.nguoi, nguoi: 0, dieu: mc.dieu, ngoaiBang: mc.ngoaiBang,
+          phuongPhap: pp, rieng: !qt ? false : dungBq || ppLh!.rieng,
+        };
         theoMau.set(id, d);
       }
       d.so += n;
@@ -139,8 +177,17 @@ export function danSoLo(pa: TrangThaiPA, lo: Lo, tv: ThuVien): KetQuaDanSo {
     g.dtMin = g.dtMin === null ? d.dt : Math.min(g.dtMin, d.dt);
     g.dtMax = g.dtMax === null ? d.dt : Math.max(g.dtMax, d.dt);
   }
+  const theoLoaiHinh: KetQuaDanSo['theoLoaiHinh'] = {};
+  for (const d of dong) {
+    const h = (theoLoaiHinh[d.loaiHinh] ??= { so: 0, nguoi: 0, phuongPhap: d.phuongPhap, rieng: d.rieng, dieu: [] });
+    h.so += d.so;
+    h.nguoi += d.nguoi;
+    if (d.dieu && !h.dieu.includes(d.dieu)) h.dieu.push(d.dieu);
+  }
+  // mọi căn cùng một phương pháp thực áp (VD khai cách bq nhưng loại hình không được bq) → báo đúng phương pháp đó
+  const ppChung = dong.length > 0 && dong.every((d) => d.phuongPhap === dong[0].phuongPhap) ? dong[0].phuongPhap : phuongPhap;
   return {
-    coKhai: !!qt, phuongPhap, quyTac: qt, dong, theoLoai, theoToa,
+    coKhai: !!qt, phuongPhap: ppChung, quyTac: qt, dong, theoLoai, theoLoaiHinh, theoToa,
     soCan: dong.reduce((a, d) => a + d.so, 0),
     tong: dong.reduce((a, d) => a + d.nguoi, 0),
     canCu: [...new Set(dong.map((d) => d.dieu).filter(Boolean))],

@@ -435,3 +435,21 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 **Kiểm:** web vitest 219/219, worker 9/9, pytest 12/12, `tsc` 0, `vite build` qua; xem trên app 1440×900 và 1200×800.
 
 **Còn dở:** tab Chi phí (dự toán + tài chính, agent Opus); tự xếp tòa TMB + STRETCH MB tầng như app cũ (agent Opus); các điểm chờ chủ nhiệm chốt (mục 6 tài liệu học Architechtures).
+
+## 2026-10-29 · Dân số theo QĐ tỉnh — đối chiếu toàn văn + NOXH / TĐC theo loại hình · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** thay quy tắc "tạm" Hải Dương / Phú Yên / Đồng Nai bằng trị số trong văn bản gốc; NOXH, TĐC tính theo quy định riêng của từng địa phương, chỗ chưa có thì mặc định quốc gia.
+
+**Nguồn:** toàn văn trên vbpl.vn (CSDL quốc gia về pháp luật) — thuvienphapluat chặn bằng captcha, không dùng. Kho "QCVN TCVN" (_DANH-MUC.md) không có trên máy; chỉ có `E:\OneDrive\_QCVN-TCVN`.
+- Hải Dương QĐ 11/2024 (hiệu lực 26/4/2024): Điều 3 khoản 1 (3,0 người/hộ; 35,5 m² sàn/người), khoản 2 bảng chung 45 / 80 / 120 / 150 / 180 → 1…6 người.
+- Đồng Nai QĐ 09/2025 (hiệu lực 01/3/2025): Điều 4 khoản 1 (3,53 người/căn; 31,0 m²/người đô thị, 28,5 nông thôn), khoản 3 bảng theo SỐ PHÒNG Ở + DT → kiểu phương pháp mới `bangPhong` (Studio/1PN → 1 phòng, 2PN/2PN+ → 2, 3PN → 3).
+- Phú Yên QĐ 05/2025: Điều 4 chỉ có P = S / Stb, Stb theo Chương trình phát triển nhà ở tỉnh — QĐ không ghi trị số → giữ tạm 32, cờ tạm.
+- Hà Nội QĐ 34/2024 Điều 4 khoản 1 (TM), khoản 2 (NOXH) khớp bảng cũ; QĐ 39/2026 không sửa Điều 4. QĐ không quy định TĐC → TĐC nay theo mặc định quốc gia S / 32 (trước: bảng TM).
+- TP.HCM QĐ 83/2026 khớp mã cũ (TĐC gộp điểm a cùng TM).
+- QCVN 01:2021, 04:2021 (kho local) không có người/căn riêng cho NOXH / TĐC → mặc định quốc gia `FALLBACK_QG_LH` = 32 m²/người (QĐ 2161).
+
+**Mã:** `QuyTacTinh.loaiHinh` (loại hình QĐ có quy định), `bqCan.giaiDoan / loaiHinh`; `quyTacApDung().theoLoaiHinh` chọn phương pháp từng loại hình; `KetQuaDanSo.theoLoaiHinh`; Dashboard dân số thêm dòng cách tính + căn cứ theo từng loại hình (ghi "mặc định quốc gia" khi QĐ không quy định).
+
+**Kiểm:** `node scripts/kiem.mjs` ĐẠT (web 709, worker 9, pytest 15, tsc, build). Chưa xem trực tiếp trên app (server preview đang chạy là của bản checkout chính).
+
+**Chờ chủ nhiệm chốt:** Stb Phú Yên; 2PN+ = 2 phòng ở (Đồng Nai); mốc 125 m² Đồng Nai (lời văn trùng mốc); dùng mốc đô thị 31,0 cho Đồng Nai.
