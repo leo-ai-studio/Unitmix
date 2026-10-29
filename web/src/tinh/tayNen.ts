@@ -10,7 +10,7 @@ import { doiChoO, doiCongNang, latO } from './doiCan';
 import type { DuLieuMB, LoaiThangBo } from './loiThang';
 import type { ThuVien, ToaDat } from './kieu';
 import type { ViTriCan } from './matBang';
-import { doiChoTay, doiLoaiThangTay, doiThangTay, latTay, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from './thaoTacTay';
+import { doiChoTay, doiLoaiThangTay, doiThangTay, hanhLangTuDong, keoHanhLangTay, latTay, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from './thaoTacTay';
 
 type Tangs = number[] | null;
 /** Bảng thao tác được chạy nền (tên → hàm thuần, ctx đứng đầu). Đối số phải chép được qua structuredClone. */
@@ -25,6 +25,8 @@ export const BANG_TAY = {
   xoaThangTay: (c: Ctx, toa: ToaDat, khoa: string) => xoaThangTay(toa, khoa, c),
   doiLoaiThangTay: (c: Ctx, toa: ToaDat, khoa: string, loai: LoaiThangBo) => doiLoaiThangTay(toa, khoa, loai, c),
   doiThangTay: (c: Ctx, toa: ToaDat, khoa: string, mat: number, sau: string) => doiThangTay(toa, khoa, mat, sau, c),
+  keoHanhLangTay: (c: Ctx, toa: ToaDat, i: number, dau: 0 | 1, d: number) => keoHanhLangTay(toa, i, dau, d, c),
+  hanhLangTuDong: (c: Ctx, toa: ToaDat) => hanhLangTuDong(toa, c),
   /** Gợi ý giữ số căn (tinh/baoThaoTac.ts) — bọc trong object để null "không có gợi ý" khác null "bị huỷ". */
   goiYGiuCan: (c: Ctx, sau: ToaDat, goTN: string[], canTruoc: number, tang: number | null, hanMs: number) => ({ g: goiYGiuCan(sau, goTN, canTruoc, c, tang, hanMs) as GoiYGiuCan | null }),
 } as const;

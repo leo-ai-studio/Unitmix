@@ -356,7 +356,9 @@ export function donKhit(mau: ToaCoMat, vtsGoc: ViTriCan[], bc: Pick<ToaDat, 'can
     // app cũ: dồn về lõi thang máy, thang bộ không còn là mốc); không có lõi kề thì neo đầu gần mốc hơn như cũ
     const loiKe = (dau: boolean) => m.phan_tu.some((q) => q.bang && (dau ? Math.abs(q.a1 - d.a0) <= 200 : Math.abs(q.a0 - d.a1) <= 200));
     const loiDau = loiKe(true), loiCuoi = loiKe(false);
-    const neoDau = Math.abs(chenh) <= KHIT_MM || (loiDau !== loiCuoi ? loiDau : d.a0 - truoc <= sau - d.a1);
+    // đầu neo ghi sẵn khi dồn khít qua thang bộ (loiThang.donQuaThang — thang trượt theo căn, như donKhitMat app cũ)
+    const ghi = (m.phan_tu.find((q) => q.khoa === vtsGoc[d.ds[0]].khoa) as { neo?: 'dau' | 'cuoi' } | undefined)?.neo;
+    const neoDau = Math.abs(chenh) <= KHIT_MM || (ghi ? ghi === 'dau' : loiDau !== loiCuoi ? loiDau : d.a0 - truoc <= sau - d.a1);
     let a = neoDau ? d.a0 : d.a1 - tong;
     d.ds.forEach((i, k) => {
       const v = vtsGoc[i], B = coSo(m.goc_deg, m.truc_mm), a0 = a, a1 = a + rong[k];

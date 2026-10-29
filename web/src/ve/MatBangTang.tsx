@@ -33,6 +33,8 @@ type Props = {
   deBai?: Partial<Record<LoaiCan, number>>;
   /** Sai lệch DT còn coi là đạt (m²). */
   nguongDt: number;
+  /** Khoá ô căn vượt cự ly thoát nạn (lớp Thoát nạn bật): tô viền cảnh báo, không chặn gì. */
+  canVuot?: string[];
   /** Công cụ tay: thang bộ đang chọn, bấm thang (chọn), ô đích đang kéo tới (bóng xem trước), ô đang kéo, hiện tim hành lang. */
   thangKhoa?: string | null;
   onChonThang?: (khoa: string, e: MouseEvent) => void;
@@ -68,7 +70,7 @@ export function soLieuTang(mau: ToaVe, toa: BoCuc, tv: ThuVien) {
 
 /** Mặt bằng tầng điển hình vẽ trong BanVe (toạ độ mm, lật trục y bằng phép biến đổi nhóm). */
 export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKhoa, onChonO, dsChon = [], onMenu, loiTT, loiKhoa, nhanCongNang, deBai, nguongDt,
-  thangKhoa, onChonThang, oDich, dichLoi, oKeo, hienHanhLang = true, choSang }: Props) {
+  thangKhoa, onChonThang, oDich, dichLoi, oKeo, hienHanhLang = true, choSang, canVuot }: Props) {
   const mauDich = dichLoi ? 'var(--warn)' : 'var(--green)';
   const K = KIEU_MB[kieu];
   const { can, loai } = useMemo(() => soLieuTang(mau, toa, tv), [mau, toa.canTheo, toa.canViTri, toa.congNang, toa.latO, tv]);
@@ -224,6 +226,10 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
       )}
       {lop.filter((x) => x.vt.khoa === oKeo).map(({ vt, ranh }) => (
         <path key={`keo${vt.khoa}`} d={ranh} fill="var(--panel)" fill-opacity="0.55" pointer-events="none" />
+      ))}
+      {/* căn vượt cự ly thoát nạn (lớp Thoát nạn bật) — CẢNH BÁO, không chặn thao tác (app cũ c.bad tô đỏ) */}
+      {canVuot && canVuot.length > 0 && lop.filter((x) => canVuot.includes(x.vt.khoa)).map(({ vt, ranh }) => (
+        <path key={`tn${vt.khoa}`} class="can-vuot-tn" d={ranh} vector-effect="non-scaling-stroke" />
       ))}
       {lop.filter((x) => daChon.has(x.vt.khoa)).map(({ vt, ranh }) => (
         <path key={`chon${vt.khoa}`} d={ranh} fill="var(--green)" fill-opacity="0.18" stroke="var(--green)" stroke-width="3" stroke-dasharray={vt.khoa === canKhoa ? undefined : '6 3'}

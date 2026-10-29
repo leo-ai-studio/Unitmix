@@ -4,7 +4,7 @@ import { chanToa, dienTich } from './hinhHoc';
 import { tongKhe } from './khe';
 import { taoThuVien, type CanMau, type MatBangSua, type ToaDat, type ToaMau, type TrangThaiPA } from './kieu';
 import {
-  apMatBang, banSaoMatBang, daiLoi, doKhitLoi, matBangMacDinh, O_THANG_MM, sanhCuaToa, soMangHL, trucQuaSanh, tuChinhMatBang, tuChinhToa,
+  apMatBang, banSaoMatBang, daiLoi, doKhitLoi, hocLogia, matBangMacDinh, O_THANG_MM, sanhCuaToa, soMangHL, trucQuaSanh, tuChinhMatBang, tuChinhToa,
   TUONG_CHUNG_MM, type DuLieuMB, type HinhLoiMB, type ToaMB,
 } from './loiThang';
 import { chuanHoaPA, taoPAMoi } from './macDinh';
@@ -168,8 +168,12 @@ describe('QT-69 · STRETCH đầu cánh không có căn bù: dãy dài ra, nét 
     // so với cùng bố cục chưa kéo (PC-11 có thể đã thêm thang như nhau ở cả hai)
     const toaGoc = tuChinhToa(toa0, m, tv, dl);
     const dtGoc = toaGoc.dtxdM2 ?? m.dtxd_m2;
-    expect(toa1.dtxdM2! - dtGoc).toBeCloseTo((100 * 8500) / 1e6, 1);
-    expect(dienTich(chanToa(m, toa1)) - dienTich(chanToa(m, toaGoc))).toBeCloseTo(0.85, 1);
+    // trừ phần hốc logia đổi theo căn kéo (QT-59b: hốc lùi theo tỉ lệ bề ngang căn STRETCH, nét bao khoét theo)
+    const dtHoc = (x: ToaDat) => hocLogia(m, x.matBang!, dl, tv, { canTheo: {}, canViTri: x.canViTri, congNang: x.congNang })
+      .reduce((a, R) => a + Math.abs(R.reduce((t, p, i) => { const q = R[(i + 1) % R.length]; return t + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2e6, 0);
+    const hocMoi = dtHoc(toa1) - dtHoc(toaGoc);
+    expect(toa1.dtxdM2! - dtGoc).toBeCloseTo((100 * 8500) / 1e6 - hocMoi, 1);
+    expect(dienTich(chanToa(m, toa1)) - dienTich(chanToa(m, toaGoc))).toBeCloseTo(0.85 - hocMoi, 1);
     // không đè sau khi dồn: căn dãy dài ra không chạm mốc
     const hd1 = apMatBang(m, toa1.matBang!, dl);
     expect(donKhit(hd1, viTriCan(hd1, tv), toa1, tv).de).toEqual([]);
