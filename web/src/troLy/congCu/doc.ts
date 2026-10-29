@@ -201,7 +201,7 @@ export const CONG_CU_DOC: CongCu[] = [
   },
   {
     ten: 'get_basement', nhom: 'doc',
-    moTa: 'Kết quả rải hầm của một lô (như màn Hầm): thông số đang dùng, tổng DT sàn hầm, số chỗ ô tô / xe máy, kho, yêu cầu đỗ xe, các mục kiểm QCVN 13 / 04 chưa đạt.',
+    moTa: 'Kết quả rải hầm của một lô (như màn Hầm): thông số đang dùng, tổng DT sàn hầm, số chỗ ô tô / xe máy / sạc / xe lăn so với yêu cầu, kho, đầu làn cụt, phòng kỹ thuật (loại, tầng, DT yêu cầu / đã đặt), khoang cháy (DT, lối ra, cự ly), hộp gió, tầng 1 (cảnh quan, đầu ram), các mục kiểm QCVN 13 / 06 / 04 / 10 chưa đạt.',
     schema: S.doiTuong({ lot_id: S.chu('mặc định lô đang chọn / lô cao tầng đầu tiên') }),
     chay: (v, ng) => {
       const pa = ng.kho.lay(), tv = canTV(ng);
@@ -210,7 +210,15 @@ export const CONG_CU_DOC: CongCu[] = [
       const r = raiHam(pa, tv, lo);
       if (!r) return { lo: lo.id, ket_qua: null, ghi_chu: 'chưa rải được hầm (lô chưa có tòa / ranh)' };
       return {
-        lo: lo.id, so_tang: r.ts.soTang, tong: { dt_san_m2: tron(r.tong.dtSan, 0), cho_oto: r.tong.soCho, xe_may_m2: tron(r.tong.dtXeMay, 0), kho: r.tong.soKho },
+        lo: lo.id, so_tang: r.ts.soTang, tong: { dt_san_m2: tron(r.tong.dtSan, 0), cho_oto: r.tong.soCho, xe_may_m2: tron(r.tong.dtXeMay, 0), kho: r.tong.soKho,
+          xe_may: r.tong.soXeMay, cho_sac: r.tong.soSac, xe_lan: r.tong.soXeLan, dau_lan_cut: r.tong.soCutDuong },
+        yeu_cau_cho: r.yeuCauCho,
+        phong_ky_thuat: (r.phongCT ?? []).map((p) => ({ loai: p.loai, ma: p.ma, tang: p.tang, dt_yeu_cau_m2: tron(p.dt, 1), tam: p.tam, can_cu: p.canCu,
+          dt_dat_m2: tron(r.tang.flatMap((x) => x.phong).filter((q) => q.ma === p.ma).reduce((a, q) => a + q.dt, 0), 1) })),
+        khoang_chay: (r.khoang ?? []).map((k) => ({ so: k.so + 1, dt_m2: tron(k.dt, 0), loi_ra: k.thang.length, cu_ly_max_m: Number.isFinite(k.cuLyMax) ? tron(k.cuLyMax, 1) : null })),
+        thang_thoat_nan: { loi: r.thang.filter((x) => x.nguon === 'loi').length, them: r.thang.filter((x) => x.nguon === 'them').length, chung_hai_khoang: r.thang.filter((x) => x.chung).length },
+        thong_gio: (r.thongGio ?? []).map((g) => ({ khoang: g.khoang + 1, q_hut_m3h: tron(g.qHut, 0), ong_thai_m2: tron(g.dtOngThai, 2), ong_cap_m2: tron(g.dtOngCap, 2), louver_m2: tron(g.dtLouver, 1), da_dat: g.daDat })),
+        tang_1: r.t1 ? { dt_canh_quan_m2: tron(r.t1.dtCanhQuan, 0), dt_lo_m2: tron(r.t1.dtLo, 0), dau_ram_toi_duong_m: r.t1.kcDuong === null ? null : tron(r.t1.kcDuong, 1), mieng_gio_duoi_thap: r.t1.gioDuoiToa } : null,
         yeu_cau: { oto: tron(r.yeuCau.tong, 0), xe_may: tron(r.yeuCau.xeMay, 0) }, ty_le: { do_xe: tron(r.tyLe.doXe, 3), ky_thuat: tron(r.tyLe.kyThuat, 3) },
         chua_dat: r.kiem.filter((k) => k.muc !== 'ok').map((k) => ({ k: k.khoa, dat: tron(k.dat), muc_tieu: tron(k.mucTieu), chieu: k.chieu, muc: k.muc, can_cu: k.canCu })),
         thong_so: { caoTang: r.ts.caoTang, nhip: r.ts.nhip, rongLan: r.ts.rongLan, choDai: r.ts.choDai, choRong: r.ts.choRong, lui: r.ts.lui, tyLeKyThuat: r.ts.tyLeKyThuat, ram: r.ts.ram.loai },

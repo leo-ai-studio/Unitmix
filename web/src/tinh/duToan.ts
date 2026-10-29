@@ -124,7 +124,7 @@ export function tinhKhoiLuong(
     const tongCanLo = toa.reduce((a, x) => a + x.tongCan, 0);
 
     // Hầm: rải được thì lấy số đếm; không thì ước theo DT hầm như chiTieu.ts (chỉ lô có tòa).
-    let dtHam = 0, soChoOto = 0, dtXeMay = 0, soKho = 0;
+    let dtHam = 0, soChoOto = 0, dtXeMay = 0, soKho = 0, soXeMayRai: number | null = null;
     let nguonHam: KhoiLuongLo['nguonHam'] = 'khong';
     const soTangHam = toaLo.length ? (lo.temDat.chiTieu.tangHam ?? ts.soTang) : 0;
     if (soTangHam > 0) {
@@ -135,6 +135,7 @@ export function tinhKhoiLuong(
         soChoOto = r.tong.soCho;
         dtXeMay = r.tong.dtXeMay;
         soKho = r.tong.soKho;
+        soXeMayRai = r.tong.soXeMay ?? null; // đợt 2: đếm ô xe máy đã rải
       } else {
         nguonHam = 'uoc';
         dtHam = soTangHam * (ts.ranh && ts.ranh.length >= 3 ? dienTich(ts.ranh) : dtLo);
@@ -146,7 +147,7 @@ export function tinhKhoiLuong(
     ds.push({
       loId: lo.id, kyHieu: lo.temDat.kyHieu, dtLo, dtChiemDat, dtSan: Math.max(0, dtLo - dtChiemDat),
       dtDe, chuViDe, dtMatNgoaiDe: chuViDe * caoDe,
-      dtHam, soChoOto, dtXeMay, soXeMay: Math.floor(dtXeMay / M2_MOI_XE_MAY), soKho, nguonHam, toa,
+      dtHam, soChoOto, dtXeMay, soXeMay: soXeMayRai ?? Math.floor(dtXeMay / M2_MOI_XE_MAY), soKho, nguonHam, toa,
     });
   }
 

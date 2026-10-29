@@ -26,9 +26,9 @@ export const RAM_MAC_DINH: RamHam = {
   x: null, y: null, gocDo: null, dai: 24, rong: 6.5, loai: 'thang_mai', docNgang: 2, coNguoiDi: false, viaHe: 0,
   doanChuyen: 3.6, doanThangDuoi: 6, doanThangTren: 6, banKinh: 6,
 };
-/** Khu xe điện theo dự thảo SĐ 01:2026 QCVN 04: mặc định tắt. */
+/** Khu xe điện theo dự thảo SĐ 01:2026 QCVN 04 / QCVN 07-11:2025 (chỉ cảnh báo). Đợt 2: PA mới bật sẵn, số chỗ = 10% tổng chỗ (`tyLeOto`); PA cũ giữ giá trị đã lưu. */
 export const XE_DIEN_MAC_DINH: KhuXeDien = {
-  bat: false, tang: 1, choOto: 0, choXeMay: 0, vungOto: 25, vungXeMay: 50, dtXeMayMoiCho: 2.5, khoangCach: 2, tuongNgan: false, tuDoiPinTang: null,
+  bat: true, tang: 1, choOto: 0, choXeMay: 0, vungOto: 25, vungXeMay: 50, dtXeMayMoiCho: 2.5, khoangCach: 2, tuongNgan: false, tuDoiPinTang: null,
   tyLeOto: 10,
 };
 /** Thông số hầm mặc định (giá trị tạm, chờ chủ nhiệm chốt). Chỗ đỗ 2,5 × 5 m ≥ tối thiểu 2,3 × 5 m của QCVN 13:2018 2.2.1.25. */

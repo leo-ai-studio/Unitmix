@@ -536,7 +536,7 @@ export function raiHamTinh(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaH
   for (let vv = v0Luoi; vv < bbR[3]; vv += modDay) dayCho.push(vv, vv + d + lan);
   // Dải làn (để thang / phòng / hộp gió không đặt lên làn), bỏ hai đầu u (dải chỗ quay + đường ngang).
   const daiLan: Diem[][] = [];
-  for (let vv = v0Luoi + d; vv < bbR[3]; vv += modDay) daiLan.push(hcnUv(ht, bbR[0] + d + 0.5, vv, bbR[2] - d - 0.5, vv + lan));
+  for (let vv = v0Luoi + d; vv < bbR[3]; vv += modDay) daiLan.push(hcnUv(ht, bbR[0] + d + 0.5, vv + 0.25, bbR[2] - d - 0.5, vv + lan - 0.25));
 
   // Khoang cháy + thang thoát nạn (chung mọi tầng: cùng ranh, cùng lõi).
   const { khoang, tuong, catU } = chiaKhoang(ranh, ht, bbR, ts.dtKhoangMax, { v0: v0Luoi, mod: modDay });
@@ -634,8 +634,11 @@ export function raiHamTinh(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaH
       for (let i = 0; i < 6; i++) {
         xm = catDai(ranh, goc, u, bb, muc);
         choXeMay = xm.manh.filter((p) => dtCoDau(p) > 0).flatMap((p) => raiChoDo(p, coDinhCot, tsXM, { goc, yeuCauLan: true }).cho);
-        if (ts.dtXeMay != null || choXeMay.length >= yeuCauCho.xeMay || xm.u1 >= bb[2] || muc >= dtSan * 0.7) break;
-        muc = Math.min(dtSan * 0.7, muc * Math.max(1.08, (yeuCauCho.xeMay / Math.max(1, choXeMay.length)) * 1.03));
+        if (ts.dtXeMay != null || xm.u1 >= bb[2] || muc >= dtSan * 0.7) break;
+        const dtCo = dtTru(xm.manh, [...loi, ...cot]);
+        const thieuSo = yeuCauCho.xeMay / Math.max(1, choXeMay.length), thieuDt = yeuCau.xeMay / Math.max(1, dtCo);
+        if (thieuSo <= 1 && thieuDt <= 1) break;
+        muc = Math.min(dtSan * 0.7, muc * Math.max(1.02, Math.max(thieuSo, thieuDt) * 1.01));
       }
     }
     u = xm.u1;
