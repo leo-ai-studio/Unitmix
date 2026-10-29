@@ -54,11 +54,15 @@ export function sanHanhLangNgoai(mau: MauToa3D): Diem[][] {
 
 /** Ranh tum lõi / buồng thang của một mặt bằng (bỏ dải lõi `bang` — chỉ là mốc dồn khít, không phải khối thật). */
 export function ranhTum(mau: DuLieuToa['mau'], loi: Map<string, LoiHinh>, idLoi: (b: string) => string): Diem[][] {
-  const kq: Diem[][] = [];
+  return ranhTumCo(mau, loi, idLoi).map((r) => r.pts);
+}
+/** Như `ranhTum` (mm, toạ độ mặt tòa) kèm cờ thang bộ (khối `loi-tb-*`: N2 / N3) để tô trục thang khác lõi. */
+export function ranhTumCo(mau: DuLieuToa['mau'], loi: Map<string, LoiHinh>, idLoi: (b: string) => string): { pts: Diem[]; thang: boolean }[] {
+  const kq: { pts: Diem[]; thang: boolean }[] = [];
   for (const m of mau.mat) for (const q of m.phan_tu) {
     if (q.loai === 'can' || q.bang) continue;
-    const l = loi.get(idLoi(q.block));
-    if (l?.bao_tuong_mm) kq.push(ranhLoi(l.bao_tuong_mm, q));
+    const id = idLoi(q.block), l = loi.get(id);
+    if (l?.bao_tuong_mm) kq.push({ pts: ranhLoi(l.bao_tuong_mm, q), thang: id.startsWith('loi-tb-') });
   }
   return kq;
 }
