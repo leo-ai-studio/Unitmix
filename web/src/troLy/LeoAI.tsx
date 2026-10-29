@@ -501,7 +501,7 @@ export function LeoAI(p: PropsLeo) {
             <NutNho k="leoKem" nhan={t('leo.dinhKem')} tat={chay} onClick={() => tepRef.current?.click()} />
             <select class="leo-chon-mh" aria-label={t('leo.moHinh')} value={`${moHinh}|${nghiCuoc}`} disabled={chay}
               onChange={(e) => { const [m, n] = e.currentTarget.value.split('|'); datMoHinhCuoc(m as MaMoHinh, n as MucNghi); }}>
-              {DS_MO_HINH.map((m) => NGHI.map(([n, nn]) => <option key={`${m.id}|${n}`} value={`${m.id}|${n}`}>{m.ten.replace('Claude ', '')} · {t(nn)}</option>))}
+              {DS_MO_HINH.map((m) => NGHI.map(([n, nn]) => <option key={`${m.id}|${n}`} value={`${m.id}|${n}`} title={t(m.moTa)}>{m.ten.replace('Claude ', '')} · {t(nn)}</option>))}
             </select>
             {cai.moHinh === 'tu_chon' && !cuoc?.moHinh && <span class="leo-the">{t('leo.tuChon')}</span>}
             <span class="gian" />

@@ -514,7 +514,7 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 - Worker: `worker/src/ai.ts` (`GET /api/ai/trang-thai`, `POST /api/ai/v1/messages`), migration `0002_ai_luot.sql`.
 - `scripts/leo_ai_e2e.mjs` (E2E mô hình giả, ảnh `docs/anh/tro-ly/`), `scripts/kiem_man_hep.mjs` thêm hộp `leo-ai`.
 
-**Kiểm:** web vitest (công cụ 50 ca + vòng 11 + gợi ý 6 + markdown 3 + kho 2), worker 14/14 (5 mới), `tsc` 0; E2E Leo AI ĐẠT (1440×900 + 390×844); `kiem_man_hep.mjs` 390 / 768 / 844 / 1440 ĐẠT; `node scripts/kiem.mjs` — xem dưới.
+**Kiểm:** web vitest (công cụ 50 ca + vòng 11 + gợi ý 6 + markdown 3 + kho 2), worker 14/14 (5 mới), `tsc` 0; E2E Leo AI ĐẠT (1440×900 + 390×844); `kiem_man_hep.mjs` 390 / 768 / 844 / 1440 ĐẠT; `node scripts/kiem.mjs` ĐẠT (tsc, web 799, worker 14, pytest 15, build); `kiem_man_hep.mjs` đủ 7 khung ĐẠT (hộp leo-ai đạt mọi khung).
 
 **Chủ app phải làm:** `npx wrangler secret put ANTHROPIC_API_KEY` và `npx wrangler d1 migrations apply unitmix --remote` (bảng `ai_luot`). Không đặt thì người dùng dán khoá riêng.
 
