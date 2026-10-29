@@ -1,6 +1,7 @@
 import { t } from '../i18n/i18n';
 import { danSoDuAn, type KetQuaDanSo } from '../tinh/danSo';
 import { LOAI_CAN, type Lo, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
+import { LOAI_HINH } from '../tinh/quyTacDanSo';
 import { MucGap } from './MucGap';
 import { fmtSo } from './so';
 import './dan-so.css';
@@ -47,6 +48,26 @@ function CachTinh({ k, lo }: { k: KetQuaDanSo; lo: Lo }) {
   );
 }
 
+/** Cách tính + căn cứ đang áp cho từng loại hình có căn trên lô (TM / XH / TĐC); loại hình QĐ không quy định ghi "mặc định quốc gia". */
+function TheoLoaiHinh({ k }: { k: KetQuaDanSo }) {
+  if (!k.coKhai) return null;
+  const ds = LOAI_HINH.filter((lh) => k.theoLoaiHinh[lh]);
+  if (!ds.length) return null;
+  return (
+    <ul class="ds-lh" aria-label={t('ds.theoLh')}>
+      {ds.map((lh) => {
+        const h = k.theoLoaiHinh[lh]!;
+        return (
+          <li key={lh} title={h.dieu.join('\n')}>
+            <b>{t(`ds.lh.${lh}`)}</b> · {t(`ds.pp.${h.phuongPhap}`)} · <span class={h.rieng ? '' : 'canh-bao'}>{t(h.rieng ? 'ds.lhRieng' : 'ds.lhQG')}</span>
+            <small class="muted"> — {h.dieu.join(' · ')}</small>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 /**
  * Dashboard dân số của lô (panel phải mục chỉ tiêu): vòng tỉ lệ dân theo loại căn, tổng dân, dân / ngưỡng QH (thanh, vượt tô
  * `--warn`), người / căn bình quân; bảng chi tiết từng mẫu căn và căn cứ. Hàm tính: `tinh/danSo.ts`.
@@ -81,6 +102,7 @@ export function DashDanSo({ pa, tv, lo }: { pa: TrangThaiPA; tv: ThuVien | null;
         </div>
       </div>
       <CachTinh k={k} lo={lo} />
+      <TheoLoaiHinh k={k} />
       {k.soNgoaiBang > 0 && <p class="ds-ghi canh-bao" title={t('gt.ds.ngoaiBang')}>{t('ds.ngoaiBang').replace('{n}', fmtSo(k.soNgoaiBang))}</p>}
       <div class="ds-bang" role="table" aria-label={t('ds.vong')}>
         <div class="ds-hang dau" role="row"><span>{t('ds.cot.loai')}</span><span>{t('ds.cot.soCan')}</span><span title={t('ds.dtDung')}>{t('ds.cot.dt')}</span><span>{t('ds.cot.dan')}</span><span>%</span></div>
