@@ -325,6 +325,7 @@
   "ssm.theoLo": "Theo chỉ tiêu, cơ cấu, dân số lô {lo}",
   "ssm.moTa": "Mỗi mẫu dựng thành một tòa ảo (không đặt lên Tổng mặt bằng), chạy đúng tự chỉnh của app (thang bộ PC-11, lõi, gỡ căn vượt cự ly) rồi đo tầng điển hình. Biến thể \"tối ưu + STRETCH\" = mẫu sau Tối ưu cơ cấu có đổi bề ngang / STRETCH (như nút ở màn Tầng).",
   "ssm.chonMau": "Mẫu so sánh",
+  "ssm.dangChon": "Đang chọn {n} mẫu: {ds}",
   "ssm.ho": "Họ mẫu",
   "gt.ssm.ho": "Chọn cả họ cùng dạng hình (VD các cách sắp lõi thang L1, L2, L3)",
   "ssm.dang": "Dạng {h}",

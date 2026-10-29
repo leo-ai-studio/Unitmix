@@ -202,7 +202,8 @@ export function DashDanSo({ pa, tv, lo, sua, chiXem, moCan }: {
             <span>{t('ds.cot.nguoiCan')}</span><span>{t('ds.cot.dan')}</span><span>{t('ds.cot.lh')}</span>
           </div>
           {k.dong.map((d) => (
-            <div class={`ds-hang${d.ngoaiBang ? ' ngoai' : ''}`} role="row" key={d.canId} title={d.dieu || t('ds.pp.heSoChung')}>
+            <div class={`ds-hang${d.ngoaiBang ? ' ngoai' : ''}`} role="row" key={d.canId}
+              title={(d.dieu || t('ds.pp.heSoChung')) + (d.lamTron && d.satMoc ? `\n${t('ds.lamTronAp').replace('{n}', fmtSo(k.satMoc.dungSai, { thapPhan: 2 }))}: ${fmtSo(d.dt, { thapPhan: 2 })} → ${fmtSo(d.satMoc.dtGoiY, { thapPhan: 2 })} m²` : '')}>
               <span title={tv.can.get(d.canId)?.ten_vi ?? d.canId}><i class="o-mau" style={{ background: `var(--u-${d.loai})` }} /> {tv.can.get(d.canId)?.ten_vi.split(' · ')[0] ?? d.canId}</span>
               <span>{fmtSo(d.so)}</span>
               <span>{fmtSo(d.dt, so1)}</span>

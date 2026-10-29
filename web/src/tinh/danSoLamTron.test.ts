@@ -127,7 +127,8 @@ describe('dân số lô có làm tròn', () => {
     expect(k.satMoc.bat).toBe(true);
     const c2 = k.dong.find((d) => d.canId === 'c2')!;
     expect(c2).toMatchObject({ nguoiMoiCan: 2, lamTron: true, dt: 70.18 });
-    expect(c2.dieu).toMatch(/làm tròn DT 70.18 → 70 m²/);
+    expect(c2.satMoc!.dtGoiY).toBe(70);
+    expect(k.canCu).toEqual(['QĐ 34/2024/QĐ-UBND Hà Nội, Điều 4 khoản 1 (nhà ở thương mại)']);
     expect(tinhChiTieu(pa(l), tvGia).theoLo.A.dong.find((d) => d.khoa === 'danSo')!.dat).toBe(90);
   });
   it('dung sai 1,0: thêm 3PN 101 (4 → 3), 2 tòa: (20×2 + 10×1 + 10×3) × 2 = 160', () => {

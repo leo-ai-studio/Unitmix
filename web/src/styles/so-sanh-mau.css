@@ -10,14 +10,16 @@
 .ss-mau .ssm-ho { display: flex; gap: 6px; flex-wrap: wrap; }
 .ss-mau .ssm-chip { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 3px 11px; font-size: 12px; color: var(--ink); cursor: pointer; }
 .ss-mau .ssm-chip[aria-pressed='true'] { border-color: var(--green); background: color-mix(in srgb, var(--green) 10%, var(--panel)); color: var(--green); font-weight: 600; }
+.ss-mau .ssm-mau-gap summary { cursor: pointer; font-size: 12px; color: var(--green); margin-bottom: 6px; }
 .ss-mau .ssm-mau { display: flex; flex-wrap: wrap; gap: 6px; }
 .ss-mau .ssm-mau-o { flex-direction: row; align-items: center; gap: 5px; padding: 3px 9px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; cursor: pointer; }
 .ss-mau .ssm-mau-o.bat { border-color: var(--green); background: color-mix(in srgb, var(--green) 6%, var(--panel)); }
 .ss-mau .ssm-mau-o input { width: auto; padding: 0; margin: 0; accent-color: var(--green); }
-.ss-mau .o-tg { padding: 0; }
+.ss-mau .o-tg { padding: 0; flex-direction: row; align-items: center; gap: 6px; font-size: 12px; }
+.ss-mau input[type='checkbox'] { min-width: 0; width: auto; margin: 0; padding: 0; accent-color: var(--green); }
 .ss-mau .o-so { flex-direction: row; align-items: center; gap: 6px; font-size: 12px; }
 .ss-mau .o-so-nhap { display: inline-flex; align-items: center; gap: 4px; }
-.ss-mau .o-so input { width: 58px; padding: 4px 6px; }
+.ss-mau .o-so input { width: 58px; min-width: 0; padding: 4px 6px; }
 .ss-mau .ssm-muc { font-size: 12px; }
 .ss-mau .ssm-yc-o { gap: 6px; }
 .ss-mau .ssm-yc-o > span { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--green); font-size: 13px; }
@@ -49,7 +51,7 @@
 .ss-mau .ssm-bang thead th { background: color-mix(in srgb, var(--green) 8%, var(--panel)); position: sticky; top: 0; }
 .ss-mau .ssm-bang tr.top td:first-child { color: var(--green); font-weight: 700; }
 .ss-mau .ssm-sap { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; white-space: nowrap; }
-.ss-mau .ssm-ten { text-align: left; }
+.ss-mau .ssm-ten, .ss-mau .ssm-bang th.ssm-ten { text-align: left; }
 .ss-mau td.ssm-ten { display: flex; align-items: center; gap: 6px; }
 .ss-mau .ssm-ten span { display: flex; flex-direction: column; text-align: left; }
 .ss-mau .ssm-thanh { display: inline-flex; width: 70px; height: 8px; border-radius: 4px; overflow: hidden; background: var(--line); vertical-align: middle; margin-right: 4px; }

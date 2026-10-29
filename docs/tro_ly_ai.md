@@ -32,7 +32,7 @@ congCu/{doc,tmb,tang,khac}.ts ──► NguCanh (congCu/nguCanh.ts) ──► ng
 |---|---|
 | Đọc | `get_state`, `get_kpi` (project / lot / floor), `get_floor_plan`, `list_templates` (towers / units, ứng viên đổi căn), `check_rules` (chỉ tiêu QH, LO-01/02/05, QCVN 04, thang N2+N3), `get_cost`, `get_population`, `get_basement`, `compare_pas` |
 | Điều hướng | `navigate` (màn TMB / Tầng / Hầm, 2D / 3D / Chi phí, lô, tòa, tầng, ô, tầng hầm), `zoom_to_fit` |
-| TMB | `suggest_arrangements`, `apply_arrangement`, `batch_arrange`, `add_tower`, `update_tower` (x, y, góc, tầng, đế, đổi mẫu), `transform_towers` (dời / xoay / lật nhóm), `duplicate_towers`, `delete_towers`, `lock_towers`, `set_road_edges`, `add_lot`, `update_lot` (ký hiệu, chức năng, chỉ tiêu, cơ cấu mục tiêu, khai dân số tỉnh), `update_coefficients` |
+| TMB | `suggest_arrangements`, `apply_arrangement`, `batch_arrange`, `add_tower`, `update_tower` (x, y, góc, tầng, đế, đổi mẫu), `transform_towers` (dời / xoay / lật nhóm), `duplicate_towers`, `delete_towers`, `lock_towers`, `set_road_edges`, `add_lot`, `update_lot` (ký hiệu, chức năng, chỉ tiêu, cơ cấu mục tiêu, khai dân số tỉnh, `round_area` làm tròn DT khi tính dân), `recommend_tower_shapes` (so sánh / gợi ý dạng tòa không đặt lên TMB — tiêu chí có cấu trúc, `show_in_app` mở hộp So sánh mẫu tòa), `update_coefficients` |
 | Tầng | `change_units` (theo unit_id hoặc loại căn, nhiều ô một bước), `swap_units`, `add_unit`, `delete_units`, `flip_units`, `set_cell_function`, `stairs` (add / delete / move / set_type N2·N3 / reset_auto), `optimize_floor` (PC-11 + cơ cấu), `reset_floor_units`, `stretch_unit`, `set_floor_mix_target`, `repack_floor` |
 | Khác | `update_basement`, `update_cost`, `manage_pa` (nhân bản / đổi tên / tạo / xoá có xác nhận / mở), `export_file` (xls có xác nhận, cad mở hộp), `undo`, `redo` |
 | Dự phòng | `ui_snapshot` (nút / ô nhập đang hiện, id ổn định theo vùng + vai trò + nhãn), `ui_click`, `ui_set_value` — bấm được mọi nút như người dùng khi chưa có công cụ riêng |
@@ -97,7 +97,7 @@ Cổng khoá chung (`worker/src/ai.ts`): chỉ dự án mở bằng mã sửa đ
 
 ## Chi phí (ước)
 
-Một câu sửa điển hình 5–6 lượt gọi: mỗi lượt gửi lại lời hệ thống + 45 công cụ (~12.000 token, đọc từ cache sau lượt đầu: 0,1× giá vào) + hội thoại. Ví dụ Sonnet 5.5: lượt đầu ghi cache ~12k × $2,5/MTok ≈ $0,03; các lượt sau ~1–3k token mới + ~12k đọc cache ($0,2/MTok) + 200–500 token ra ≈ $0,01 / lượt → cả câu ≈ $0,06–0,10. Haiku rẻ hơn ~20 lần, Opus đắt gấp đôi Sonnet. Đặt trần lượt / ngày ở Worker nếu dùng khoá chung.
+Một câu sửa điển hình 5–6 lượt gọi: mỗi lượt gửi lại lời hệ thống + 46 công cụ (~12.000 token, đọc từ cache sau lượt đầu: 0,1× giá vào) + hội thoại. Ví dụ Sonnet 5.5: lượt đầu ghi cache ~12k × $2,5/MTok ≈ $0,03; các lượt sau ~1–3k token mới + ~12k đọc cache ($0,2/MTok) + 200–500 token ra ≈ $0,01 / lượt → cả câu ≈ $0,06–0,10. Haiku rẻ hơn ~20 lần, Opus đắt gấp đôi Sonnet. Đặt trần lượt / ngày ở Worker nếu dùng khoá chung.
 
 ## Còn hạn chế
 

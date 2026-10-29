@@ -32,8 +32,9 @@
 .ds-khai-ghi { margin: 0; font-size: 11px; }
 /* Làm tròn DT khi tính dân + căn sát mốc dải (KhaiDanSo, DashDanSo `SatMocDS`) */
 .ds-lam-tron { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-.ds-lam-tron .o-so { flex: 0 1 auto; }
-.ds-lam-tron .o-so input { width: 64px; }
+.ds-lam-tron .o-so { flex: 0 1 auto; flex-direction: row; align-items: center; gap: 6px; }
+.ds-lam-tron .o-tg { padding-left: 0; padding-right: 0; }
+.ds-lam-tron .o-so input { width: 64px; min-width: 0; }
 .ds-sat-moc summary { display: flex; align-items: center; gap: 4px; }
 .ds-sat-moc summary .bt-svg { width: 16px; height: 16px; flex: none; }
 .ds-sm-giam { margin-left: auto; color: var(--green); font-variant-numeric: tabular-nums; }

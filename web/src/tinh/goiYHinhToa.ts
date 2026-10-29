@@ -222,7 +222,7 @@ export function xepHang(ds: KetQuaMau[], yc: YeuCauMau): HangMau[] {
 /** Giá trị hiển thị của tiêu chí (để ghép câu ưu / nhược). */
 function giaTri(r: KetQuaMau, tc: TieuChi): string | number {
   switch (tc) {
-    case 'hieuSuat': return r.hieuSuat === null ? '—' : Math.round(r.hieuSuat * 1000) / 10;
+    case 'hieuSuat': return r.hieuSuat === null ? '—' : Math.round(r.hieuSuat * 10000) / 100;
     case 'coCau': return Math.round(r.lech * 10) / 10;
     case 'thoatNan': return r.vuot ?? '—';
     case 'loiGon': return r.tyLeLoi === null ? '—' : Math.round(r.tyLeLoi * 1000) / 10;
@@ -242,9 +242,11 @@ export function uuNhuoc(r: HangMau, ds: HangMau[], yc: YeuCauMau): { uu: Nhan[];
   const tcs = TIEU_CHI.filter((tc) => yc.trongSo[tc] > 0 && r.diem.theoTC[tc] !== undefined).sort((a, b) => yc.trongSo[b] - yc.trongSo[a]);
   for (const tc of tcs) {
     const v = r.diem.theoTC[tc]!;
-    const tot = ds.every((x) => (x.diem.theoTC[tc] ?? -1) <= v + 1e-9);
+    // "tốt nhất" chỉ khi hơn hẳn ít nhất một mẫu; mọi mẫu bằng nhau thì tiêu chí không phân biệt → không kể là ưu
+    const tot = ds.every((x) => (x.diem.theoTC[tc] ?? -1) <= v + 1e-9) && ds.some((x) => (x.diem.theoTC[tc] ?? -1) < v - 1e-9);
+    const ngang = ds.length > 1 && ds.every((x) => Math.abs((x.diem.theoTC[tc] ?? -1) - v) < 1e-9);
     const p = { v: giaTri(r, tc), d: Math.round(v) };
-    if (v >= 75 || (tot && v >= 50 && ds.length > 1)) uu.push({ k: `gh.uu.${tc}`, p: { ...p, tot: tot && ds.length > 1 ? 1 : 0 } });
+    if (!ngang && (v >= 75 || (tot && v >= 50))) uu.push({ k: `gh.uu.${tc}`, p: { ...p, tot: tot ? 1 : 0 } });
     else if (v < 45) nhuoc.push({ k: `gh.nhuoc.${tc}`, p });
   }
   if (r.hieuSuat !== null && r.hieuSuat < yc.hsMin && !nhuoc.some((x) => x.k === 'gh.nhuoc.hieuSuat'))

@@ -325,6 +325,7 @@
   "ssm.theoLo": "Using the targets, mix and population rule of lot {lo}",
   "ssm.moTa": "Each template becomes a virtual tower (not placed on the site plan); the app's own auto-adjust runs (PC-11 stairs, cores, removing units beyond escape distance) and the typical floor is measured. The \"optimised + STRETCH\" variant = the template after Optimise mix with width changes / STRETCH (as on the Floor screen).",
   "ssm.chonMau": "Templates to compare",
+  "ssm.dangChon": "{n} templates selected: {ds}",
   "ssm.ho": "Template family",
   "gt.ssm.ho": "Pick the whole family of one shape (e.g. the core/stair layouts L1, L2, L3)",
   "ssm.dang": "{h} shape",

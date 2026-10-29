@@ -239,12 +239,11 @@ export function danSoLo(pa: TrangThaiPA, lo: Lo, tv: ThuVien): KetQuaDanSo {
         const ppLh = qt?.theoLoaiHinh[lh];
         const sm = qt && !dungBq ? satMoc(can.dt_tt_m2, lh, ppLh!.pp, can.loai, lt.dungSai) : null;
         const lamTron = !!sm && lt.bat;
-        const mc0: MotCan = !qt
+        const mc: MotCan = !qt
           ? { nguoi: heSo, dieu: '', ngoaiBang: null }
           : dungBq ? { nguoi: qt.bq!.so, dieu: qt.bq!.dieu, ngoaiBang: null }
           : nguoiMotCan(lamTron ? sm!.dtGoiY : can.dt_tt_m2, lh, ppLh!.pp, can.loai);
-        // làm tròn: ghi rõ DT đã dùng trong căn cứ (tooltip) — DT thật vẫn là DT mẫu căn
-        const mc: MotCan = lamTron ? { ...mc0, dieu: `${mc0.dieu} · làm tròn DT ${can.dt_tt_m2} → ${sm!.dtGoiY} m²` } : mc0;
+        // làm tròn: căn cứ giữ nguyên (không lặp theo từng mẫu ở danh sách căn cứ); DT đã dùng ở `satMoc.dtGoiY` + cờ `lamTron`
         const pp: PhuongPhapApDung = !qt ? 'heSoChung' : dungBq ? 'bq' : ppLh!.pp.kieu;
         d = {
           canId: id, loai: can.loai, loaiHinh: lh, dt: can.dt_tt_m2, so: 0, nguoiMoiCan: mc.nguoi, nguoi: 0, dieu: mc.dieu, ngoaiBang: mc.ngoaiBang,

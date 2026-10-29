@@ -74,7 +74,7 @@ export function dichNhan(n: Nhan): string {
   let s = t(n.k);
   for (const [k, v] of Object.entries(n.p ?? {})) {
     if (k === 'tot') continue;
-    const gt = k === 'tc' ? t(`gh.tc.${v}`) : k === 'g' ? t(v === 'xh' ? 'xep.nhomXh' : 'xep.nhomTm') : typeof v === 'number' ? fmtSo(v, { thapPhan: Number.isInteger(v) ? 0 : 1 }) : String(v);
+    const gt = k === 'tc' ? t(`gh.tc.${v}`) : k === 'g' ? t(v === 'xh' ? 'xep.nhomXh' : 'xep.nhomTm') : typeof v === 'number' ? fmtSo(v, { thapPhan: Number.isInteger(v) ? 0 : Number.isInteger(Math.round(v * 1000) / 100) ? 1 : 2 }) : String(v);
     s = s.replace(`{${k}}`, gt);
   }
   return s.replace(/\s*\{tot\}/, n.p?.tot ? ` ${t('gh.totNhat')}` : '');
@@ -223,6 +223,8 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props) {
               <button type="button" class="ssm-chip" aria-pressed={!!hoDangChon(null)} onClick={() => tv && datTT({ chon: hoMau(tv, s.nhom, null) })}>{t('ssm.tatCa')}</button>
             </div>
           </div>
+          <details class="ssm-mau-gap" open={typeof matchMedia === 'undefined' || !matchMedia('(max-width: 1024px)').matches}>
+            <summary title={t('ssm.chonMau')}>{t('ssm.dangChon').replace('{n}', String(s.chon.length)).replace('{ds}', tv ? s.chon.map((id) => tenMau(tv, id)).join(', ') : '')}</summary>
           <div class="ssm-mau" role="group" aria-label={t('ssm.chonMau')}>
             {tv && hoMau(tv, s.nhom, null).map((id) => (
               <label key={id} class={`ssm-mau-o${s.chon.includes(id) ? ' bat' : ''}`} title={tenDayDu(tv, id)}>
@@ -230,6 +232,7 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props) {
               </label>
             ))}
           </div>
+          </details>
           <div class="ssm-hang">
             <label class="o-tg" title={t('gt.ssm.toiUu')}><input type="checkbox" checked={s.toiUu} onChange={(e) => datTT({ toiUu: e.currentTarget.checked })} /><span>{t('ssm.toiUu')}</span></label>
             <label class="o-so ssm-so-tang" title={t('gt.ssm.soTang')}><span>{t('ssm.soTang')}</span>
@@ -298,7 +301,7 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props) {
           <div class="ssm-bang-cuon">
             <table class="ssm-bang">
               <thead><tr>
-                <Th c="hang" nhan="#" /><th>{t('ssm.cot.mau')}</th><Th c="diem" nhan={t('ssm.cot.diem')} tip={t('gt.ssm.diem')} />
+                <Th c="hang" nhan="#" /><th class="ssm-ten">{t('ssm.cot.mau')}</th><Th c="diem" nhan={t('ssm.cot.diem')} tip={t('gt.ssm.diem')} />
                 <Th c="soCan" nhan={t('ssm.cot.can')} /><Th c="lech" nhan={t('ssm.cot.coCau')} tip={t('xep.diemLech')} />
                 <Th c="hieuSuat" nhan={t('ssm.cot.hs')} tip={t('kpi.gt.hieuSuat').replace('{n}', fmtSo(s.yc.hsMin * 100))} />
                 <Th c="dtxd" nhan={t('ssm.cot.dtxd')} tip={t('kpi.gt.dtxdTang')} /><Th c="dtsd" nhan={t('ssm.cot.dtsd')} tip={t('kpi.gt.dtsdTang')} />
