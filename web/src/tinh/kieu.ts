@@ -375,7 +375,15 @@ export type TrangThaiPA = {
   chiPhi?: ChiPhiPA;
   /** Cài đặt điểm view căn hộ + góc Bắc dự án (tinh/huongView.ts); thiếu = mặc định (+Y bản vẽ là Bắc). */
   huongView?: CaiDatViewLuu;
+  /** Vị trí dự án trên bản đồ (WGS84) + tham chiếu bản vẽ → bản đồ (tinh/viTri.ts). Thiếu = chưa đặt toạ độ (vĩ độ lấy `huongView.viDo`). */
+  viTri?: ViTriLuu;
 };
+
+/**
+ * Vị trí dự án (tinh/viTri.ts): điểm `neo` của bản vẽ (m) nằm ở (lat, lng) WGS84. Góc Bắc KHÔNG lưu ở đây — dùng `huongView.gocBac`
+ * (một nguồn cho la bàn 2D, mặt trời 3D, điểm view, nắng / gió). `tyLe` = mét thật / mét bản vẽ (khớp hai điểm), thiếu = 1.
+ */
+export type ViTriLuu = { lat: number; lng: number; neo: Diem; tyLe?: number; cachDat?: 'lienKet' | 'tay' | 'haiDiem' };
 
 /**
  * Cài đặt điểm view (tinh/huongView.ts `caiDatView`): mọi trường tuỳ chọn, thiếu = mặc định. `gocBac` = góc (°, chiều kim đồng hồ) từ

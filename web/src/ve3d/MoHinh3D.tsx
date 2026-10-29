@@ -28,7 +28,8 @@ import { datLopView, TheDiemCan, ThanhMauView, useLocView, useLopView, useViewTa
 import { gradientCss } from '../tinh/mauView';
 import type { KetQuaViewPA } from '../tinh/huongView';
 import { khoi3dTheoId } from './stretch3d';
-import { caiDatView } from '../tinh/huongView'; // góc Bắc dự án (TMB › Điểm view › Cài đặt): mặt trời 3D cả dự án quay theo
+import { HopNangGioCho, NutNangGio3D, useMoRongNangGio, useNutNangGio3D } from '../nangGio';
+import { viTriPA } from '../tinh/viTri'; // vị trí · ảnh nền · nắng · gió (gói riêng, cắm qua moRong) // góc Bắc dự án (TMB › Điểm view › Cài đặt): mặt trời 3D cả dự án quay theo
 
 type Nap = { khoi3d: Map<string, Khoi3d | null>; loi: Map<string, LoiHinh>; xong: boolean };
 
@@ -163,7 +164,7 @@ export function MoHinhToa({ toa, mau, mauTang, tv, pa, dauThanh, chon3d, ...luu 
     chuGiai: kq ? <ChuGiai3D kq={kq} soO={canToa.length * (dt?.tu.length ?? 0)} phamVi={mau.ten_vi.split(' · ')[0]} /> : null,
   };
   return (
-    <Khung3D khoa={khoa} gocBac={toa.gocDo} viDo={caiDatView(pa.huongView).viDo} chinhThamSo toaNguyen dauThanh={<>{dauThanh}<NutPhanTich /></>} {...luu} tenAnh={`Unitmix-${mau.id}`} phanTich={phanTich}
+    <Khung3D khoa={khoa} gocBac={toa.gocDo} viDo={viTriPA(pa).lat} chinhThamSo toaNguyen dauThanh={<>{dauThanh}<NutPhanTich /></>} {...luu} tenAnh={`Unitmix-${mau.id}`} phanTich={phanTich}
       lop={nutLop(['thang'], lopAn, doiLop)} lopAn={lopAn}
       tieuDe={`${mau.ten_vi.split(' · ')[0]} · ${toa.soTangDe ? toa.soTangDe + ' + ' : ''}${toa.soTangDH} ${t('m3d.tang')}`}
       chon={c} onChon={chon3d?.onChonToa} onMo={chon3d?.onMoToa} chuThich={chu}
@@ -214,6 +215,9 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   const bat = useLopView(), loc = useLocView();
   const vt = useViewTang(pa, tv, bat && che === 'du_an');
   const vHam = useNgheHam('3d'); // hầm rải trong Web Worker: có kết quả mới thì dựng lại (khoaNhe)
+  const moRong = useMoRongNangGio(pa);
+  const nutNG3D = useNutNangGio3D(); // Lớp › Ảnh vệ tinh nền (bật / tắt tức thì)
+  const vtDA = viTriPA(pa); // một nguồn vĩ độ / góc Bắc: toạ độ dự án (tinh/viTri.ts), PA cũ đọc huongView
   // tầng tum + trục thang mọi tòa: mặt bằng hiệu dụng (đã tự chỉnh) + hình lõi; nạp lõi lười, chưa xong thì dựng không tum rồi dựng lại
   const mbToa = useMemo(() => new Map(pa.toa.flatMap((x) => {
     const m0 = mauToa(tv, x);
@@ -265,10 +269,11 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   };
   // tòa đang xem không vào khoá: đổi tòa (kể cả bấm chọn trong 3D) chỉ dựng lại nhẹ, giữ góc nhìn (góc "Cận tòa chọn" theo tòa mới)
   const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';')].join('|');
-  return (
-    <Khung3D khoa={khoa} khoaNhe={JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '') + '|' + napLoi.xong + '|' + loiDA.join()} toaNguyen dauThanh={<>{nut}{nutHam}<NutPhanTich /></>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
+  return (<>
+    <Khung3D khoa={khoa} moRong={moRong} khoaNhe={JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '') + '|' + napLoi.xong + '|' + loiDA.join()} toaNguyen dauThanh={<>{nut}{nutHam}<NutPhanTich /><NutNangGio3D /></>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
-      lop={nutLop(['tum', 'ham', 'thang', 'gio', 'cay', 'duong', 'ranh'], lopAn, doiLop)} lopAn={lopAn}
-      gocBac={caiDatView(pa.huongView).gocBac} viDo={caiDatView(pa.huongView).viDo} dung={({ T, goc, M, kieu, capDo }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa })} />
-  );
+      lop={[...nutLop(['tum', 'ham', 'thang', 'gio', 'cay', 'duong', 'ranh'], lopAn, doiLop), ...nutNG3D]} lopAn={lopAn}
+      gocBac={vtDA.gocBac} viDo={vtDA.lat} dung={({ T, goc, M, kieu, capDo }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa })} />
+    <HopNangGioCho pa={pa} tv={tv} sua={sua} chiXem={chiXem} la3D />
+  </>);
 }
