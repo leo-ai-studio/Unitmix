@@ -195,7 +195,7 @@ export type TuyChonThang = { rong: number; dai: number; cuLy: number };
  * ứng viên (dọc tường ngoài, trên tường ngăn cháy — phục vụ hai khoang, cuối cùng là trong sàn) phủ thêm nhiều điểm nhất; khi còn
  * thiếu lối ra thì ưu tiên vị trí xa lối ra sẵn có (phân tán).
  */
-export function datThang(ranh: Diem[], ht: HeTruc, khoang: KhoangChay[], tuong: TuongKhoang[], thangLoi: Diem[][], vatCan: Diem[][], o: TuyChonThang): ThangThoat[] {
+export function datThang(ranh: Diem[], ht: HeTruc, khoang: KhoangChay[], tuong: TuongKhoang[], thangLoi: Diem[][], vatCan: Diem[][], o: TuyChonThang, tranh: Diem[][] = []): ThangThoat[] {
   const ds: ThangThoat[] = [];
   const hcnCua: Hcn[] = [];
   const ranhUv = ranh.map(ht.uv);
@@ -207,7 +207,9 @@ export function datThang(ranh: Diem[], ht: HeTruc, khoang: KhoangChay[], tuong: 
     ds.push({ poly: p, tam: trongTam(p), nguon: 'loi', chung: kh.length > 1, khoang: kh });
     hcnCua.push(r);
   }
-  type UngVien = { r: Hcn; loai: 'tuong' | 'chung' | 'trong'; kh: number[] };
+  type UngVien = { r: Hcn; loai: 'tuong' | 'chung' | 'trong'; kh: number[]; duoiToa: boolean };
+  // Thang thêm phải ra thẳng ngoài nhà (QCVN 06:2022 3.2.2 a): tránh nằm dưới chân tháp / đế (phạt nặng, chỉ dùng khi hết chỗ).
+  const kTranh = tranh.map((p) => khungUvP(ht, p));
   const theoKhoang: UngVien[][] = khoang.map(() => []);
   const { rong, dai } = o;
   const vc = vatCan.map((p) => khungUvP(ht, p));
@@ -215,7 +217,7 @@ export function datThang(ranh: Diem[], ht: HeTruc, khoang: KhoangChay[], tuong: 
     if (vc.some((x) => chongHcn(x, r, 0.2))) return;
     if (!hcnTrong(r, ranhUv)) return;
     const kh = thuocKhoang(r);
-    const c: UngVien = { r, loai, kh };
+    const c: UngVien = { r, loai, kh, duoiToa: kTranh.some((x) => chongHcn(x, r)) };
     for (const k of kh) theoKhoang[k].push(c);
   };
   // dọc cạnh ranh song song trục u hoặc v (thang sát tường ngoài, ra thẳng tầng 1), lùi vào 0,05 m
@@ -264,7 +266,7 @@ export function datThang(ranh: Diem[], ht: HeTruc, khoang: KhoangChay[], tuong: 
         let phu = 0;
         for (const p of vuot) if (kcHcn(p, c.r) <= o.cuLy) phu++;
         const xa = loiRa ? Math.min(...k.thang.map((i) => kcHcn({ u: (c.r[0] + c.r[2]) / 2, v: (c.r[1] + c.r[3]) / 2 }, hcnCua[i]))) : o.cuLy;
-        const d = phu * 10 + (loiRa < 2 ? 500 + Math.min(xa, 2 * o.cuLy) * 5 : 0) + (c.loai === 'chung' ? 8 : 0) - (c.loai === 'trong' ? 60 : 0);
+        const d = phu * 10 + (loiRa < 2 ? 500 + Math.min(xa, 2 * o.cuLy) * 5 : 0) + (c.loai === 'chung' ? 8 : 0) - (c.loai === 'trong' ? 60 : 0) - (c.duoiToa ? 400 : 0);
         if (d > diemTot) { diemTot = d; tot = c; }
       }
       if (!tot) {

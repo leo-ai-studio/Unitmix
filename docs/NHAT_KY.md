@@ -2,6 +2,100 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · Hầm đợt 2: phòng kỹ thuật theo dự án, khoang cháy + thang thoát nạn, làn không cụt, ram có đoạn thẳng, xe lăn QCVN 10, xe máy / sạc, hộp gió, mặt bằng tầng 1 · agent Opus
+
+**Yêu cầu:** cải tiến bộ rải hầm và màn Hầm, tham khảo các hồ sơ bản vẽ đã có. Gồm:
+- chương trình phòng kỹ thuật theo dự án;
+- thứ tự đỗ: ô tô → xe máy → sạc → xe lăn;
+- làn xe không cụt;
+- ram thẳng có đoạn thẳng ở hai đầu;
+- khoang cháy và thang thoát nạn dùng chung;
+- hộp gió và louver;
+- mặt bằng tầng 1.
+
+Vẫn chạy trong Web Worker. 3D, chi phí và Leo AI phải chạy theo.
+
+**Tham khảo và căn cứ:** xem `docs/ham_tham_khao.md`.
+- Hồ sơ đã đọc: M1 Đan Phượng, Đông Quan B2/B3, KDAS Dream City, chuẩn đỗ xe Vinhomes, M&E Đại An.
+- Quy chuẩn: QCVN 13:2018, 06:2022 + SĐ1:2023, 04:2021, 10:2024, 01:2021. Dự thảo (chỉ cảnh báo): QCVN 07-11:2025, SĐ 01:2026 QCVN 04.
+- Không có trong kho: QCVN 13:2023, QCVN 10:2014, bề rộng làn theo góc đỗ, TCVN 2622 / 7336 / 9206 / 5687. Các số thiếu căn cứ để **tạm**.
+
+**Mã:**
+- `tinh/hamHinh.ts` (mới): hình học Clipper chung, hệ trục u/v. Tách ra từ `ham.ts`.
+- `tinh/hamPhong.ts` (mới): `chuongTrinhPhong`.
+  - Nước: bể SH = dân số × q × ngày ÷ 2,7 m (≥ 80 L/người/ngày đêm, QCVN 01 2.10.2). Bể PCCC = ngoài nhà max(Bảng 8 F1.3, Bảng 9 F5 hạng C) × 3 h + Bảng 11 × 2,5 L/s × 3 h + sprinkler (tạm). Bơm, XLNT + phòng vận hành.
+  - Điện: TBA khô + máy phát ở B1 (QCVN 13 2.2.2 b, QCVN 06 A.2.10).
+  - Phòng khác: bảo vệ, trực PCCC, điện nhẹ, kho; quạt hút / cấp mỗi khoang mỗi tầng; rác cạnh lõi ở B1 (QCVN 04 2.7.3).
+  - Chỉnh sửa: `ThongSoHam.phong[loai] = { dt, bo }` ghi đè DT hoặc bỏ phòng.
+- `tinh/hamBoTri.ts` (mới):
+  - `chiaKhoang`: các ô gần vuông ≤ `dtKhoangMax` 3 000 m² (QCVN 13 Bảng 4). Đường cắt v bắt vào lưng hai dãy chỗ.
+  - `datThang`: thang lõi tòa + thang thêm. Mỗi khoang ≥ 2 lối ra, cự ly ≤ 40 m đo Manhattan (QCVN 13 2.2.1.14, Bảng 3). Thang trên tường ngăn cháy (TB*) dùng cho hai khoang. Phạt vị trí dưới tháp (QCVN 06 3.2.2 a).
+  - `timChoSatTuong`: cụm quạt + hộp gió, không nằm dưới tháp. `timChoCanhLoi`.
+  - `demCutDuong`, `soXeLanQCVN10`, `chonXeLan` (gần lõi), `chonSac` (gần TBA).
+  - Hình học nhanh `dtTrongHcn` / `hcnTrong`: lô 400 × 400 từ 2,1 s xuống 0,25–0,4 s.
+- `tinh/raiCho.ts`:
+  - `yeuCauLan`: chỗ chỉ nhận khi ô làn trước mặt hợp lệ. Trước đây có chỗ xe không vào được.
+  - `vatCanCho`: tường ngăn cháy và cột tòa chỉ chặn chỗ, không chặn làn.
+  - `phatLan`: điểm phạt đầu cụt khi chọn lưới. `lanTai` / `lechV`: một lưới dãy chung mọi tầng, có một làn sát mép ram.
+- `tinh/ham.ts` `raiHamTinh` viết lại:
+  - Ram: chọn góc hầm gần đường. Ram thẳng gồm đoạn thẳng dưới + dốc (`doanChuyen` 3,6 m, đổi dốc ≤ 12,5% theo dự thảo 07-11) + đoạn thẳng trên.
+  - Dải lớn trên tầng: phòng → xe máy → kho. Xe máy đủ số theo chỉ tiêu và ≥ 6 m²/căn, khu riêng.
+  - Khu ô tô: đường ngang ở hai đầu, dải chỗ quay đầu hầm. Đầu cụt (lõi, thang chắn) mở đoạn nối sang làn kề.
+  - Rèm ngăn cháy ở chỗ làn cắt tường.
+  - Xe lăn theo QCVN 10:2024 Bảng 1, gần lõi, ưu tiên B1. Sạc 10% (dự thảo) gần TBA.
+  - Thông gió: 9 lần/h × thể tích khoang (QCVN 04 2.6.5), ống riêng từng tầng. Vận tốc gió là số tạm.
+  - Tầng 1 `t1`: tháp / đế, miệng ram + đoạn thẳng + đường vào, louver, thang ra, cảnh quan.
+  - Kiểm mới: cutDuong, ramNoi, khoangDt / LoiRa / CuLy, gioKhoang, soLanRam (QCVN 13 2.2.1.11), rongLan, ramDoiDoc, ramBanKinh, soXeMay, xeLan (QCVN 10), qSinhHoat, sacOto.
+- `kieu.ts`, `macDinh.ts`:
+  - Trường mới: `tuDongPhong`, `phong`, `qSinhHoat`, `ngayDuTru`, `kvaMoiCan`, `dtKhoangMax`, `cuLyThoat`, `thangRong/Dai`, `xeLanTuDong`, `xeMayRong/Dai/Lan`; ram `doanChuyen` / `doanThangDuoi` / `doanThangTren` / `banKinh`; `xeDien.tyLeOto`.
+  - Ram mặc định 24 × 6,5 m. Xe điện bật cho PA mới; PA cũ giữ giá trị đã lưu.
+- Màn Hầm (`man/ManHam.tsx`, `ve/MatBangHam.tsx`, `styles/ham.css`):
+  - Nút **T1** (mặt bằng tầng 1, lớp phủ, khung giữa không đổi) cạnh B1 / B2.
+  - Bản vẽ thêm: phòng (tên ngắn + DT), tường / rèm ngăn cháy, thang TB / TB*, hộp gió GT / GC, đầu cụt ⊗, ô xe máy.
+  - Panel phải thêm: "Đỗ xe: có / yêu cầu", "Phòng kỹ thuật" (sửa DT / bỏ), "Khoang cháy, thoát nạn, thông gió", "Tầng 1".
+  - Panel trái thêm: khoang, phòng tự động, xe máy, ram, tỷ lệ sạc.
+  - i18n VI / EN.
+- Leo AI:
+  - `get_basement` trả thêm chỗ có / yêu cầu, phòng, khoang, thang, thông gió, tầng 1.
+  - `update_basement` nhận trường mới, `rooms`, `auto_rooms`, `auto_accessible`, `ev`, và các trường ram mới.
+- Phần khác:
+  - 3D: thang thêm và hộp gió nhô lên cốt 0.
+  - Dự toán: số xe máy lấy từ số đã rải.
+  - Chữ ký đối chiếu `__mau__/hamDoiChieu.json` sinh lại (kết quả đổi có chủ đích).
+
+**Số đo trước → sau** (mã `59ee54d` → nhánh này; ô tô theo tầng):
+
+| Lô | Ô tô | Xe lăn | Xe máy | Đầu cụt | Khoang | Thời gian rải |
+|---|---|---|---|---|---|---|
+| Dự án thử `2mlg1a2l` pa-2 (NO-01, 2 tầng) | 713 → 503 | 4 → 9 / 9 | 5 879 m² → 2 249 chỗ / 2 016 (6 078 m²) | ≈ 78 → 0 | 6 (≤ 2 452 m², ≥ 3 lối, ≤ 38,6 m) | 71 → 183 ms |
+| 200 × 120 (1 tòa) | 1 680 → 1 275 | — | — | ≈ 112 → 0 | — | — |
+| 400 × 400 (2 tầng) | 13 173 → 11 506 | 4 → 120 | — | ≈ 268 → 0 | 63 | 0,10 → 0,28 s |
+| 311 × 293 (222 đỉnh) | — | — | — | 9 (đã báo trên bản vẽ) | — | — |
+
+- Ô tô giảm là có chủ đích:
+  - chỗ không có làn trước mặt (trước được tính) bị bỏ;
+  - thêm đường ngang hai đầu, đoạn nối quanh lõi;
+  - thêm thang thoát nạn (pa-2: 9 thang thêm), cụm quạt + hộp gió từng khoang;
+  - chuyển 9 chỗ thành chỗ xe lăn (gộp hai chỗ thành một);
+  - dải xe máy đủ 6 m²/căn.
+- Mở màn Hầm: longtask luồng chính = 0 (PerformanceObserver). Rải xong sau khoảng 0,2–0,45 s (worker).
+- Khung giữa 1440 × 900: `270,52,870,848`; điện thoại 390 × 844: `0,48,390,740`. Không đổi khi chuyển T1 / B1 / B2.
+
+**Kiểm:**
+- Test mới `tinh/hamBoTri.test.ts` (11 ca tính tay).
+- `ham.test.ts`: cập nhật ram có đoạn chuyển, xe lăn QCVN 10.
+- `congCu.test.ts`: update / get_basement.
+- `node scripts/kiem.mjs` ĐẠT.
+- Ảnh trước / sau trong `docs/anh/ham/`: `truoc-ham-*`, `sau-ham-*`, `sau-b2-*`, `sau-tang1-*`, `sau-phong-desktop`, `sau-khoang-desktop`. Chụp bằng vite 5473 + API 8787, PA thử `pa-ham2` (bản sao pa-2 bật xe điện, đã xoá sau khi chụp).
+
+**Còn dở / chờ chủ nhiệm chốt:**
+- Thang trên tường ngăn cháy phục vụ hai khoang. QCVN 06 3.2.4 không tính lối ra sang khoang F5 kề, nhưng buồng thang không thuộc khoang (H.6.2). Cần chốt có được tính cho cả hai khoang.
+- Cột tòa chỉ chặn chỗ, không chặn làn. Đây là giả định lưới cột hầm đi theo dãy đỗ hoặc chuyển tại sàn đế.
+- Vận tốc gió, sprinkler, kVA/căn, DT phòng rác / TBA / máy phát, đoạn thẳng ram 6 m, ngày dự trữ bể đều là số tạm.
+- Đọc chung "> 200: 5 + 1 cho mỗi 100 xe thêm" là lấy tròn lên (201 → 6).
+- Thang thêm vẫn có thể rơi dưới đế khi hết chỗ. Panel Tầng 1 có đếm "thang dưới tháp / đế".
+- Lô ranh nhiều đỉnh (311 × 293) còn 9 đầu cụt.
+
 ## 2026-10-29 · Dân số: ô Khu vực đô thị / nông thôn · Đồng Nai phòng ở + mốc biên · tỉnh trọng điểm sau sáp nhập · agent Opus
 
 **Chủ nhiệm đã chốt:** Hà Nội TĐC = mặc định quốc gia 32 m²/người; Đồng Nai thêm ô "Khu vực"; phòng ở theo QĐ địa phương, không có thì QCVN; Phú Yên bỏ qua; tỉnh trọng điểm HN, TP.HCM, An Giang (Kiên Giang, Phú Quốc), Hưng Yên.

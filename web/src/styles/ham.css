@@ -51,8 +51,8 @@
 .t1-ve .t1-thap { fill: var(--ham-t1-thap); stroke: var(--ink); stroke-width: 1.5; }
 .t1-ve .t1-duong-vao { stroke: #d8cdb8; stroke-linecap: butt; opacity: 0.9; }
 .ham-tang .sep { width: 1px; background: var(--line); margin: 2px 4px; }
-.ham-phong-dong { display: grid; grid-template-columns: 1.6fr 0.5fr 1fr auto; gap: 4px; align-items: center; padding: 2px 12px; font-size: 12px; }
-.ham-phong-dong input[type="number"] { width: 100%; min-width: 0; }
+.ham-phong-dong { display: grid; grid-template-columns: minmax(0, 1fr) 40px 68px 20px; gap: 4px; align-items: center; padding: 2px 12px; font-size: 12px; }
+.ham-phong-dong input[type="number"] { width: 68px; min-width: 0; box-sizing: border-box; padding: 2px 4px; }
 .ham-phong-dong small { color: var(--muted-text); font-size: 10px; }
 .ham-phong-dong.dau { font-weight: 700; color: var(--muted-text); }
 .nhan-tam { display: inline-block; margin-left: 4px; padding: 0 4px; font-size: 9px; border-radius: 3px; background: #eef1f4; color: var(--muted-text); vertical-align: 1px; }

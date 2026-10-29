@@ -294,6 +294,8 @@ export type KetQuaTang1 = {
   miengGio: OngGio[];
   /** Hộp gió nằm dưới chân tháp / đế (phải dời). */
   gioDuoiToa: number;
+  /** Thang thêm nằm dưới chân tháp / đế (không ra thẳng ngoài nhà — QCVN 06:2022 3.2.2 a). */
+  thangDuoiToa: number;
   dtLo: number;
   dtCanhQuan: number;
 };
@@ -540,7 +542,7 @@ export function raiHamTinh(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaH
 
   // Khoang cháy + thang thoát nạn (chung mọi tầng: cùng ranh, cùng lõi).
   const { khoang, tuong, catU } = chiaKhoang(ranh, ht, bbR, ts.dtKhoangMax, { v0: v0Luoi, mod: modDay });
-  const thang = datThang(ranh, ht, khoang, tuong, thangLoi, [...loi, ...cot, ...ramVc, ...(ramTren ? [ramTren] : []), ...daiLan], { rong: ts.thangRong, dai: ts.thangDai, cuLy: ts.cuLyThoat });
+  const thang = datThang(ranh, ht, khoang, tuong, thangLoi, [...loi, ...cot, ...ramVc, ...(ramTren ? [ramTren] : []), ...daiLan], { rong: ts.thangRong, dai: ts.thangDai, cuLy: ts.cuLyThoat }, toaLo.map((x) => x.chan));
   const thangThem = thang.filter((x) => x.nguon === 'them').map((x) => x.poly);
 
   // Chương trình phòng.
@@ -813,7 +815,7 @@ export function raiHamTinh(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaH
   const ramMo = ram?.doc ?? ram?.poly ?? null;
   const t1: KetQuaTang1 = {
     chan: chanDs, de, ramMo, ramThang: ramTren, duongVao, kcDuong: gd ? gd.kc : null,
-    thangRa: thangThem, miengGio: ongGio, gioDuoiToa, dtLo: dtHop([lo.ranh]),
+    thangRa: thangThem, miengGio: ongGio, gioDuoiToa, thangDuoiToa: thangThem.filter((p) => treTren.some((c) => khungChong(p, c) && giaoNhau(p, c))).length, dtLo: dtHop([lo.ranh]),
     dtCanhQuan: dtTru([lo.ranh], [...chanDs, ...de, ...(ramMo ? [ramMo] : []), ...(ramTren ? [ramTren] : []), ...(daiDuong ? [daiDuong] : []), ...thangThem, ...ongGio.map((g) => g.poly)]),
   };
 
@@ -830,7 +832,7 @@ export function raiHamTinh(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaH
     dongKiem('dtDoXe', soCan ? tong.dtOto + tong.dtXeMay : null, soCan ? yeuCau.tong : null, '>=', { donVi: 'm²', canCu: `${QC04} 2.2.17.1 ${ts.garaCoKhi ? 'd)' : noxh ? 'b), c)' : 'b)'}` }),
     dongKiem('dtXeMay', soCan ? tong.dtXeMay : null, soCan ? yeuCau.xeMay : null, '>=', { donVi: 'm²', canCu: `${QC04} 2.2.17.1 b)` }),
     dongKiem('choOto', soCan ? tong.soCho : null, soCan ? yeuCauCho.oto : null, '>=', { canCu: 'QH' }),
-    dongKiem('soXeMay', soCan ? tong.soXeMay : null, soCan ? yeuCauCho.xeMay : null, '>=', { canCu: 'QH' }),
+    dongKiem('soXeMay', soCan ? tong.soXeMay : null, soCan ? yeuCauCho.xeMay : null, '>=', { canCu: 'QHXM' }),
     dongKiem('xeLan', tong.soXeLan, yeuCauCho.xeLan, '>=', { canCu: 'QCVN 10:2024/BXD 2.1.1, Bảng 1', khongSat: true }),
     dongKiem('choDai', ts.choDai, 5, '>=', { donVi: 'm', canCu: `${QC13} 2.2.1.25`, thapPhan: 2 }),
     dongKiem('choRong', ts.choRong, 2.3, '>=', { donVi: 'm', canCu: `${QC13} 2.2.1.25`, thapPhan: 2 }),

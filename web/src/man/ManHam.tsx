@@ -304,12 +304,13 @@ const lop = (k: KiemHam) => (k.dat === null || k.mucTieu === null ? '' : k.muc =
 function DongKiem({ k }: { k: KiemHam }) {
   const dv = { thapPhan: k.thapPhan, donVi: k.donVi || undefined };
   const dat = k.khoa === 'xdKhoangCach' && k.dat === null ? t('ham.coTuong') : fmtSo(k.dat, dv);
+  const canCu = k.canCu === 'QH' ? t('ham.canCuQH') : k.canCu === 'QHXM' ? t('ham.canCuQHXM') : k.canCu;
   return (
-    <div class="ham-kiem" title={k.canCu === 'QH' ? t('ham.canCuQH') : k.canCu}>
+    <div class="ham-kiem" title={canCu}>
       <span>
         {t(`ham.k.${k.khoa}`)}
         {k.duThao && <i class="nhan-du-thao">{t('ham.duThao')}</i>}
-        <small>{k.canCu === 'QH' ? t('ham.canCuQH') : k.canCu}</small>
+        <small>{canCu}</small>
       </span>
       <span class={lop(k)}>{dat}</span>
       <span>{k.mucTieu === null ? '—' : `${k.chieu === '<=' ? '≤' : '≥'} ${fmtSo(k.mucTieu, dv)}`}</span>
@@ -413,6 +414,7 @@ function BangT1({ kq, cayXanhMin }: { kq: KetQuaHam; cayXanhMin: number | null }
       <div class="dong"><span>{t('ham.t1.kcDuong')}</span><b>{fmtSo(t1.kcDuong, { thapPhan: 1, donVi: 'm' })}</b></div>
       <div class="dong"><span>{t('ham.t1.soLouver')}</span><b>{`${fmtSo(t1.miengGio.length)} / ${fmtSo(t1.thangRa.length)}`}</b></div>
       <div class="dong"><span>{t('ham.t1.gioDuoiToa')}</span><b class={t1.gioDuoiToa ? 'vuot' : 'ok'}>{fmtSo(t1.gioDuoiToa)}</b></div>
+      <div class="dong" title="QCVN 06:2022/BXD 3.2.2 a)"><span>{t('ham.t1.thangDuoiToa')}</span><b class={t1.thangDuoiToa ? 'vuot' : 'ok'}>{fmtSo(t1.thangDuoiToa ?? 0)}</b></div>
     </MucGap>
   );
 }
