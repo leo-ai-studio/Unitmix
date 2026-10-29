@@ -455,6 +455,9 @@ export type CanMau = {
   /** Hình bao thật của căn góc V (nét `khung`), chuẩn hoá 0..1 theo rộng × sâu như nét vẽ (có thể vượt 0..1); căn chữ nhật thì
    * thiếu. Tiền tính bằng scripts/sinh_phai_sinh_can.py — nét bao DTXD dựng theo hình này (app cũ `bienCan`). */
   khung?: [number, number][];
+  /** Điểm nét cửa căn nằm trên tường hành lang (sâu ≤ 300 mm), chuẩn hoá 0..1 như nét vẽ — vật cản cánh cửa ngăn cháy hành lang
+   * (tinh/cuaNganChay.ts, app cũ cncVatCan). Tiền tính bằng scripts/sinh_phai_sinh_can.py. */
+  cua_hl?: [number, number][];
   /** Có ở mẫu biến thể STRETCH (tinh/stretch.ts): id mẫu gốc + mức kéo (mm). */
   stretchGoc?: { id: string; st: number };
 };

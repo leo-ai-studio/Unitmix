@@ -35,7 +35,13 @@
 .lop-pccc .pc-cua-rac rect { fill: var(--pc-lam); stroke: var(--pc-lam); }
 .lop-pccc .pc-chu-cua { fill: var(--pc-do); font-weight: 700; }
 .lop-pccc .pc-cnc path { stroke: var(--pc-lam); stroke-linecap: butt; fill: none; pointer-events: none; }
+.lop-pccc .pc-cnc .pc-cnc-vach { stroke-opacity: .35; }
+.lop-pccc .pc-cnc .pc-cnc-net { stroke-width: 1.4; stroke-linejoin: round; }
+.lop-pccc .pc-cnc .pc-cnc-bu { fill: var(--pc-lam); fill-opacity: .55; stroke-width: 1; }
+.lop-pccc .pc-cnc.quet path { stroke: var(--pc-cam); }
+.lop-pccc .pc-cnc.quet .pc-cnc-bu { fill: var(--pc-cam); }
 .lop-pccc .pc-chu-cnc { fill: var(--pc-lam); }
+.lop-pccc .pc-cnc.quet .pc-chu-cnc { fill: var(--pc-cam); }
 
 /* chú giải (nút Chú giải góc bản vẽ) */
 .chu-giai-pccc { font-size: 12px; line-height: 1.5; max-width: 300px; }
