@@ -8,8 +8,15 @@ import { idTepCan } from '../tinh/stretch';
 import { idLoi, tai, type HinhLoi } from '../ve/hinhHocThuVien';
 import type { ToaVe } from '../ve/MatBangTang';
 import { dungCan, type Khoi3d } from './dungCan';
-import { dungToa, type LoiHinh } from './dungToa';
+import { dungToa, ranhTumCo, type LoiHinh } from './dungToa';
 import { dungDuAn } from './dungDuAn';
+import { docLopAn, dungTrucThang, luuLopAn, type Lop3D } from './lop3d';
+import { coMat } from '../tinh/matBang';
+import { mauToa } from '../tinh/canThem';
+import { xoayTinhTien } from '../tinh/hinhHoc';
+import { mauCuaToa } from '../man/tuChinhTang';
+import type { Diem } from '../tinh/kieu';
+import type { NutHienThi } from '../ui/ThanhHienThi';
 import { chonTiaToa, doiTuongDangChonToa, hinhNhanToa, type DangChon3D, type DoiTuong3D } from './chon3d';
 import { dtVung, khoiDe } from '../tinh/hinhHoc';
 import { tenTang } from '../ui/ChonTang';
@@ -110,7 +117,17 @@ export function thongTinChonToa(toa: ToaDat, mau: ToaVe, mauTang: ((tang: number
 }
 
 /** Tab Mô hình: 3D cả tòa đang xem (khối đế + tầng điển hình + mái + tum). Có `chon3d` thì bấm chọn căn / tầng, bấm đúp mở mặt bằng. */
+/** Trạng thái lớp 3D dùng chung Toàn dự án / Công trình, nhớ theo máy (localStorage `unitmix.lop-3d.v1`). */
+function useLop3D(): [Lop3D[], (k: Lop3D) => void] {
+  const [an, setAn] = useState<Lop3D[]>(docLopAn);
+  const doi = (k: Lop3D) => setAn((a) => { const b = a.includes(k) ? a.filter((x) => x !== k) : [...a, k]; luuLopAn(b); return b; });
+  return [an, doi];
+}
+const nutLop = (ds: Lop3D[], an: Lop3D[], doi: (k: Lop3D) => void): NutHienThi[] =>
+  ds.map((k) => ({ khoa: k, nhan: t(`m3d.lop.${k}`), bat: !an.includes(k), onClick: () => doi(k) }));
+
 export function MoHinhToa({ toa, mau, mauTang, tv, pa, dauThanh, chon3d, ...luu }: PropsToa & { chon3d?: Chon3D }) {
+  const [lopAn, doiLop] = useLop3D();
   const bat = useLopView(), loc = useLocView();
   const vt = useViewTang(pa, tv, bat);
   // căn của mọi bố cục tầng (chung + tầng riêng); chữ ký bố cục vào khoá để dựng lại khi đổi theo tầng / công năng ô
@@ -146,11 +163,14 @@ export function MoHinhToa({ toa, mau, mauTang, tv, pa, dauThanh, chon3d, ...luu 
     chuGiai: kq ? <ChuGiai3D kq={kq} soO={canToa.length * (dt?.tu.length ?? 0)} phamVi={mau.ten_vi.split(' · ')[0]} /> : null,
   };
   return (
-    <Khung3D khoa={khoa} gocBac={toa.gocDo} chinhThamSo toaNguyen dauThanh={<>{dauThanh}<NutPhanTich /></>} {...luu} tenAnh={`Unitmix-${mau.id}`} phanTich={phanTich}
+    <Khung3D khoa={khoa} gocBac={toa.gocDo} viDo={caiDatView(pa.huongView).viDo} chinhThamSo toaNguyen dauThanh={<>{dauThanh}<NutPhanTich /></>} {...luu} tenAnh={`Unitmix-${mau.id}`} phanTich={phanTich}
+      lop={nutLop(['thang'], lopAn, doiLop)} lopAn={lopAn}
       tieuDe={`${mau.ten_vi.split(' · ')[0]} · ${toa.soTangDe ? toa.soTangDe + ' + ' : ''}${toa.soTangDH} ${t('m3d.tang')}`}
       chon={c} onChon={chon3d?.onChonToa} onMo={chon3d?.onMoToa} chuThich={chu}
       dung={({ T, goc, M, G, P }) => {
         const r = dungToa(T, goc, M, G, P, { mau, toa, tv, khoi3d: nap.khoi3d, loi: nap.loi, idLoi, mauTang });
+        // lớp Trục thang bộ / lõi: khối xuyên tòa từ đất tới mái tum (mm mặt tòa → m)
+        dungTrucThang(T, goc, ranhTumCo(mau, nap.loi, idLoi).map((x) => ({ pts: x.pts.map(([a, b]) => [a / 1000, b / 1000] as Diem), thang: x.thang, y0: 0, y1: r.canh.cao })));
         const bd = r.chon, hc = (P.tang - P.san) / 1000;
         return {
           ...r.canh, nen: true,
@@ -189,10 +209,29 @@ type PropsChinh = { pa: TrangThaiPA; tv: ThuVien; sua: (fn: (p: TrangThaiPA) => 
 /** Tab 3D: chọn Toàn dự án (ô đất, cây xanh, mặt nước, khối tòa) hoặc Công trình (tòa đang chọn, chi tiết từng căn); góc nhìn lưu trong PA. */
 export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, chon3d }: PropsChinh) {
   const [che, setChe] = useState<'du_an' | 'toa'>('du_an');
-  const [hienHam, setHienHam] = useState(true);
+  const [lopAn, doiLop] = useLop3D();
+  const hienHam = !lopAn.includes('ham');
   const bat = useLopView(), loc = useLocView();
   const vt = useViewTang(pa, tv, bat && che === 'du_an');
   const vHam = useNgheHam('3d'); // hầm rải trong Web Worker: có kết quả mới thì dựng lại (khoaNhe)
+  // tầng tum + trục thang mọi tòa: mặt bằng hiệu dụng (đã tự chỉnh) + hình lõi; nạp lõi lười, chưa xong thì dựng không tum rồi dựng lại
+  const mbToa = useMemo(() => new Map(pa.toa.flatMap((x) => {
+    const m0 = mauToa(tv, x);
+    return m0 && coMat(m0) ? [[x.id, { x, m0, m: mauCuaToa(x, m0 as ToaVe, null) }] as const] : [];
+  })), [pa.toa, tv]);
+  const loiDA = useMemo(() => [...new Set([...mbToa.values()].flatMap(({ m }) => m.mat.flatMap((f) => f.phan_tu.filter((q) => q.loai !== 'can' && !q.bang).map((q) => idLoi(q.block)))))], [mbToa]);
+  const napLoi = useNap3d([], loiDA, tv);
+  const tumToa = (id: string) => {
+    const d = mbToa.get(id);
+    if (!d || !napLoi.xong) return [];
+    // như chanToa (tinh/hinhHoc): tâm khung bao nét mẫu, lật, xoay + dời theo tòa — mm → m
+    const xs = d.m0.duong_bao.map((p) => p[0]), ys = d.m0.duong_bao.map((p) => p[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2, s = d.x.lat ? -1 : 1;
+    return ranhTumCo(d.m, napLoi.loi, idLoi).map((r) => {
+      const m = r.pts.map(([px, py]) => [(s * (px - cx)) / 1000, (py - cy) / 1000] as Diem);
+      return { pts: xoayTinhTien(d.x.lat ? m.reverse() : m, d.x.x, d.x.y, d.x.gocDo), thang: r.thang };
+    });
+  };
   const xem = che === 'toa' && toa && mau ? 'toa' : 'du_an';
   const gocLuu = (pa.gocNhin ?? []).filter((g) => g.che === xem && (xem === 'du_an' || g.toaId === toa?.id));
   const luu: LuuGoc = {
@@ -208,7 +247,7 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   );
   const nutHam = (
     <span class="nhom-3d" role="group" aria-label={t('m3d.ham')}>
-      <button type="button" aria-pressed={hienHam} title={t('m3d.hamGiaiThich')} onClick={() => setHienHam(!hienHam)}>{t('m3d.ham')}</button>
+      <button type="button" aria-pressed={hienHam} title={t('m3d.hamGiaiThich')} onClick={() => doiLop('ham')}>{t('m3d.ham')}</button>
       {hienHam && dieuPhoiHam.dangChoKenh('3d') && <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '0 8px' }}><img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '14px', height: '14px' }} />{t('ham.dangRai')}</span>}
     </span>
   );
@@ -227,8 +266,9 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   // tòa đang xem không vào khoá: đổi tòa (kể cả bấm chọn trong 3D) chỉ dựng lại nhẹ, giữ góc nhìn (góc "Cận tòa chọn" theo tòa mới)
   const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';')].join('|');
   return (
-    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '')} toaNguyen dauThanh={<>{nut}{nutHam}<NutPhanTich /></>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
+    <Khung3D khoa={khoa} khoaNhe={JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '') + '|' + napLoi.xong + '|' + loiDA.join()} toaNguyen dauThanh={<>{nut}{nutHam}<NutPhanTich /></>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
-      gocBac={caiDatView(pa.huongView).gocBac} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, hienHam)} />
+      lop={nutLop(['tum', 'ham', 'thang', 'gio', 'cay', 'duong', 'ranh'], lopAn, doiLop)} lopAn={lopAn}
+      gocBac={caiDatView(pa.huongView).gocBac} viDo={caiDatView(pa.huongView).viDo} dung={({ T, goc, M, kieu, capDo }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa })} />
   );
 }
