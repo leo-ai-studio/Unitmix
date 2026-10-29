@@ -27,8 +27,9 @@ export function TheSo({ nhan, gt, donVi, thapPhan = 0, phu, o, tip, thanh, id }:
   const tt = o?.tt ?? null;
   return (
     <div class={`the-so${tt ? ` tt-${tt}` : ''}`} title={tip} id={id} role="group" aria-label={nhan}>
-      <div class="the-so-nhan"><span>{nhan}</span>{tt && <ChipTT tt={tt} />}</div>
-      <div class="the-so-gt"><b>{fmtSo(gt, { thapPhan })}</b>{donVi && gt !== null && <small>{donVi}</small>}</div>
+      {/* chip Đạt / Vượt ở hàng số (không chen hàng nhãn → nhãn dài như "Tổng DT sàn xây dựng" không bẻ hai dòng) */}
+      <div class="the-so-nhan"><span>{nhan}</span></div>
+      <div class="the-so-gt"><b>{fmtSo(gt, { thapPhan })}</b>{donVi && gt !== null && <small>{donVi}</small>}{tt && <ChipTT tt={tt} />}</div>
       {thanh && o?.tyLe != null && (
         <span class="the-so-thanh" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(o.tyLe * 100)} aria-label={nhan}>
           <i style={{ width: `${Math.min(100, o.tyLe * 100)}%` }} />

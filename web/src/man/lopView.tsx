@@ -22,6 +22,7 @@ import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { fmtSo } from '../ui/so';
 import type { NutHienThi } from '../ui/ThanhHienThi';
 import { useLuatTMB } from './tmbThaoTac';
+import { nhanToa } from '../ui/nhanToa';
 
 // ---- trạng thái lớp (cấp module, không lưu vào PA): bật, lọc khoảng điểm, tia view ----
 type TrangThaiLop = { bat: boolean; loc: [number, number] | null; tia: boolean };
@@ -445,7 +446,6 @@ export function KpiView({ pa, tv, lo, sua, chiXem, toaId, chonToa }: {
   const luu = (p: CaiDatViewLuu) => sua((q) => ({ ...q, huongView: { ...(q.huongView ?? {}), ...p } }));
   const luuW = (k: keyof TrongSoView, v: number) => luu({ trongSo: { ...(pa.huongView?.trongSo ?? {}), [k]: Math.max(0, v) } });
   const toaLo = pa.toa.filter((x) => (caDuAn || x.loId === lo.id) && kq.theoToa.has(x.id));
-  const ten = (mauId: string) => tv?.toa.get(mauId)?.ten_vi.split(' · ')[0] ?? mauId;
   const tim = (v: VanDe) => {
     if (!v.toa.length || !chonToa) return;
     const i = (buocVD[v.khoa] ?? 0) % v.toa.length;
@@ -492,7 +492,7 @@ export function KpiView({ pa, tv, lo, sua, chiXem, toaId, chonToa }: {
                 const r = kq.theoToa.get(x.id)!;
                 return (
                   <button type="button" class={`dong-toa-view${x.id === toaId ? ' chon' : ''}`} role="row" key={x.id} onClick={() => chonToa?.(x.id)} disabled={!chonToa}>
-                    <span class="ten">{ten(x.mauId)} <small>{x.soTangDH} T</small></span>
+                    <span class="ten">{nhanToa(pa, tv, x.id, { lo: caDuAn })} <small>{x.soTangDH} T</small></span>
                     <span class="chip-view" style={{ background: mauViewCss(r.tb ?? 0), color: chuTrenView(r.tb ?? 0) }}>{fmtSo(r.tb, { thapPhan: 0 })}</span>
                     <ThanhHang th={r} nho />
                     <DuongTang ys={tbTheoTang(tang.kq, x.id)} />
