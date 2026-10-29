@@ -4,7 +4,8 @@
  *  - TMB (man/ManXepToa.tsx): `<LopNangGio2D>` con đầu của `<BanVe>`, `useNutNangGio()` vào danh sách Lớp của GocBanVe, `<HopNangGioLuoi>` trong `.noi-tren`;
  *  - 3D Toàn dự án (ve3d/MoHinh3D.tsx): `moRong` của Khung3D = `useMoRongNangGio(pa)`, nút `<NutNangGio3D>` ở thanh 3D, `<HopNangGioLuoi la3D>`.
  */
-import { useEffect, useMemo, useRef } from 'preact/hooks';
+import { h } from 'preact';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { luoi } from '../ui/Luoi';
@@ -15,7 +16,23 @@ import type { GanMoRong, MoRong3D } from '../ve3d/moRong3D';
 import type { CanhDung } from '../ve3d/Khung3D';
 import { datNG, layNG, useNG } from './kho';
 
-export { LopNangGio2D } from './LopNangGio2D';
+type Lop2D = typeof import('./LopNangGio2D').LopNangGio2D;
+let Lop2DDaNap: Lop2D | null = null;
+/**
+ * Lớp 2D (ảnh nền, phân tích, bóng đổ) — chỉ tải mã khi có thứ cần vẽ (bật ảnh nền / mở hộp / có lớp phân tích), chưa tải thì không vẽ gì
+ * (không có vòng chờ trong SVG). Chunk khởi động không nặng thêm.
+ */
+export function LopNangGio2D(p: { pa: TrangThaiPA; tv: ThuVien | null }) {
+  const can = useNG((x) => x.banDo2D || x.moHop || !!x.lop);
+  const [, ve] = useState(0);
+  useEffect(() => {
+    if (!can || Lop2DDaNap) return;
+    let huy = false;
+    import('./LopNangGio2D').then((m) => { Lop2DDaNap = m.LopNangGio2D; if (!huy) ve((n) => n + 1); }).catch(() => {});
+    return () => { huy = true; };
+  }, [can]);
+  return can && Lop2DDaNap ? h(Lop2DDaNap, p) : null;
+}
 
 const HopNangGioLuoi = luoi(() => import('./HopNangGio').then((m) => m.default), 'hop');
 type PropsHop = { pa: TrangThaiPA; tv: ThuVien | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; la3D?: boolean };
