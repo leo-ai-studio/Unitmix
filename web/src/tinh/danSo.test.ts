@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { tinhChiTieu } from './chiTieu';
-import { danSoDuAn, danSoLo, nguoiMotCan, quyTacApDung, traBang } from './danSo';
+import { danSoDuAn, danSoLo, khuVucKhai, nguoiMotCan, quyTacApDung, traBang } from './danSo';
 import {
   HE_SO_MAC_DINH, NGUONG_MAC_DINH, taoThuVien,
   type CanMau, type ChiTieuQH, type KhaiDanSo, type Lo, type ToaDat, type ToaMau, type TrangThaiPA,
 } from './kieu';
 import { chuanHoaPA } from './macDinh';
-import { FALLBACK_QG, FALLBACK_QG_LH, QUY_TAC_DAN_SO, timQuyTac, type BangDanSo, type PhuongPhap } from './quyTacDanSo';
+import {
+  coPhanBietKhuVuc, dsTinhChon, FALLBACK_QG, FALLBACK_QG_LH, QUY_TAC_DAN_SO, SO_PHONG_O, theoKhuVuc, timQuyTac,
+  type BangDanSo, type PhuongPhap,
+} from './quyTacDanSo';
 
 const can = (id: string, loai: CanMau['loai'], dt: number, nhom: 'tm' | 'xh' = 'tm'): CanMau =>
   ({ id, ma_goc: id, nhom, loai, vi_tri: 'giua', vi_tri_ma: 'm1', sau_mm: 8500, rong_mm: 7000, ten_vi: id, ten_en: id, dt_tt_m2: dt, dt_tim_m2: dt + 4 });
@@ -120,9 +123,11 @@ describe('Hải Dương QĐ 11/2024 · Đồng Nai QĐ 09/2025 (đối chiếu t
   it('Đồng Nai Điều 4 khoản 3: cùng DT, khác số phòng ở → khác số người', () => {
     const pp = timQuyTac('dnai')!.phuongPhap!.cp;
     const n = (dt: number, l: CanMau['loai']) => nguoiMotCan(dt, 'notm', pp, l).nguoi;
+    // 2PN+ = 3 phòng ở (QCVN 04:2021 1.4.21) → 130 m² cột 03 phòng ở = 5
     expect([n(40, '1pn'), n(60, '1pn'), n(60, '2pn'), n(85, '2pn'), n(85, '3pn'), n(110, '3pn'), n(130, '3pn'), n(125, '2pn'), n(130, '2pnp')])
-      .toEqual([1.5, 2, 2.5, 3, 3.5, 4, 5, 3.5, 4.5]);
-    expect(nguoiMotCan(80, 'noxh', pp, '1pn')).toMatchObject({ nguoi: 2, ngoaiBang: 'tren' }); // 1 phòng ở chỉ tới 70 m²
+      .toEqual([1.5, 2, 2.5, 3, 3.5, 4, 5, 3.5, 5]);
+    // 1 phòng ở chỉ tới 70 m² → khoản 4 theo DT: cột gần nhất chứa 80 m² là 02 phòng ở (trên 70–100 → 3,0)
+    expect(nguoiMotCan(80, 'noxh', pp, '1pn')).toMatchObject({ nguoi: 3, ngoaiBang: null, dieu: expect.stringMatching(/khoản 4/) });
   });
   it('Đồng Nai lô cấp phép: 10 × (2×68→2,5 + 45 1PN→1,5 + 101 3PN→4) = 105; lập quy hoạch 62 / 31 = 2', () => {
     const p = pa(lo({ tinh: 'dnai', giaiDoan: 'cp' }));
@@ -155,7 +160,7 @@ describe('fallback và tỉnh chưa có trị số', () => {
   });
   it('mỗi tỉnh có QĐ đều ghi số hiệu; tỉnh có bảng ghi điều khoản từng bảng', () => {
     for (const q of QUY_TAC_DAN_SO) {
-      if (q.id !== 'khac') expect(q.qd).toBeTruthy();
+      if (q.phuongPhap || q.theo) expect(q.qd).toBeTruthy();
       for (const pp of Object.values(q.phuongPhap ?? {})) {
         if (pp.kieu === 'bang') for (const b of Object.values(pp.bang)) expect(b!.dieu).toMatch(/QĐ/);
         else if (pp.kieu === 'bangPhong') for (const b of Object.values(pp.phong)) expect(b.dieu).toMatch(/QĐ.*Điều/);
@@ -223,5 +228,102 @@ describe('dân số từng căn → loại, tòa, lô, dự án', () => {
     const k = danSoLo(p, p.lo[0], tv);
     expect(k.phuongPhap).toBe('bq');
     expect(k.tong).toBeCloseTo(144);
+  });
+});
+
+// Lô giả: 10 tầng × (2 × 68 + 45 + 101) = 2.820 m² DT sử dụng, 40 căn (2PN 68 ×20, 1PN 45 ×10, 3PN 101 ×10)
+describe('Đồng Nai QĐ 09/2025 — phòng ở (QCVN 04:2021 1.4.21) và mốc biên theo lời văn điểm a–d', () => {
+  const pp = timQuyTac('dnai')!.phuongPhap!.cp;
+  const n = (dt: number, l: CanMau['loai']) => nguoiMotCan(dt, 'notm', pp, l).nguoi;
+  it('số phòng ở: Studio, 1PN → 1 · 2PN → 2 · 2PN+ → 3 · 3PN → 3', () => {
+    expect(SO_PHONG_O).toEqual({ stu: 1, '1pn': 1, '2pn': 2, '2pnp': 3, '3pn': 3 });
+  });
+  it('2PN+ khác 2PN cùng DT: 85 m² → 3,5 (03 phòng ở, điểm c) vs 3,0 (02 phòng ở, điểm b); căn cứ ghi QCVN 04 1.4.21', () => {
+    expect(n(85, '2pnp')).toBe(3.5);
+    expect(n(85, '2pn')).toBe(3);
+    expect(nguoiMotCan(85, 'notm', pp, '2pnp').dieu).toMatch(/điểm c.*QCVN 04:2021\/BXD 1\.4\.21/);
+  });
+  it('2PN+ nhỏ 68 m² không có trong cột 03 phòng ở (từ trên 70) → khoản 4 theo DT: cột 02 phòng ở = 2,5', () => {
+    expect(nguoiMotCan(68, 'notm', pp, '2pnp')).toMatchObject({ nguoi: 2.5, ngoaiBang: null, dieu: expect.stringMatching(/điểm b.*khoản 4/) });
+  });
+  it('mốc trên lấy, mốc "từ trên" không lấy: 2PN 125 → 3,5 · 125,01 → 4,5 · 3PN 125 → 4 · 3PN 100 → 3,5', () => {
+    expect([n(125, '2pn'), n(125.01, '2pn'), n(125, '3pn'), n(100, '3pn')]).toEqual([3.5, 4.5, 4, 3.5]);
+  });
+  it('đúng mốc dưới "từ trên": 2PN 45 m² → ngoài điểm b → khoản 4: cột 01 phòng ở (25–45) = 1,5; 45,01 → 2,5', () => {
+    expect([n(45, '2pn'), n(45.01, '2pn')]).toEqual([1.5, 2.5]);
+  });
+  it('3PN 70 m² → ngoài điểm c (từ trên 70) → khoản 4: cột gần nhất chứa 70 là 02 phòng ở = 2,5', () => {
+    expect(n(70, '3pn')).toBe(2.5);
+  });
+  it('NOXH / TĐC cùng bảng (QĐ không phân biệt loại hình): 2PN+ 85 m² → 3,5 cho cả ba loại hình', () => {
+    expect((['notm', 'noxh', 'tdc'] as const).map((lh) => nguoiMotCan(85, lh, pp, '2pnp').nguoi)).toEqual([3.5, 3.5, 3.5]);
+  });
+});
+
+describe('khu vực đô thị / nông thôn (Đồng Nai QĐ 09/2025 Điều 4 khoản 1: 31,0 / 28,5 m² sàn/người)', () => {
+  it('PA cũ không có khuVuc → đô thị; giai đoạn quy hoạch có phân biệt → S_tb 31', () => {
+    const l = lo({ tinh: 'dnai', giaiDoan: 'qh' });
+    expect(khuVucKhai(l)).toBe('doThi');
+    expect(quyTacApDung(l)!.khuVuc).toEqual({ ap: 'doThi', phanBiet: true, sTb: 31 });
+    // chuẩn hoá PA cũ không tự thêm trường
+    expect(chuanHoaPA(pa(l)).lo[0].temDat.danSo!.khuVuc).toBeUndefined();
+  });
+  it('đô thị: 2.820 / 31 = 90,97 người · nông thôn: 2.820 / 28,5 = 98,95 người', () => {
+    const pDo = pa(lo({ tinh: 'dnai', giaiDoan: 'qh', khuVuc: 'doThi' }));
+    const pNong = pa(lo({ tinh: 'dnai', giaiDoan: 'qh', khuVuc: 'nongThon' }));
+    expect(danSoLo(pDo, pDo.lo[0], tv).tong).toBeCloseTo(2820 / 31, 6);
+    const k = danSoLo(pNong, pNong.lo[0], tv);
+    expect(k.tong).toBeCloseTo(2820 / 28.5, 6);
+    expect(k.quyTac!.khuVuc).toEqual({ ap: 'nongThon', phanBiet: true, sTb: 28.5 });
+    expect(k.canCu[0]).toMatch(/28,5.*nông thôn/);
+  });
+  it('NOXH, TĐC cũng theo khu vực (QĐ không phân biệt loại hình): căn 57 m² nông thôn → 2 người', () => {
+    const q = quyTacApDung(lo({ tinh: 'dnai', giaiDoan: 'qh', khuVuc: 'nongThon' }))!;
+    for (const lh of ['notm', 'noxh', 'tdc'] as const) expect(nguoiMotCan(57, lh, q.theoLoaiHinh[lh].pp).nguoi).toBeCloseTo(2);
+  });
+  it('giai đoạn cấp phép (bảng số phòng) và tỉnh không phân biệt → không hiện ô, khai nông thôn không đổi kết quả', () => {
+    expect(quyTacApDung(lo({ tinh: 'dnai', giaiDoan: 'cp', khuVuc: 'nongThon' }))!.khuVuc.phanBiet).toBe(false);
+    const p = pa(lo({ tinh: 'hn', giaiDoan: 'cp', khuVuc: 'nongThon' }));
+    expect(danSoLo(p, p.lo[0], tv).tong).toBe(90);
+    expect(QUY_TAC_DAN_SO.filter((q) => Object.values(q.phuongPhap ?? {}).some(coPhanBietKhuVuc)).map((q) => q.id)).toEqual(['dnai']);
+  });
+  it('theoKhuVuc giữ cờ tạm; S_tb không có trị số nông thôn thì giữ nguyên', () => {
+    const tam: PhuongPhap = { kieu: 'sTb', sTb: 30, dieu: 'QĐ x', tam: true, nongThon: { sTb: 25, dieu: 'QĐ x nt' } };
+    expect(theoKhuVuc(tam, 'nongThon')).toEqual({ kieu: 'sTb', sTb: 25, dieu: 'QĐ x nt', tam: true });
+    expect(theoKhuVuc(FALLBACK_QG, 'nongThon')).toBe(FALLBACK_QG);
+  });
+});
+
+describe('tỉnh trọng điểm sau sáp nhập: An Giang (gồm Kiên Giang, Phú Quốc), Hưng Yên (gồm Thái Bình) — chưa có QĐ', () => {
+  for (const id of ['ag', 'hy']) {
+    it(`${id}: mọi loại hình theo mặc định quốc gia S / 32, không cờ tạm, đã rà (daDoiChieu)`, () => {
+      const qt = timQuyTac(id)!;
+      expect(qt).toMatchObject({ qd: null, phuongPhap: null, daDoiChieu: true, trongDiem: true });
+      expect(qt.ghiChu).toMatch(/29\/10\/2026/);
+      const q = quyTacApDung(lo({ tinh: id, giaiDoan: 'cp' }))!;
+      expect(q).toMatchObject({ fallback: true, tam: false, bq: null });
+      for (const lh of ['notm', 'noxh', 'tdc'] as const) {
+        expect(q.theoLoaiHinh[lh]).toMatchObject({ rieng: false, pp: FALLBACK_QG });
+        expect(nguoiMotCan(96, lh, q.theoLoaiHinh[lh].pp).nguoi).toBeCloseTo(3); // 96 / 32
+      }
+    });
+    it(`${id}: lô NOTM / NOXH / TĐC = 2.820 / 32 = 88,125 người, căn cứ QĐ 2161`, () => {
+      for (const loaiHinh of ['notm', 'noxh', 'tdc'] as const) {
+        const p = pa(lo({ tinh: id, giaiDoan: 'cp', loaiHinh }));
+        const k = danSoLo(p, p.lo[0], tv);
+        expect(k.tong).toBeCloseTo(88.125);
+        expect(k.theoLoaiHinh[loaiHinh]).toMatchObject({ so: 40, phuongPhap: 'sTb', rieng: false });
+        expect(k.canCu[0]).toMatch(/2161/);
+      }
+    });
+  }
+  it('danh sách chọn tỉnh: trọng điểm trước (HN, TP.HCM ×2, An Giang, Hưng Yên), "Tỉnh / thành khác" cuối', () => {
+    const ds = dsTinhChon();
+    expect(ds.trongDiem.map((q) => q.id)).toEqual(['hn', 'hcm', 'hcm83', 'ag', 'hy']);
+    expect(ds.khac.at(-1)!.id).toBe('khac');
+    expect(ds.trongDiem.length + ds.khac.length).toBe(QUY_TAC_DAN_SO.length);
+  });
+  it('Hà Nội TĐC: mặc định quốc gia 32 m²/người — ghi chú "đã chốt"', () => {
+    expect(timQuyTac('hn')!.ghiChu).toMatch(/TĐC.*32 m²\/người.*đã chốt/);
   });
 });

@@ -31,10 +31,13 @@ export type LoaiHinh = 'notm' | 'noxh' | 'tdc';
 export type GiaiDoan = 'qh' | 'cp';
 /**
  * Khai báo cách tính dân số theo QĐ tỉnh (`tinh/quyTacDanSo.ts`). Thiếu = PA cũ / chưa khai: dân số = số căn × `nguoiMoiCan`
- * (hệ số chung). `tinh` theo địa giới CŨ trước 1/7/2025. `loaiHinh` thiếu = lấy theo chức năng lô / nhóm mẫu căn.
- * `cach` 'bq' = bình quân người / căn mà QĐ cho phép thay bảng.
+ * (hệ số chung). `tinh` = id trong `QUY_TAC_DAN_SO` (tỉnh theo địa giới cũ, hoặc tỉnh mới sau sáp nhập 1/7/2025 đã rà QĐ). `loaiHinh` thiếu = lấy theo chức năng lô / nhóm mẫu căn.
+ * `cach` 'bq' = bình quân người / căn mà QĐ cho phép thay bảng. `khuVuc` đô thị / nông thôn — chỉ có tác dụng khi QĐ ghi trị
+ * số riêng hai khu vực (VD Đồng Nai QĐ 09/2025 Điều 4 khoản 1: 31,0 / 28,5 m² sàn/người); thiếu (PA cũ) = đô thị.
  */
-export type KhaiDanSo = { tinh: string; giaiDoan: GiaiDoan; loaiHinh?: LoaiHinh; cach?: 'bang' | 'bq' };
+export type KhaiDanSo = { tinh: string; giaiDoan: GiaiDoan; loaiHinh?: LoaiHinh; cach?: 'bang' | 'bq'; khuVuc?: KhuVuc };
+/** Khu vực khu đất để tra chỉ tiêu m² sàn/người khi QĐ tỉnh phân biệt đô thị / nông thôn. */
+export type KhuVuc = 'doThi' | 'nongThon';
 
 export type TemDat = {
   kyHieu: string;
