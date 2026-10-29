@@ -10,6 +10,12 @@
   --ham-loi: #5c6662;
   --ham-ram: #f6d8b8;
   --ham-sac: #c9e6c4;
+  --ham-phong: #e4e7ea;
+  --ham-thang: #f3c9c4;
+  --ham-gio: #cfe0f3;
+  --ham-t1-thap: #d9d6cc;
+  --ham-t1-de: #ebe7dc;
+  --ham-t1-xanh: #dcebd2;
 }
 
 .ham-ve .ranh-ham { fill: var(--ham-san); stroke: var(--green); stroke-width: 2; }
@@ -26,6 +32,30 @@
 .ham-ve .chan-toa { fill: none; stroke: var(--ink); stroke-width: 1; stroke-dasharray: 6 4; }
 .ham-ve .ranh-lo { fill: none; stroke: var(--muted); stroke-width: 1; }
 .ham-ve text { pointer-events: none; fill: var(--ink); }
+/* Đợt 2: phòng kỹ thuật, xe máy từng ô, thang thoát nạn, hộp gió, tường / rèm ngăn cháy, đầu làn cụt, tầng 1. */
+.ham-ve .phong { fill: var(--ham-phong); stroke: var(--muted); stroke-width: 1; }
+.ham-ve .cho-xe-may { fill: none; stroke: #c7aa76; stroke-width: 0.5; }
+.ham-ve .thang-thoat { fill: var(--ham-thang); stroke: var(--vuot); stroke-width: 1.2; }
+.ham-ve .ong-gio { fill: var(--ham-gio); stroke: #3b6ea8; stroke-width: 1; }
+.ham-ve .tuong-chay { stroke: var(--vuot); stroke-width: 3; stroke-dasharray: 10 4 2 4; fill: none; }
+.ham-ve .rem-chay { fill: var(--vuot); stroke: none; }
+.ham-ve .ram-thang { fill: var(--ham-ram); fill-opacity: 0.5; stroke: #a15c1d; stroke-width: 1; stroke-dasharray: 4 3; }
+.ham-ve .cut-duong circle { fill: color-mix(in srgb, var(--vuot) 18%, transparent); stroke: var(--vuot); stroke-width: 1.5; }
+.ham-ve .cut-duong line { stroke: var(--vuot); stroke-width: 1.5; }
+.ham-ve .nhan-phong { font-weight: 600; }
+.ham-ve .nhan-khoang { fill: var(--vuot); opacity: 0.55; }
+.ham-ve .nhan-thang { fill: var(--vuot); }
+.t1-ve .t1-lo { fill: var(--ham-t1-xanh); stroke: var(--muted); stroke-width: 1; }
+.t1-ve .t1-ranh-ham { fill: none; stroke: var(--green); stroke-width: 1.2; stroke-dasharray: 8 5; }
+.t1-ve .t1-de { fill: var(--ham-t1-de); stroke: var(--muted); stroke-width: 1; }
+.t1-ve .t1-thap { fill: var(--ham-t1-thap); stroke: var(--ink); stroke-width: 1.5; }
+.t1-ve .t1-duong-vao { stroke: #d8cdb8; stroke-linecap: butt; opacity: 0.9; }
+.ham-tang .sep { width: 1px; background: var(--line); margin: 2px 4px; }
+.ham-phong-dong { display: grid; grid-template-columns: 1.6fr 0.5fr 1fr auto; gap: 4px; align-items: center; padding: 2px 12px; font-size: 12px; }
+.ham-phong-dong input[type="number"] { width: 100%; min-width: 0; }
+.ham-phong-dong small { color: var(--muted-text); font-size: 10px; }
+.ham-phong-dong.dau { font-weight: 700; color: var(--muted-text); }
+.nhan-tam { display: inline-block; margin-left: 4px; padding: 0 4px; font-size: 9px; border-radius: 3px; background: #eef1f4; color: var(--muted-text); vertical-align: 1px; }
 
 .ham-tang { display: flex; gap: 4px; justify-content: center; padding: 6px 12px; }
 .ham-tang button { border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 92%, transparent); padding: 4px 10px; font-size: 12px; border-radius: 4px; color: var(--ink); }

@@ -279,6 +279,28 @@ export type ThongSoHam = {
   garaCoKhi?: boolean;
   ram?: RamHam;
   xeDien?: KhuXeDien;
+  /* Bố trí hầm đợt 2 (tinh/hamPhong.ts, tinh/hamBoTri.ts). PA cũ thiếu thì chuanHoaHam điền mặc định. */
+  /** Tự lập chương trình phòng kỹ thuật theo dự án (tắt = dải kỹ thuật theo `tyLeKyThuat` như cũ). */
+  tuDongPhong?: boolean;
+  /** Chỉnh từng loại phòng (khoá = LoaiPhong): DT m² (null = tự tính) hoặc bỏ. */
+  phong?: Record<string, { dt?: number | null; bo?: boolean }>;
+  /** Nước sinh hoạt L/người/ngày đêm (QCVN 01:2021 2.10.2: ≥ 80); số ngày dự trữ bể; kVA mỗi căn (tạm). */
+  qSinhHoat?: number;
+  ngayDuTru?: number;
+  kvaMoiCan?: number;
+  /** DT tối đa một khoang cháy mỗi tầng hầm, m² (QCVN 13:2018 Bảng 4: bậc I, S0 ≤ 3 000). */
+  dtKhoangMax?: number;
+  /** Cự ly tối đa tới lối ra thoát nạn trong hầm, m (QCVN 13:2018 Bảng 3: ngầm 40 m giữa hai lối ra). */
+  cuLyThoat?: number;
+  /** Buồng thang thoát nạn đặt thêm: rộng × dài, m (tạm). */
+  thangRong?: number;
+  thangDai?: number;
+  /** Số chỗ xe lăn tự tính theo QCVN 10:2024/BXD Bảng 1 trên tổng chỗ (tắt = `choXeLan` mỗi tầng). */
+  xeLanTuDong?: boolean;
+  /** Chỗ xe máy: rộng × dài, lối đi, m (QCVN 07-11:2025 dự thảo 2.4.2.2: ≥ 0,75 × 2,0; lối một chiều ≥ 1,5). */
+  xeMayRong?: number;
+  xeMayDai?: number;
+  xeMayLan?: number;
 };
 
 /** Loại ram theo QCVN 13:2018 2.2.1.28 a): thẳng có mái che, cong, hở (không mái che). */
@@ -294,6 +316,13 @@ export type RamHam = {
   docNgang: number; // %
   coNguoiDi: boolean;
   viaHe: number; // m
+  /** Đoạn chuyển dốc (nửa dốc) ở mỗi đầu, m — tính trong `dai` (QCVN 07-11:2025 dự thảo 2.4.3.8.3: đổi dốc ≤ 12,5% / 15%). */
+  doanChuyen?: number;
+  /** Đoạn thẳng bằng sau chân ram trong hầm / trước đỉnh ram (tầng 1 và tầng có ram xuống tiếp), m (tạm). */
+  doanThangDuoi?: number;
+  doanThangTren?: number;
+  /** Bán kính ram cong (tim làn trong), m (QCVN 07-11:2025 dự thảo 2.4.7.4.3: ngầm ≥ 6 m). */
+  banKinh?: number;
 };
 /** Khu xe điện / sạc / đổi pin theo DỰ THẢO Sửa đổi 01:2026 QCVN 04:2021/BXD (chưa có số, chưa hiệu lực): chỉ cảnh báo. */
 export type KhuXeDien = {
@@ -307,6 +336,8 @@ export type KhuXeDien = {
   khoangCach: number; // m, giữa các khu / phân vùng
   tuongNgan: boolean; // có tường / vách ngăn không cháy cao ≥ 2 m
   tuDoiPinTang: number | null; // tầng hầm đặt tủ đổi pin; null = không có
+  /** % chỗ ô tô có sạc khi `choOto` = 0 (QCVN 07-11:2025 dự thảo 2.3.5 phương án 3: ≥ 10%). */
+  tyLeOto?: number;
 };
 
 /** Góc nhìn 3D đã lưu (m, toạ độ three: X = x, Y = cao, Z = −y). `che` = cảnh toàn dự án hay một công trình. */

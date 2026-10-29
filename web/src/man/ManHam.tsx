@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
-import { diemTheoDoDai, dongRanhVe, type HamDayDu, type KiemHam } from '../tinh/ham';
+import { diemTheoDoDai, dongRanhVe, type HamDayDu, type KetQuaHam, type KiemHam } from '../tinh/ham';
 import { useRaiHam } from '../tinh/hamNen';
 import { chanToa } from '../tinh/hinhHoc';
 import { PHAN_HAM_MAC_DINH, type Diem, type LoaiRam, type ThongSoHam, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
@@ -9,7 +9,7 @@ import { MucGap } from '../ui/MucGap';
 import { GocBanVe } from '../ui/GocBanVe';
 import { fmtSo } from '../ui/so';
 import { BanVe, khungBao, sPoly, type DieuKhienVe } from '../ve/BanVe';
-import { ChuGiaiHam, MatBangHam } from '../ve/MatBangHam';
+import { ChuGiaiHam, ChuGiaiT1, MatBangHam, MatBangT1 } from '../ve/MatBangHam';
 import { VeRanh } from '../ve/VeRanh';
 import { ChonLoCaoTang } from './ManLo';
 import { loDangXep } from './ManXepToa';
@@ -87,6 +87,7 @@ export function HamTrai({ pa, sua, chiXem, loId, chonLo, tv, tangHam, chonTangHa
   const ramViTri = (k: 'x' | 'y' | 'gocDo') => (v: number | null) =>
     suaHam(sua, (x) => ({ ram: { ...x.ram, x: x.ram.x ?? kq?.ram?.x ?? 0, y: x.ram.y ?? kq?.ram?.y ?? 0, gocDo: x.ram.gocDo ?? kq?.ram?.gocDo ?? 0, [k]: v ?? 0 } }));
   const QC13 = 'QCVN 13:2018/BXD';
+  const D0711 = 'QCVN 07-11:2025/BXD (dự thảo)';
   const DT = t('ham.duThaoCanCu');
 
   return (
@@ -115,7 +116,8 @@ export function HamTrai({ pa, sua, chiXem, loId, chonLo, tv, tangHam, chonTangHa
         <ONhap nhan={t('ham.choDai')} gt={h.choDai} donVi="m" buoc={0.1} min={5} goiY={`${QC13} 2.2.1.25: ≥ 5 m`} tat={tat} onDoi={so('choDai')} />
         <ONhap nhan={t('ham.choRong')} gt={h.choRong} donVi="m" buoc={0.1} min={2.3} goiY={`${QC13} 2.2.1.25: ≥ 2,3 m`} tat={tat} onDoi={so('choRong')} />
         <ONhap nhan={t('ham.rongLan')} gt={h.rongLan} donVi="m" buoc={0.1} min={1} tat={tat} onDoi={so('rongLan')} />
-        <ONhap nhan={t('ham.choXeLan')} gt={h.choXeLan} buoc={1} goiY={`QCVN 04:2021/BXD 2.2.17.3; ${QC13} 2.2.1.25: 3,5 m`} tat={tat} onDoi={(v) => so('choXeLan')(Math.round(v ?? 0))} />
+        <OTich nhan={t('ham.xeLanTuDong')} bat={h.xeLanTuDong} goiY="QCVN 10:2024/BXD 2.1.1, Bảng 1" tat={tat} onDoi={(v) => suaHam(sua, () => ({ xeLanTuDong: v }))} />
+        {!h.xeLanTuDong && <ONhap nhan={t('ham.choXeLan')} gt={h.choXeLan} buoc={1} goiY={`QCVN 04:2021/BXD 2.2.17.3; ${QC13} 2.2.1.25: 3,5 m`} tat={tat} onDoi={(v) => so('choXeLan')(Math.round(v ?? 0))} />}
         <ONhap nhan={t('ham.nhip')} gt={h.nhip} donVi="m" buoc={0.1} min={3} tat={tat} onDoi={so('nhip')} />
         <ONhap nhan={t('ham.cotRong')} gt={h.cotRong} donVi="m" buoc={0.05} tat={tat} onDoi={so('cotRong')} />
         <OTich nhan={t('ham.garaCoKhi')} bat={h.garaCoKhi} goiY="QCVN 04:2021/BXD 2.2.17.1 d)" tat={tat} onDoi={(v) => suaHam(sua, () => ({ garaCoKhi: v }))} />
@@ -124,11 +126,32 @@ export function HamTrai({ pa, sua, chiXem, loId, chonLo, tv, tangHam, chonTangHa
       <MucGap tieuDe={t('ham.mucXeMayKho')}>
         <ONhap nhan={t('ham.tangXeMay')} gt={h.tangXeMay} buoc={1} min={1} max={h.soTang} tat={tat} onDoi={(v) => so('tangXeMay')(Math.round(v ?? 1))} />
         <ONhap nhan={t('ham.dtXeMay')} gt={h.dtXeMay ?? null} donVi="m²" buoc={10} choTrong goiY={t('ham.dtXeMayGoiY')} tat={tat} onDoi={so('dtXeMay')} />
+        <ONhap nhan={t('ham.xeMayRong')} gt={h.xeMayRong} donVi="m" buoc={0.05} min={0.75} goiY={`${D0711} 2.4.2.2: ≥ 0,75 m`} tat={tat} onDoi={so('xeMayRong')} />
+        <ONhap nhan={t('ham.xeMayDai')} gt={h.xeMayDai} donVi="m" buoc={0.1} min={2} goiY={`${D0711} 2.4.2.2: ≥ 2,0 m`} tat={tat} onDoi={so('xeMayDai')} />
+        <ONhap nhan={t('ham.xeMayLan')} gt={h.xeMayLan} donVi="m" buoc={0.1} min={1.5} goiY={`${D0711} 2.4.3.4: một chiều ≥ 1,5 m`} tat={tat} onDoi={so('xeMayLan')} />
         <ONhap nhan={t('ham.khoMoiTang')} gt={h.khoMoiTang} buoc={1} tat={tat} onDoi={(v) => so('khoMoiTang')(Math.round(v ?? 0))} />
         <ONhap nhan={t('ham.dtKho')} gt={h.dtKho} donVi="m²" buoc={0.5} min={1} tat={tat} onDoi={so('dtKho')} />
         <ONhap nhan={t('ham.rongKho')} gt={h.rongKho} donVi="m" buoc={0.1} min={1} tat={tat} onDoi={so('rongKho')} />
         <ONhap nhan={t('ham.lanKho')} gt={h.lanKho} donVi="m" buoc={0.1} tat={tat} onDoi={so('lanKho')} />
-        <ONhap nhan={t('ham.tyLeKyThuat')} gt={Math.round(h.tyLeKyThuat * 1000) / 10} donVi="%" buoc={1} max={50} tat={tat} onDoi={(v) => so('tyLeKyThuat')((v ?? 0) / 100)} />
+        {!h.tuDongPhong && <ONhap nhan={t('ham.tyLeKyThuat')} gt={Math.round(h.tyLeKyThuat * 1000) / 10} donVi="%" buoc={1} max={50} tat={tat} onDoi={(v) => so('tyLeKyThuat')((v ?? 0) / 100)} />}
+      </MucGap>
+
+      <MucGap tieuDe={t('ham.mucPhongNhap')} giaiThich={t('ham.phongGiaiThich')}>
+        <OTich nhan={t('ham.tuDongPhong')} bat={h.tuDongPhong} tat={tat} onDoi={(v) => suaHam(sua, () => ({ tuDongPhong: v }))} />
+        {h.tuDongPhong && (
+          <>
+            <ONhap nhan={t('ham.qSinhHoat')} gt={h.qSinhHoat} donVi="L/ng.ngđ" buoc={10} min={80} goiY="QCVN 01:2021/BXD 2.10.2: ≥ 80 L/người/ngày đêm" tat={tat} onDoi={so('qSinhHoat')} />
+            <ONhap nhan={t('ham.ngayDuTru')} gt={h.ngayDuTru} donVi="ngày" buoc={0.5} min={0.5} goiY={t('ham.tam')} tat={tat} onDoi={so('ngayDuTru')} />
+            <ONhap nhan={t('ham.kvaMoiCan')} gt={h.kvaMoiCan} donVi="kVA" buoc={0.5} min={0} goiY={t('ham.tam')} tat={tat} onDoi={so('kvaMoiCan')} />
+          </>
+        )}
+      </MucGap>
+
+      <MucGap tieuDe={t('ham.mucKhoangNhap')} giaiThich={t('ham.khoangGiaiThich')}>
+        <ONhap nhan={t('ham.dtKhoangMax')} gt={h.dtKhoangMax} donVi="m²" buoc={100} min={300} goiY={`${QC13} 2.2.2 a), Bảng 4: bậc I, S0 ≤ 3 000 m²`} tat={tat} onDoi={so('dtKhoangMax')} />
+        <ONhap nhan={t('ham.cuLyThoat')} gt={h.cuLyThoat} donVi="m" buoc={1} min={10} goiY={`${QC13} Bảng 3: ngầm 40 m (giữa hai lối ra), 20 m (cụt)`} tat={tat} onDoi={so('cuLyThoat')} />
+        <ONhap nhan={t('ham.thangRong')} gt={h.thangRong} donVi="m" buoc={0.1} min={2.4} goiY={`${QC13} 2.2.1.14: thang ≥ 1 m mỗi vế; ${t('ham.tam')}`} tat={tat} onDoi={so('thangRong')} />
+        <ONhap nhan={t('ham.thangDai')} gt={h.thangDai} donVi="m" buoc={0.1} min={4} goiY={t('ham.tam')} tat={tat} onDoi={so('thangDai')} />
       </MucGap>
 
       <MucGap tieuDe={t('ham.mucRam')}>
@@ -139,6 +162,10 @@ export function HamTrai({ pa, sua, chiXem, loId, chonLo, tv, tangHam, chonTangHa
         </label>
         <ONhap nhan={t('ham.ramDai')} gt={h.ram.dai} donVi="m" buoc={0.5} min={1} tat={tat} onDoi={(v) => ram('dai')(v)} />
         <ONhap nhan={t('ham.ramRong')} gt={h.ram.rong} donVi="m" buoc={0.1} min={2} tat={tat} onDoi={(v) => ram('rong')(v)} />
+        <ONhap nhan={t('ham.ramChuyen')} gt={h.ram.doanChuyen ?? 0} donVi="m" buoc={0.1} goiY={`${D0711} 2.4.3.8.3: đổi dốc ≤ 12,5%`} tat={tat} onDoi={(v) => ram('doanChuyen')(v ?? 0)} />
+        <ONhap nhan={t('ham.ramThangDuoi')} gt={h.ram.doanThangDuoi ?? 0} donVi="m" buoc={0.5} goiY={t('ham.tam')} tat={tat} onDoi={(v) => ram('doanThangDuoi')(v ?? 0)} />
+        <ONhap nhan={t('ham.ramThangTren')} gt={h.ram.doanThangTren ?? 0} donVi="m" buoc={0.5} goiY={t('ham.tam')} tat={tat} onDoi={(v) => ram('doanThangTren')(v ?? 0)} />
+        {h.ram.loai === 'cong' && <ONhap nhan={t('ham.ramBanKinh')} gt={h.ram.banKinh ?? 6} donVi="m" buoc={0.5} min={1} goiY={`${D0711} 2.4.7.4.3: ≥ 6 m`} tat={tat} onDoi={(v) => ram('banKinh')(v ?? 6)} />}
         <ONhap nhan={t('ham.ramDocNgang')} gt={h.ram.docNgang} donVi="%" buoc={0.5} goiY={`${QC13} 2.2.1.28 b): ≤ 6%`} tat={tat} onDoi={(v) => ram('docNgang')(v)} />
         <OTich nhan={t('ham.ramNguoiDi')} bat={h.ram.coNguoiDi} goiY={`${QC13} 2.2.1.28 c)`} tat={tat} onDoi={(v) => ram('coNguoiDi')(v)} />
         {h.ram.coNguoiDi && <ONhap nhan={t('ham.ramViaHe')} gt={h.ram.viaHe} donVi="m" buoc={0.1} goiY={`${QC13} 2.2.1.28 c): ≥ 0,8 m`} tat={tat} onDoi={(v) => ram('viaHe')(v)} />}
@@ -160,6 +187,7 @@ export function HamTrai({ pa, sua, chiXem, loId, chonLo, tv, tangHam, chonTangHa
           <>
             <ONhap nhan={t('ham.xdTang')} gt={h.xeDien.tang} buoc={1} min={1} max={h.soTang} tat={tat} onDoi={(v) => xd('tang')(Math.round(v ?? 1))} />
             <ONhap nhan={t('ham.xdChoOto')} gt={h.xeDien.choOto} buoc={1} tat={tat} onDoi={(v) => xd('choOto')(Math.round(v ?? 0))} />
+            <ONhap nhan={t('ham.xdTyLe')} gt={h.xeDien.tyLeOto ?? 10} donVi="%" buoc={1} max={100} goiY={`${D0711} 2.3.5: ≥ 10%`} tat={tat} onDoi={(v) => xd('tyLeOto')(v ?? 10)} />
             <ONhap nhan={t('ham.xdVungOto')} gt={h.xeDien.vungOto} buoc={1} min={1} goiY={`${DT} 2.10.2.1 b): ≤ 25`} tat={tat} onDoi={(v) => xd('vungOto')(Math.round(v ?? 1))} />
             <ONhap nhan={t('ham.xdChoXeMay')} gt={h.xeDien.choXeMay} buoc={1} tat={tat} onDoi={(v) => xd('choXeMay')(Math.round(v ?? 0))} />
             <ONhap nhan={t('ham.xdVungXeMay')} gt={h.xeDien.vungXeMay} buoc={1} min={1} goiY={`${DT} 2.10.2.1 b): ≤ 50`} tat={tat} onDoi={(v) => xd('vungXeMay')(Math.round(v ?? 1))} />
@@ -182,6 +210,8 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
   const [con, setCon] = useState<Diem | null>(null);
   const [bao, setBao] = useState('');
   const [doDai, setDoDai] = useState('');
+  /** Xem mặt bằng tầng 1 (cốt 0) trên hầm thay cho tầng hầm. */
+  const [xemT1, setXemT1] = useState(false);
   const lo = loDangXep(pa, loId);
   const { kq, dangCho } = useRaiHam('ham.giua', pa, tv, lo);
   const huyVe = () => { setVe(false); setPts([]); setCon(null); setBao(''); setDoDai(''); };
@@ -223,9 +253,13 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
   return (
     <>
       <BanVe khung={khung} nhan={t('ham.banVe')} onDieuKhien={setDk}>
-        <g class="ham-ve"><polygon class="ranh-lo" points={sPoly(lo.ranh)} vector-effect="non-scaling-stroke" /></g>
-        <MatBangHam kq={kq} tang={tang} coChu={coChu} />
-        <g class="ham-ve">{chan.map((p, i) => <polygon key={i} class="chan-toa" points={sPoly(p)} vector-effect="non-scaling-stroke" />)}</g>
+        {xemT1 && kq.t1 ? <MatBangT1 kq={kq} lo={lo} coChu={coChu} /> : (
+          <>
+            <g class="ham-ve"><polygon class="ranh-lo" points={sPoly(lo.ranh)} vector-effect="non-scaling-stroke" /></g>
+            <MatBangHam kq={kq} tang={tang} coChu={coChu} />
+            <g class="ham-ve">{chan.map((p, i) => <polygon key={i} class="chan-toa" points={sPoly(p)} vector-effect="non-scaling-stroke" />)}</g>
+          </>
+        )}
         <VeRanh dangVe={ve} pts={pts} con={con} nut={nut} ranh={h.ranh} coChu={coChu} chiXem={chiXem}
           onCon={setCon} onBam={(p) => {
             if (pts.length >= 3 && p[0] === pts[0][0] && p[1] === pts[0][1]) dongVe(pts);
@@ -235,10 +269,12 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
       </BanVe>
       <div class="noi-tren">
         <nav class="ham-tang" aria-label={t('ham.chonTang')}>
+          <button type="button" aria-pressed={xemT1} title={t('ham.t1.nutGoiY')} onClick={() => { setXemT1(true); huyVe(); }}>{t('ham.t1.nut')}</button>
+          <span class="sep" aria-hidden="true" />
           {kq.tang.map((x) => (
-            <button type="button" key={x.tang} aria-pressed={x.tang === tang.tang} onClick={() => chonTangHam(x.tang)}>{`B${x.tang}`}</button>
+            <button type="button" key={x.tang} aria-pressed={!xemT1 && x.tang === tang.tang} onClick={() => { setXemT1(false); chonTangHam(x.tang); }}>{`B${x.tang}`}</button>
           ))}
-          {!chiXem && <button type="button" class="nut-ve-ranh" aria-pressed={ve} onClick={() => (ve ? huyVe() : setVe(true))}>{t('ham.ve.nut')}</button>}
+          {!chiXem && !xemT1 && <button type="button" class="nut-ve-ranh" aria-pressed={ve} onClick={() => (ve ? huyVe() : setVe(true))}>{t('ham.ve.nut')}</button>}
         </nav>
         {ve && (
           <div class="ham-ve-thanh" role="group" aria-label={t('ham.ve.nut')}>
@@ -258,7 +294,7 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
         {!ve && !chiXem && h.ranh && <p class="ham-ve-ghi">{t('ham.ve.keoDinh')}</p>}
       </div>
       {dangCho && <PhuDangRai />}
-      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null} chuGiai={<ChuGiaiHam coSac={tang.vungSac.length > 0} />} />
+      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null} chuGiai={xemT1 ? <ChuGiaiT1 /> : <ChuGiaiHam coSac={tang.vungSac.length > 0} />} />
     </>
   );
 }
@@ -278,6 +314,106 @@ function DongKiem({ k }: { k: KiemHam }) {
       <span class={lop(k)}>{dat}</span>
       <span>{k.mucTieu === null ? '—' : `${k.chieu === '<=' ? '≤' : '≥'} ${fmtSo(k.mucTieu, dv)}`}</span>
     </div>
+  );
+}
+
+/** Một dòng có / yêu cầu (số đếm): thiếu thì đỏ (dự thảo: cam). */
+function DongCo({ nhan, co, can, duThao }: { nhan: string; co: number | null | undefined; can: number | null | undefined; duThao?: boolean }) {
+  const lopCo = co == null || can == null ? '' : co >= can ? 'ok' : duThao ? 'canh-bao' : 'vuot';
+  return (
+    <div class="ham-kiem">
+      <span>{nhan}{duThao && <i class="nhan-du-thao">{t('ham.duThao')}</i>}</span>
+      <span class={lopCo}>{fmtSo(co ?? null)}</span>
+      <span>{can == null ? '—' : `≥ ${fmtSo(can)}`}</span>
+    </div>
+  );
+}
+
+/** Chương trình phòng kỹ thuật: gộp theo loại, DT sửa được (ghi đè), bỏ tích = không bố trí. */
+function BangPhong({ kq, sua, chiXem }: { kq: KetQuaHam; sua: ChungHam['sua']; chiXem: boolean }) {
+  if (!kq.ts.tuDongPhong) return null;
+  const ghiDe = kq.ts.phong ?? {};
+  const dat = new Map<string, number>();
+  for (const x of kq.tang) for (const p of x.phong ?? []) dat.set(p.ma, (dat.get(p.ma) ?? 0) + p.dt);
+  const nhom = new Map<string, { loai: string; dt: number; so: number; tang: Set<number>; daDat: number; tam: boolean; canCu: string; dienGiai: string }>();
+  for (const m of kq.phongCT ?? []) {
+    const g = nhom.get(m.loai) ?? { loai: m.loai, dt: m.dt, so: 0, tang: new Set<number>(), daDat: 0, tam: m.tam, canCu: m.canCu, dienGiai: m.dienGiai };
+    g.so++; g.tang.add(m.tang); g.daDat += dat.get(m.ma) ?? 0;
+    nhom.set(m.loai, g);
+  }
+  // loại đang bỏ vẫn hiện để tích lại
+  for (const [loai, v] of Object.entries(ghiDe)) if (v?.bo && !nhom.has(loai)) nhom.set(loai, { loai, dt: 0, so: 0, tang: new Set(), daDat: 0, tam: true, canCu: '', dienGiai: '' });
+  const doi = (loai: string, f: (x: { dt?: number | null; bo?: boolean }) => { dt?: number | null; bo?: boolean }) =>
+    sua((p) => { const h = chuanHoaHam(p.ham); return { ...p, ham: { ...h, phong: { ...h.phong, [loai]: f(h.phong?.[loai] ?? {}) } } }; });
+  const sl = kq.soLieuPhong;
+  const m2 = { donVi: 'm²' };
+  return (
+    <MucGap tieuDe={t('ham.mucPhong')} giaiThich={t('ham.phongGiaiThich')} mo>
+      <div class="ham-phong-dong dau"><span>{t('ham.phongTen')}</span><span>{t('ham.tang')}</span><span>{t('ham.phongDt')}</span><span>{t('ham.phongCo')}</span></div>
+      {[...nhom.values()].map((g) => {
+        const bo = !!ghiDe[g.loai]?.bo;
+        return (
+          <div class="ham-phong-dong" key={g.loai} title={`${g.canCu}
+${g.dienGiai}`}>
+            <span>{t(`ham.phong.${g.loai}`)}{g.so > 1 ? ` ×${g.so}` : ''}{g.tam && <i class="nhan-tam">{t('ham.tam')}</i>}<small>{g.so ? `${t('ham.phongCo')} ${fmtSo(g.daDat, m2)}` : ''}</small></span>
+            <span>{[...g.tang].sort().map((x) => `B${x}`).join(', ') || '—'}</span>
+            <input type="number" min={0} step={1} disabled={chiXem || bo} value={ghiDe[g.loai]?.dt ?? ''} placeholder={fmtSo(g.dt, { thapPhan: 0 })}
+              aria-label={`${t(`ham.phong.${g.loai}`)} m²`}
+              onChange={(e) => { const raw = e.currentTarget.value; const v = Number(raw); doi(g.loai, (x) => ({ ...x, dt: raw === '' || !(v > 0) ? null : v })); }} />
+            <input type="checkbox" checked={!bo} disabled={chiXem} aria-label={t('ham.phongCo')} onChange={(e) => { const c = e.currentTarget.checked; doi(g.loai, (x) => ({ ...x, bo: !c })); }} />
+          </div>
+        );
+      })}
+      {sl && <p class="ham-ghi-chu">{t('ham.soLieuNuoc').replace('{q}', fmtSo(sl.qSH, { thapPhan: 0 })).replace('{v}', fmtSo(sl.vBeSH, { thapPhan: 0 })).replace('{p}', fmtSo(sl.vBePCCC, { thapPhan: 0 })).replace('{n}', fmtSo(sl.qNgoai)).replace('{k}', fmtSo(sl.kva, { thapPhan: 0 })).replace('{t}', fmtSo(sl.soTram))}</p>}
+    </MucGap>
+  );
+}
+
+/** Khoang cháy: DT, lối ra, cự ly lớn nhất, hộp gió + louver từng khoang; thang lõi / thang thêm / rèm. */
+function BangKhoang({ kq }: { kq: KetQuaHam }) {
+  if (!kq.khoang?.length) return null;
+  const m2 = { donVi: 'm²' };
+  const thangThem = kq.thang.filter((x) => x.nguon === 'them');
+  const rem = kq.tang.reduce((a, x) => a + (x.remChay?.length ?? 0), 0);
+  const cot = { gridTemplateColumns: '0.5fr 1fr 0.6fr 0.8fr' };
+  return (
+    <MucGap tieuDe={t('ham.mucKhoang')} giaiThich={t('ham.khoangGiaiThich')} mo>
+      <div class="ham-kiem dau" style={cot}><span>{t('ham.khoangCot')}</span><span>{t('ham.khoangDt')}</span><span>{t('ham.khoangRa')}</span><span>{t('ham.khoangCuLy')}</span></div>
+      {kq.khoang.map((k) => (
+        <div class="ham-kiem" style={cot} key={k.so}>
+          <span>{k.so + 1}</span>
+          <span class={k.dt > kq.ts.dtKhoangMax ? 'vuot' : ''}>{fmtSo(k.dt, m2)}</span>
+          <span class={k.thang.length < 2 ? 'vuot' : ''}>{fmtSo(k.thang.length)}</span>
+          <span class={!Number.isFinite(k.cuLyMax) || k.cuLyMax > kq.ts.cuLyThoat ? 'vuot' : ''}>{Number.isFinite(k.cuLyMax) ? fmtSo(k.cuLyMax, { thapPhan: 1, donVi: 'm' }) : '—'}</span>
+        </div>
+      ))}
+      <div class="ham-kiem dau" style={{ gridTemplateColumns: '0.5fr 2.4fr' }}><span>{t('ham.khoangCot')}</span><span>{t('ham.khoangGio')}</span></div>
+      {kq.thongGio.map((g) => (
+        <div class="ham-kiem" style={{ gridTemplateColumns: '0.5fr 2.4fr' }} key={`g${g.khoang}`}>
+          <span>{g.khoang + 1}</span>
+          <span class={g.daDat ? '' : 'vuot'}>{`${fmtSo(g.dtOngThai, { thapPhan: 1 })} / ${fmtSo(g.dtOngCap, { thapPhan: 1 })} m² · ${fmtSo(g.dtLouver, { thapPhan: 0, donVi: 'm²' })}`}</span>
+        </div>
+      ))}
+      <div class="dong"><span>{t('ham.thangLoi')}</span><b>{fmtSo(kq.thang.length - thangThem.length)}</b></div>
+      <div class="dong"><span>{t('ham.thangThem')}</span><b>{`${fmtSo(thangThem.length)} (TB* ${fmtSo(thangThem.filter((x) => x.chung).length)})`}</b></div>
+      <div class="dong"><span>{t('ham.remChay')}</span><b>{fmtSo(rem)}</b></div>
+    </MucGap>
+  );
+}
+
+/** Tầng 1: cảnh quan còn lại, đầu ram tới đường, miệng gió dưới tháp. */
+function BangT1({ kq, cayXanhMin }: { kq: KetQuaHam; cayXanhMin: number | null }) {
+  const t1 = kq.t1;
+  if (!t1) return null;
+  const pct = t1.dtLo > 0 ? (t1.dtCanhQuan / t1.dtLo) * 100 : null;
+  return (
+    <MucGap tieuDe={t('ham.t1.muc')}>
+      <div class="dong"><span>{t('ham.t1.dtCanhQuan')}</span><b>{`${fmtSo(t1.dtCanhQuan, { donVi: 'm²' })} (${fmtSo(pct, { thapPhan: 1, donVi: '%' })})`}</b></div>
+      <div class="dong"><span>{t('ham.t1.cayXanh')}</span><b>{fmtSo(cayXanhMin, { donVi: '%' })}</b></div>
+      <div class="dong"><span>{t('ham.t1.kcDuong')}</span><b>{fmtSo(t1.kcDuong, { thapPhan: 1, donVi: 'm' })}</b></div>
+      <div class="dong"><span>{t('ham.t1.soLouver')}</span><b>{`${fmtSo(t1.miengGio.length)} / ${fmtSo(t1.thangRa.length)}`}</b></div>
+      <div class="dong"><span>{t('ham.t1.gioDuoiToa')}</span><b class={t1.gioDuoiToa ? 'vuot' : 'ok'}>{fmtSo(t1.gioDuoiToa)}</b></div>
+    </MucGap>
   );
 }
 
@@ -308,6 +444,18 @@ export function HamPhai({ pa, sua, chiXem, loId, tv }: ChungHam) {
           <p class="ham-ghi-chu">{t('ham.xeDienGiaiThich')}</p>
         </MucGap>
       )}
+      <MucGap tieuDe={t('ham.mucDoXe')} giaiThich={t('ham.doXeThuTu')} mo>
+        <div class="ham-kiem dau"><span /><span>{t('ct.dat')}</span><span>{t('ham.yeuCau')}</span></div>
+        <DongCo nhan={t('ham.choOto')} co={tong.soCho} can={kq.yeuCauCho?.oto} />
+        <DongCo nhan={t('ham.xeMayCho')} co={tong.soXeMay} can={kq.yeuCauCho?.xeMay} />
+        <DongCo nhan={t('ham.choSacNgan')} co={kq.ts.xeDien.bat ? tong.soSac : null} can={kq.yeuCauCho?.sac} duThao />
+        <DongCo nhan={t('ham.choXeLanNgan')} co={tong.soXeLan} can={kq.yeuCauCho?.xeLan} />
+        <p class="ham-ghi-chu">{t('ham.doXeThuTu')}</p>
+        {(tong.soCutDuong ?? 0) > 0 && <p class="ham-ghi-chu vuot">{t('ham.cutDuongGhi').replace('{n}', String(tong.soCutDuong))}</p>}
+      </MucGap>
+      <BangPhong kq={kq} sua={sua} chiXem={chiXem} />
+      <BangKhoang kq={kq} />
+      <BangT1 kq={kq} cayXanhMin={lo.temDat.chiTieu.cayXanhMin ?? null} />
       <MucGap tieuDe={t('ham.mucSoLieu')} mo>
         <div class="dong"><span>{t('ham.soCan')}</span><b>{fmtSo(soCan)}</b></div>
         <div class="dong"><span>{t('ham.dtsd')}</span><b>{fmtSo(kq.dtsd, m2)}</b></div>
@@ -315,6 +463,7 @@ export function HamPhai({ pa, sua, chiXem, loId, tv }: ChungHam) {
         <div class="dong"><span>{t('ham.dtDoXeYeuCau')}</span><b>{fmtSo(soCan ? kq.yeuCau.tong : null, m2)}</b></div>
         <div class="dong"><span>{t('ham.dtDoXeCo')}</span><b>{fmtSo(tong.dtOto + tong.dtXeMay, m2)}</b></div>
         <div class="dong"><span>{t('ham.soChoOto')}</span><b>{`${fmtSo(tong.soCho)} (${t('ham.xeLanNgan')} ${fmtSo(tong.soXeLan)})`}</b></div>
+        <div class="dong"><span>{t('ham.xeMayCho')}</span><b>{fmtSo(tong.soXeMay ?? null)}</b></div>
         <div class="dong"><span>{t('ham.choMoiCan')}</span><b>{fmtSo(soCan ? tong.soCho / soCan : null, { thapPhan: 2 })}</b></div>
         <div class="dong"><span>{t('ham.m2MoiCho')}</span><b>{fmtSo(tong.soCho ? tong.dtOto / tong.soCho : null, { thapPhan: 1, donVi: 'm²' })}</b></div>
         <div class="dong"><span>{t('ham.dtXeMayCo')}</span><b>{fmtSo(tong.dtXeMay, m2)}</b></div>
@@ -337,10 +486,10 @@ export function HamPhai({ pa, sua, chiXem, loId, tv }: ChungHam) {
         </div>
       </MucGap>
       <MucGap tieuDe={t('ham.mucTheoTang')}>
-        <div class="ham-kiem dau" style={{ gridTemplateColumns: '0.6fr 1fr 1fr 1fr' }}><span>{t('ham.tang')}</span><span>{t('ham.choOto')}</span><span>{t('ham.xeMay')}</span><span>{t('ham.kho')}</span></div>
+        <div class="ham-kiem dau" style={{ gridTemplateColumns: '0.6fr 1fr 1fr 1fr 0.8fr' }}><span>{t('ham.tang')}</span><span>{t('ham.choOto')}</span><span>{t('ham.xeMay')}</span><span>{t('ham.kho')}</span><span>{t('ham.k.cutDuong')}</span></div>
         {kq.tang.map((x) => (
-          <div class="ham-kiem" style={{ gridTemplateColumns: '0.6fr 1fr 1fr 1fr' }} key={x.tang}>
-            <span>{`B${x.tang}`}</span><span>{fmtSo(x.soCho)}</span><span>{fmtSo(x.dtXeMay, m2)}</span><span>{fmtSo(x.soKho)}</span>
+          <div class="ham-kiem" style={{ gridTemplateColumns: '0.6fr 1fr 1fr 1fr 0.8fr' }} key={x.tang}>
+            <span>{`B${x.tang}`}</span><span>{fmtSo(x.soCho)}</span><span>{fmtSo(x.soXeMay ?? null)}</span><span>{fmtSo(x.soKho)}</span><span class={x.cutDuong?.length ? 'vuot' : ''}>{fmtSo(x.cutDuong?.length ?? 0)}</span>
           </div>
         ))}
       </MucGap>

@@ -1,15 +1,28 @@
 /** Rải chỗ đỗ ô tô cho một tầng hầm: kiểu dãy đôi (chỗ – làn – chỗ), hàm thuần. Toạ độ mét. */
 import type { Diem, ThongSoHam } from './kieu';
 
-/** `cho` = chỗ thường; `xeLan` = chỗ người khuyết tật (gộp hai ô liền nhau); soCho = cho + xeLan. */
-export type KetQuaRaiCho = { cho: Diem[][]; lan: Diem[][]; kho: Diem[][]; soCho: number; soKho: number; xeLan: Diem[][] };
-/** Tuỳ chọn: số chỗ xe lăn cần tạo, bề rộng tối thiểu chỗ xe lăn (QCVN 13:2018 2.2.1.25: 3,5 m), góc dãy cố định (rad). */
-export type TuyChonRai = { soXeLan?: number; rongXeLan?: number; goc?: number };
+/** `cho` = chỗ thường; `xeLan` = chỗ người khuyết tật (gộp hai ô liền nhau); soCho = cho + xeLan.
+ *  `lanUv`: làn đã gộp trong hệ xoay (u dọc dãy) — dùng kiểm cụt đường. */
+export type KetQuaRaiCho = { cho: Diem[][]; lan: Diem[][]; kho: Diem[][]; soCho: number; soKho: number; xeLan: Diem[][]; lanUv?: Hcn[] };
+/**
+ * Tuỳ chọn: số chỗ xe lăn cần tạo, bề rộng tối thiểu chỗ xe lăn (QCVN 13:2018 2.2.1.25: 3,5 m), góc dãy cố định (rad).
+ * `yeuCauLan`: chỉ nhận chỗ có ô làn trước mặt (xe vào được) — ô tô bật, kho / xe máy cũ tắt.
+ * `vatCanCho`: vật cản chỉ chặn chỗ đỗ, không chặn làn (tường ngăn cháy: làn đi qua bằng cửa / rèm ngăn cháy).
+ * `phatLan(lanGop)`: số "lỗi" của bộ làn (vd. đầu cụt) — mỗi lỗi trừ `diemPhat` chỗ khi chọn độ lệch lưới.
+ */
+export type TuyChonRai = {
+  soXeLan?: number; rongXeLan?: number; goc?: number;
+  yeuCauLan?: boolean; vatCanCho?: Diem[][]; phatLan?: (lanGop: Hcn[]) => number; diemPhat?: number;
+  /** Thêm cao độ v (hệ xoay) mà một làn phải BẮT ĐẦU tại đó (vd. sát mép ram) — thử thêm các độ lệch lưới tương ứng. */
+  lanTai?: number[];
+  /** Chỉ thử các độ lệch v này (hệ xoay, theo khung bao ranh truyền vào) — lưới dãy cố định cho mọi tầng. */
+  lechV?: number[];
+};
 
 const EPS = 1e-6;
 
 /** Hình chữ nhật trục song song trong hệ đã xoay: [u0, v0, u1, v1]. */
-type Hcn = [number, number, number, number];
+export type Hcn = [number, number, number, number];
 
 /** Điểm nằm trong đa giác (even-odd). */
 function diemTrong(x: number, y: number, poly: Diem[]): boolean {
@@ -190,8 +203,8 @@ export type KichThuocCho = Pick<ThongSoHam, 'choRong' | 'choDai' | 'rongLan'>;
 
 type Phuong = { cho: Hcn[]; lan: Hcn[] };
 
-/** Rải một phương án với độ lệch lưới (offU, offV) trong hệ xoay. */
-function raiMot(hopLe: (r: Hcn) => boolean, ts: KichThuocCho, offU: number, offV: number, bb: Hcn): Phuong {
+/** Rải một phương án với độ lệch lưới (offU, offV) trong hệ xoay. `hopLeLan` kiểm ô làn (mặc định = hopLe). */
+function raiMot(hopLe: (r: Hcn) => boolean, ts: KichThuocCho, offU: number, offV: number, bb: Hcn, hopLeLan = hopLe, yeuCauLan = false): Phuong {
   const { choRong: w, choDai: d, rongLan: lan } = ts;
   const mod = 2 * d + lan;
   const cho: Hcn[] = [];
@@ -207,17 +220,19 @@ function raiMot(hopLe: (r: Hcn) => boolean, ts: KichThuocCho, offU: number, offV
       const ub = ua + w;
       const duoi: Hcn = [ua, vb, ub, vb + d];
       const tren: Hcn = [ua, vb + d + lan, ub, vb + mod];
+      const o: Hcn = [ua, vb + d, ub, vb + d + lan];
+      const coLan = hopLeLan(o);
+      if (coLan) lanOk.push(o);
+      if (yeuCauLan && !coLan) continue;
       if (hopLe(duoi)) cho.push(duoi);
       if (hopLe(tren)) cho.push(tren);
-      const o: Hcn = [ua, vb + d, ub, vb + d + lan];
-      if (hopLe(o)) lanOk.push(o);
     }
   }
   return { cho, lan: lanOk };
 }
 
 /** Gộp các ô làn liền nhau theo u thành dải. */
-function gopLan(o: Hcn[]): Hcn[] {
+export function gopLan(o: Hcn[]): Hcn[] {
   const nhom = new Map<string, Hcn[]>();
   for (const r of o) {
     const key = r[1].toFixed(4);
@@ -240,6 +255,12 @@ function gopLan(o: Hcn[]): Hcn[] {
   }
   return kq;
 }
+
+/** Độ lệch v (hệ xoay) để một làn bắt đầu đúng tại v = t, với lưới tính từ v0 của khung bao `vMin`. */
+export const lechLanTai = (t: number, ts: KichThuocCho, vMin: number): number => {
+  const mod = 2 * ts.choDai + ts.rongLan;
+  return (((t - ts.choDai - vMin) % mod) + mod) % mod;
+};
 
 /**
  * Rải chỗ đỗ ô tô trong ranh một tầng hầm. Dãy chạy song song cạnh dài nhất,
@@ -266,12 +287,20 @@ export function raiChoDo(ranh: Diem[], vatCan: Diem[][], ts: KichThuocCho, tuyCh
   }
 
   const mod = 2 * ts.choDai + ts.rongLan;
-  const hopLe = taoKiem(r, vc, Math.max(4, 2 * Math.max(ts.choRong, ts.choDai)));
-  let tot: Phuong | null = null;
+  const kt = Math.max(4, 2 * Math.max(ts.choRong, ts.choDai));
+  const vcCho = (tuyChon.vatCanCho ?? []).filter((p) => p && p.length >= 3).map((p) => p.map(xoay));
+  const hopLeLan = taoKiem(r, vc, kt);
+  const hopLe = vcCho.length ? taoKiem(r, [...vc, ...vcCho], kt) : hopLeLan;
+  const phat = tuyChon.phatLan, diemPhat = tuyChon.diemPhat ?? 6;
+  let tot: Phuong | null = null, diemTot = -Infinity;
+  const lechV = tuyChon.lechV ? [...tuyChon.lechV] : [0, 1, 2, 3].map((b) => (b / 4) * mod);
+  // làn bắt đầu tại v = t: v0 = bb[1] − mod + offV, làn ở v0 + k·mod + d → offV ≡ t − d − bb[1] (mod mod)
+  for (const t of tuyChon.lanTai ?? []) lechV.push(lechLanTai(t, ts, bb[1]));
   for (let a = 0; a < 4; a++) {
-    for (let b = 0; b < 4; b++) {
-      const ph = raiMot(hopLe, ts, (a / 4) * ts.choRong, (b / 4) * mod, bb);
-      if (!tot || ph.cho.length > tot.cho.length) tot = ph;
+    for (const offV of lechV) {
+      const ph = raiMot(hopLe, ts, (a / 4) * ts.choRong, offV, bb, hopLeLan, !!tuyChon.yeuCauLan);
+      const diem = ph.cho.length - (phat && ph.cho.length ? diemPhat * phat(gopLan(ph.lan)) : 0);
+      if (!tot || diem > diemTot) { tot = ph; diemTot = diem; }
     }
   }
   if (!tot) return rong;
@@ -279,7 +308,8 @@ export function raiChoDo(ranh: Diem[], vatCan: Diem[][], ts: KichThuocCho, tuyCh
   const ve = (h: Hcn): Diem[] => [xoayNguoc(h[0], h[1]), xoayNguoc(h[2], h[1]), xoayNguoc(h[2], h[3]), xoayNguoc(h[0], h[3])];
   const { thuong, xeLan } = tachXeLan(tot.cho, tuyChon.soXeLan ?? 0, tuyChon.rongXeLan ?? 3.5);
   const cho = thuong.map(ve);
-  return { cho, lan: gopLan(tot.lan).map(ve), kho: [], soCho: cho.length + xeLan.length, soKho: 0, xeLan: xeLan.map(ve) };
+  const lanUv = gopLan(tot.lan);
+  return { cho, lan: lanUv.map(ve), kho: [], soCho: cho.length + xeLan.length, soKho: 0, xeLan: xeLan.map(ve), lanUv };
 }
 
 /**
