@@ -1,25 +1,41 @@
-import { nhanPhamVi } from '../ui/ChonTang';
-import { useEffect, useState } from 'preact/hooks';
+import { chonTangNgoai, nhanPhamVi, tenTang } from '../ui/ChonTang';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { api, LoiApi, type DuAnApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
 import { useKho } from '../kho/kho';
 import { ghiNhoDuAn, layMaSua, nhanMaTuLink } from '../kho/maSua';
-import type { TrangThaiPA } from '../tinh/kieu';
+import { usePhimSoan } from '../kho/phimSoan';
+import type { Lo, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaPA, taoPAMoi } from '../tinh/macDinh';
 import { KhungSoan } from '../ui/KhungSoan';
-import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
+import type { CheDoXem } from '../ui/ThanhTren';
+import { chonSauBam, chonSauBamToa } from '../ve3d/chon3d';
+import type { Chon3D } from '../ve3d/MoHinh3D';
+import { ChonLang, ThuongHieu, type CapDo, type MenuCap } from '../ui/ThanhTren';
+import { capHienTai, dsMucTang, giaiKhoaTang, khoaTangDangXem, lenMotCap, type BuocSoan } from '../ui/capDo';
+import { mauToa } from '../tinh/canThem';
+import { laCaoTang } from '../tinh/loaiDat';
+import { tangCoRieng } from '../tinh/matBang';
 import { tinhChiTieu, type KetQuaChiTieu } from '../tinh/chiTieu';
 import type { ThuVien } from '../tinh/kieu';
 import { soCanChuVi, viTriCan } from '../tinh/matBang';
 import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
 import { diemLechPA } from '../tinh/diemPA';
-import { baoCaoPA, tenTepXls, xuatXls } from '../xuat/xuatXls';
-import { ChiPhiGiua, ChiPhiPhai } from './ManChiPhi';
-import { HamGiua, HamPhai, HamTrai } from './ManHam';
-import { HopXuatCad } from './HopXuatCad';
-import { TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
+import { xuatBaoCaoPA } from '../xuat/xuatXls';
+import { luoi } from '../ui/Luoi';
+import { chonTangToa, TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
+
+// Màn nặng ít dùng: chunk riêng, tải khi mở (vòng O giữ chỗ) — de_xuat_hieu_nang P5.
+const napHam = () => import('./ManHam');
+const HamTrai = luoi(() => napHam().then((m) => m.HamTrai));
+const HamGiua = luoi(() => napHam().then((m) => m.HamGiua), 'giua');
+const HamPhai = luoi(() => napHam().then((m) => m.HamPhai));
+const napChiPhi = () => import('./ManChiPhi');
+const ChiPhiGiua = luoi(() => napChiPhi().then((m) => m.ChiPhiGiua), 'giua');
+const ChiPhiPhai = luoi(() => napChiPhi().then((m) => m.ChiPhiPhai));
+const HopXuatCad = luoi(() => import('./HopXuatCad').then((m) => m.HopXuatCad), 'hop');
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
 
@@ -47,13 +63,17 @@ export function SoanThao({ ma }: { ma: string }) {
       try {
         nhanMaTuLink(ma);
         const maSua = layMaSua(ma);
-        const [da, quyen] = await Promise.all([api.docDuAn(ma), api.kiemMa(ma, maSua)]);
+        // Thư viện không phụ thuộc PA: tải song song với dự án + PA (bỏ bậc nối đuôi, de_xuat_hieu_nang P2).
+        void taiThuVien().catch(() => {});
         const muon = new URLSearchParams(location.search).get('pa');
+        // Link có ?pa=: đọc PA cùng lúc với dự án; PA không có trong dự án thì bỏ bản đọc trước.
+        const docTruoc = muon ? api.docPA(ma, muon).catch(() => null) : null;
+        const [da, quyen] = await Promise.all([api.docDuAn(ma), api.kiemMa(ma, maSua)]);
         let paId = (muon && da.phuong_an.some((p) => p.id === muon) ? muon : da.phuong_an[0]?.id) ?? 'pa-1';
         let ban: TrangThaiPA;
         let tenPA = t('pa.mau');
         if (da.phuong_an.length) {
-          const pa = await api.docPA(ma, paId);
+          const pa = (paId === muon ? await docTruoc : null) ?? (await api.docPA(ma, paId));
           ban = chuanHoaPA(pa.trang_thai as TrangThaiPA);
           tenPA = pa.ten;
         } else {
@@ -87,18 +107,47 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   useEffect(() => void taiThuVien().then(setTv, () => setTv(null)), []);
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
   const chiXem = kho.cheDo === 'chi_xem';
+  usePhimSoan({ chiXem, hoanTac: kho.hoanTac, lamLai: kho.lamLai, luuNgay: kho.luuNgay, conChuaLuu: kho.conChuaLuu });
   const kq: KetQuaChiTieu | null = tv ? tinhChiTieu(kho.pa, tv) : null;
-  const [buoc, setBuoc] = useState<'tmb' | 'tang' | 'ham'>('tmb');
+  const [buoc, setBuocGoc] = useState<BuocSoan>('tmb');
+  // bước trên cốt 0 gần nhất (menu cốt: Dưới → Trên trở lại đúng màn đang làm)
+  const buocTren = useRef<'tmb' | 'tang'>('tmb');
+  const setBuoc = (b: BuocSoan) => { if (b !== 'ham') buocTren.current = b; setBuocGoc(b); };
   const [tangHam, setTangHam] = useState(1);
   const [canKhoa, setCanKhoa] = useState<string | null>(null);
   const [moXuat, setMoXuat] = useState(false);
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
-  const chungXep = { ...chung, tv, toaId, chonToa: setToaId };
+  const chungXep = { ...chung, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); } };
   const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };
   const chungHam = { ...chung, tv, tangHam, chonTangHam: setTangHam };
+  // chọn trong 3D đi qua đúng state chọn của 2D; bấm đúp tòa → mặt bằng tầng (như bấm đúp ở TMB) và về khung 2D
+  const [xemGiua, setXemGiua] = useState<CheDoXem>('mat_bang');
   const soTangHam = Math.max(1, Math.round(kho.pa.ham.soTang));
   const xemXuat = toaDangXem(kho.pa, tv, loId, toaId);
+  // 3D Công trình: căn / tầng của tòa đang xem đi qua đúng state màn Tầng (canKhoa + tầng đang xem); bấm đúp căn → màn Tầng tầng đó, chọn căn đó
+  const coXem = useChonO(xemXuat?.toa ?? null);
+  const tang3d = coXem.tangs?.length === 1 ? coXem.tangs[0] : null;
+  const chon3d: Chon3D = {
+    chon: { toaId, loId, tang: tang3d, canKhoa },
+    onChon: (d) => { const c = chonSauBam(d); setLoId(c.loId); setToaId(c.toaId); setCanKhoa(null); },
+    onMo: (d) => { if (d.loai === 'toa') { chungXep.moTang(d.id); setXemGiua('mat_bang'); } },
+    onChonToa: (d) => {
+      const x = xemXuat?.toa;
+      if (!x) return;
+      const c = chonSauBamToa(d);
+      setCanKhoa(c.canKhoa);
+      chonTangToa(x, c.tang ? [c.tang] : null);
+    },
+    onMoToa: (d) => {
+      const x = xemXuat?.toa;
+      if (!x || (d.loai !== 'can' && d.loai !== 'tang')) return;
+      const c = chonSauBamToa(d);
+      setLoId(x.loId); setToaId(x.id); setCanKhoa(c.canKhoa);
+      chonTangToa(x, c.tang ? [c.tang] : null);
+      setBuoc('tang'); setXemGiua('mat_bang');
+    },
+  };
   const xemTang = buoc === 'tang' ? toaDangXem(kho.pa, tv, loId, toaId) : null;
   const loDangChon = buoc !== 'tang' ? loDangXep(kho.pa, loId) : xemTang?.lo;
   const toaDangChon = buoc === 'tmb' ? kho.pa.toa.find((x) => x.id === toaId) : xemTang?.toa;
@@ -119,15 +168,11 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
 
   return (
     <KhungSoan
-      capDo={{
-        lo: `${da.ten} · ${tenPA}${loDangChon ? ' · ' + loDangChon.temDat.kyHieu : ''}`.toUpperCase(),
-        coTe: buoc === 'ham' ? 'duoi' : 'tren',
-        onCoTe: () => setBuoc(buoc === 'ham' ? 'tmb' : 'ham'),
-        toa: buoc !== 'ham' && toaDangChon ? tv?.toa.get(toaDangChon.mauId)?.ten_vi ?? toaDangChon.mauId : undefined,
-        tang: buoc === 'ham' ? `B${Math.min(tangHam, soTangHam)}` : buoc === 'tang' && toaDangChon ? (chonO.tangs ? nhanPhamVi(chonO.tangs, toaDangChon.soTangDe) : t('tang.dienHinh')) : undefined,
-        onTang: buoc === 'ham' ? () => setTangHam((Math.min(tangHam, soTangHam) % soTangHam) + 1) : undefined,
-        can: buoc === 'tang' && canKhoa && xemTang ? tenCanChon(xemTang, tv, canKhoa) : undefined,
-      }}
+      capDo={dungCapDo({
+        da, paId, tenPA, pa: kho.pa, tv, buoc, buocTren: buocTren.current, loDangChon, toaDangChon, xemTang, chonO, canKhoa, tangHam, soTangHam,
+        datBuoc: setBuoc, datLo: setLoId, datToa: setToaId, datCan: setCanKhoa, datTangHam: setTangHam,
+        moPA: (id) => location.assign(`/du-an/${encodeURIComponent(ma)}?pa=${encodeURIComponent(id)}`),
+      })}
       cheDo={kho.cheDo}
       onCheDo={kho.datCheDo}
       duocSua={duocSua}
@@ -136,8 +181,10 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onLamLai={kho.lamLai}
       thongBao={thongBao}
       onXuatCad={xemXuat && tv ? () => setMoXuat(true) : undefined}
-      onXuatXls={tv && kq ? () => void xuatXls(baoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)), tenTepXls(da.ten, tenPA)) : undefined}
-      moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} />}
+      onXuatXls={tv && kq ? () => xuatBaoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)) : undefined}
+      xem={xemGiua}
+      onXem={setXemGiua}
+      moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} chon3d={chon3d} />}
       chiPhi={<ChiPhiGiua pa={kho.pa} tv={tv} kq={kq} sua={kho.sua} chiXem={chiXem} />}
       chiPhiPhai={<ChiPhiPhai pa={kho.pa} tv={tv} kq={kq} />}
       buoc={{ ds: [['tmb', t('buoc.tmb')], ['tang', t('buoc.tang')], ['ham', t('buoc.ham')]], chon: buoc, onChon: (k) => setBuoc(k as 'tmb' | 'tang' | 'ham') }}
@@ -148,9 +195,119 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   );
 }
 
-/** Tên CH-xx của căn đang chọn trên tầng (cho đường dẫn trên thanh trên). */
-function tenCanChon(xem: NonNullable<ReturnType<typeof toaDangXem>>, tv: ThuVien | null, khoa: string): string | undefined {
-  if (!tv) return undefined;
-  const so = soCanChuVi(xem.mau.duong_bao, viTriCan(xem.mau, tv)).get(khoa);
-  return so ? `CH-${String(so).padStart(2, '0')}` : undefined;
+const tenCH = (so: number) => `CH-${String(so).padStart(2, '0')}`;
+/** Căn trên tầng đang xem theo số CH-xx (đánh số theo chu vi như bản vẽ). */
+function dsCan(xem: NonNullable<ReturnType<typeof toaDangXem>>, tv: ThuVien | null): [string, number][] {
+  if (!tv) return [];
+  return [...soCanChuVi(xem.mau.duong_bao, viTriCan(xem.mau, tv)).entries()].sort((a, b) => a[1] - b[1]);
+}
+const tenMau = (tv: ThuVien | null, x: ToaDat) => (tv && mauToa(tv, x)?.ten_vi) || x.mauId;
+
+type DauVaoCap = {
+  da: DuAnApi; paId: string; tenPA: string; pa: TrangThaiPA; tv: ThuVien | null; buoc: BuocSoan; buocTren: 'tmb' | 'tang';
+  loDangChon: Lo | undefined; toaDangChon: ToaDat | undefined; xemTang: ReturnType<typeof toaDangXem>; chonO: { tangs: number[] | null };
+  canKhoa: string | null; tangHam: number; soTangHam: number;
+  datBuoc: (b: BuocSoan) => void; datLo: (id: string | null) => void; datToa: (id: string | null) => void; datCan: (k: string | null) => void;
+  datTangHam: (n: number) => void; moPA: (id: string) => void;
+};
+
+/** Dải cấp trên thanh trên: lô / PA · cốt · tòa · tầng · căn, mỗi ô một menu thả xuống; ↑ lên một cấp. Chỉ đổi state chọn của SoanThao. */
+function dungCapDo(v: DauVaoCap): CapDo {
+  const { da, pa, tv, buoc, loDangChon, toaDangChon, canKhoa } = v;
+  const tangHam = Math.min(v.tangHam, v.soTangHam);
+  const viTri = { buoc, toaId: toaDangChon?.id ?? null, canKhoa: buoc === 'tang' ? canKhoa : null };
+  const cap = capHienTai(viTri);
+  const len = lenMotCap(viTri);
+  const nhanCap = (c: ReturnType<typeof capHienTai>) => t(c === 'lo' ? 'cap.tmb' : c === 'toa' ? 'cap.capToa' : c === 'tang' ? 'cap.tang' : 'cap.can');
+  const chonToa = (id: string) => { const x = pa.toa.find((q) => q.id === id); if (x) v.datLo(x.loId); v.datToa(id); v.datCan(null); };
+
+  // Lô / PA: tên dự án · PA · lô
+  const loMenu: MenuCap = {
+    nhan: `${da.ten} · ${v.tenPA}${loDangChon ? ' · ' + loDangChon.temDat.kyHieu : ''}`.toUpperCase(),
+    tieuDe: `${da.ten} · ${v.tenPA}${loDangChon ? ' · ' + loDangChon.temDat.kyHieu : ''}`,
+    dangO: cap === 'lo',
+    ds: [
+      ...da.phuong_an.map((p) => ({ khoa: `pa:${p.id}`, nhan: p.ten, nhom: t('cap.pa'), chon: p.id === v.paId })),
+      ...pa.lo.filter(laCaoTang).map((l) => ({ khoa: `lo:${l.id}`, nhan: l.temDat.kyHieu, nhom: t('cap.lo'), chon: l.id === loDangChon?.id,
+        phu: t('cap.soToa').replace('{n}', String(pa.toa.filter((x) => x.loId === l.id).length)) })),
+    ],
+    onChon: (k) => {
+      const [loai, id] = [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)];
+      if (loai === 'pa') { if (id !== v.paId) v.moPA(id); return; }
+      if (id === loDangChon?.id) return;
+      v.datLo(id); v.datToa(null); v.datCan(null);
+    },
+  };
+
+  // Cốt: Trên (Tầng) / Dưới (Hầm)
+  const coTe: MenuCap = {
+    nhan: t(buoc === 'ham' ? 'cap.duoi' : 'cap.tren'),
+    tieuDe: t('cap.doiCoTe'),
+    ds: [
+      { khoa: 'tren', nhan: t('cap.tren'), phu: t('cap.phuTren'), chon: buoc !== 'ham' },
+      { khoa: 'duoi', nhan: t('cap.duoi'), phu: t('cap.phuDuoi'), chon: buoc === 'ham' },
+    ],
+    onChon: (k) => { if (k === 'duoi' && buoc !== 'ham') v.datBuoc('ham'); else if (k === 'tren' && buoc === 'ham') v.datBuoc(v.buocTren); },
+  };
+
+  // Tòa của lô đang xem (Hầm: không có)
+  const loToa = buoc === 'tang' ? v.xemTang?.lo ?? loDangChon : loDangChon;
+  const dsToa = pa.toa.filter((x) => !loToa || x.loId === loToa.id);
+  // nhiều tòa cùng mẫu trên một lô: đánh số thứ tự cho phân biệt (như danh sách tòa ở panel trái)
+  const trungTen = new Set(dsToa.map((x) => tenMau(tv, x))).size < dsToa.length;
+  const nhanToa = (x: ToaDat) => { const i = dsToa.indexOf(x); return trungTen && i >= 0 ? `${i + 1} · ${tenMau(tv, x)}` : tenMau(tv, x); };
+  const toa: MenuCap | undefined = buoc !== 'ham' && dsToa.length ? {
+    nhan: toaDangChon ? nhanToa(toaDangChon) : t('cap.chonToa'),
+    tieuDe: toaDangChon ? nhanToa(toaDangChon) : t('cap.chonToa'),
+    dangO: cap === 'toa',
+    ds: dsToa.map((x) => ({ khoa: x.id, nhan: nhanToa(x), phu: `${x.soTangDe} + ${x.soTangDH} T`, nhom: loToa ? `${t('cap.toa')} ${loToa.temDat.kyHieu}` : undefined, chon: x.id === toaDangChon?.id })),
+    onChon: (id) => { if (id !== toaDangChon?.id) chonToa(id); },
+  } : undefined;
+
+  // Tầng: tầng điển hình, từng tầng (đánh dấu tầng riêng), tầng hầm
+  const toaTang = buoc === 'tang' ? v.xemTang?.toa : toaDangChon;
+  const khoaTang = khoaTangDangXem(buoc, buoc === 'tang' ? v.chonO.tangs : null, tangHam);
+  const mucTang = dsMucTang({ soTangDH: toaTang?.soTangDH ?? 0, coRieng: toaTang ? tangCoRieng(toaTang) : [], soTangHam: v.soTangHam, coToa: !!toaTang });
+  const nhanTang = buoc === 'ham' ? `B${tangHam}`
+    : buoc === 'tang' && toaTang ? (v.chonO.tangs ? nhanPhamVi(v.chonO.tangs, toaTang.soTangDe) : t('tang.dienHinh'))
+    : t('cap.chonTang');
+  const tang: MenuCap | undefined = buoc !== 'tmb' || toaTang ? {
+    nhan: nhanTang,
+    tieuDe: nhanTang,
+    dangO: cap === 'tang',
+    ds: mucTang.map((m) => ({
+      khoa: m.khoa,
+      nhan: m.loai === 'dh' ? t('tang.dienHinh') : m.loai === 'ham' ? `B${m.so}` : tenTang(toaTang!.soTangDe, m.so),
+      nhom: m.loai === 'ham' ? t('cap.ham') : m.loai === 'tang' ? t('cap.tangDH') : undefined,
+      phu: m.loai === 'dh' ? t('cap.moiTang') : m.rieng ? t('cap.rieng') : undefined,
+      danhDau: m.rieng,
+      chon: m.khoa === khoaTang,
+    })),
+    onChon: (k) => {
+      const g = giaiKhoaTang(k);
+      if (!g) return;
+      if (g.loai === 'ham') { v.datTangHam(g.so); v.datBuoc('ham'); return; }
+      if (toaTang) v.datToa(toaTang.id);
+      v.datCan(null);
+      chonTangNgoai(g.loai === 'dh' ? null : [g.so]);
+      if (buoc !== 'tang') v.datBuoc('tang');
+    },
+  } : undefined;
+
+  // Căn trên tầng đang xem
+  const cans = buoc === 'tang' && v.xemTang ? dsCan(v.xemTang, tv) : [];
+  const soChon = canKhoa ? cans.find(([k]) => k === canKhoa)?.[1] : undefined;
+  const can: MenuCap | undefined = cans.length ? {
+    nhan: soChon ? tenCH(soChon) : t('cap.chonCan'),
+    tieuDe: soChon ? tenCH(soChon) : t('cap.chonCan'),
+    dangO: cap === 'can',
+    ds: cans.map(([k, so]) => ({ khoa: k, nhan: tenCH(so), chon: k === canKhoa })),
+    onChon: (k) => v.datCan(k),
+  } : undefined;
+
+  return {
+    lo: loMenu, coTe, toa, tang, can,
+    onLen: len ? () => { v.datCan(len.canKhoa); v.datToa(len.toaId); v.datBuoc(len.buoc); } : undefined,
+    nhanLen: len ? t('cap.lenToi').replace('{c}', nhanCap(capHienTai(len))) : t('cap.len'),
+  };
 }

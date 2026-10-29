@@ -37,8 +37,12 @@ type Props = {
   thangKhoa?: string | null;
   onChonThang?: (khoa: string, e: MouseEvent) => void;
   oDich?: string | null;
+  /** Ô đích đang kéo tới không hợp lệ (dò thử tự chỉnh khi rê): tô `--warn` thay xanh. */
+  dichLoi?: boolean;
   oKeo?: string | null;
   hienHanhLang?: boolean;
+  /** Chỗ trống đang trỏ trong danh sách "Thêm căn vào chỗ trống" (mặt, đoạn mm): tô nét đứt. */
+  choSang?: { matIdx: number; a0: number; a1: number } | null;
 };
 
 /** Ô thang bộ (mm thế giới) của phần tử thang trên mặt: [a0, a1] × [0, sâu bay]. */
@@ -64,11 +68,15 @@ export function soLieuTang(mau: ToaVe, toa: BoCuc, tv: ThuVien) {
 
 /** Mặt bằng tầng điển hình vẽ trong BanVe (toạ độ mm, lật trục y bằng phép biến đổi nhóm). */
 export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKhoa, onChonO, dsChon = [], onMenu, loiTT, loiKhoa, nhanCongNang, deBai, nguongDt,
-  thangKhoa, onChonThang, oDich, oKeo, hienHanhLang = true }: Props) {
+  thangKhoa, onChonThang, oDich, dichLoi, oKeo, hienHanhLang = true, choSang }: Props) {
+  const mauDich = dichLoi ? 'var(--warn)' : 'var(--green)';
   const K = KIEU_MB[kieu];
   const { can, loai } = useMemo(() => soLieuTang(mau, toa, tv), [mau, toa.canTheo, toa.canViTri, toa.congNang, toa.latO, tv]);
   const thang = useMemo(() => mau.mat.flatMap((m, mi) => m.phan_tu.filter((q) => q.loai === 'thang_bo').map((q, i) => ({
     khoa: q.khoa ?? `${mi}:t${i}`, o: d(oThang(m, q.a0, q.a1, q.sau_mm ?? 8500)) + 'Z',
+    // nhãn loại thang N2 / N3 (QT-63) ở giữa ô
+    tam: oThang(m, q.a0, q.a1, q.sau_mm ?? 8500).reduce<Diem>((s, p) => [s[0] + p[0] / 4, s[1] + p[1] / 4], [0, 0]),
+    loai: q.block === 'x_tb_n2' ? 'N2' : q.block === 'x_tb_n3' ? 'N3' : '',
   }))), [mau]);
   const menu = (loaiMenu: 'o' | 'loi', khoa: string) => (e: MouseEvent) => {
     if (!onMenu) return;
@@ -195,16 +203,25 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
           : { stroke: '#E0201B', 'stroke-width': 300, 'stroke-dasharray': '2000 1000' })} />
       {/* ô thang bộ bấm được (công cụ tay: chọn / kéo dời / xoá thang) */}
       {onChonThang && thang.map((th) => (
-        <path key={`tb${th.khoa}`} d={th.o} data-thang={th.khoa} fill={th.khoa === oDich ? 'var(--green)' : 'transparent'} fill-opacity={th.khoa === oDich ? 0.16 : 1}
-          stroke={th.khoa === thangKhoa || th.khoa === oDich ? 'var(--green)' : 'none'} stroke-width="3" stroke-dasharray={th.khoa === oDich ? '8 4' : undefined}
+        <path key={`tb${th.khoa}`} d={th.o} data-thang={th.khoa} fill={th.khoa === oDich ? mauDich : 'transparent'} fill-opacity={th.khoa === oDich ? 0.16 : 1}
+          stroke={th.khoa === oDich ? mauDich : th.khoa === thangKhoa ? 'var(--green)' : 'none'} stroke-width="3" stroke-dasharray={th.khoa === oDich ? '8 4' : undefined}
           vector-effect="non-scaling-stroke" style={{ cursor: 'pointer', opacity: th.khoa === oKeo ? 0.45 : 1 }}
           onClick={(e) => { e.stopPropagation(); onChonThang(th.khoa, e); }} />
       ))}
+      {thang.filter((th) => th.loai).map((th) => (
+        <text key={`tbl${th.khoa}`} x="0" y="0" class="nhan-loi" text-anchor="middle" font-size="650" pointer-events="none"
+          transform={`translate(${Math.round(th.tam[0])} ${Math.round(th.tam[1])}) scale(1 -1)`}>{th.loai}</text>
+      ))}
       {/* bóng xem trước chỗ thả (kéo đổi chỗ) + ô đang kéo mờ đi */}
       {lop.filter((x) => x.vt.khoa === oDich).map(({ vt, ranh }) => (
-        <path key={`dich${vt.khoa}`} d={ranh} class="o-dich" fill="var(--green)" fill-opacity="0.16" stroke="var(--green)" stroke-width="3" stroke-dasharray="8 4"
+        <path key={`dich${vt.khoa}`} d={ranh} class={`o-dich${dichLoi ? ' loi' : ''}`} fill={mauDich} fill-opacity="0.16" stroke={mauDich} stroke-width="3" stroke-dasharray="8 4"
           vector-effect="non-scaling-stroke" pointer-events="none" />
       ))}
+      {/* chỗ trống đang trỏ trong danh sách Thêm căn vào chỗ trống */}
+      {choSang && mau.mat[choSang.matIdx] && (
+        <path d={d(oThang(mau.mat[choSang.matIdx], choSang.a0, choSang.a1)) + 'Z'} class="cho-sang" fill="var(--green)" fill-opacity="0.12" stroke="var(--green)"
+          stroke-width="3" stroke-dasharray="8 4" vector-effect="non-scaling-stroke" pointer-events="none" />
+      )}
       {lop.filter((x) => x.vt.khoa === oKeo).map(({ vt, ranh }) => (
         <path key={`keo${vt.khoa}`} d={ranh} fill="var(--panel)" fill-opacity="0.55" pointer-events="none" />
       ))}

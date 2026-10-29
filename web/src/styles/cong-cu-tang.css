@@ -4,10 +4,30 @@
   display: flex; align-items: flex-start; gap: 6px; pointer-events: auto;
 }
 .thanh-cc-tang .cc-them { position: relative; display: inline-flex; }
+/* nhóm nút chứa menu Thêm: không cắt menu nổi (.nhom-bt mặc định overflow: hidden để bo góc) — bo góc nút đầu / cuối thay vào đó */
+.thanh-cc-tang > .nhom-bt { overflow: visible; }
+.thanh-cc-tang > .nhom-bt > .nut-bt:first-child { border-radius: 5px 0 0 5px; }
+.thanh-cc-tang > .nhom-bt > .nut-bt:last-child { border-radius: 0 5px 5px 0; }
 .thanh-cc-tang .cc-menu-them {
-  position: absolute; top: calc(100% + 4px); left: -1px; z-index: 5;
-  box-shadow: 0 6px 18px rgb(0 0 0 / .12);
+  /* mở sang TRÁI (thanh nằm sát mép phải bản vẽ — .panel-giua cắt phần tràn) */
+  position: absolute; top: calc(100% + 4px); right: -1px; z-index: 5;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
 }
+.thanh-cc-tang .cc-menu-them > .nhom-bt { box-shadow: 0 6px 18px rgb(0 0 0 / .12); }
+/* chọn mẫu căn + danh sách chỗ trống: bảng nổi dưới menu Thêm (lớp phủ, không đẩy bản vẽ) */
+.thanh-cc-tang .cc-mau, .thanh-cc-tang .cc-cho-trong {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 18px rgb(0 0 0 / .12);
+  font-size: 12px; color: var(--ink);
+}
+.thanh-cc-tang .cc-mau { display: flex; align-items: center; gap: 6px; padding: 4px 6px; }
+.thanh-cc-tang .cc-mau select { max-width: 220px; font-size: 12px; }
+.thanh-cc-tang .cc-cho-trong { list-style: none; margin: 0; padding: 4px; max-height: 260px; overflow: auto; width: max-content; max-width: min(360px, calc(100vw - 32px)); }
+.thanh-cc-tang .cc-cho-trong li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px; border-radius: 4px; }
+.thanh-cc-tang .cc-cho-trong li:hover { background: var(--selected); }
+.thanh-cc-tang .cc-cho-ten { flex: 1 0 100%; font-weight: 600; }
+.thanh-cc-tang .cc-cho-trong .nut-phu { font-size: 11px; padding: 2px 6px; }
+.bong-keo.loi { border-color: var(--warn); }
+.bong-keo.loi small { color: var(--warn); }
 /* bóng kéo: bám con trỏ 1:1 (transform qua rAF), không bắt chuột để dò ô đích bên dưới */
 .bong-keo {
   position: fixed; left: 0; top: 0; z-index: 40; pointer-events: none;
@@ -20,3 +40,5 @@
 .bong-keo small { font-weight: 500; color: var(--muted); font-size: 11px; }
 .lop-st-bao.loi { border-color: var(--warn); }
 @media (prefers-reduced-motion: reduce) { .bong-keo { transition: none !important; } }
+/* loại thang đang chọn N3 | N2 (QT-63) — nút chữ cùng cỡ nút biểu tượng */
+.thanh-cc-tang .cc-loai-thang .nut-bt { min-width: 34px; padding: 0 8px; font-size: 12px; font-weight: 600; }

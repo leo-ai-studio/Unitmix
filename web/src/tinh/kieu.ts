@@ -25,6 +25,17 @@ export type DeBaiKD = { dtCan: Partial<Record<LoaiCan, number>>; soCan: Partial<
 /** Dòng bảng chỉ tiêu Excel đã áp cho lô (để lần sau đối chiếu lại). */
 export type NguonChiTieu = { tep: string; sheet: string; dong: number; ten: string; dtBang: number | null; soLo: number };
 
+/** Loại hình nhà ở để tra bảng dân số: thương mại / xã hội / tái định cư. */
+export type LoaiHinh = 'notm' | 'noxh' | 'tdc';
+/** Giai đoạn hồ sơ: `qh` lập quy hoạch chi tiết / TMB (chủ trương đầu tư); `cp` thẩm định BCNCKT và cấp GPXD. */
+export type GiaiDoan = 'qh' | 'cp';
+/**
+ * Khai báo cách tính dân số theo QĐ tỉnh (`tinh/quyTacDanSo.ts`). Thiếu = PA cũ / chưa khai: dân số = số căn × `nguoiMoiCan`
+ * (hệ số chung). `tinh` theo địa giới CŨ trước 1/7/2025. `loaiHinh` thiếu = lấy theo chức năng lô / nhóm mẫu căn.
+ * `cach` 'bq' = bình quân người / căn mà QĐ cho phép thay bảng.
+ */
+export type KhaiDanSo = { tinh: string; giaiDoan: GiaiDoan; loaiHinh?: LoaiHinh; cach?: 'bang' | 'bq' };
+
 export type TemDat = {
   kyHieu: string;
   chucNang: ChucNang;
@@ -32,8 +43,15 @@ export type TemDat = {
   coCauMucTieu: Record<LoaiCan, number>;
   deBai?: DeBaiKD;
   nguonChiTieu?: NguonChiTieu;
+  /** Tuỳ chọn: tính dân số theo QĐ tỉnh, từng căn. */
+  danSo?: KhaiDanSo;
 };
-export type Lo = { id: string; temDat: TemDat; ranh: Diem[]; chiGioi: Diem[] | null; xungQuanh: Diem[][] };
+/**
+ * Lô đất. `canhDuong` (tuỳ chọn, theo thứ tự cạnh của `ranh`: cạnh i = ranh[i] → ranh[i+1]): số = cạnh giáp đường, bề rộng lộ giới
+ * (m) để tra khoảng lùi LO-01 · QCVN 01:2021 Bảng 2.7; null = không giáp đường (lô bên cạnh, cây xanh…) — lùi 0 như app cũ (`lo.canh`,
+ * `lui_ben` mặc định 0). Chưa khai (hoặc số cạnh không khớp ranh) thì mọi cạnh coi là giáp đường 12 m (hành vi cũ, `tm_rong`).
+ */
+export type Lo = { id: string; temDat: TemDat; ranh: Diem[]; chiGioi: Diem[] | null; xungQuanh: Diem[][]; canhDuong?: (number | null)[] };
 
 /**
  * Tỷ lệ (0–1) DT từng hạng mục được tính vào DT sàn tính HSSDĐ (QCVN 01:2021/BXD 1.4.21: tổng DT sàn gồm cả tầng hầm,
@@ -100,6 +118,11 @@ export type ToaDat = {
    * Có thì tự chỉnh coi tập thang là lựa chọn tay — PC-11 không dời / bỏ / thêm thang. Áp cho MỌI tầng (thang liền suốt chiều cao).
    */
   thangTay?: ThangTay;
+  /**
+   * Loại thang bộ chọn tay (QT-63: khoá thang → 'x_tb_n2' | 'x_tb_n3'). Quy tắc mọi tòa: luôn có ít nhất một N2 và một N3 — thang chưa
+   * chọn do ganLoaiThang (tinh/loiThang.ts) gán. Áp mọi tầng.
+   */
+  loaiThang?: Record<string, string>;
   /** Lật gương căn theo vị trí ở bố cục chung (khoá ô -> true = lật so với mẫu); tầng riêng ghi đè ở `BoCucTang.latO`. */
   latO?: Record<string, boolean>;
   /** Căn thêm tay (công cụ "Thêm căn" · QT-69): chèn ngay sau ô `sau` trên mặt `mat`, dãy dài ra ở đầu tự do. Mọi tầng. */
@@ -111,8 +134,11 @@ export type ToaDat = {
  */
 export type ThangTayThem = { khoa: string; mat: number; sau?: string; truoc?: string; sx: 1 | -1; tu?: string };
 export type ThangTay = { them: ThangTayThem[]; bo: string[] };
-/** Căn thêm tay: mẫu căn `id` chèn ngay sau ô `sau` (khoá vị trí) trên mặt `mat`. */
-export type CanThem = { mat: number; sau: string; id: string };
+/**
+ * Căn thêm tay: mẫu căn `id` chèn ngay sau ô `sau` (khoá vị trí) — hoặc ngay TRƯỚC ô `truoc` (chèn đầu dãy, app cũ tAdd ở ô đầu)
+ * — trên mặt `mat`. Có `sau` thì bỏ qua `truoc`.
+ */
+export type CanThem = { mat: number; sau?: string; truoc?: string; id: string };
 
 /** Ô thang bộ trên một mặt tòa (mm, hệ mặt): ô [a0, a0 + rong], điểm chèn khối thang = (a0 + dIns, bIns), lật theo `sx`. */
 export type ThangBoMB = { khoa: string; matIdx: number; a0: number; rong: number; sx: 1 | -1; dIns: number; bIns: number; block: string; nguon: 'mau' | 'them' };
@@ -373,6 +399,8 @@ export type CanMau = {
   /** Đường cắt STRETCH qua phòng khách (DC-04 · QT-81, scripts/boc_stretch.py app cũ): x cắt (mm), chiều sâu cắt qua
    * thông thủy / tim tường, nét thuộc block [chỉ số nét, 1 dời / 0 đứng]. Thiếu = không kéo được. */
   stretch?: { x_mm: number; sau_tt_mm: number; sau_tim_mm: number; cung: [number, number][] };
+  /** Tim cửa chính chuẩn hoá 0..1 theo mặt tiền, tiền tính bằng `tinhCuaCan` (scripts/sinh_phai_sinh_can.py). Thiếu thì tính từ can/<id>.json. */
+  cua_x?: number;
   /** Có ở mẫu biến thể STRETCH (tinh/stretch.ts): id mẫu gốc + mức kéo (mm). */
   stretchGoc?: { id: string; st: number };
 };

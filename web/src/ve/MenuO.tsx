@@ -4,7 +4,7 @@ import { t } from '../i18n/i18n';
 import { CONG_NANG_O, type CongNangO, type DiXuyen, type ThongTinLoi } from '../tinh/kieu';
 
 /** Hộp nổi đặt tại toạ độ màn hình (position: fixed), không chiếm chỗ trong bố cục. Esc / bấm ra ngoài thì đóng. */
-function HopNoi({ x, y, dong, nhan, children }: { x: number; y: number; dong: () => void; nhan: string; children: ComponentChildren }) {
+export function HopNoi({ x, y, dong, nhan, children }: { x: number; y: number; dong: () => void; nhan: string; children: ComponentChildren }) {
   const ref = useRef<HTMLDivElement>(null);
   const dongRef = useRef(dong);
   dongRef.current = dong;

@@ -3,8 +3,8 @@
  * (MT-01) × cách xếp, chấm bằng chính bộ kiểm tra của app. Hàm thuần, toạ độ mét như lô.
  *
  * Mỗi mẫu: xếp tham lam nhiều tòa nhất (lưới 3 m, góc theo cạnh dài nhất của lô + 90/180/270°, neo "tâm" lô và "góc" đầu cạnh
- * dài, như `tuDatToaG`), mỗi lần đặt kiểm: trong chỉ giới / ranh lô (LO-05), khoảng lùi Bảng 2.7 mọi cạnh lô theo bề rộng đường
- * (LO-01 — lô chưa có dữ liệu cạnh giáp đường nên áp mọi cạnh, như app cũ khi thiếu `lo.canh`), khoảng cách cạnh dài §2.6.1 với
+ * dài, như `tuDatToaG`), mỗi lần đặt kiểm: trong chỉ giới / ranh lô (LO-05), khoảng lùi Bảng 2.7 theo lộ giới TỪNG cạnh lô
+ * (LO-01 · `Lo.canhDuong`; cạnh không giáp đường lùi 0; lô chưa khai thì áp mọi cạnh đường 12 m như app cũ khi thiếu `lo.canh`), khoảng cách cạnh dài §2.6.1 với
  * tòa đã đặt và tòa lô bên cạnh trong 60 m (LO-02), dừng khi chạm MĐXD (CT-01). Mỗi số tòa 1..n là một phương án; số tầng điển
  * hình lớn nhất ≤ trần QH mà `tinhChiTieu` không vượt (MĐXD, HSSDĐ gồm hầm, tầng cao, số căn, dân số — CT-01…04), như
  * `tangToiDa` (QT-68). Sau đó trộn mẫu: lấp chỗ trống của phương án tốt nhất bằng mẫu khác.
@@ -32,6 +32,29 @@ export function luiBang27(luat: Luat, rongDuong: number, H: number): number {
   const hang = Object.keys(b.hang_duong_m);
   const r = moc(hang).filter((m) => rongDuong >= m).length;
   return b.hang_duong_m[hang[r]]?.[cot] ?? 0;
+}
+
+/** Bề rộng đường mặc định khi lô chưa khai lộ giới từng cạnh — app cũ `TMB.rong` = 12 m ("Bề rộng đường tiếp giáp" `tm_rong`). */
+export const RONG_DUONG_MAC_DINH = 12;
+
+/** Lô đã khai lộ giới từng cạnh (số phần tử khớp số cạnh ranh). */
+export const coCanhDuong = (lo: Lo): boolean => Array.isArray(lo.canhDuong) && lo.canhDuong.length === lo.ranh.length && lo.ranh.length >= 3;
+
+/**
+ * Bề rộng lộ giới cạnh i của lô (m); null = cạnh không giáp đường. Lô chưa khai thì mọi cạnh giáp đường `macDinh` m (hành vi cũ).
+ */
+export function rongCanh(lo: Lo, i: number, macDinh = RONG_DUONG_MAC_DINH): number | null {
+  if (!coCanhDuong(lo)) return macDinh;
+  const v = lo.canhDuong![i];
+  return typeof v === 'number' && v > 0 ? v : null;
+}
+
+/**
+ * LO-01 · Bảng 2.7 theo TỪNG cạnh lô (`cach_tinh` LO-01, app cũ `luiCanh`): cạnh giáp đường lùi theo lộ giới của chính cạnh đó ×
+ * chiều cao H; cạnh không giáp đường lùi 0. Trả mảng theo thứ tự cạnh của `ranh`.
+ */
+export function luiTungCanh(luat: Luat, lo: Lo, H: number, macDinh = RONG_DUONG_MAC_DINH): number[] {
+  return lo.ranh.map((_, i) => { const r = rongCanh(lo, i, macDinh); return r === null ? 0 : luiBang27(luat, r, H); });
 }
 
 /** LO-02 · §2.6.1: khoảng cách tối thiểu cạnh dài / đầu hồi (m) theo chiều cao công trình cao hơn, đọc ngưỡng trong luật. */
@@ -80,16 +103,16 @@ export function kcDaGiac(P: Diem[], Q: Diem[]): number {
 }
 const namTrongNhanh = (F: Diem[], V: Diem[]) =>
   F.every((p) => trong(p, V)) && !F.some((p, i) => V.some((q, j) => cat(p, F[(i + 1) % F.length], q, V[(j + 1) % V.length])));
-/** Khoảng cách nhỏ nhất từ đa giác F tới các cạnh lô. */
-const kcToiCanh = (F: Diem[], R: Diem[]) => {
+/** Khoảng cách nhỏ nhất từ đa giác F tới đoạn ab (cạnh lô). */
+export const kcToiDoan = (F: Diem[], a: Diem, b: Diem) => {
   let m = Infinity;
-  for (let i = 0; i < R.length; i++) {
-    const a = R[i], b = R[(i + 1) % R.length];
-    for (const p of F) m = Math.min(m, kcDoan(p, a, b));
-    for (const q of [a, b]) for (let k = 0; k < F.length; k++) m = Math.min(m, kcDoan(q, F[k], F[(k + 1) % F.length]));
-  }
+  for (const p of F) m = Math.min(m, kcDoan(p, a, b));
+  for (const q of [a, b]) for (let k = 0; k < F.length; k++) m = Math.min(m, kcDoan(q, F[k], F[(k + 1) % F.length]));
   return m;
 };
+/** F đủ khoảng lùi `lui[i]` tới từng cạnh i của ranh R (cạnh lùi 0 bỏ qua). */
+export const duLuiTungCanh = (F: Diem[], R: Diem[], lui: number[]) =>
+  R.every((a, i) => !(lui[i] > 0) || kcToiDoan(F, a, R[(i + 1) % R.length]) >= lui[i] - 1e-6);
 
 // ---------- kiểu kết quả ----------
 export type LuatXep = { lo01: Luat; lo02: Luat };
@@ -98,7 +121,7 @@ export type DauVaoXep = {
   lo: Lo;
   tv: ThuVien;
   luat: LuatXep;
-  /** Bề rộng đường áp mọi cạnh lô (m) khi lô chưa có dữ liệu cạnh giáp đường — app cũ mặc định 12 m (`TMB.rong`). */
+  /** Bề rộng đường áp mọi cạnh lô (m) khi lô chưa khai lộ giới từng cạnh (`Lo.canhDuong`) — app cũ mặc định 12 m (`TMB.rong`). */
   rongDuong?: number;
   /** Tim cửa căn (ma_goc → 0..1) để đo thoát nạn; thiếu thì 0,5. */
   cuaCan?: Record<string, number>;
@@ -166,7 +189,7 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
   const soTangDe = ct.tangDe ?? 1;
   const nMax = Math.max(1, ct.tangCanHo ?? Math.round(ct.tangCaoMax) - soTangDe);
   const Hmax = soTangDe * CAO_DE + nMax * CAO_DH;
-  const lui = luiBang27(luat.lo01, rongDuong, Hmax);
+  const lui = luiTungCanh(luat.lo01, lo, Hmax, rongDuong); // LO-01 theo lộ giới từng cạnh
   const kc = kcToa261(luat.lo02, Hmax);
 
   // tòa đã đặt ở lô khác (LO-02 · lô bên cạnh)
@@ -187,7 +210,7 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
     for (const [x, y] of diemLuoi) for (const goc of gocs) {
       const F = chanToa(mau, { x, y, gocDo: goc } as ToaDat);
       if (!namTrongNhanh(F, V)) continue;
-      if (lui > 0 && kcToiCanh(F, R) < lui - 1e-6) continue;
+      if (!duLuiTungCanh(F, R, lui)) continue;
       if (ngoai.some((o) => kcDaGiac(F, o.F) < XET_LO_BEN_M && kcDaGiac(F, o.F) < kcToa261(luat.lo02, Math.max(Hmax, o.H)).dai)) continue;
       kq.push({ mauId: mau.id, x, y, goc, F, r: Math.max(...F.map((p) => Math.hypot(p[0] - x, p[1] - y))) });
     }

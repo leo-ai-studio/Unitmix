@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { RANH_HATCH, napDxf, taoLoTuDxf, type BanDxf } from '../dxf/napDxf';
+import type { BanDxf } from '../dxf/napDxf';
 import { t } from '../i18n/i18n';
 import type { DongChiTieu } from '../tinh/chiTieu';
 import { dienTich } from '../tinh/hinhHoc';
@@ -14,6 +14,7 @@ import { fmtSo } from '../ui/so';
 import { SoDong } from '../ui/SoDong';
 import { NhapChiTieu } from './NhapChiTieu';
 import { NhapDeBai } from './NhapDeBai';
+import { KhaiDanSo } from '../ui/KhaiDanSo';
 
 type Chung = { pa: TrangThaiPA; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; loId: string | null; chonLo: (id: string) => void };
 
@@ -56,6 +57,10 @@ function ON({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; tip?
   );
 }
 
+/** Bộ đọc DXF (kèm dxf-parser): chunk riêng, tải khi chọn tệp lần đầu. */
+let modDxf: typeof import('../dxf/napDxf') | null = null;
+const napModDxf = async () => (modDxf ??= await import('../dxf/napDxf'));
+
 function doanLop(lop: string[], mau: RegExp): string {
   return lop.find((l) => mau.test(l)) ?? '';
 }
@@ -73,7 +78,8 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
   async function docTep(f: File) {
     setLoiDoc('');
     try {
-      const b = napDxf(await f.text());
+      const [{ napDxf, RANH_HATCH }, text] = await Promise.all([napModDxf(), f.text()]);
+      const b = napDxf(text);
       setBan(b);
       // Ranh lập quy hoạch là ranh cả khu, không phải ranh lô.
       const ranh = doanLop(b.lop.filter((l) => !/l[aậ]p\s*quy\s*ho[aạ]ch/i.test(l)), /RANH|LO|PLOT|BOUND/i);
@@ -92,9 +98,9 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
   }
 
   function taoTuDxf() {
-    if (!ban || !chon.ranh) return;
+    if (!ban || !chon.ranh || !modDxf) return;
     if (pa.lo.length && !confirm(t('lo.thayLo'))) return;
-    const ds = taoLoTuDxf(ban, { ranh: chon.ranh, chiGioi: chon.chiGioi || undefined, tem: chon.tem || undefined, xungQuanh: chon.xungQuanh || undefined });
+    const ds = modDxf.taoLoTuDxf(ban, { ranh: chon.ranh, chiGioi: chon.chiGioi || undefined, tem: chon.tem || undefined, xungQuanh: chon.xungQuanh || undefined });
     sua((p) => ({ ...p, lo: ds, toa: p.toa.filter((x) => ds.some((l) => l.id === x.loId)) }));
     setBan(null);
     const dau = ds.find(laCaoTang) ?? ds[0];
@@ -130,7 +136,7 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
               <span>{t({ ranh: 'lo.lopRanh', chiGioi: 'lo.lopChiGioi', tem: 'lo.lopTem', xungQuanh: 'lo.lopXungQuanh' }[k])}</span>
               <select value={chon[k]} onChange={(e) => setChon({ ...chon, [k]: e.currentTarget.value })}>
                 <option value="">{t('lo.khongChon')}</option>
-                {k === 'ranh' && ban.lopHatch.length > 0 && <option value={RANH_HATCH}>{t('lo.ranhHatch')}</option>}
+                {k === 'ranh' && ban.lopHatch.length > 0 && <option value={modDxf?.RANH_HATCH}>{t('lo.ranhHatch')}</option>}
                 {ban.lop.map((l) => <option value={l}>{l}</option>)}
               </select>
             </label>
@@ -219,6 +225,7 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
               <O nhan={t('ct.choXeMayMoiCan')} tip={t('gt.ct.choXeMayMoiCan')} gt={ct.choXeMayMoiCan} buoc={0.1} tat={chiXem} onDoi={datCt('choXeMayMoiCan')} />
               <O nhan={t('ct.cayXanhMin')} tip={t('gt.ct.cayXanhMin')} gt={ct.cayXanhMin} donVi="%" tat={chiXem} onDoi={datCt('cayXanhMin')} />
             </div>
+            <KhaiDanSo lo={lo} sua={sua} chiXem={chiXem} />
           </MucGap>
           <MucGap tieuDe={t('muc.coCauMucTieu')} giaiThich={t('gt.muc.coCauMucTieu')}>
             <DongPreset nhom="coCau" chiXem={chiXem} chup={() => chupPreset('coCau', pa, lo)} ap={apPresetNhom('coCau')} />

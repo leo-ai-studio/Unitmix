@@ -17,14 +17,21 @@ export const BIEU_TUONG = {
   nhanBan: '⧉',
   do: '⟷', // đo khoảng cách
   batDinh: '⌖', // bắt dính
-  toaDo: '⊕', // nhập toạ độ / góc chính xác
+  toaDo: '⌗', // nhập toạ độ / góc chính xác
   xoay: '⟳',
   vuaKhung: '⛶', // vừa khung
   xem3d: '⬡',
+  phong: '⊕', // phóng to
+  thu: '⊖', // thu nhỏ
+  lop: '☰', // lớp hiển thị (bật / tắt)
+  chuGiai: '▤', // chú giải
+  troGiup: '?', // hướng dẫn thao tác
   // màn Tầng
   sapXep: '✥', // kéo đổi chỗ căn (QT-8 · QT-30)
   them: '＋', // menu gộp Thêm căn / Thêm thang bộ (app cũ tAddMenu)
   themCan: '⊞',
+  themTruoc: '⇤', // thêm căn TRƯỚC ô chọn (đầu dãy)
+  themCho: '⊡', // thêm căn vào khe / ô trống
   thangTuDong: '⟲', // bỏ thang đặt tay, PC-11 tự đặt lại
   themThang: '≣', // thêm thang bộ — ô 3.000 mm (QT-10)
   hanhLang: '⇉', // hành lang tự động
@@ -33,11 +40,17 @@ export const BIEU_TUONG = {
   // Tổng mặt bằng
   tuDat: '◎', // tự đặt / gợi ý xếp tòa (MT-05)
   datToa: '▣', // đặt tòa đang chọn
+  moTang: '⧈', // mở mặt bằng tầng của tòa
   hangLoat: '▦', // xếp hàng loạt
   canhBao: '⚠︎', // vi phạm khoảng lùi / khoảng cách
   bongDo: '☼',
   nenBanDo: '▧',
   khoaCG: '⊟', // giữ tòa trong chỉ giới khi kéo / xoay (LO-05)
+  // màn hẹp (điện thoại / máy tính bảng)
+  nganTrai: '◧', // mở ngăn Nhập liệu (panel trái)
+  nganPhai: '◨', // mở ngăn Số liệu (panel phải)
+  dongNgan: '⌄', // đóng ngăn kéo
+  menuToa: '⋯', // menu tòa (nhấn giữ)
   // xuất
   xuatCad: '◫',
   xuatXls: '▥',

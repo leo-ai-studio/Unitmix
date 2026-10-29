@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
+import { dieuPhoiHam, useNgheHam } from '../tinh/hamNen';
 import type { GocNhin, ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { chuKyMatBang } from '../tinh/loiThang';
-import { boCucTang, canDangDung, nhomTang, viTriCan } from '../tinh/matBang';
+import { boCucTang, canDangDung, congNangTai, nhomTang, soCanChuVi, tangCoRieng, viTriCan } from '../tinh/matBang';
 import { idTepCan } from '../tinh/stretch';
 import { idLoi, tai, type HinhLoi } from '../ve/hinhHocThuVien';
 import type { ToaVe } from '../ve/MatBangTang';
 import { dungCan, type Khoi3d } from './dungCan';
 import { dungToa, type LoiHinh } from './dungToa';
 import { dungDuAn } from './dungDuAn';
+import { chonTiaToa, doiTuongDangChonToa, hinhNhanToa, type DangChon3D, type DoiTuong3D } from './chon3d';
+import { tenTang } from '../ui/ChonTang';
+import { fmtSo } from '../ui/so';
 import { Khung3D } from './Khung3D';
 import { khoi3dTheoId } from './stretch3d';
 
@@ -35,8 +39,24 @@ type LuuGoc = { gocLuu?: GocNhin[]; onLuuGoc?: (g: Omit<GocNhin, 'id' | 'che' | 
 type PropsToa = { toa: ToaDat; mau: ToaVe; mauTang?: (tang: number | null) => ToaVe; tv: ThuVien; pa: TrangThaiPA; dauThanh?: preact.ComponentChildren } & LuuGoc;
 
 
-/** Tab Mô hình: 3D cả tòa đang xem (khối đế + tầng điển hình + mái + tum). */
-export function MoHinhToa({ toa, mau, mauTang, tv, dauThanh, ...luu }: PropsToa) {
+/**
+ * Thông tin căn / tầng đang chọn ở 3D Công trình: CH-xx (đánh số chu vi như bản vẽ tầng), loại, DT thông thủy, tầng.
+ * Theo mặt bằng + bố cục của chính tầng đó (tầng null = bố cục chung).
+ */
+export function thongTinChonToa(toa: ToaDat, mau: ToaVe, mauTang: ((tang: number | null) => ToaVe) | undefined, tv: ThuVien, c: { tang: number | null; canKhoa: string | null }): string | null {
+  const tang = c.tang && c.tang <= toa.soTangDH ? c.tang : null;
+  const nhanTang = tang ? tenTang(toa.soTangDe, tang) : t('tang.dienHinh');
+  if (!c.canKhoa) return tang ? t('m3d.chonTang').replace('{tang}', nhanTang) : null;
+  const mT = (tang && tangCoRieng(toa).includes(tang) ? mauTang?.(tang) : null) ?? mau, bc = boCucTang(toa, tang);
+  const vts = viTriCan(mT, tv, bc), vt = vts.find((v) => v.khoa === c.canKhoa);
+  if (!vt || congNangTai(vt.khoa, bc) !== 'can') return null;
+  const no = soCanChuVi(mT.duong_bao, vts).get(vt.khoa) ?? 0, cm = tv.can.get(canDangDung(vt, bc));
+  return t('m3d.chonCan').replace('{tang}', nhanTang).replace('{can}', `CH-${String(no).padStart(2, '0')}`)
+    .replace('{loai}', cm ? t(`loai.${cm.loai}`) : '—').replace('{dt}', fmtSo(cm?.dt_tt_m2, { thapPhan: 1 }));
+}
+
+/** Tab Mô hình: 3D cả tòa đang xem (khối đế + tầng điển hình + mái + tum). Có `chon3d` thì bấm chọn căn / tầng, bấm đúp mở mặt bằng. */
+export function MoHinhToa({ toa, mau, mauTang, tv, dauThanh, chon3d, ...luu }: PropsToa & { chon3d?: Chon3D }) {
   // căn của mọi bố cục tầng (chung + tầng riêng); chữ ký bố cục vào khoá để dựng lại khi đổi theo tầng / công năng ô
   const canIds = useMemo(() => [...new Set(nhomTang(toa).flatMap(({ tang }) => { const bc = boCucTang(toa, tang); return viTriCan(mau, tv).map((vt) => canDangDung(vt, bc)); }))], [mau, toa.canTheo, toa.canViTri, toa.tangRieng, tv]);
   // khối lõi / thang của mọi mặt bằng tầng (thang PC-11 thêm có thể là khối khác bản vẽ)
@@ -44,10 +64,22 @@ export function MoHinhToa({ toa, mau, mauTang, tv, dauThanh, ...luu }: PropsToa)
   const nap = useNap3d(canIds, loiIds, tv);
   if (!nap.xong) return <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('m3d.dangDung')}</span></div>;
   const khoa = ['toa', mau.id, toa.soTangDe, toa.soTangDH, canIds.join(), JSON.stringify([toa.canTheo, toa.canViTri, toa.congNang, toa.tangRieng]), chuKyMatBang(toa)].join('|');
+  const c = chon3d?.chon, tang = c?.tang ?? null, canKhoa = c?.canKhoa ?? null;
+  const chu = chon3d ? thongTinChonToa(toa, mau, mauTang, tv, { tang, canKhoa }) ?? t('m3d.goiYChonToa') : null;
   return (
     <Khung3D khoa={khoa} gocBac={toa.gocDo} chinhThamSo toaNguyen dauThanh={dauThanh} {...luu} tenAnh={`Unitmix-${mau.id}`}
       tieuDe={`${mau.ten_vi.split(' · ')[0]} · ${toa.soTangDe ? toa.soTangDe + ' + ' : ''}${toa.soTangDH} ${t('m3d.tang')}`}
-      dung={({ T, goc, M, G, P }) => ({ ...dungToa(T, goc, M, G, P, { mau, toa, tv, khoi3d: nap.khoi3d, loi: nap.loi, idLoi, mauTang }).canh, nen: true })} />
+      chon={c} onChon={chon3d?.onChonToa} onMo={chon3d?.onMoToa} chuThich={chu}
+      dung={({ T, goc, M, G, P }) => {
+        const r = dungToa(T, goc, M, G, P, { mau, toa, tv, khoi3d: nap.khoi3d, loi: nap.loi, idLoi, mauTang });
+        const bd = r.chon, hc = (P.tang - P.san) / 1000;
+        return {
+          ...r.canh, nen: true,
+          chonTia: (o, h, catY) => chonTiaToa(bd, o, h, catY),
+          hinhNhan: (d) => hinhNhanToa(bd, d, hc),
+          doiTuongChon: (cc) => doiTuongDangChonToa(bd, cc),
+        };
+      }} />
   );
 }
 
@@ -68,12 +100,18 @@ export function MoHinhCan({ canId, ten, tv }: { canId: string; ten: string; tv?:
   );
 }
 
-type PropsChinh = { pa: TrangThaiPA; tv: ThuVien; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; toa: ToaDat | null; mau: ToaVe | null; mauTang?: (tang: number | null) => ToaVe; tenDuAn: string };
+/**
+ * Nối chọn trong 3D với state chọn của 2D (`man/SoanThao.tsx`): đang chọn, bấm chọn, bấm đúp mở mặt bằng tầng.
+ * Toàn dự án: tòa / lô (`onChon`, `onMo`). Công trình: căn / tầng của tòa đang xem (`onChonToa`, `onMoToa`).
+ */
+export type Chon3D = { chon: DangChon3D; onChon: (d: DoiTuong3D | null) => void; onMo: (d: DoiTuong3D) => void; onChonToa?: (d: DoiTuong3D | null) => void; onMoToa?: (d: DoiTuong3D) => void };
+type PropsChinh = { pa: TrangThaiPA; tv: ThuVien; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; toa: ToaDat | null; mau: ToaVe | null; mauTang?: (tang: number | null) => ToaVe; tenDuAn: string; chon3d?: Chon3D };
 
 /** Tab 3D: chọn Toàn dự án (ô đất, cây xanh, mặt nước, khối tòa) hoặc Công trình (tòa đang chọn, chi tiết từng căn); góc nhìn lưu trong PA. */
-export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn }: PropsChinh) {
+export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, chon3d }: PropsChinh) {
   const [che, setChe] = useState<'du_an' | 'toa'>('du_an');
   const [hienHam, setHienHam] = useState(true);
+  const vHam = useNgheHam('3d'); // hầm rải trong Web Worker: có kết quả mới thì dựng lại (khoaNhe)
   const xem = che === 'toa' && toa && mau ? 'toa' : 'du_an';
   const gocLuu = (pa.gocNhin ?? []).filter((g) => g.che === xem && (xem === 'du_an' || g.toaId === toa?.id));
   const luu: LuuGoc = {
@@ -90,12 +128,15 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn }:
   const nutHam = (
     <span class="nhom-3d" role="group" aria-label={t('m3d.ham')}>
       <button type="button" aria-pressed={hienHam} title={t('m3d.hamGiaiThich')} onClick={() => setHienHam(!hienHam)}>{t('m3d.ham')}</button>
+      {hienHam && dieuPhoiHam.dangChoKenh('3d') && <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '0 8px' }}><img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '14px', height: '14px' }} />{t('ham.dangRai')}</span>}
     </span>
   );
-  if (xem === 'toa' && toa && mau) return <MoHinhToa pa={pa} tv={tv} toa={toa} mau={mau} mauTang={mauTang} dauThanh={nut} {...luu} />;
-  const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';'), toa?.id ?? ''].join('|');
+  if (xem === 'toa' && toa && mau) return <MoHinhToa pa={pa} tv={tv} toa={toa} mau={mau} mauTang={mauTang} dauThanh={nut} chon3d={chon3d} {...luu} />;
+  // tòa đang xem không vào khoá: đổi tòa (kể cả bấm chọn trong 3D) chỉ dựng lại nhẹ, giữ góc nhìn (góc "Cận tòa chọn" theo tòa mới)
+  const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';')].join('|');
   return (
-    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham)} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
+    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '')} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
+      chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
       gocBac={0} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, hienHam)} />
   );
 }

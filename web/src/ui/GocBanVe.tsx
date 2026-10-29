@@ -1,0 +1,58 @@
+import type { ComponentChildren } from 'preact';
+import { useState } from 'preact/hooks';
+import { t } from '../i18n/i18n';
+import { NutBieuTuong } from './NutBieuTuong';
+import type { NutHienThi } from './ThanhHienThi';
+
+type Props = {
+  /** Phóng / thu / vừa khung của bản vẽ (BanVe `dk`); không có thì ẩn cụm zoom (vd 3D tự có chuột). */
+  zoom?: { phong: () => void; thu: () => void; vua: () => void } | null;
+  /** Nút bật / tắt lớp hiển thị — gom vào một nút "Lớp" mở danh sách. */
+  lop?: NutHienThi[];
+  /** Nội dung chú giải — gom vào nút "Chú giải", gập mặc định. */
+  chuGiai?: ComponentChildren;
+  /** Hướng dẫn thao tác — tooltip + bấm để mở. */
+  troGiup?: string;
+};
+
+/**
+ * Điều khiển góc bản vẽ kiểu Forma: thay dải đáy (chú giải + hướng dẫn + Phóng / Thu / Vừa khung) bằng cụm nút biểu tượng nhỏ ở hai góc dưới,
+ * chú giải / lớp / hướng dẫn chỉ mở khi bấm — nhường tối đa chỗ cho mặt bằng / layout / 3D. Mọi thứ là lớp phủ, không đổi kích thước khung giữa.
+ */
+export function GocBanVe({ zoom, lop, chuGiai, troGiup }: Props) {
+  const [mo, setMo] = useState<'' | 'lop' | 'chuGiai' | 'troGiup'>('');
+  const bat = (k: typeof mo) => setMo((m) => (m === k ? '' : k));
+  return (
+    <>
+      {(chuGiai || troGiup) && (
+        <div class="goc-bv trai">
+          {mo === 'chuGiai' && chuGiai && <div class="goc-bv-hop" role="dialog" aria-label={t('bt.chuGiai')}>{chuGiai}</div>}
+          {mo === 'troGiup' && troGiup && <div class="goc-bv-hop" role="note">{troGiup}</div>}
+          <div class="nhom-bt">
+            {chuGiai && <NutBieuTuong k="chuGiai" bat={mo === 'chuGiai'} onClick={() => bat('chuGiai')} />}
+            {troGiup && <NutBieuTuong k="troGiup" ghiChu={troGiup} bat={mo === 'troGiup'} onClick={() => bat('troGiup')} />}
+          </div>
+        </div>
+      )}
+      {(zoom || (lop && lop.length > 0)) && (
+        <div class="goc-bv phai">
+          {mo === 'lop' && lop && (
+            <div class="goc-bv-hop lop" role="group" aria-label={t('bt.lop')}>
+              {lop.map((n) => (
+                <label key={n.khoa}>
+                  <input type="checkbox" checked={!!n.bat} onChange={() => n.onClick?.()} /> {n.nhan}
+                </label>
+              ))}
+            </div>
+          )}
+          <div class="nhom-bt doc">
+            {lop && lop.length > 0 && <NutBieuTuong k="lop" bat={mo === 'lop'} onClick={() => bat('lop')} />}
+            {zoom && <NutBieuTuong k="phong" onClick={zoom.phong} />}
+            {zoom && <NutBieuTuong k="thu" onClick={zoom.thu} />}
+            {zoom && <NutBieuTuong k="vuaKhung" onClick={zoom.vua} />}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

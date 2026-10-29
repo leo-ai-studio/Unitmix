@@ -2,6 +2,198 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · Giao diện điện thoại / máy tính bảng + cảm ứng 2D / 3D · agent Opus
+
+- Yêu cầu: tối ưu cho điện thoại; thao tác mượt, không che công cụ; zoom hai ngón; chạm chọn tòa, lô; tương tác được.
+- Đã làm:
+  - Bố cục ≤ 1024 px (`ui/manHep.ts`, `styles/dien-thoai.css`, `ui/KhungSoan.tsx`, `ui/ThanhTren.tsx`). Bản vẽ / 3D chiếm gần trọn màn: 390×844 có khung giữa 390×740, 768×1024 có 768×920.
+  - Panel trái / phải thành ngăn kéo trượt từ đáy. Dock dưới có Nhập · ↶ ↷ · Số liệu. Kéo tay cầm xuống để đóng (`ui/nganKeo.ts`), Esc cũng đóng. Ngăn đang đóng có `inert`.
+  - Thanh trên một hàng 48 px: logo · TMB / Tầng / Hầm (nhãn ngắn `buoc.ngan.*`) · 2D / 3D / Chi phí · ⋯. Dải cấp, chế độ sửa, trạng thái lưu, XLS / CAD, VI / EN gom vào menu ⋯.
+  - Điện thoại nằm ngang (cao ≤ 520): dock thành cột phải. Máy tính bảng: ngăn rộng 440 px, Nhập bám trái, Số liệu bám phải.
+  - Né tai thỏ bằng `viewport-fit=cover` + `env(safe-area-inset-*)`. Nút ≥ 40–44 px, ô nhập 16 px. Thanh TMB và thanh 3D một hàng, vuốt ngang trong thanh. Màn Tầng: nhãn tầng một dòng, thanh công cụ tay xuống hàng dưới, không đè hoa gió. Thông báo, thanh ô chọn, chip 3D xuống đáy khung giữa.
+  - Cảm ứng 2D (`ve/camUng.ts` thuần + `ve/BanVe.tsx`):
+    - Đang kéo / chụm chỉ đổi CSS `transform` của SVG trong rAF. Nhấc tay mới đặt viewBox, vẽ lại một lần. Quán tính cũng chạy bằng transform.
+    - Chạm hai lần = phát `dblclick`, nhấn giữ 520 ms = phát `contextmenu` lên phần tử dưới ngón, nên tòa / ô căn / lõi dùng lại handler chuột. Bản gốc trình duyệt tự phát bị chặn để menu không mở hai lần. Click khi nhấc tay sau nhấn giữ bị nuốt, vì nó trúng mục menu vừa mở.
+    - Ngưỡng run tay khi chạm là 10 px (chuột 4 px).
+  - TMB (`man/ManXepToa.tsx`):
+    - Ngón đặt lên tòa CHƯA chọn thì kéo là dời bản vẽ; chỉ tòa đã chọn mới kéo bằng một ngón.
+    - Chạm tòa / lô chọn bằng hit-test trong `bamNen` (`data-toa`, `data-lo`). Chạm nền bỏ chọn.
+    - Menu ngữ cảnh tòa (chuột phải / nhấn giữ): mở mặt bằng tầng, xoay 90°, lật, nhân bản, khoá, xoá (`HopNoi` export từ `ve/MenuO.tsx`).
+  - 3D (`ve3d/Khung3D.tsx`, chỉ phần điều khiển): `touches` ONE = xoay, TWO = chụm phóng + dời, `screenSpacePanning`. Đặt ngón thứ hai thì cả lượt không còn là chạm, nên ngón đầu đứng yên khi chụm không chọn nhầm.
+- Kiểm:
+  - `npm run kiem` ĐẠT (web 505/505; mới `ve/camUng.test.ts` 11 ca: chạm / kéo / chụm / giữ, chạm hai lần, phóng quanh tâm, chụm + dời, transform khớp vẽ lại).
+  - `scripts/kiem_man_hep.mjs` (mới, cần vite + API): đo tràn ngang, nút bị che, nút < 40 px, thanh trên ra ngoài mép. Chạy ở 390×844, 430×932, 844×390, 768×1024, 1024×768, 1440×900 qua TMB, Tầng, Hầm, 3D, Chi phí, hai ngăn, menu ⋯: ĐẠT. Cỡ 1440×900 khung giữa vẫn 270,52,870×848 như trước.
+  - Edge headless + CDP (`mobile: true`, dpr 3; máy tính bảng 768×1024), chạm qua `Input.dispatchTouchEvent`, vite 5426, API 8787, dự án thử `12alnif0` (chép PA 16 lô / 3 tòa của `xhwv7fzo`):
+    - TMB 12/12: chụm 80 → 280 px phóng đúng ×3,5, tâm lệch 0 px; đang chụm viewBox đứng yên; chạm chọn tòa / lô / bỏ chọn; kéo tòa đã chọn; kéo từ tòa chưa chọn thì dời bản vẽ; nhấn giữ mở menu; chạm hai lần mở Tầng.
+    - 3D 8/8. Ngăn / Tầng 6/6: kéo tay cầm đóng ngăn, chụm MB tầng, nhấn giữ ô căn mở menu công năng.
+    - Ảnh ở `docs/anh/mobile/` (đã giảm còn 256 màu cho nhẹ).
+- Bẫy:
+  - Sau kéo nhanh, quán tính còn chạy khoảng 1 s. Đo toạ độ phần tử ngay lúc đó sẽ lệch (chạm đầu tiên dừng trôi).
+  - Menu mở tại điểm nhấn giữ nên click khi nhấc tay trúng mục đầu → phải nuốt ở `window`, không chỉ trong `.ban-ve`.
+  - `Set-Content -Encoding utf8` của PowerShell 5 thêm BOM.
+- Còn dở:
+  - Chưa thử trên máy thật iOS / Android. iOS chặn phóng trang bằng `gesturestart` + `touch-action`, chưa kiểm.
+  - Màn Tầng: chế độ ✥ kéo đổi chỗ (`man/CongCuTang.tsx`, không thuộc phạm vi) chặn lan truyền `pointerdown` trên ô, nên khi bật ✥ thì chụm bắt đầu trên ô không phóng được.
+  - Màn Hầm vẽ ranh bằng chạm chưa thử.
+  - Ngăn kéo chưa có nấc nửa / đầy.
+  - Hộp thoại lớn (Nhập bảng QH) trên điện thoại mới chỉ cuộn được, chưa tối ưu.
+## 2026-10-29 · xếp căn: quy tắc thang bộ (2–3, luôn N2 + N3) · nét bao bo theo ô · phá hoại 126 → 0 · thao tác tay nhanh · agent Opus
+
+Người dùng: "đường bao bo lại, đảo / xoá / di chuyển căn, xoá / thêm thang, dồn khít không mượt như app cũ … có khe hở, thang không đúng quy chuẩn, không tối ưu thang, chỉ được mắc 3 thang, mặc định 2, luôn một N2 và một N3 — cho mọi tòa, mọi phương án".
+- **Quy tắc thang bộ** (quy tắc 7 trong AI_START): `ganLoaiThang` (tinh/loiThang.ts) gán N2 / N3 ở mặt bằng mẫu, sau mọi tự chỉnh, tầng riêng theo tầng chung (`loaiTheoChung`); `ToaDat.loaiThang` lưu loại chọn tay. PC-11 như `datThangBo` app cũ: tối ưu với 2 thang (cặp thang của bản vẽ) trước, thang thứ 3 chỉ khi 2 thang còn căn vượt. Thêm tay quá 3 → chặn `nhieu_thang`; hợp thang liền không vượt 3; thang tay > 3 (PA cũ) cắt về 3 (`catThangThua`). Đổi loại `doiLoaiThangTay` + nút N3 | N2 ở thanh công cụ màn Tầng (đổi N2 duy nhất → thang gần nhất thành N2), nhãn N2 / N3 trên bản vẽ. Mở PA cũ: `chuanHoaThang` (tinh/macDinh.ts) gán lại loại; số thang ngoài 2…3 thì bỏ mặt bằng lưu. Test `tinh/thangBo.test.ts`.
+- Số thang sau PC-11 (33 mẫu, 24 tầng): trước 4 mẫu 2 thang / 29 mẫu 3 thang, toàn N3 → sau 5 mẫu 2 thang (tm-i2, tm-i3, tm-l1, tm-v4, xh-i1) / 28 mẫu 3 thang, mẫu nào cũng ≥ 1 N2 + ≥ 1 N3; số căn / tầng không mẫu nào giảm, căn vượt 0.
+- **Thử phá hoại** `tinh/phaHoai.test.ts` (như `thu_pha_hoai.js` app cũ): mọi mẫu (kiểm nhanh 1/4), hạt cố định, 14 bước (nhanh 8): xoá / thêm / đổi chỗ / lật căn, thêm / xoá / dời thang, đổi N2/N3, dồn khít, thang về tự động, hoàn tác. Bất biến: 0 đè / khe mới (khe ≤ nền + 200 mm, không cộng dồn), nét bao khớp ô đặc (góc ô đã đổi trong nét bao ±700 mm, đỉnh nét bao cách ô / hành lang / lõi ≤ nền + 60 mm), DTXD = DT nét bao, 2–3 thang có N2 + N3, số căn báo cáo = mặt bằng = cơ cấu, tự chỉnh lại bất động. Env: `PHA_HOAI_GHI` (tổng kết), `PHA_HOAI_DUMP` (trạng thái phép vi phạm đầu), `PHA_HOAI_HAT`, `PHA_HOAI_BUOC`. **Mốc 126 phép vi phạm / 33 mẫu → 0** (hạt 101 × 24 bước cũng 0; hạt 202 × 24 bước còn 4 ở tm-v2 / tm-v4 — xem còn dở).
+- Sửa theo phá hoại: nét bao co ở đầu dãy để lại gai / viền thừa (noiNetBao chỉ thay cạnh đầu mặt) → `gonDaGiac` + `gotDauThua` (đầu tự do thừa / thiếu so với ô thì gọt / nới) + `tinh/netBao.ts` dựng lại bằng boolean như `duongBao0` app cũ khi nét nối dần hỏng (sàn mất nở 700 mm trừ ô còn + hành lang + lõi; cộng sàn mọc thêm; đóng khe ≤ 500 mm); thang tay neo vào căn đã bị gỡ thì neo theo vật thể còn lại (trước: thang mất → ép lại làm dãy trôi 15–30 m); đổi chỗ một bên không vừa → từ chối cả phép `khong_vua` (trước thành đổi mẫu một bên).
+- **Nhanh**: PC-11 giữ tập thang lần trước khi vẫn đạt (`datLaiThang`, không tệ hơn số căn vượt lần trước; lệch chỗ thì dò lại) — thang không nhảy chỗ khi sửa căn, giữ khoá → giữ loại N2/N3. Đo trong phá hoại (462 phép): trung vị 9–15 ms, p90 ~100 ms, mẫu lớn p90 125–140 ms (trước: lật / xoá tm-t2, tm-u1 ~200–300 ms mỗi phép); phép cần dò lại từ đầu (⟲, thêm thang) còn 300–600 ms. Dò hợp lệ khi kéo dùng cùng phép nên cũng nhanh theo.
+- Trên app (vite 5425 bản mới / 5426 bản 3927f37 dựng tạm để chụp "trước", API 8787, dự án thử sao `gwym3l6i` tm-u1: `b4scfd69`, `sngazpo4` sau; `fiaoa9kq`, `c2cwbziz` trước; 1440×900, Edge headless + CDP): `.panel-giua` 270,52,870×848 mọi bước. PA cũ toàn N3 mở ra hiện N3 · N2 · N3. Thêm thang khi đủ 3: cũ "Thao tác để lại khe 0 mm. Đã trả về" → mới "Tòa đã đủ 3 thang bộ … Không thêm". Xoá căn đầu dãy 2:8: cũ nét bao đỏ còn gai thò ra ngoài hai cánh → mới bo theo ô. Xoá thang N2: còn N3 + N2; xoá tiếp → "phải giữ ít nhất 2 thang (một N2 + một N3)"; ⟲ về 3 thang, 32 căn. Đổi loại: "Đã đổi Thang bộ mặt 1 sang N2. Tòa: 2 N2 · 1 N3". Ảnh `docs/anh/xep-can/{truoc,sau}-{1-mat-bang,2-them-thang,3-xoa-can,8-xoa-thang-n2,9-xoa-thang-chan,10-thang-tu-dong,6-doi-loai,7-lat}.png`.
+- `npm run kiem` ĐẠT (tsc · web 566 · worker 9 · pytest 15 · build).
+- Còn dở: mẫu V (tm-v2, tm-v4) căn góc V không phải chữ nhật — nét bao boolean dựng theo ô chữ nhật nên vài phép (hạt khác) để đỉnh nét bao xa ô 2–4 m (cần hình bao thật của căn từ `can/<id>.json`); phép phải dò PC-11 lại từ đầu vẫn 300–600 ms (chưa chạy Web Worker); ghi chú QT-69 "dài ra 1700 mm" tính trước khít đoạn kẹp nên có thể lệch nét bao cuối; đổi loại thang chưa ghi vào quy_tac.json (mới ở AI_START + tooltip); xoá thang có thể gỡ nhiều căn vì thoát nạn (đúng luật, có gợi ý ⟲).
+
+## 2026-10-29 · 3D: chọn lô kiểm trên app, chọn căn / tầng ở Công trình, nhớ hình tầng, FPS · agent Opus
+
+- Yêu cầu: (1) kiểm bấm chọn lô trên app thật (phần lô trống ngoài chân tòa); (2) chế độ Công trình bấm chọn căn / tầng, rê thì tô nhấn, bấm đúp căn mở màn Tầng đúng tầng + căn; (3) dựng lại tòa không đổi hình < 20 ms, giảm lần đầu; (4) đo FPS khi xoay camera.
+- Đã làm:
+  - Chọn lô: raycast đúng (chỉ dò mesh có `userData.chon`, không trúng đất / hầm). Lỗi thật: khi bật Hầm lô bán trong suốt nên pha màu chọn gần như không thấy → lớp phủ xanh mỏng + viền trên mặt lô (`CanhDung.hinhNhan` / `doiTuongChon` trong `ve3d/dungDuAn.ts`, vẽ ở `Khung3D`).
+  - Công trình: `ve3d/chon3d.ts` thêm đối tượng `tang` / `can` + dò tia thuần `chonTiaToa` (lăng trụ thân tháp, khối đế che, bỏ phần trên mặt cắt ngang, căn chứa điểm chạm theo mặt bằng / bố cục của chính tầng đó), `hinhNhanToa`, `doiTuongDangChonToa`, `chonSauBamToa`. `dungToa` trả `chon` (bản đồ chọn). `Khung3D`: `CanhDung.chonTia` (dò tia thay raycast lưới 1,8 triệu tam giác), lớp phủ tô nhấn bán trong suốt + viền (chọn đậm, rê nhạt, kiểu tia X xuyên mặt che), `chuThich` (chip thông tin căn trong khung, không chiếm chỗ — `styles/chon-3d.css`). `MoHinh3D`: `thongTinChonToa` (Tầng · CH-xx · loại · DT thông thủy). `SoanThao`: `onChonToa` → `canKhoa` + tầng (`chonTangToa` mới ở `man/ManTang.tsx`, đặt thẳng store chọn tầng, chạy cả khi ô ChonTang chưa gắn), `onMoToa` → màn Tầng 2D đúng tầng + căn. Bấm nền → về bố cục chung, bỏ căn.
+  - Dựng nhanh: `dungToa` dựng mỗi mẫu căn một lần rồi biến đổi mảng đỉnh vào từng ô; nhớ tầng đã gộp (LRU 48), khối đế / mái (LRU 16), nét nhân tầng; khoá theo tên vật liệu nên đổi kiểu vẽ dùng lại hình. `stretch3d.khoi3dTheoId` nhớ khối căn kéo. `Khung3D` dựng cảnh mới trước rồi gỡ cảnh cũ, không huỷ hình còn dùng.
+  - Móc kiểm mới trên `.vung-3d`: `_chamThu(x, y)` (đối tượng trúng khi bấm ở x, y px trong khung), `_doFps(giay)` (xoay camera bằng rAF, trả FPS / ms khung).
+- Số đo (chi tiết `de_xuat_hieu_nang.md` mục 12): dựng `tm-t2` 24 tầng (vitest) 120–132 → 39–56 ms lần đầu, dựng lại 0,6–0,7 ms; `tm-i1` 78–87 → 30–32 ms, dựng lại < 1 ms. Trên app (GPU RTX 3060): vào Công trình lần đầu 74–93 ms, đổi kiểu vẽ 0,8–6,9 ms, quay lại Công trình 4–5 ms. FPS xoay camera: GPU có vsync 60 / 60 (Toàn dự án / tòa 1,87 triệu tam giác), tắt vsync 2.711 / 437; swiftshader (CPU) 9,5 / 0,6 FPS TB.
+- Kiểm trên app (Edge headless GPU + CDP, vite 5424, API 8787, PA `tztd1udv/pa-1`, chỉ xem): bấm phần lô trống → bỏ chọn tòa, lô tô xanh + viền; Công trình: bấm căn → dải cấp "Tầng 19 · CH-12", ô tầng 19 sáng ở panel trái, panel phải "Chỉ tiêu tầng · Tầng 19", chip "Tầng 19 · CH-12 · 2PN · DT thông thủy 56,7 m²"; rê căn khác → tô nhạt; bấm mái / lõi → chọn tầng (tô cả tầng); bấm đúp căn → màn Tầng 2D, tầng 19, CH-12 đã chọn. Ảnh: `docs/anh/3d/6-chon-lo.png`, `7-cong-trinh-chon-can.png`, `8-cong-trinh-chon-tang.png`, `9-cong-trinh-bam-dup-mo-tang.png`.
+- Bẫy: headless Edge khung tự nhiên 1416×808, `Emulation.setDeviceMetricsOverride` mất khi đóng kết nối CDP → toạ độ bấm / rê lệch với ảnh chụp 1440×900; đặt override ở đầu MỖI lệnh. `Input.dispatchMouseEvent` loại `mouseMoved` phải `button: 'none'`, không thì trang thấy `buttons = 1` (đang kéo) và không rê. Edge headless với profile trống tự đăng nhập / đồng bộ tài khoản máy → chạy `--inprivate --disable-sync --disable-extensions`.
+- Kiểm: `npm run kiem` ĐẠT. Test mới `ve3d/chonToa3d.test.ts` (5 ca, có tòa thật), `hieuNang3d.test.ts` thêm chặn dựng lại < 20 ms.
+- Còn dở: chạm hai lần trên điện thoại ở Công trình chưa thử trên máy thật; căn ở góc lõm có thể bị căn bên cạnh che khi dò tia (theo chân tháp, không theo hình thật); chưa hạ bóng đổ cho máy không có GPU rời; tầng đế không chọn được.
+
+## 2026-10-29 · Hầm: rải nhanh, xuất XLS không đứng, bản vẽ nhẹ · agent Opus
+
+- Yêu cầu: (1) xuất XLS khi cache hầm trống không làm đứng giao diện; (2) phép rải hầm lô 400×400 m từ 6–16 s xuống < 2 s, KHÔNG đổi kết quả; (3) bản vẽ hầm sau khi rải < 50 ms, đếm nút SVG.
+- Đã làm:
+  - `tinh/raiCho.ts`: lưới chỉ mục khung bao cho vật cản + cạnh ranh, cắt sớm ngoài khung bao ranh, điểm-trong-ranh theo hàng (tìm nhị phân). Phép thử từng ô vẫn là hàm cũ nên kết quả khớp từng bit.
+  - Test đối chiếu `tinh/raiHamDoiChieu.test.ts` + mẫu `tinh/__mau__/hamDoiChieu.json` (6 PA thật từ DB local, chữ ký sinh bằng mã `808abb3`); chữ ký ở `tinh/chuKyHam.ts`.
+  - `tinh/hamNen.ts`: `DieuPhoiHam.cho` + `choRaiHamPA`; `xuat/xuatXls.ts`: `xuatBaoCaoPA` chờ worker rồi mới dựng báo cáo; `ui/ThanhTren.tsx`: nút XLS có vòng O `spin-o`, khoá khi chờ; `man/SoanThao.tsx`, `ui/KhungSoan.tsx` một dòng. Test mới trong `tinh/hamNen.test.ts`.
+  - `ve/MatBangHam.tsx`: mỗi loại ô một `path`, lớp tĩnh nhớ vnode.
+- Số đo (chi tiết `de_xuat_hieu_nang.md` mục 10): rải 400×400 2 tầng 4,4 s → 0,11 s, 5 tầng 12,3 s → 0,14 s; mở tab Hầm tới khi có bản vẽ 8,1 s → 0,53 s; xuất XLS cache trống đứng 8,0 s → ≤ 64 ms (ra tệp sau 0,32 s); nút SVG 6.471 → 20; đổi B1 ↔ B2 91–156 → 22–31 ms.
+- Kiểm: `npm run kiem` ĐẠT (web 480/480). Trên app không lỗi console.
+- Còn dở: chưa gộp tầng giống nhau trong `raiHamTinh`, chưa chia nhiều worker (không cần ở cỡ hiện tại); chưa đo bằng `vite preview`. Đo hai vite song song phải đặt `cacheDir` riêng (junction `node_modules` dùng chung `.vite` → nạp hai bản preact, trang trắng).
+## 2026-10-29 · 3D: kiểu Vật liệu, chọn tòa / lô trong 3D, gộp draw call (P8) · agent Opus
+
+- Yêu cầu: (1) 3D dễ nhìn — tường be ấm theo brand, viền rõ, kính / cửa / khung nhôm / lan can, nhìn xa vẽ dải cửa theo tầng, đất / lô tách khỏi nền ngà; (2) bấm tòa / lô trong 3D toàn dự án ra thông số bên cạnh như 2D, bấm đúp mở mặt bằng tầng; (3) một tòa 24 tầng 2.655 draw call → dưới 100.
+- Đã làm:
+  - Kiểu `vatlieu` (mặc định, khoá lưu mới `unitmix.kieu-3d.v2`; Brand / Mô hình trắng giữ nguyên): `BANG_MAU` + `taoVatLieu` trong `ve3d/dungCan.ts`. Tường #DDD0B9, đế #CBBFA6, tum #D6CCB9, sàn #C9BFAC, kính #5F7F88 trong 62 % metalness 0,55 có phản chiếu (`RoomEnvironment`, `environmentIntensity` 0,35), dải kính nhìn xa #4E6C76 (polygonOffset), khung nhôm / lan can #3A3F42 kim loại, lover #5B6266, gỗ #8E6F4E, viền / vạch sàn `--logo-ink` #022B1E 62 %, nét mở cửa `--gold`. Nền khung #F1F0EA, mặt đất #C9C3B2, lô cao tầng #E9E4D6; bóng đổ `shadow.intensity` 0,55. Cửa sổ / cửa đi vẫn lấy từ `openings` của mẫu căn như cũ.
+  - Chọn trong 3D: `ve3d/chon3d.ts` (thuần: `doiTuongCua`, `doiTuongTrung`, `laBam` ngưỡng chuột 5 px / chạm 12 px / giữ ≤ 700 ms, `laBamDup`, `chonSauBam`, `dangChon`, `nguongLod`). `dungDuAn` gắn `userData.chon` cho mesh / nét tòa và lô; `Khung3D` raycast khi nhả chuột / nhấc ngón (chỉ thêm listener pointer, không đổi OrbitControls), rê chuột tô nhẹ, đang chọn pha màu `--green` + viền xanh, đổi vật liệu chứ không dựng lại. `SoanThao` nối `chon3d` vào `setToaId` / `setLoId`; bấm đúp tòa → `moTang` + về 2D (`KhungSoan` nhận `xem` / `onXem` từ ngoài). Tòa đang xem rời khỏi `khoa` sang `khoaNhe` nên chọn tòa không reset góc nhìn.
+  - Hiệu năng (chi tiết `de_xuat_hieu_nang.md` mục 10): `gop` trải InstancedMesh + Line; mỗi bố cục tầng một bộ InstancedMesh theo vật liệu; LOD dải cửa. `tm-t2` 24 tầng: 2.752 → 15 draw call, tam giác đổ bóng 1,81 triệu → 0,52 triệu, nhìn xa 1.812 tam giác; dựng không đổi (~130 ms).
+  - Móc kiểm trên phần tử `.vung-3d`: `_chieuDoiTuong()` (toạ độ màn hình tòa / lô), `_doVe()` (draw call / tam giác / ms dựng), `_phong(k)`.
+- Ảnh 1440×900 trước / sau (Edge headless + CDP, `--use-angle=swiftshader`): `docs/anh/3d/{1-toan-du-an,2-mot-toa,3-can-toa,4-chon-toa}-{truoc,sau}.png`, thêm `5-toa-xa-sau.png` (LOD dải cửa). Cận tòa: bản trước phóng bằng 5 nấc lăn chuột, bản sau bằng `_phong(0.38)` (lăn chuột qua CDP bị treo ở headless), khung hình xấp xỉ.
+- Kiểm: `npm run kiem` ĐẠT. Test mới `ve3d/chon3d.test.ts` (7 ca, có raycast thật), `ve3d/hieuNang3d.test.ts` (2 ca, chặn > 100 draw call). Trên app (CDP, sự kiện con trỏ lên canvas): bấm T2 → thanh trên "T2 · Chữ T", panel trái Thông số tòa T2, bảng phải tô dòng T2, tòa pha xanh; bấm nền → bỏ chọn; kéo 20 px → không đổi chọn; chạm (`pointerType: 'touch'`) i1 → chọn i1; 2D → 3D giữ i1; bấm đúp T2 → màn Tầng · Căn, khung 2D, tòa T2. Bấm lô chỉ kiểm bằng test (tâm lô trên app trùng khối tòa i1).
+- Còn dở: chạm hai ngón / điều khiển camera trên điện thoại do agent giao diện điện thoại làm; chưa chọn được trong 3D chế độ Công trình (một tòa); chưa nhớ hình tầng giữa các lần dựng lại; FPS GPU thật chưa đo.
+
+## 2026-10-29 · rải hầm trong Web Worker · agent Opus
+
+- Yêu cầu: lần rải hầm đầu tiên, hoặc khi đổi thông số hầm, giao diện đứng 4,5–14 s. Chuyển `raiHam` sang Web Worker. Ba chỗ gọi (màn Hầm, Chi phí, 3D bật Hầm) chuyển sang bất đồng bộ. Trong lúc chờ phải giữ kết quả cũ, có vòng O "Đang rải hầm…", khung giữa không đổi; đổi đầu vào thì chỉ giữ lượt mới nhất.
+- Đã làm:
+  - Thêm `tinh/hamNen.ts`: lớp `DieuPhoiHam` theo kênh, có huỷ bằng `terminate`; hook `useRaiHam` / `useNgheHam`.
+  - Thêm `tinh/raiHam.worker.ts`.
+  - `tinh/ham.ts`: thêm `layNhoHam`, `datNhoHam`, `paGonChoHam`; cache dùng chung giữa worker và bản đồng bộ.
+  - Chỗ gọi: `man/ManHam.tsx`, `man/ManChiPhi.tsx` (tham số mới `layHam` của `tinhKhoiLuong`), `ve3d/dungDuAn.ts` + `ve3d/MoHinh3D.tsx` (chỉ phần gọi `raiHam` và `khoaNhe`).
+  - Thêm i18n `ham.dangRai` và CSS `.ham-dang-rai` trong `styles/ham.css`.
+- Số đo, chi tiết ở `de_xuat_hieu_nang.md` mục 9. Giao diện đứng:
+  - mở Hầm lần đầu: 7,9 s → 0;
+  - đổi số tầng 2 → 3: 11,7 s → 0,19 s;
+  - đổi 3 → 4: 15,7 s → 0,15 s.
+  Thời gian tới khi có kết quả vẫn như cũ. `.panel-giua` 1348×854 trước, trong và sau lúc rải.
+- Kiểm: `npm run kiem` ĐẠT. Test mới `tinh/hamNen.test.ts` (7 ca, worker giả). Đã thử trên app: Hầm, đổi liền 5 → 6 (lượt 5 bị huỷ), Chi phí, 3D bật Hầm; không lỗi console.
+- Còn dở:
+  - Xuất XLS vẫn gọi `tinhKhoiLuong` đồng bộ.
+  - Lượt vẽ SVG mặt bằng hầm 150–185 ms chưa tối ưu.
+  - Trong Browser pane, observer `longtask` báo không đều, nên số chính lấy theo nhịp `setInterval`.
+  - Worktree agent thiếu `worker/node_modules`; đã nối junction tới bản ở repo chính để chạy `kiem`.
+
+## 2026-10-29 · bảng KPI cho lãnh đạo ở Tổng mặt bằng và màn Tầng · agent Opus
+
+- Yêu cầu: ở TMB cần nhìn dân số, số căn, tổng DT sàn XD, tổng DT sàn sử dụng, DTXD một sàn, hiệu suất. Ở màn Tầng, với từng mẫu tòa, cần unit mix, số căn theo loại, DT thông thủy, dân số, tổng căn, hiệu suất, DTXD và DTSD một sàn. Phải dễ nhìn, số nổi bật đặt trên cùng.
+- Định nghĩa, theo app cũ `metrics()` (`MDI_Unitmix_v4/prototype/shell.src.html` ~5804–5940):
+  - DTSD = Σ DT thông thủy căn (`dt_tt_m2`); không cộng phần chung, không phải NSA.
+  - DTXD một sàn = DT nét bao sàn (chân tháp). Tầng / tòa tự chỉnh thì đo nét bao mới, giống `tinhChiTieu`.
+  - Hiệu suất = DTSD / DTXD (`eff: tt/foot`; app cũ đã bỏ `effTim` = tim tường / DTXD). Mục tiêu ≥ 75 % theo luật MT-03 `mdi_eff`, đọc từ quy_tac.json.
+  - Tổng DT sàn XD = DT sàn tính HSSDĐ (`dtSanTinhHSSDD`, QCVN 01:2021 1.4.21), so với HSSDĐ × DT lô.
+  - Tổng DT sàn sử dụng = Σ thông thủy × số tầng.
+  - Dân số = dòng chỉ tiêu `danSo` (QĐ tỉnh từng căn, hoặc hệ số chung).
+- Hàm thuần `tinh/kpi.ts`: `soVoi` (đạt / sát 3 % / vượt / chưa đạt), `dtxdTang`, `sanToa`, `kpiTmb(pa, tv, kq, loIds)`, `loDuAn`, `kpiTang(...)`. Dân theo loại lấy người / căn của `danSoLo`, nên tổng các loại bằng dân tòa ở TMB.
+- Giao diện:
+  - `ui/TheSo.tsx`: ô số lớn với chip trạng thái, thanh tỉ lệ, tooltip công thức + căn cứ; `VongKpi`; `useHieuSuatMin`.
+  - `ui/KpiTmb.tsx`: công tắc Lô / Cả dự án; mục gập "Chi tiết theo tòa".
+  - `ui/KpiTang.tsx`: 6 ô (căn / tầng, tổng căn tòa, dân tòa, hiệu suất tầng + cả tòa, DTXD, DTSD 1 sàn); donut + bảng theo loại (căn tầng / tòa, lệch % tô `--warn` khi quá `nguong.coCauDiem`, DT TT min–max + bq, dân); mục gập "Chi tiết từng mẫu căn".
+  - CSS `ui/kpi.css` (biến LEO, `--u-*`, `--warn`).
+  - Gắn một dòng ở `TmbPhai` (`ManXepToa.tsx`) và một dòng ở `TangPhai` (`ManTang.tsx`).
+  - Bỏ trùng bằng cách gập mặc định: Chỉ tiêu lô, Dân số theo căn, DT trên lô (TMB); Căn trong tòa, Loại căn trong tầng (Tầng). i18n `kpi.*` có ở vi + en.
+- Test `tinh/kpi.test.ts`, 8 ca trên mẫu thật tm-i1 / tm-t2 / tm-l1:
+  - DTXD khớp `dtxd_m2` CAD trong 3 %; hiệu suất nằm trong 60–90 %.
+  - Dân các loại cộng lại = `danSoLo`; % cộng 100.
+  - Ô SHCĐ không tính căn và DTSD.
+  - TMB 2 lô 3 tòa: khớp dòng chỉ tiêu; cả dự án = tổng các lô; lô ngưỡng nhỏ báo vượt; lô chưa có tòa ra "—".
+- Kiểm trên app: vite 5417, API 8787, dự án thử `u9z54gw7` sao từ `k05gkt6j` (3 lô, 7 tòa), lô CT-02 hạ ngưỡng (dân 2.000, HSSDĐ 3,5, 600 căn) để có ô vượt. Chụp bằng Edge headless + CDP ở 1440×900. Ảnh ở `docs/anh/kpi/`:
+  - 01 lô CT-01; 02 cả dự án (dân 8.075 / 8.000 vượt, hiệu suất 74,0 % chưa đạt).
+  - 03 chi tiết theo tòa; 04 CT-02 có 3 ô vượt.
+  - 05 + 06 Tầng mẫu i3 (19 căn / tầng, 74,3 %, chi tiết mẫu); 07 Tầng mẫu Y2 (26 căn / tầng, 74,6 %).
+  - `.panel-giua` giữ 270,52,870×848 qua mọi bước ở 1440 và 270,52,630×848 ở 1200; `.panel-phai` scrollWidth − clientWidth = 0 ở cả hai cỡ. Bản EN không lộ khoá `kpi.`.
+- `npm run kiem`: ĐẠT (tsc · web 454 · worker 9 · pytest 12 · build). `worker/node_modules` là junction (không commit).
+- Còn dở / chờ chủ nhiệm chốt:
+  - Ngưỡng hiệu suất 75 % là mục tiêu nội bộ MDI (MT-03), không phải QCVN.
+  - "DTXD một sàn" ở TMB = Σ chân tháp tầng điển hình; MĐXD bên dưới tính theo khối đế.
+  - Hiệu suất cả tòa / lô là bình quân có trọng số theo DT sàn mọi tầng.
+  - Căn đã STRETCH lấy `dt_tt_m2` của biến thể trong thư viện.
+  - Chưa có ô NSA (khả bán) riêng.
+
+## 2026-10-29 · hiệu năng: cache raiHam · Ctrl+Z/Y/S · tim cửa tiền tính + nội thất tải lười · tách chunk · agent Opus
+
+- Làm 4 việc "nên làm ngay" 1–4 của `docs/de_xuat_hieu_nang.md`; bảng số đo trước / sau ở mục 8 của tài liệu đó.
+- P1: `raiHam` (`tinh/ham.ts`) tự nhớ theo đầu vào thật (`pa.ham`, lô, tòa thuộc lô, `tv`), dùng chung cho Hầm / Chi phí / 3D Hầm. Sửa đơn giá Chi phí 7,8–8,3 s → 15–26 ms. Lần rải đầu vẫn chạy trên luồng chính (chưa Worker).
+- B1: `kho/phimSoan.ts` + `usePhimSoan` ở `TrinhSoan`: Ctrl+Z, Ctrl+Y / Ctrl+Shift+Z, Ctrl+S lưu ngay (`BoLuu.luuNgay`), `beforeunload` khi `conChuaLuu`. Bỏ qua khi đang gõ ô nhập (trừ Ctrl+S), khoá ở chế độ chỉ xem.
+- P3 (+P7): `scripts/sinh_phai_sinh_can.py` — chạy lại sau MỖI lần chép / bóc lại căn (`chep_thu_vien.py`, `boc_cad/boc_lai_can*.py`): ghi `cua_x` vào `can.json`, tách nội thất sang `can/<id>.noithat.json`, đánh số lại `stretch.cung`; `--kiem` để soát (pytest gọi). Màn Tầng chỉ tải lõi của tòa trong PA (`man/tuChinhTang.ts` `khoiCuaPA`) và nội thất khi lớp Nội thất bật: 57 req / 5,16 MB → 15 req / 0,94 MB.
+- P2 + P5: thư viện + PA `?pa=` tải song song với dự án; `ui/Luoi.tsx` tách chunk ManHam, ManChiPhi, HopXuatCad, SoSanhPA; `napDxf` (dxf-parser) `import()` khi chọn tệp. Chunk khởi động 737 → 661 KB (250 → 227 KB gz).
+- Tệp vùng agent khác: `man/ManTang.tsx` sửa đúng 1 dòng (`useDuLieuMB(tv, pa)` ở `TangTrai`); không đụng `loiThang` / `thaoTacTay` / `matBang` / `CongCuTang` / `MatBangTang` / `ve3d` / `unitmix.css` / `KhungSoan`. Test CAD (`xuatCad*.test.ts`) chỉ đổi hàm đọc nét để ghép tệp nội thất — chưa chạy (`kiem:cad`).
+- Kiểm trên app: vite preview 5418 (nhánh) và 5419 (`b808b73`), API 8787, tab riêng, dự án thử `4sybq7h3` (sao PA `tztd1udv/pa-1` qua API). Ctrl+Z bằng phím thật, Ctrl+Y, Ctrl+Shift+Z, Ctrl+S → PUT sau 4 ms; khung giữa 1348×854 không đổi khi chunk Chi phí / Hầm đang tải (vòng O). Console sạch. Worktree thiếu `worker/node_modules` → junction (không commit).
+- Còn dở: Worker cho `raiHam`; tách `ve3d/dung*` + `manualChunks`; endpoint gộp mở dự án; lớp Nội thất vẫn bật mặc định.
+## 2026-10-29 · dân số theo từng căn theo QĐ tỉnh + dashboard vòng tròn · agent Opus
+
+- Yêu cầu: "bảng chỉ tiêu không có cách tính dân theo từng khu vực… tính dân theo từng căn… có cái bảng tròn tròn như TMB". Trước đây `chiTieu.ts` = số căn × `nguoiMoiCan` (một hệ số).
+- Dữ liệu `tinh/quyTacDanSo.ts` (nguồn: `MDI_Unitmix_v4/docs/quy-tac-tinh-dan-so-chung-cu.md` + khối `TINH` / `occPhongO` / `occQD83` trong `shell.src.html`): mỗi tỉnh có `kieu` A–E, số hiệu QĐ, `daDoiChieu`, phương pháp theo giai đoạn `qh` / `cp` (bảng theo loại hình NOTM / NOXH / TĐC · `sTb` P = S / S_tb · `qd83`), `bqCan` (cách "hoặc bình quân"), `theo` (tỉnh cũ đã sáp nhập). Đã cài: Hà Nội QĐ 34/2024 (sửa QĐ 39/2026, kiểu C) · TP.HCM QĐ 32/2025 (kiểu B; đã trích PDF trong kho `32_2025_QĐ-UBND.pdf`, khớp từng mốc Điều 4 khoản 1, 2a, 2b; khoản 1 = giai đoạn quy hoạch 32 m²/người) · TP.HCM QĐ 83/2026 · BR-VT cũ → theo TP.HCM (QĐ 32/2025 Điều 2 khoản 2: QĐ 43/2023 BR-VT hết hiệu lực) · Hải Dương QĐ 11/2024, Đồng Nai QĐ 09/2025 (chưa có trị số → fallback, cờ tạm) · Phú Yên QĐ 05/2025 (kiểu E, S_tb tạm 32) · tỉnh khác → P = S / 32 (QĐ 2161/QĐ-TTg). Kiểu A chưa có tỉnh nào — chỉ cài máy tính, test bằng bảng giả.
+- Khác app cũ: bảng NOXH / TĐC TP.HCM "đến dưới" giữ đúng chữ văn bản (45 m² → 2 người; app cũ cho 1,5).
+- Khai `TemDat.danSo?: KhaiDanSo` (`kieu.ts`): `tinh`, `giaiDoan`, `loaiHinh?` (thiếu = lô XH hoặc mẫu căn nhóm XH → NOXH), `cach?` 'bq'. Không khai = PA cũ, giữ số căn × `nguoiMoiCan`, dashboard báo "Đang dùng hệ số chung". Giao diện `ui/KhaiDanSo.tsx` trong mục Chỉ tiêu QH (`ManLo.tsx` một dòng): tỉnh, loại hình, giai đoạn, cách tính, dòng căn cứ + cờ "chưa đối chiếu" / "giá trị tạm", nút áp cho mọi lô cao tầng.
+- Tính `tinh/danSo.ts` (thuần): `nguoiMotCan` / `traBang` (DT = `dt_tt_m2` = DT sử dụng, QCVN 04:2021 1.4.13; dưới 25 m² / trên mốc cuối lấy dòng gần nhất + cờ `ngoaiBang`), `danSoLo` (từng mẫu căn → loại căn → tòa → lô, số thực không làm tròn từng căn), `danSoDuAn`. `chiTieu.ts` dòng `danSo` + `tong.danSo` dùng kết quả này khi lô đã khai.
+- Dashboard `ui/DashDanSo.tsx` + `ui/dan-so.css` (gắn một dòng sau `BangChiTieuLo` trong `XepPhai`, `ManXepToa.tsx`): mục gập "Dân số theo căn", vòng donut tỉ lệ dân theo loại căn (màu `--u-*`, cùng kiểu `VongCoCau`, tổng ở giữa), số lớn tổng dân · dân / ngưỡng QH (thanh, vượt tô `--warn`) · người / căn bình quân; bảng theo loại (căn, DT min–max, dân, %); `details` bảng chi tiết từng mẫu căn (căn × DT × người/căn → dân, loại hình, tooltip điều khoản), theo tòa, căn cứ; dòng toàn dự án khi > 1 lô có căn.
+- Test `tinh/danSo.test.ts` 21 ca: mốc biên HN / HCM (≤ và "đến dưới"), dưới 25 m², kiểu A–E, QĐ 83, giai đoạn quy hoạch HCM, fallback không tạm / Hải Dương tạm / BR-VT theo HCM, mỗi tỉnh có số hiệu, PA cũ chưa khai giữ hệ số chung (chiTieu 140 người), HN 90 người, cộng theo tòa / dự án, NOXH tự theo lô, TĐC ghi đè, bình quân 3,6. Không test cũ nào phải đổi kỳ vọng.
+- Kiểm trên app (vite 5415, API 8787, tab riêng, dự án thử `r58gziom`: lô 80×60 + gợi ý xếp i2 15T 140 căn, 1440×900): chưa khai → 490 người (3,5/căn) + câu "hệ số chung"; Hà Nội → 364 người (1PN 45,1 m² → 2 vì > 45), dòng chỉ tiêu lô cùng 364; TP.HCM QĐ 32 + NOXH → 378 người, 3PN 94,5 m² "3 *" ngoài bảng; ngưỡng 300 → 126 % thanh `vuot`. EN không lộ khoá. Khung giữa `.panel-giua` 270,52,870×848 trước / sau mở dashboard + bảng chi tiết; `.panel-phai` không tràn ngang. Ảnh `docs/anh/dan-so/01…03`.
+- `npm run kiem`: ĐẠT (tsc · web 446 · worker 9 · pytest 12 · build). Worktree thiếu `worker/node_modules` → junction (không commit).
+- Còn dở / chờ chủ nhiệm chốt: bảng Hải Dương, Đồng Nai, S_tb Phú Yên chưa có trị số (đang 32 m²/người, giá trị tạm); bản gốc QĐ 34/2024 + 39/2026 Hà Nội và QĐ 83/2026 TP.HCM chưa có trong kho (chép từ tài liệu app cũ); cách hiểu "bảng = thang DT sử dụng, không theo số phòng" (app cũ §A13); căn ngoài bảng lấy dòng gần nhất; S ÷ 32 không làm tròn từng căn; căn đã STRETCH vẫn tra DT mẫu gốc; tên mẫu căn trong bảng chi tiết dùng `ten_vi` cả khi EN (như các chỗ khác của app).
+## 2026-10-29 · TMB: xếp hàng loạt nhiều lô + lộ giới từng cạnh lô · agent Opus
+
+- Gộp `nang-cap/architechtures` (biểu tượng SVG `ui/bieuTuongSvg.ts`); không thêm khoá biểu tượng mới (`hangLoat` đã có hình).
+- Xếp hàng loạt (app cũ `tm_hl` / `xepHangLoat`, QT-86 / QT-92): `tinh/xepHangLoat.ts` thuần — `thuTuLo` (lô xếp được, lớn trước), `sinhHangLoat` chạy `sinhGoiY` MT-05 lần lượt, mỗi lô thấy tòa phương án đang chọn của các lô trước (§2.6.1 LO-02 qua `ngoai` của xepToa), `xepHangLoatNen` nhả luồng + dừng giữ lô đã xong, `paVoiChon` / `apHangLoat` (một `sua`), `xungDotCheo` (cặp tòa khác lô dưới §2.6.1 khi đổi phương án). Giao diện `man/xepHangLoat.tsx` + `styles/xep-hang-loat.css`: nút ▦ trong thanh TMB, hộp lớp phủ `.noi-tren` — tick lô, Chạy xếp / Dừng, thanh tiến độ (cả lượt), bảng từng lô (chọn phương án / giữ nguyên, căn, MĐXD, số cặp §2.6.1 + ↻ chạy lại từ lô đó), Áp dụng cả lượt, xem trước nét đứt trên bản vẽ; kết quả cũ báo "đã đổi — chạy lại" khi lô / tòa ngoài lượt đổi.
+- Lộ giới từng cạnh (app cũ `tm_rong` + `lo.canh` / `luiCanh`, QT-122): `Lo.canhDuong?: (number | null)[]` theo thứ tự cạnh `ranh`; `chuanHoaCanhDuong` (macDinh.ts) bỏ mảng lệch số cạnh. `xepToa.ts`: `RONG_DUONG_MAC_DINH` 12, `rongCanh`, `luiTungCanh` (Bảng 2.7 từ quy_tac.json qua `luiBang27`), `duLuiTungCanh`. Dùng ở: gợi ý xếp tòa (ứng viên tĩnh), `dichBatDinh` (đường lùi chỉ ở cạnh giáp đường, đúng khoảng từng cạnh), `kiemViPham` (cạnh thiếu lùi nhất, `ViPhamLui.canh` / `rong`; nhãn bản vẽ "LO-01 c2 …", danh sách cảnh báo ghi cạnh + lộ giới), `kichThuocToa`, `viTriNhanBan`; khoá gợi ý `GoiYXepToa` gồm `canhDuong`. Giao diện `man/loGioiCanh.tsx`: bấm cạnh lô đang chọn (`canhGan` trong `bamNen`) → hộp lớp phủ: giáp đường ☑, bề rộng lộ giới, khoảng lùi Bảng 2.7 theo tòa cao nhất lô, bỏ khai cả lô; nhãn "đường 30 m" ngoài cạnh (lô chưa khai: "đường 12 m?"), cạnh đang khai tô đậm. Mọi thay đổi qua `sua`.
+- Test: `tinh/loGioiCanh.test.ts` (8 ca: tra từng cạnh, chuẩn hoá, kiểm vi phạm theo cạnh, bắt dính, kích thước, nhân bản, bấm cạnh / khai / bỏ khai, gợi ý xếp tòa đủ lùi từng cạnh), `tinh/xepHangLoat.test.ts` (5 ca: thứ tự, §2.6.1 giữa lô, áp cả lượt, đổi phương án + xung đột, dừng giữa chừng / chạy tiếp, tiến độ tăng dần).
+- Kiểm trên app (vite 5409, API 8787, dự án thử `k05gkt6j` 3 lô liền nhau tạo qua API, 1440×900): khung giữa `.panel-giua` 270,52,870×848 không đổi qua mọi bước. Bấm cạnh phải CT-01 → hộp "Cạnh c2 · lô CT-01 · dài 90,0 m", bỏ giáp đường → nhãn "không giáp đường"; cạnh đáy nhập 30 → "đường 30 m"; Hoàn tác về 12 m, Làm lại về 30 m; tải lại trang vẫn giữ. Lô CT-02 cạnh chung bỏ giáp đường. ▦ Xếp hàng loạt 3 lô: tiến độ "Lô CT-01 (1/3) · 55 %" → bảng 3 lô · 2,7 s, 7 tòa · 2.307 căn, §2.6.1 ✓ cả 3, 7 nét đứt xem trước. Đổi CT-01 sang phương án 3 + CT-03 giữ nguyên → CT-01 / CT-03 báo 1 cặp §2.6.1 + nút ↻. Áp cả lượt (7 tòa) rồi Hoàn tác một lần về đúng 7 tòa cũ. Console sạch. Bẫy: sửa tệp lúc đang thử làm HMR nhân đôi trạng thái cấp module (hộp không mở / lượt chạy mất) → tải lại trang; người dùng cũng bấm vào tab trong lúc thử (mở 3D, đóng hộp) nên phần Dừng kiểm bằng vitest.
+- `npm run kiem`: ĐẠT (tsc · web 406 · worker 9 · pytest 12 · build). Worktree thiếu `worker/node_modules` → junction tới bản chính (không commit).
+- Còn dở: chưa đọc cạnh giáp đường từ CAD (lớp tim đường); chưa có `lui_qh` / `lui_ben`; xếp hàng loạt chưa có 3 option A/B/C và nguồn mẫu kho dự án / PA .json như app cũ; hộp khai cạnh đặt ở góc trên (không nổi tại cạnh như app cũ).
+## 2026-10-29 · công cụ tay màn Tầng đợt 2: thêm căn mọi chỗ · câu báo số căn · dò hợp lệ khi kéo · agent Opus
+
+- **Thêm căn mọi chỗ** (app cũ tAdd · QT-30 · QT-32 · QT-69). `CanThem` có thêm `truoc` (chèn ngay TRƯỚC ô — chọn căn đầu dãy là chèn đầu dãy); `themMot` (canThem.ts) dùng chung một điểm chèn `p` cho sau / trước. Menu Thêm ▾: ⊞ sau ô · ⇤ trước ô · ⊡ vào chỗ trống (số đếm) · ≣ thang; ô **Mẫu** chọn mẫu căn giữa cùng nhóm / chiều sâu (`dsMauThem`, mặc định `mauThem`). Chỗ trống `tinh/choTrong.ts`: khe XC-02 loại 'trong' ≥ 3 m, đầu dãy hở (mép mặt còn sàn trong nét bao, không phải chỗ căn mặt khác), ô "Ô trống", ô căn người dùng đã xoá (không tính ô tự chỉnh gỡ). Mỗi chỗ gợi ý ≤ 4 mẫu vừa nhất (rộng ≤ chỗ + 500 mm STRETCH co QT-81); rê chuột lên dòng thì bản vẽ tô chỗ đó nét đứt. Ô trống / ô đã xoá đặt lại bằng `themVaoO` (công năng về căn + mẫu chọn).
+- **Xoá căn thêm tay rút khỏi `canThem`** (`rutCanThem`): căn thêm không còn là căn ở tầng nào thì bỏ hẳn; căn thêm sau nó cùng mặt lùi khoá → đổi khoá trong bố cục chung / tầng riêng (mẫu, công năng, lật), `tuDong`, neo của căn thêm / thang tay; vật neo vào căn bị rút chuyển sang neo của căn đó.
+- **Câu báo số căn** (`tinh/baoThaoTac.ts`, mọi thao tác ở `CongCuTang` qua `useChay`): "Căn / tầng: a → b." + căn tự chỉnh vừa gỡ vì vượt cự ly thoát nạn (đọc `tuDong` mới, trừ căn khít đoạn kẹp XC-05 báo riêng) kèm ngưỡng + căn cứ `gioiHanThoatNan` (H > 75 m: cụt 15 / hai hướng 20 m · QCVN 06:2022 A.3.1.7 → A.2.19) + căn tự chỉnh trả lại (số CH theo mặt bằng sau). Số căn giảm do gỡ thoát nạn thì sau khi câu báo hiện chạy `goiYGiuCan` (hạn 1,5 s): thử dời thang tới cạnh căn bị gỡ (như PC-11), rồi ⟲ thang về tự động — tìm được thì nối "Gợi ý giữ N căn / tầng: …— chưa áp", không thì "Chưa tìm được…". Không tự áp. `datBaoStretch` có `giuMs`, `baoConHien`.
+- **Kéo thả dò hợp lệ khi rê** (`useKeoTay`): chuột dừng 120 ms trên ô đích (`DO_DUNG_MS`) mới chạy thử phép (tự chỉnh thật), cache theo ô đích trong lượt kéo; lần dò > 900 ms (`DO_HAN_MS`) thì thôi dò lúc rê ("kiểm khi thả"). Bóng ghi "đang dò…" → "✓ Thả: CH-xx · căn / tầng a → b" hoặc "✕ lý do ngắn" (`cc.ngan.*`); ô đích / ô thang đích tô `var(--warn)` (`MatBangTang` prop `dichLoi`). Thả dùng lại kết quả đã dò (thả 7 ms).
+- Sửa kèm: menu Thêm bị `.nhom-bt { overflow: hidden }` (bieu-tuong.css) cắt mất — không thấy trên màn hình; nay `.thanh-cc-tang > .nhom-bt` overflow visible (bo góc nút đầu / cuối), menu mở sang trái để không tràn mép phải `.panel-giua`. Thêm 2 biểu tượng `themTruoc`, `themCho` (BIEU_TUONG + SVG_BT nét 1,5). Gộp `nang-cap/architechtures` (bộ biểu tượng SVG).
+- Test `tinh/themCho.test.ts` 11 ca mẫu thật: chèn trước đầu dãy tm-i1 (+1 căn, đứng trước, DTXD tăng); trước ô giữa = sau ô đứng trước (tm-l1); xoá căn thêm rút + đổi khoá + về số căn gốc; `rutCanThem` đổi khoá tầng riêng / lật; chỗ trống ô đã xoá + ô trống → đặt lại đúng số căn; `dsMauThem`; tm-u1 lật 1:6 → 32 → 31, gỡ 1:6, căn cứ A.3.1.7; lật 1:7 → gợi ý dời thang giữ 32 (không sửa tòa); tm-t2 xoá thang 40 → 39 + gợi ý giữ 40; đổi chỗ không đổi số căn; dò thử tất định (cache dùng được khi thả).
+- `npm run kiem`: ĐẠT (tsc · web 404 · worker 9 · pytest 12 · build).
+- Kiểm trên app (vite 5410, API 8787, tab riêng, dự án thử `7jln0j5y` = bản sao `gwym3l6i` tm-u1, 1440×900): khung giữa `.panel-giua` 270,52,870×848 trước / sau mọi bước. Lật CH-18: "32 → 31. Tự chỉnh gỡ CH-18 vì vượt cự ly thoát nạn (cụt ≤ 15 m, hai hướng ≤ 20 m · QCVN 06:2022 A.3.1.7 → A.2.19). Chưa tìm được chỗ dời thang…"; hoàn tác về 32. Xoá thang 1:10: "32 → 30 … gỡ CH-15, CH-11, CH-09 … trả lại … Gợi ý giữ 32 căn / tầng: ⟲ Thang bộ về tự động (PC-11, 3 thang) — chưa áp". Mẫu 1PN M2 + ⇤ trước CH-09: 32 → 33; xoá chính căn đó: 33 → 32, PA lưu `canThem` = null. Xoá 1:1 → ⊡ liệt kê "Ô căn đã xoá · mặt 2 · 5,8 m" (1PN M1 5,8 đầu danh sách) → đặt lại 31 → 32. Ô trống 1:12 → danh sách "Ô trống · mặt 2 · 5,8 m", rê chuột tô chỗ trên bản vẽ, đặt lại 31 → 32. Kéo (✥): bóng "Thả: CH-19 · đang dò…" → "✓ Thả: CH-19 · căn / tầng 32 → 33", khoảng cách giữa hai lần pointermove ≤ 22 ms khi rê; kéo thang 1:3 lên 0:4: "✕ không đặt được thang ở đây", ô đích `.o-dich.loi`, bóng `.bong-keo.loi`, thả → báo + trả về. Console không lỗi mới.
+- Còn dở: gợi ý giữ số căn chỉ thử dời thang tới hai ô kề căn bị gỡ + thang về tự động (không quét mọi chỗ như PC-11 đầy đủ); ở dự án thử, lật 1:7 không tìm ra gợi ý trong 1,5 s (mẫu sạch tìm ra); dò hợp lệ chạy trên luồng chính (chuột đứng yên ~0,3–1 s mới chạy, không Web Worker); chỗ "khe" và "đầu dãy hở" hiếm gặp trên 33 mẫu sạch (dãy kẹp xoá căn bị chặn "khe") — đã có mã, test chủ yếu qua ô đã xoá / ô trống; thêm căn vào khe chèn bằng cách dời dãy (không lấp khe tại chỗ).
+## 2026-10-29 · thanh trên: dải cấp bấm được (menu lô / PA · cốt · tòa · tầng · căn) · agent Opus
+
+- Dải giữa `nav.cap-do` (`ui/ThanhTren.tsx` `DaiCap` / `NutCap` / `BangCap`) thành nhóm liền khung viền `--line` như `.nhom-nut`, chữ 12 px, cấp đang đứng tô `--selected`. Mỗi ô là menu thả xuống thật (`position: fixed`, `role="menu"` + `menuitemradio`): ↑ / ↓ / Home / End chuyển mục, Enter chọn, Esc / Tab / bấm ngoài đóng, đóng bằng phím thì trả focus về ô; hiệu ứng mở / đóng `menu-cap-vao` / `menu-cap-ra` qua `useDongHop`. Esc trong menu không lọt xuống phím tắt bản vẽ.
+  - lô / PA: nhóm Phương án (chọn PA khác → mở `?pa=`) + nhóm Lô đất (lô cao tầng, kèm số tòa); cốt: Trên cốt 0 (Tầng) / Dưới cốt 0 (Hầm), từ Hầm về lại màn trên cốt 0 vừa làm; tòa: tòa của lô (trùng mẫu thì đánh số 1 · 2 · 3); tầng: tầng điển hình, từng tầng (chấm + "bố cục riêng"), tầng hầm B1…; căn: CH-xx theo đánh số chu vi. Nút ↑ lên một cấp: căn → tầng → tòa (về TMB, giữ tòa) → lô; Hầm → lô.
+- Phần thuần `ui/capDo.ts` (+ `capDo.test.ts`, 8 ca): `capHienTai`, `lenMotCap`, `dsMucTang`, `khoaTangDangXem`, `giaiKhoaTang`, `buocPhim`. Dựng menu trong `man/SoanThao.tsx` `dungCapDo` (chỉ đổi state chọn của SoanThao). Chọn tầng từ ngoài màn Tầng qua kênh `chonTangNgoai` trong `ui/ChonTang.tsx` (ô ChonTang đang gắn nhận lệnh, chưa gắn thì giữ lệnh chờ) — không sửa `ManTang.tsx`.
+- Nhóm chế độ Tự động / Chỉnh tay / Chỉ xem dời sang trái, ngay sau 2D / 3D / Chi phí; bỏ nhãn "Chế độ:". CSS riêng `styles/cap-do.css`; bỏ luật `.cap-do` cũ trong `unitmix.css`. Màn ≤ 1480 px: khoảng cách 8 px, ẩn chữ UNITMIX cạnh logo, đệm tab hẹp; dải cấp co theo thứ tự lô → tòa (cốt / tầng / căn giữ nguyên), chữ cắt "…", tooltip đủ tên.
+- Kiểm trên app (vite 5411, API 8787, dự án thử `g4by0d6l` 2 PA × 3 lô × 7 tòa sao từ `k05gkt6j`; `plevadne` cho tầng riêng): bấm từng menu (chuột + phím), đổi lô, tòa, tầng (từ TMB nhảy sang Tầng đúng tầng), căn, cốt, tầng hầm, PA, ↑ ba lần tới lô (nút tắt). `.panel-giua` trước / khi mở menu / sau chọn: 1440×900 `270,52,870,848`, 1200×800 `270,52,630,748` — không đổi; thanh cao 52 px, `scrollWidth − clientWidth = 0` ở cả hai cỡ. `npm run kiem` ĐẠT (tsc, web 401, worker 9, pytest 12, build).
+- Còn dở: danh sách PA lấy lúc mở dự án (PA tạo sau chưa hiện tới khi tải lại); ở 1200 px tên lô gần như chỉ còn "T…" (tooltip đủ).
+
 ## 2026-10-29 · thao tác tay trên Tổng mặt bằng (học màn ③ app cũ) · agent Opus
 
 - Đối chiếu màn ③ `MDI_Unitmix_v4` (`phimTMB`, `doiCoKhoa`, `nhanBanToa`, `latToa`, kéo / Ctrl+kéo trong `veTMB`): app cũ có chọn một tòa, kéo + khoá CGXD (QT-118), Ctrl+kéo / Ctrl+C·V nhân bản, Q/E ±5°, R 90°, F lật, mũi tên 1 m (Shift 5 m), Delete, ô X / Y / góc; KHÔNG có chọn nhiều tòa, khung chọn, bắt dính, tay nắm xoay, đo, hiện kích thước khi kéo (chỉ tô đỏ khi chạm CGXD).

@@ -1,3 +1,4 @@
+import { useEffect } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 
 /** Tên tầng hiển thị: số tầng thật = số tầng đế + thứ tự tầng điển hình (k = 1..soTangDH). */
@@ -29,8 +30,23 @@ type Props = {
   coCauRieng: number[];
 };
 
+// Kênh chọn tầng từ ngoài (menu tầng trên thanh trên): ô ChonTang đang gắn nhận lệnh; chưa gắn (đang ở TMB) thì giữ lệnh chờ,
+// ô gắn vào là áp. Trạng thái chọn tầng nằm trong màn Tầng, thanh trên chỉ gửi lệnh qua đây.
+let datNgoai: ((v: number[] | null) => void) | null = null;
+let lenhCho: { v: number[] | null } | null = null;
+/** Chọn tầng điển hình đang xem từ ngoài màn Tầng: null = bố cục chung, [k] = tầng điển hình thứ k. */
+export function chonTangNgoai(v: number[] | null) {
+  if (datNgoai) datNgoai(v);
+  else lenhCho = { v };
+}
+
 /** Ô chọn tầng áp dụng (L10): mặc định mọi tầng điển hình; hoặc bấm chọn từng tầng (Shift: chọn dải). */
 export function ChonTang({ soTangDH, soTangDe, tangs, datTangs, coRieng, coCauRieng }: Props) {
+  useEffect(() => {
+    datNgoai = datTangs;
+    if (lenhCho) { const { v } = lenhCho; lenhCho = null; datTangs(v); }
+    return () => { if (datNgoai === datTangs) datNgoai = null; };
+  });
   const ds = Array.from({ length: soTangDH }, (_, i) => i + 1);
   const chon = new Set(tangs ?? []);
   const bam = (k: number, e: MouseEvent) => {
@@ -47,13 +63,12 @@ export function ChonTang({ soTangDH, soTangDe, tangs, datTangs, coRieng, coCauRi
     <div class="chon-tang">
       <label class="o-tg"><input type="radio" name="tang-ap" checked={!tangs} onChange={() => datTangs(null)} /><span>{t('oc.tr.chung')}</span></label>
       <label class="o-tg"><input type="radio" name="tang-ap" checked={!!tangs} onChange={() => datTangs([soTangDH])} /><span>{t('oc.tr.chonTang')}</span></label>
-      <div class="luoi-tang" role="group" aria-label={t('oc.tr.tieuDe')}>
+      <div class="luoi-tang" role="group" aria-label={t('oc.tr.tieuDe')} title={t('oc.tr.ghiChu')}>
         {ds.map((k) => (
           <button type="button" key={k} aria-pressed={chon.has(k)} class={`${coRieng.includes(k) ? 'rieng' : ''}${coCauRieng.includes(k) ? ' cc-rieng' : ''}`}
             title={tenTang(soTangDe, k)} onClick={(e) => bam(k, e)}>{soTangDe + k}</button>
         ))}
       </div>
-      <p class="dong muted" style={{ margin: 0 }}>{t('oc.tr.ghiChu')}</p>
     </div>
   );
 }

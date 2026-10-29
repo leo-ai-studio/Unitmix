@@ -13,9 +13,30 @@
 .nut-bt[aria-pressed='true'] { background: var(--selected); color: var(--logo-ink); }
 .nut-bt:disabled { color: var(--muted); opacity: .45; cursor: default; }
 .nut-bt:focus-visible { outline: 3px solid #78aaa6; outline-offset: 2px; }
+.nut-bt .bt-svg { display: block; flex: none; }
 .nut-bt > :not([aria-hidden]) { font-family: var(--font); font-size: 11px; font-weight: 600; color: var(--ink); }
 /* Nhóm nút liền nhau — cùng kiểu .nhom-nut của app: một khung viền --line, ngăn bằng vạch dọc */
 .nhom-bt { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); overflow: hidden; }
 .nhom-bt .nut-bt { border: 0; border-right: 1px solid var(--line); border-radius: 0; }
 .nhom-bt .nut-bt:last-child { border-right: 0; }
 @media (prefers-reduced-motion: reduce) { .nut-bt { transition: none; } .nut-bt:active:not(:disabled) { transform: none; } }
+
+/* Điều khiển góc bản vẽ (ui/GocBanVe.tsx) — thay dải đáy: cụm nút nhỏ ở hai góc dưới, hộp chú giải / lớp / hướng dẫn mở phía trên nút. */
+.goc-bv { position: absolute; bottom: 10px; z-index: 4; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+.goc-bv > * { pointer-events: auto; }
+.goc-bv.trai { left: 10px; align-items: flex-start; }
+.goc-bv.phai { right: 10px; align-items: flex-end; }
+.nhom-bt.doc { flex-direction: column; }
+.nhom-bt.doc .nut-bt { border-right: 0; border-bottom: 1px solid var(--line); }
+.nhom-bt.doc .nut-bt:last-child { border-bottom: 0; }
+.goc-bv-hop { max-width: min(420px, calc(100vw - 40px)); max-height: 50vh; overflow: auto; padding: 8px 10px; font-size: 12px; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 2px 10px rgb(0 0 0 / .08); }
+.goc-bv-hop.lop { display: flex; flex-direction: column; gap: 4px; white-space: nowrap; }
+.goc-bv-hop.lop label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.goc-bv-hop .chu-giai-dat { justify-content: flex-start; padding: 0; }
+
+/* Bảng trái gọn: mỗi tòa / lô một dòng (tên trái, số liệu phải); thước tỷ lệ nhường chỗ cho nút góc trái. */
+.muc-lo { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 12px; }
+.muc-lo > b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.muc-lo > span { flex: none; font-size: 11px; white-space: nowrap; }
+.thuoc-ty-le { left: 96px; bottom: 14px; }

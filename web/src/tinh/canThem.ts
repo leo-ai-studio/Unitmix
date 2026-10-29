@@ -30,13 +30,15 @@ export type LyDoThem ='khong_o' | 'khong_mau' | 'khong_dau_tu_do';
  */
 function themMot(m: ToaCoMat, e: CanThem, tv: ThuVien): LyDoThem | null {
   const f = m.mat[e.mat];
-  const iSau = f ? f.phan_tu.findIndex((q, i) => (q.khoa ?? `${e.mat}:${i}`) === e.sau && q.loai === 'can') : -1;
+  // chèn sau ô `sau`, hoặc trước ô `truoc` (đầu dãy)
+  const neo = e.sau ?? e.truoc, laTruoc = !e.sau && !!e.truoc;
+  const iSau = f && neo ? f.phan_tu.findIndex((q, i) => (q.khoa ?? `${e.mat}:${i}`) === neo && q.loai === 'can') : -1;
   if (!f || iSau < 0) return 'khong_o';
   const c = tv.can.get(e.id);
   if (!c) return 'khong_mau';
   const q = f.phan_tu[iSau], w = c.rong_mm, u: Diem = [Math.cos(rad(f.goc_deg)), Math.sin(rad(f.goc_deg))], n: Diem = [-u[1], u[0]];
   const pt = (a: number, b: number): Diem => [u[0] * a + n[0] * (f.truc_mm + b), u[1] * a + n[1] * (f.truc_mm + b)];
-  const p = q.a1;
+  const p = laTruoc ? q.a0 : q.a1;
   // dãy liền chứa ô chọn (khe ≤ 600 mm): chỉ dãy này dời — cánh khác cùng mặt (bên kia sân trong) đứng yên
   const sx = f.phan_tu.filter((x) => x.a1 - x.a0 > 1).sort((a, b) => a.a0 - b.a0);
   const k = sx.indexOf(q);
@@ -44,7 +46,8 @@ function themMot(m: ToaCoMat, e: CanThem, tv: ThuVien): LyDoThem | null {
   while (i1 + 1 < sx.length && sx[i1 + 1].a0 - sx[i1].a1 <= KHE_LIEN_MM) i1++;
   while (i0 > 0 && sx[i0].a0 - sx[i0 - 1].a1 <= KHE_LIEN_MM) i0--;
   const thu = (cuoi: boolean): boolean => {
-    const day = cuoi ? sx.slice(k + 1, i1 + 1) : sx.slice(i0, k + 1);
+    // phần dãy phía đầu được dời: sau điểm chèn (dời ra cuối) / trước điểm chèn (dời ra đầu)
+    const day = sx.slice(i0, i1 + 1).filter((x) => (cuoi ? x.a0 >= p - 1 : x.a1 <= p + 1));
     const E = cuoi ? sx[i1].a1 : sx[i0].a0;
     // lõi không chiếm bề ngang nằm trong đoạn dời → không dời được
     if (f.phan_tu.some((x) => x.loai !== 'can' && x.loai !== 'thang_bo' && (cuoi ? x.a0 >= p - 1 && x.a0 <= E + 1 : x.a0 >= E - 1 && x.a0 <= p + 1))) return false;
@@ -107,6 +110,52 @@ export const mauMoRong = <T extends ToaMau>(mau: T, ds: CanThem[] | undefined, t
 export function mauToa(tv: ThuVien, toa: Pick<ToaDat, 'mauId' | 'canThem'>): ToaMau | undefined {
   const m = tv.toa.get(toa.mauId);
   return m && mauMoRong(m, toa.canThem, tv);
+}
+
+/** Chỉ số căn thêm có khoá ô `khoa`; không phải căn thêm thì −1. */
+export function chiSoCanThem(mau: ToaMau, ds: CanThem[] | undefined, khoa: string): number {
+  return (ds ?? []).findIndex((_, i) => khoaCanThem(mau, ds!, i) === khoa);
+}
+
+/**
+ * Rút căn thêm tay có khoá `khoa` khỏi `ToaDat.canThem` (xoá hẳn, không để công năng 'bo'): các căn thêm sau nó cùng mặt lùi một
+ * chỉ số → đổi khoá trong mọi bố cục (chung + tầng riêng: mẫu căn, công năng, lật), bản ghi tự chỉnh, neo của căn thêm / thang tay;
+ * vật thể neo vào căn bị rút thì neo sang chỗ căn đó đã neo. Không phải căn thêm thì null.
+ */
+export function rutCanThem<T extends ToaDat>(toa: T, mau: ToaMau, khoa: string): T | null {
+  const ds = toa.canThem ?? [];
+  const i = chiSoCanThem(mau, ds, khoa);
+  if (i < 0) return null;
+  const e = ds[i];
+  const doi = new Map<string, string>();
+  for (let j = i + 1; j < ds.length; j++) if (ds[j].mat === e.mat) doi.set(khoaCanThem(mau, ds, j)!, `${e.mat}:${Number(khoaCanThem(mau, ds, j)!.split(':')[1]) - 1}`);
+  const moi = (k: string) => doi.get(k) ?? k;
+  const neoBo = e.sau ? { sau: e.sau } : { truoc: e.truoc };
+  const doiNeo = <X extends { sau?: string; truoc?: string }>(x: X): X => {
+    if (x.sau === khoa || x.truoc === khoa) {
+      const { sau: _s, truoc: _t, ...r } = x;
+      void _s; void _t;
+      const n = { ...r, ...neoBo } as X;
+      return { ...n, ...(n.sau ? { sau: moi(n.sau) } : {}), ...(n.truoc ? { truoc: moi(n.truoc) } : {}) };
+    }
+    return { ...x, ...(x.sau ? { sau: moi(x.sau) } : {}), ...(x.truoc ? { truoc: moi(x.truoc) } : {}) };
+  };
+  const banDo = <V>(o: Record<string, V> | undefined): Record<string, V> | undefined => {
+    if (!o) return o;
+    const r: Record<string, V> = {};
+    for (const [k, v] of Object.entries(o)) if (k !== khoa) r[moi(k)] = v;
+    return Object.keys(r).length ? r : undefined;
+  };
+  const canThem = ds.filter((_, j) => j !== i).map(doiNeo);
+  const tangRieng = toa.tangRieng && Object.fromEntries(Object.entries(toa.tangRieng).map(([k, g]) => [k, {
+    ...g, canViTri: banDo(g.canViTri), congNang: banDo(g.congNang), latO: banDo(g.latO),
+  }]));
+  const tuDong = toa.tuDong?.filter((d) => d.khoa !== khoa).map((d) => ({ ...d, khoa: moi(d.khoa) }));
+  const thangTay = toa.thangTay && { ...toa.thangTay, them: toa.thangTay.them.map(doiNeo) };
+  return {
+    ...toa, canThem: canThem.length ? canThem : undefined, canViTri: banDo(toa.canViTri), congNang: banDo(toa.congNang), latO: banDo(toa.latO),
+    ...(tangRieng ? { tangRieng } : {}), tuDong: tuDong?.length ? tuDong : undefined, ...(thangTay ? { thangTay } : {}),
+  };
 }
 
 /** Khoá ô của căn thêm thứ `i` (theo mẫu thư viện + các căn thêm trước nó): "<mặt>:<chỉ số phần tử>". */

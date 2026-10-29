@@ -27,13 +27,22 @@ body { font-size: 13px; line-height: 1.45; }
 .thuong-hieu .mark img { height: 30px; width: auto; display: block; }
 .thuong-hieu .mark .brand-o { position: absolute; left: 52.93%; top: .88%; width: 46.11%; height: auto; }
 .thuong-hieu strong { font-size: 15px; font-weight: 600; letter-spacing: .08em; }
+/* Phiên bản mảnh dưới tên app (rê logo xem đủ mã commit · ngày build). */
+.thuong-hieu .ten-ban { display: flex; flex-direction: column; line-height: 1.05; }
+.thuong-hieu .ban { font-size: 9px; font-weight: 300; letter-spacing: .06em; color: var(--muted); }
+.thuong-hieu { position: relative; }
+.thuong-hieu .ban { cursor: pointer; border-radius: 3px; }
+.thuong-hieu .ban:hover { color: var(--green); }
+.lich-su-ban { position: absolute; top: calc(100% + 8px); left: 0; z-index: 70; width: 320px; max-height: 60vh; overflow: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .14); color: var(--ink); font-size: 12px; letter-spacing: 0; cursor: default; animation: the-vao var(--dur-1, 120ms) var(--ease-out, ease-out); }
+.lich-su-ban > b { font-size: 12px; color: var(--green); }
+.ls-dau { display: flex; justify-content: space-between; font-weight: 600; } .ls-dau small { color: var(--muted); font-weight: 400; }
+.ls-muc ul { margin: 2px 0 0; padding-left: 16px; } .ls-muc li { line-height: 1.45; }
+.ls-chan { color: var(--muted); font-size: 10px; }
 .gian { flex: 1; }
 .tab-xem { display: flex; }
 .tab-xem button { border: 1px solid var(--line); background: var(--band); padding: 10px 16px; margin-right: -1px; font-size: 12px; color: var(--ink); }
 .tab-xem button[aria-pressed="true"] { background: var(--panel); font-weight: 700; border-bottom-color: var(--panel); }
-.cap-do { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.cap-do button { border: 0; background: none; font-weight: 600; color: var(--ink); padding: 4px 2px; }
-.cap-do .xam { color: var(--muted-text); font-weight: 500; }
 .nhom-nut { display: inline-flex; border: 1px solid var(--line); }
 .nhom-nut button { border: 0; border-right: 1px solid var(--line); background: var(--panel); padding: 6px 9px; font-size: 12px; color: var(--ink); }
 .nhom-nut button:last-child { border-right: 0; }
@@ -65,6 +74,8 @@ body { font-size: 13px; line-height: 1.45; }
 .thong-bao.canh { background: #f5ecd9; color: #4a3203; }
 .thong-bao button { border: 1px solid var(--secondary); background: var(--panel); border-radius: 4px; padding: 4px 10px; font-size: 12px; color: var(--ink); }
 .thanh-tren button:disabled { opacity: .4; cursor: default; }
+/* leo-ui.css đặt cursor: wait (vòng xoay) cho mọi nút tắt — trông như đang tải mãi. Nút tắt dùng con trỏ "cấm"; lý do ghi ở tooltip. */
+button:disabled { cursor: not-allowed; }
 
 /* Màn Dự án */
 .trang { width: 100%; max-width: 1440px; margin: 0 auto; padding: 28px 24px; display: flex; flex-direction: column; gap: 18px; }
@@ -212,13 +223,10 @@ body { font-size: 13px; line-height: 1.45; }
 .chu-giai-dat { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: center; padding: 4px 12px; font-size: 11px; color: var(--muted-text); }
 .chu-giai-dat i { display: inline-block; width: 11px; height: 11px; border: 1px solid; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 
-/* Thanh trên một dòng: đường dẫn co lại, cắt bằng dấu …; nhãn "Chế độ" ẩn cho gọn */
+/* Thanh trên một dòng: dải cấp co lại, cắt bằng dấu … (styles/cap-do.css) */
 @media (min-width: 1100px) {
   .khung-soan .thanh-tren { flex-wrap: nowrap; }
-  .khung-soan .thanh-tren .cap-do { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
-  .khung-soan .thanh-tren .cap-do button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
 }
-.thanh-tren .nhan-che-do { display: none; }
 
 /* ===== 3D theo brand ===== */
 .vung-3d { background: var(--bg); }
@@ -255,8 +263,6 @@ body { font-size: 13px; line-height: 1.45; }
 .khung-soan .thanh-tren { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; height: 52px; min-height: 0; box-sizing: border-box; }
 .khung-soan .thanh-tren > :not(.gian):not(.cap-do) { flex-shrink: 0; }
 .khung-soan .thanh-tren button { white-space: nowrap; }
-.khung-soan .cap-do { flex: 1 1 auto; flex-wrap: nowrap; min-width: 0; overflow: hidden; }
-.khung-soan .cap-do button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 /* Panel hai bên giữ chỗ thanh cuộn, nội dung không nhảy khi thanh cuộn hiện / ẩn. */
 .panel-trai, .panel-phai { scrollbar-gutter: stable; }
 

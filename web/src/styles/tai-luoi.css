@@ -1,0 +1,5 @@
+/* Màn tải lười (ui/Luoi.tsx): vòng O giữ chỗ, không đẩy / đổi kích thước khung làm việc. */
+.cho-tai { display: flex; align-items: center; justify-content: center; color: var(--muted-text); pointer-events: none; }
+.cho-tai-panel { padding: 24px 12px; }
+.cho-tai-giua { position: absolute; inset: 0; }
+.cho-tai-hop { position: fixed; inset: 0; z-index: 50; }

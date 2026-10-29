@@ -4,6 +4,7 @@ import { canCaToa, ghiDeTang, nhomTang } from './matBang';
 import { chanToa, dienTich, dtVung, hopDienTich, khoiDe } from './hinhHoc';
 import { PHAN_HAM_MAC_DINH, type LoaiCan, type ThuVien, type TrangThaiPA } from './kieu';
 import { mauToa } from './canThem';
+import { danSoLo } from './danSo';
 
 export type MucDo = 'ok' | 'canh_bao' | 'vuot';
 export type DongChiTieu = {
@@ -49,6 +50,7 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
   const dem = demCan(pa, tv);
   const theoLo: Record<string, KetQuaLo> = {};
   let dtSanTong = 0;
+  let danSoTong = 0;
   for (const lo of pa.lo) {
     const ct = lo.temDat.chiTieu;
     const dtLo = lo.ranh.length >= 3 ? dienTich(lo.ranh) : 0;
@@ -98,6 +100,9 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
     const coDat = dtLo > 0;
     const tangCao = coToa ? Math.max(...toaLo.map((t) => t.soTangDe + t.soTangDH + (t.coApMai ? 1 : 0))) : null;
     const maxTang = (f: (t: (typeof toaLo)[number]) => number) => (coToa ? Math.max(...toaLo.map(f)) : null);
+    // Dân số: lô đã khai tỉnh / loại hình / giai đoạn → tính từng căn theo QĐ tỉnh (`tinh/danSo.ts`); chưa khai → hệ số chung.
+    const danSo = lo.temDat.danSo ? danSoLo(pa, lo, tv).tong : soCan * ct.nguoiMoiCan;
+    danSoTong += danSo;
     theoLo[lo.id] = {
       dtLo, dtDe, dtSanTinhHSSDD: dtSan, dtSanChiTiet: ct0, soCan, coCau, coCauPct: phanTram(coCau),
       dong: [
@@ -108,7 +113,7 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
         ...(ct.tangDe !== null ? [dong('tangDe', maxTang((t) => t.soTangDe), ct.tangDe, '<=')] : []),
         ...(ct.tangCanHo !== null ? [dong('tangCanHo', maxTang((t) => t.soTangDH), ct.tangCanHo, '<=')] : []),
         ...(ct.soCanMax !== null ? [dong('soCan', coToa ? soCan : null, ct.soCanMax, '<=')] : []),
-        dong('danSo', coToa ? soCan * ct.nguoiMoiCan : null, ct.danSoMax, '<='),
+        dong('danSo', coToa ? danSo : null, ct.danSoMax, '<='),
         dong('choDo', null, coToa ? Math.ceil(soCan * ct.choDoOtoMoiCan) : null, '>='),
         dong('cayXanh', null, coDat ? (dtLo * ct.cayXanhMin) / 100 : null, '>='),
       ],
@@ -116,6 +121,5 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
   }
   const coCau = congCoCau(Object.values(theoLo).map((k) => k.coCau));
   const soCan = Object.values(coCau).reduce((a, b) => a + b, 0);
-  const danSo = pa.lo.reduce((a, lo) => a + (theoLo[lo.id]?.soCan ?? 0) * lo.temDat.chiTieu.nguoiMoiCan, 0);
-  return { theoLo, tong: { soCan, danSo, dtSanTinhHSSDD: dtSanTong, coCau, coCauPct: phanTram(coCau) } };
+  return { theoLo, tong: { soCan, danSo: danSoTong, dtSanTinhHSSDD: dtSanTong, coCau, coCauPct: phanTram(coCau) } };
 }

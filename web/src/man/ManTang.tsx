@@ -17,17 +17,18 @@ import { MenuCongNang, MenuLoi } from '../ve/MenuO';
 import { ChonTang, nhanPhamVi, tenTang } from '../ui/ChonTang';
 import { nutLopPhong } from '../ve/LopPhong';
 import { MucGap } from '../ui/MucGap';
-import { ThanhHienThi } from '../ui/ThanhHienThi';
+import { GocBanVe } from '../ui/GocBanVe';
 import { fmtSo } from '../ui/so';
-import { MoHinhCan, MoHinhChinh } from '../ve3d/MoHinh3D';
+import { MoHinhCan, MoHinhChinh, type Chon3D } from '../ve3d/MoHinh3D';
 import { datCaiTang, useCaiTang } from './caiTang';
 import { datBaoStretch, useBaoStretch } from './baoStretch';
 import { mauCuaToa, suaTuChinh, useDuLieuMB } from './tuChinhTang';
 import { matBangRiengTang, type ChanSua } from '../tinh/loiThang';
 import { ST_BUOC, stretchTay, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
-import { ThanhCongCuTang, useKeoTay, type PropsCongCu } from './CongCuTang';
+import { ThanhCongCuTang, useKeoTay, type ChoSang, type PropsCongCu } from './CongCuTang';
 import { mauToa } from '../tinh/canThem';
+import { KpiTang } from '../ui/KpiTang';
 
 export type ChungTang = {
   pa: TrangThaiPA;
@@ -81,6 +82,8 @@ export function useChonO(toa: ToaDat | null): ChonO {
   return { ...chonO, tangs: tangs?.length ? tangs : null };
 }
 const datChonToa = (toa: ToaDat, p: Partial<ChonO>) => datChonO({ ...(chonO.toaId === toa.id ? {} : { tangs: null, ds: [], menu: null, thang: null }), toaId: toa.id, ...p });
+/** Chọn tầng điển hình đang xem của tòa từ ngoài màn Tầng (3D Công trình bấm căn / tầng): null = bố cục chung. Dùng được cả khi ô ChonTang chưa gắn. */
+export const chonTangToa = (toa: ToaDat, tangs: number[] | null) => datChonToa(toa, { tangs, ds: [], menu: null });
 
 /** Các ô đang chọn: ô chính (canKhoa) + ô chọn thêm. */
 const oDangChon = (canKhoa: string | null, ds: string[]) => [...new Set([...(canKhoa ? [canKhoa] : []), ...ds])];
@@ -99,7 +102,7 @@ const mucTieuTang = (toa: ToaDat, lo: Lo | undefined, tangs: number[] | null) =>
 /** Panel trái: chọn tòa, tầng áp dụng, cơ cấu mục tiêu + tối ưu, hiển thị. */
 export function TangTrai(p: ChungTang) {
   const { pa, sua, chiXem, tv, chonToa, chonCan } = p;
-  useDuLieuMB(tv);
+  useDuLieuMB(tv, pa);
   const cai = useCaiTang();
   const [ghiChu, setGhiChu] = useState('');
   // Đổi khác bề ngang + STRETCH khi tối ưu (A8 · DC-04/05, như app cũ): mặc định bật
@@ -114,7 +117,6 @@ export function TangTrai(p: ChungTang) {
   const bc = boCucTang(toa, k0);
   const ccRieng = coCauRiengTang(toa, k0);
   const muc = ccRieng ?? mucTieuCua(lo);
-  const sl = soLieuTang(mau, bc, tv);
   const coRieng = tangCoRieng(toa);
   const coCauRieng = Object.keys(toa.tangRieng ?? {}).map(Number).filter((k) => ghiDeTang(toa, k)?.coCauMucTieu);
   const datTangs = (v: number[] | null) => { datChonToa(toa, { tangs: v, ds: [], menu: null }); setGhiChu(''); };
@@ -160,7 +162,7 @@ export function TangTrai(p: ChungTang) {
         <p class="dong muted" style={{ margin: 0 }}>{ccRieng ? t('oc.cc.dangDungRieng').replace('{v}', nhanPhamVi(tangs, toa.soTangDe)) : t('oc.cc.theoLo')}</p>
         {lo?.temDat.deBai && <p class="dong muted" style={{ margin: 0 }}>{t('lo.nguonDeBai').replace('{n}', lo.temDat.deBai.nguon)}</p>}
         <div class="dong" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
-          <button type="button" class="nut-chinh" title={t('gt.tang.toiUu')} disabled={chiXem}
+          <button type="button" class="nut-chinh" title={chiXem ? t('soan.chiXem') : t('gt.tang.toiUu')} disabled={chiXem}
             onClick={async () => {
               const cuaCan = await taiCuaCan(tv, mau.nhom);
               const kq = toiUuCoCau(mau, bc, tv, muc, {
@@ -174,23 +176,21 @@ export function TangTrai(p: ChungTang) {
                 + (kq.pcccSau !== null ? ' ' + t('tang.pcccKq').replace('{a}', String(kq.pcccTruoc)).replace('{b}', String(kq.pcccSau)) : '') : t('tang.khongDoiDuoc'));
             }}>{t('tang.toiUu')}{tangs ? ` · ${nhanPhamVi(tangs, toa.soTangDe)}` : ''}</button>
           <label class="o-tg" title={t('gt.tang.doiRong')}><input type="checkbox" disabled={chiXem} checked={doiRong} onChange={(e) => setDoiRong(e.currentTarget.checked)} /><span>{t('tang.doiRong')}</span></label>
-          <button type="button" class="nut-phu" title={t('gt.tang.veGoc')} disabled={chiXem || !coDoiCan}
+          <button type="button" class="nut-phu" title={chiXem ? t('soan.chiXem') : t('gt.tang.veGoc')} disabled={chiXem || !coDoiCan}
             onClick={() => { suaTuChinh(sua, tv, toa.id, { tay: false })((q) => doiToa(q, toa.id, veMauGoc)); setGhiChu(''); }}>{t('tang.veGoc')}</button>
         </div>
         {ghiChu && <p class="dong canh-bao" role="status" style={{ margin: 0 }}>{ghiChu}</p>}
-        <p class="dong muted" style={{ margin: 0 }}>{t('tang.mixGhiChu')}</p>
       </MucGap>
-      <MucGap tieuDe={t('tang.hienThi')} giaiThich={t('gt.tang.hienThi')} mo>
+      {/* Gọn: tem căn / nội thất / chấm màu ở nút Lớp góc bản vẽ; hướng dẫn chọn ô nằm trong tooltip — mục này gập mặc định. */}
+      <MucGap tieuDe={t('tang.hienThi')} giaiThich={`${t('gt.tang.hienThi')} ${t('oc.goiYChon')}`}>
         <label class="o-chon" title={t('gt.tang.kieu')}><span>{t('tang.kieu')}</span>
           <select value={cai.kieu} onChange={(e) => datCaiTang({ kieu: e.currentTarget.value as typeof cai.kieu })}>
             {DS_KIEU_MB.map((k) => <option value={k}>{t(`kieu.${k}`)}</option>)}
           </select>
         </label>
-        {([['hienTem', 'tang.hienTem'], ['noiThat', 'tang.noiThat'], ['chamMau', 'tang.chamMau'], ['suaNhieu', 'tang.suaNhieu']] as const).map(([k, nhan]) => (
+        {([['suaNhieu', 'tang.suaNhieu']] as const).map(([k, nhan]) => (
           <label class="o-tg" key={k} title={t(`gt.${nhan}`)}><input type="checkbox" checked={cai[k]} onChange={(e) => datCaiTang({ [k]: e.currentTarget.checked })} /><span>{t(nhan)}</span></label>
         ))}
-        <p class="dong muted" style={{ margin: 0 }}>{t('tang.phamVi').replace('{n}', String(toa.soTangDH))} · {t('xep.canTang').replace('{n}', String(sl.can.filter((c) => c.cn === 'can').length))}</p>
-        <p class="dong muted" style={{ margin: 0 }}>{t('oc.goiYChon')}</p>
       </MucGap>
     </>
   );
@@ -205,10 +205,10 @@ export function TangGiua(p: ChungTang) {
 }
 
 /** Tab 3D: toàn dự án hoặc công trình đang xem. */
-export function TangMoHinh(p: ChungTang & { tenDuAn: string }) {
+export function TangMoHinh(p: ChungTang & { tenDuAn: string; chon3d?: Chon3D }) {
   const xem = toaDangXem(p.pa, p.tv, p.loId, p.toaId);
   if (!p.tv) return <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('lo.dangTaiThuVien')}</span></div>;
-  return <MoHinhChinh pa={p.pa} tv={p.tv} sua={p.sua} chiXem={p.chiXem} toa={xem?.toa ?? null} mau={xem ? xem.mauTang(null) : null} mauTang={xem?.mauTang} tenDuAn={p.tenDuAn} />;
+  return <MoHinhChinh pa={p.pa} tv={p.tv} sua={p.sua} chiXem={p.chiXem} toa={xem?.toa ?? null} mau={xem ? xem.mauTang(null) : null} mauTang={xem?.mauTang} tenDuAn={p.tenDuAn} chon3d={p.chon3d} />;
 }
 
 /** Đổi công năng các ô trên phạm vi đang chọn (chung hoặc các tầng). */
@@ -253,10 +253,11 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   // công cụ tay (sắp xếp / thêm / xoá / lật) — lớp phủ, kéo thả bám tay
   const [keoBat, setKeoBat] = useState(false);
   const [hienHL, setHienHL] = useState(true);
+  const [choSang, setChoSang] = useState<ChoSang>(null);
   const ccProps: PropsCongCu = {
     pa, sua: p.sua, chiXem, tv, toa, mau, bc, can: sl.can, tangs: co.tangs, dsO, thangKhoa: co.thang ?? null,
     chonThang: (k) => datChonToa(toa, { thang: k }), chonCan: (k) => { chonCan(k); datChonToa(toa, { ds: [] }); },
-    keoBat, datKeoBat: setKeoBat, hienHL, datHienHL: setHienHL,
+    keoBat, datKeoBat: setKeoBat, hienHL, datHienHL: setHienHL, datChoSang: setChoSang,
   };
   const keoTay = useKeoTay(ccProps);
   const onMenu = (loai: 'o' | 'loi', khoa: string, x: number, y: number) => {
@@ -316,7 +317,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
             deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2}
-            thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} oKeo={keoTay.oKeo} hienHanhLang={hienHL} />
+            thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} dichLoi={keoTay.dichLoi} oKeo={keoTay.oKeo} hienHanhLang={hienHL} choSang={choSang} />
         </BanVe>
       </div>
       <ThanhCongCuTang {...ccProps} />
@@ -341,16 +342,12 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         <MenuLoi x={menu.x} y={menu.y} dong={dongMenu} tt={thongTinLoi(toa, menu.khoa)} chiXem={chiXem}
           doi={(tt) => p.sua((q) => doiToa(q, toa.id, (x) => datLoi(x, menu.khoa, tt)))} />
       )}
-      <div class="noi-duoi">
-        <ThanhHienThi nhan={t('ht.nhom')} nut={[
-          { khoa: 'phong', nhan: t('ht.phong'), onClick: () => dk?.phong() },
-          { khoa: 'thu', nhan: t('ht.thu'), onClick: () => dk?.thu() },
-          { khoa: 'vua', nhan: t('ht.vua'), onClick: () => dk?.vuaKhung() },
-          { khoa: 'tem', nhan: t('tang.hienTem'), bat: cai.hienTem, onClick: () => datCaiTang({ hienTem: !cai.hienTem }) },
-          { khoa: 'noi', nhan: t('tang.noiThat'), bat: cai.noiThat, onClick: () => datCaiTang({ noiThat: !cai.noiThat }) },
-          ...nutLopPhong(pa.nguong),
-        ]} />
-      </div>
+      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null} lop={[
+        { khoa: 'tem', nhan: t('tang.hienTem'), bat: cai.hienTem, onClick: () => datCaiTang({ hienTem: !cai.hienTem }) },
+        { khoa: 'noi', nhan: t('tang.noiThat'), bat: cai.noiThat, onClick: () => datCaiTang({ noiThat: !cai.noiThat }) },
+        { khoa: 'cham', nhan: t('tang.chamMau'), bat: cai.chamMau, onClick: () => datCaiTang({ chamMau: !cai.chamMau }) },
+        ...nutLopPhong(pa.nguong),
+      ]} />
     </>
   );
 }
@@ -501,7 +498,8 @@ export function TangPhai(p: ChungTang) {
 
   return (
     <>
-      <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}${k0 !== null ? ' · ' + tenTang(toa.soTangDe, k0) : ''}`} giaiThich={t('gt.tang.canTrongToa')} mo>
+      <KpiTang pa={pa} tv={tv} toa={toa} lo={lo} tang={k0} can={sl.can} mucTieu={muc} nguongLech={pa.nguong.coCauDiem} tenTang={phamVi} />
+      <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}${k0 !== null ? ' · ' + tenTang(toa.soTangDe, k0) : ''}`} giaiThich={t('gt.tang.canTrongToa')}>
         <div class="bang-co-cau" role="table">
           <div class="dong bang-cc dau" style={{ gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr' }} role="row"><span /><span>{t('tang.canTang')}</span><span>{t('xep.tyLe')}</span><span>{t('xep.mucTieu')}</span><span>{t('xep.lech')}</span></div>
           {LOAI_CAN.map((k) => {
@@ -530,7 +528,7 @@ export function TangPhai(p: ChungTang) {
         <p class="dong muted" style={{ margin: 0 }}>{t('oc.sh.cum')} {t('oc.sh.dtGhiChu')}</p>
       </MucGap>
 
-      <MucGap tieuDe={t('tang.loaiCanTrongTang')} giaiThich={t('gt.tang.loaiCanTrongTang')} mo>
+      <MucGap tieuDe={t('tang.loaiCanTrongTang')} giaiThich={t('gt.tang.loaiCanTrongTang')}>
         <div class="bang-nhap-nho" role="table">
           <div class="dong hang-lc hang-lc7 dau" role="row"><span>{t('tang.mauCan')}</span><span>{t('tang.soCan')}</span><span>{t('tang.thongThuy')}</span><span>{t('tang.timTuong')}</span><span>{t('tang.phanChung')}</span><span class="tieu-co-tip" title={t('tang.dtBanGhiChu')}>{t('tang.banDT')}</span><span class="tieu-co-tip" title={t('tang.dtBanGhiChu')}>{t('tang.heSoTt')}</span></div>
           {dsMau.map(({ id, n, c }) => {

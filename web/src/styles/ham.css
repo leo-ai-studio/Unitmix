@@ -54,3 +54,12 @@
 .ve-ranh .ve-ranh-dinh.sua:hover { fill: var(--green); }
 .ve-ranh .ve-ranh-bat { fill: none; stroke: var(--thua); stroke-width: 1.5; pointer-events: none; }
 .ve-ranh .ve-ranh-dai { fill: var(--ink); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+
+/* Đang rải hầm trong Web Worker (tinh/hamNen.ts): lớp phủ trên bản vẽ, không đổi kích thước khung giữa; bản vẽ cũ vẫn thao tác được. */
+.ham-dang-rai {
+  position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%); z-index: 4; pointer-events: none;
+  display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 12px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--line); color: var(--muted-text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .08);
+}
+.ham-dang-rai .spin-o { margin-right: 0 !important; }
