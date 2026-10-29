@@ -331,6 +331,24 @@ function doanTai(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], mi: number, a: numbe
 }
 
 /**
+ * Gọn đa giác nét bao: bỏ đỉnh trùng, đỉnh thẳng hàng và GAI (đi tới rồi quay lại trên cùng một đường — nét bao co lại ở đầu dãy
+ * mà không gọt, để lại nét thừa ngoài ô; app cũ duongBao bo theo ô). Lặp tới khi không bỏ được nữa.
+ */
+export function gonDaGiac(P: Diem[], tol = 2): Diem[] {
+  let R = P.slice();
+  for (let doi = true; doi && R.length > 3;) {
+    doi = false;
+    for (let k = 0; k < R.length && R.length > 3; k++) {
+      const a = R[(k + R.length - 1) % R.length], p = R[k], c = R[(k + 1) % R.length];
+      const L = kc(a, c);
+      const lech = L < 1e-6 ? kc(a, p) : Math.abs((c[0] - a[0]) * (p[1] - a[1]) - (c[1] - a[1]) * (p[0] - a[0])) / L;
+      if (kc(p, a) <= 1 || lech <= tol) { R.splice(k, 1); doi = true; k--; }
+    }
+  }
+  return R;
+}
+
+/**
  * Nối nét bao: đổi đoạn biên a = aE (hệ mặt) phủ dải b ∈ [b0, b1] thành đường vòng lồi ra (d > 0) hoặc lõm vào (d < 0)
  * theo hướng `huong` (+1 = về phía a tăng). Không tìm được cạnh biên phủ dải thì trả null (không đoán).
  */
@@ -344,8 +362,7 @@ export function noiNetBao(P: Diem[], gocDeg: number, truc: number, aE: number, h
     const c0 = Math.abs(lo - b0) <= 60 ? lo : b0, c1 = Math.abs(hi - b1) <= 60 ? hi : b1, a2 = aE + huong * d;
     const chen: Diem[] = A[1] > C[1] ? [[aE, c1], [a2, c1], [a2, c0], [aE, c0]] : [[aE, c0], [a2, c0], [a2, c1], [aE, c1]];
     const R = [...Q.slice(0, i + 1), ...chen, ...Q.slice(i + 1)];
-    const gon = R.filter((p, k) => kc(p, R[(k + R.length - 1) % R.length]) > 1);
-    return gon.map(([a, b]) => B.pt(a, b));
+    return gonDaGiac(R).map(([a, b]) => B.pt(a, b));
   }
   return null;
 }
