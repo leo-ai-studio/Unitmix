@@ -21,7 +21,7 @@ const SUA_KHONG_DAU = W('doi|thay|them|xoa|xep|xoay|sua|giam|chinh|nhan ban|ap d
 const coDau = (s: string) => /[À-ỹ]/.test(s);
 const TOI_UU = /\b(toi uu|optimi[sz]e|hieu suat cao nhat|nhieu can nhat|toi da hoa|dat \d+ ?%|dat muc tieu|sat muc tieu)/;
 const PHAM_VI_RONG = /\b(moi|tat ca|toan bo|ca du an|cac toa|cac lo|cac tang|tung toa|tung lo|tung tang|all|every|whole project)\b/;
-const XEP_LAI = /\b(xep lai|sap xep lai|bo tri lai|xep tu dong|tu xep|xep hang loat|rearrange|re-arrange|batch)\b/;
+const XEP_LAI = /\b(xep lai|sap xep lai|bo tri lai|xep tu dong|xep toa tu dong|tu dong xep|tu xep|xep hang loat|rearrange|re-arrange|batch)\b/;
 const QUY_CHUAN = /\b(qcvn|tcvn|quy chuan|tieu chuan|tuan thu|phap ly|pccc|thoat nan)\b/;
 const HOI = /(\?|\b(bao nhieu|la gi|may|the nao|o dau|co dat|how many|how much|what is|what's|which)\b)/;
 const GIAI_THICH = /\b(giai thich|tai sao|vi sao|why|explain|nghia la)\b/;
@@ -38,7 +38,8 @@ export function goiYMoHinh(cau: string, ngu: NguCanhGoiY = {}): GoiYMH | null {
   const s = boDau(goc);
   const thuong = goc.toLowerCase();
   const soSua = (thuong.match(SUA_CO_DAU) ?? []).length + (coDau(goc) ? 0 : (s.match(SUA_KHONG_DAU) ?? []).length);
-  const soPhan = goc.split(/\n+|;|\. (?=[A-ZÀ-Ỹa-zà-ỹ])|\b(?:rồi|sau đó|then)\b/).filter((x) => x.trim().length > 3).length;
+  // số phần việc: tách theo xuống dòng, chấm phẩy, dấu phẩy, câu, "rồi / sau đó / then"
+  const soPhan = goc.split(/\n+|;|,|\. (?=\p{L})|(?<!\p{L})(?:rồi|sau đó|then)(?!\p{L})/u).filter((x) => x.trim().length > 3).length;
   const soThucThe = (s.match(/\b(lo|toa|tang|can|pa|phuong an)\s*[a-z0-9-]+/g) ?? []).length;
 
   // Opus · Kỹ

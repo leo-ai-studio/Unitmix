@@ -326,6 +326,8 @@ export function LeoAI(p: PropsLeo) {
   const ketQuaCua = new Map<string, { noiDung: string; loi: boolean }>();
   for (const m of lichSu) if (m.role === 'user') for (const b of khoiNguoiDung(m)) if (b.type === 'tool_result') ketQuaCua.set(b.tool_use_id, { noiDung: typeof b.content === 'string' ? b.content : JSON.stringify(b.content), loi: !!b.is_error });
   const iCuoiTraLoi = (() => { for (let i = lichSu.length - 1; i >= 0; i--) if (lichSu[i].role === 'assistant') return i; return -1; })();
+  // nút chép / đọc to chỉ ở câu trả lời CUỐI mỗi lượt (tin assistant không nối tiếp bằng kết quả công cụ), không ở các bước giữa
+  const laCuoiLuot = (i: number) => { const sau = lichSu[i + 1]; return !sau || laCauHoi(sau); };
   const iCauCuoi = viTriCauCuoi();
   const buoc = p.ng.ui.lay();
   const goiYMo = GOI_Y_MO[buoc.xem === 'chi_phi' ? 'chi_phi' : buoc.buoc];
@@ -362,7 +364,7 @@ export function LeoAI(p: PropsLeo) {
             : b.type === 'text' ? <Md key={j} chu={b.text} />
             : b.type === 'tool_use' ? <BuocCongCu key={j} ten={b.name} dauVao={b.input} ketQua={ketQuaCua.get(b.id)?.noiDung} loi={ketQuaCua.get(b.id)?.loi} dang={chay && !ketQuaCua.has(b.id)} />
             : null)}
-          {chu && <div class="leo-hanh-dong">
+          {chu && laCuoiLuot(i) && <div class="leo-hanh-dong">
             <NutNho k="leoSaoChep" nhan={t('leo.chep')} onClick={() => void navigator.clipboard?.writeText(chu)} />
             {coDoc() && <NutNho k="leoLoa" nhan={t('leo.docTo')} onClick={() => void docTo(chu, lang)} />}
             {i === iCuoiTraLoi && !chay && <NutNho k="leoThuLai" nhan={t('leo.thuLai')} onClick={thuLai} />}
@@ -494,7 +496,7 @@ export function LeoAI(p: PropsLeo) {
               {cai.moHinh !== 'tu_chon' && <button type="button" class="leo-nut-chu" onClick={() => datCai({ moHinh: 'tu_chon' })}>{t('leo.luonTuChon')}</button>}
             </div>
           )}
-          <div class="leo-soan-duoi">
+          <div class="leo-soan-duoi chan-hop">
             <input ref={tepRef} type="file" hidden multiple accept="image/*,application/pdf,.pdf,.xlsx,.xls,.csv" onChange={(e) => { const f = e.currentTarget.files; if (f?.length) void themTep(f); e.currentTarget.value = ''; }} />
             <NutNho k="leoKem" nhan={t('leo.dinhKem')} tat={chay} onClick={() => tepRef.current?.click()} />
             <select class="leo-chon-mh" aria-label={t('leo.moHinh')} value={`${moHinh}|${nghiCuoc}`} disabled={chay}

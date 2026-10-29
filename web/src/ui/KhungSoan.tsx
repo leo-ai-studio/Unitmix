@@ -91,6 +91,16 @@ export function KhungSoan(p: Props) {
             <NutBieuTuong k="hoanTac" tat={!p.onHoanTac || chiXem} onClick={p.onHoanTac} />
             <NutBieuTuong k="lamLai" tat={!p.onLamLai || chiXem} onClick={p.onLamLai} />
           </span>
+          {/* Leo AI trên màn hẹp: ở dock (tầm ngón cái), thanh trên không chừa chỗ */}
+          {p.leoAi && (
+            // bọc riêng: `.dock-duoi > .nut-bt` giữ đúng thứ tự Nhập / Số liệu cho scripts/kiem_man_hep.mjs, do_dien_thoai.mjs
+            <span class="nhom-leo">
+              <button type="button" class={`nut-bt nut-leo-dock${p.leoAi.mo ? ' mo' : ''}`} aria-pressed={p.leoAi.mo} aria-label={t('leo.mo')} title={t('leo.mo')} onClick={p.leoAi.bat}>
+                <span class="mark" aria-hidden="true"><img src="/brand/leo_ai_mark_base.png" alt="" /><img class={`brand-o${p.leoAi.dang ? ' spinning' : ''}`} src="/brand/leo_ai_o.png" alt="" /></span>
+                <span>{t('leo.ten')}</span>
+              </button>
+            </span>
+          )}
           <NutBieuTuong k="nganPhai" bat={mo === 'phai'} onClick={() => bat('phai')}><span>{t('dock.soLieu')}</span></NutBieuTuong>
         </nav>
       )}

@@ -22,6 +22,7 @@ describe('gợi ý mô hình (luật, 0 token)', () => {
     for (const c of ['tối ưu hiệu suất', 'đạt 55% 2PN cho cả dự án', 'xếp lại tòa cho tất cả các lô', 'kiểm tra QCVN toàn bộ dự án', 'đổi tất cả căn 1PN ở mọi tòa thành studio', 'toi uu co cau tang 5'])
       expect(mh(c), c).toBe('claude-opus-5-5');
     expect(mh('xem ảnh này', { coDinhKem: true })).toBe('claude-opus-5-5');
+    expect(mh('Xếp tòa tự động cho lô NO-02, đổi 2 căn 3PN thành 2PN ở tầng điển hình, rồi cho tôi xem KPI dự án')).toBe('claude-opus-5-5');
     expect(mh('a'.repeat(300) + ' đổi căn')).toBe('claude-opus-5-5');
     expect(goiYMoHinh('tối ưu hiệu suất')!.nghi).toBe('high');
   });

@@ -5,12 +5,11 @@
 import { api } from '../api';
 import type { DuAnApi } from '../api';
 import type { KhoLoi } from '../kho/khoLoi';
-import { tangDangXem } from '../man/ManTang';
+import { chonTangToa, tangDangXem } from '../man/ManTang';
 import { choDuLieuMB } from '../man/tuChinhTang';
 import type { ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaPA, taoPAMoi } from '../tinh/macDinh';
 import { taiQuyTac, traLuat } from '../tinh/quyTac';
-import { chonTangNgoai } from '../ui/ChonTang';
 import { t } from '../i18n/i18n';
 import { taiCuaCan } from '../ve/hinhHocThuVien';
 import type { NguCanh, PAtrongDA, TrangThaiUi } from './congCu/nguCanh';
@@ -57,7 +56,12 @@ export function taoNguCanhSoan(phu: { current: PhuSoan }, xacNhan: { current: (c
         if (p.loId !== undefined) d.datLo(p.loId);
         if (p.toaId !== undefined) d.datToa(p.toaId);
         if (p.canKhoa !== undefined) d.datCan(p.canKhoa);
-        if (p.tangs !== undefined) chonTangNgoai(p.tangs);
+        if (p.tangs !== undefined) {
+          // chọn tầng gắn thẳng với tòa đích (đổi tòa + tầng cùng lúc không bị ô ChonTang của tòa cũ nuốt lệnh)
+          const id = p.toaId !== undefined ? p.toaId : thuc().toaId;
+          const toa = id ? d.loi.lay().toa.find((x) => x.id === id) : undefined;
+          if (toa) chonTangToa(toa, p.tangs);
+        }
         if (p.tangHam !== undefined) d.datTangHam(p.tangHam);
         if (p.buoc) d.datBuoc(p.buoc);
         if (p.xem) d.datXem(p.xem);

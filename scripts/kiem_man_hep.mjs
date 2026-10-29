@@ -6,7 +6,7 @@
  *   · TRÀN NGANG: scrollWidth > bề rộng khung                            → LỖI (mã 1)
  *   · NÚT BỊ CHE: tâm nút đang hiện bị phần tử khác đè (elementFromPoint) → LỖI (mã 1)
  *   · nút < 40 px (khung điện thoại / máy tính bảng)                       → cảnh báo
- * Rồi mở lần lượt mọi HỘP THOẠI / LỚP NỔI mở được (bảng QH Excel — nạp tệp mẫu scripts/mau_kiem/chi_tieu_man_hep.xlsx,
+ * Rồi mở lần lượt mọi HỘP THOẠI / LỚP NỔI mở được (khung Leo AI — không gửi câu, bảng QH Excel — nạp tệp mẫu scripts/mau_kiem/chi_tieu_man_hep.xlsx,
  * đề bài KD, xuất CAD — chỉ mở hộp, KHÔNG bấm tải, xếp hàng loạt, chú giải / hướng dẫn / lớp góc bản vẽ, menu ⋯, menu cấp;
  * ở trang Dự án: tạo dự án — không bấm Tạo, so sánh PA) và đo:
  *   · NÚT CHÍNH (hàng nút chân hộp .chan-hop, .nut-chinh, ✕ đóng) nằm trong khung nhìn và elementFromPoint ở tâm trả về
@@ -197,6 +197,14 @@ async function main() {
         if (await bam('.menu-them-hep .nut-cap')) { await cho(400); n += await doHop(k, 'menu-cap', '.bang-cap', { nut: ':scope > button', banPhim: false }); }
       } else if (!hep && await bam('.thanh-tren .nut-cap')) {
         await cho(400); n += await doHop(k, 'menu-cap', '.bang-cap', { nut: ':scope > button', banPhim: false });
+      }
+      // 7. Leo AI (troLy/LeoAI.tsx): khung phủ, nút đầu khung; bàn phím giả → ô nhập + mic + gửi (.leo-soan-duoi.chan-hop) vẫn
+      //    ngay trên bàn phím; không gửi câu nào (không gọi Claude). Đóng bằng nút × cuối đầu khung.
+      await veTmb(hep);
+      if (!(await bam(hep ? '.dock-duoi .nut-leo-dock' : '.thanh-tren .nut-leo-ai'))) boQua(k, 'leo-ai', '(không có nút Leo AI)');
+      else {
+        await doiCo(`!!document.querySelector('.leo-ai .leo-soan')`, 15000); await cho(500);
+        n += await doHop(k, 'leo-ai', '.leo-ai', { nut: '.leo-dau button, .leo-ai textarea', dong: () => bam('.leo-ai .leo-dau button:last-of-type') });
       }
       // 6. Xuất CAD (màn Tầng có tòa đang xem) — chỉ mở hộp, KHÔNG bấm tải .scr / .dxf
       await veTmb(hep);
