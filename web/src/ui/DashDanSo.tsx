@@ -1,6 +1,7 @@
 import { t } from '../i18n/i18n';
 import { danSoDuAn, type KetQuaDanSo } from '../tinh/danSo';
 import { LOAI_CAN, type Lo, type ThuVien, type TrangThaiPA } from '../tinh/kieu';
+import { BieuTuong } from './NutBieuTuong';
 import { LOAI_HINH } from '../tinh/quyTacDanSo';
 import { MucGap } from './MucGap';
 import { fmtSo } from './so';
@@ -47,6 +48,7 @@ function CachTinh({ k, lo }: { k: KetQuaDanSo; lo: Lo }) {
           {' · '}{t('ds.kvAp').replace('{kv}', t(`ds.kv.${q.khuVuc.ap}`)).replace('{n}', fmtSo(q.khuVuc.sTb, so1))}
         </span>
       )}
+      {k.satMoc.bat && <span title={t('gt.ds.khai.lamTron')}> · {t('ds.lamTronAp').replace('{n}', fmtSo(k.satMoc.dungSai, { thapPhan: 2 }))}</span>}
       {q.ap && q.ap.qd && !q.ap.daDoiChieu && <span class="muted"> · {t('ds.chuaDoiChieu')}</span>}
       {q.tam && <b class="canh-bao"> · {t('ds.tam')}</b>}
     </p>
@@ -74,10 +76,75 @@ function TheoLoaiHinh({ k }: { k: KetQuaDanSo }) {
 }
 
 /**
+ * Căn sát mốc dải (chủ nhiệm 29/10/2026): mẫu căn có DT vừa vượt mốc bảng QĐ trong dung sai — DT hiện → DT gợi ý, người / căn,
+ * giảm mỗi căn × số căn trên lô (căn / tầng × tầng × tòa, tooltip theo tòa), tổng giảm; nhắc phải sửa DT thật trong thiết kế.
+ * `moCan` mở màn Tầng tòa có căn đó (chọn căn); `batLamTron` bật làm tròn cho lô (một bước hoàn tác).
+ */
+function SatMocDS({ k, pa, tv, moCan, batLamTron }: { k: KetQuaDanSo; pa: TrangThaiPA; tv: ThuVien; moCan?: (toaId: string, canId: string) => void; batLamTron?: () => void }) {
+  if (!k.coKhai) return null;
+  const sm = k.satMoc;
+  const coMoc = k.dong.some((d) => d.phuongPhap === 'bang' || d.phuongPhap === 'bangPhong' || d.phuongPhap === 'qd83');
+  const soToa = (id: string) => pa.toa.findIndex((x) => x.id === id) + 1;
+  return (
+    <details class="ds-chi-tiet ds-sat-moc" open={sm.dong.length > 0}>
+      <summary title={t('gt.ds.sm.muc')}>
+        <BieuTuong k="satMoc" /> {t('ds.sm.muc')}{sm.dong.length ? ` · ${sm.dong.length}` : ''}
+        {sm.giam > 0 && <b class="ds-sm-giam"> −{fmtNguoi(Math.round(sm.giam * 100) / 100)} {t('ds.nguoi')}</b>}
+      </summary>
+      {!coMoc && <p class="ds-ghi muted">{t('ds.sm.khongMoc')}</p>}
+      {coMoc && !sm.dong.length && <p class="ds-ghi muted">{t('ds.sm.rong').replace('{n}', fmtSo(sm.dungSai, { thapPhan: 2 }))}</p>}
+      {sm.dong.length > 0 && (
+        <>
+          <div class="ds-bang ds-bang-sm" role="table" aria-label={t('ds.sm.muc')}>
+            <div class="ds-hang dau" role="row">
+              <span>{t('ds.cot.mau')}</span><span>{t('ds.sm.cot.dtHien')}</span><span>{t('ds.sm.cot.dtGoiY')}</span>
+              <span>{t('ds.sm.cot.nguoi')}</span><span>{t('ds.cot.soCan')}</span><span>{t('ds.sm.cot.giam')}</span><span />
+            </div>
+            {sm.dong.map((d) => {
+              const s = d.satMoc!;
+              const toaIds = Object.keys(d.theoToa);
+              const chiTiet = toaIds.map((id) => {
+                const x = pa.toa.find((q) => q.id === id);
+                return t('ds.sm.theoToa').replace('{i}', String(soToa(id))).replace('{n}', fmtSo(d.theoToa[id])).replace('{t}', fmtSo(x?.soTangDH ?? null));
+              }).join('\n');
+              const ten = tv.can.get(d.canId)?.ten_vi ?? d.canId;
+              return (
+                <div class={`ds-hang${d.lamTron ? ' da-ap' : ''}`} role="row" key={d.canId} title={`${ten}\n${d.dieu}`}>
+                  <span><i class="o-mau" style={{ background: `var(--u-${d.loai})` }} /> {ten.split(' · ')[0]}</span>
+                  <span>{fmtSo(d.dt, { thapPhan: 2 })}</span>
+                  <b>{fmtSo(s.dtGoiY, { thapPhan: 2 })}</b>
+                  <span>{fmtNguoi(s.nguoiHien)} → {fmtNguoi(s.nguoiGoiY)}</span>
+                  <span title={chiTiet}>{fmtSo(d.so)}</span>
+                  <b title={`${fmtNguoi(Math.round(s.giam * 100) / 100)} × ${fmtSo(d.so)}`}>−{fmtSo(s.giam * d.so, { thapPhan: Number.isInteger(s.giam * d.so) ? 0 : 1 })}</b>
+                  <span>{moCan && toaIds[0] && (
+                    <button type="button" class="nut-bt ds-sm-xem" title={t('gt.ds.sm.xem')} aria-label={`${t('ds.sm.xem')} ${ten}`} onClick={() => moCan(toaIds[0], d.canId)}><BieuTuong k="moTang" /></button>
+                  )}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p class={`ds-ghi${sm.bat ? ' ok' : ''}`}>{t(sm.bat ? 'ds.sm.daAp' : 'ds.sm.chuaAp').replace('{n}', fmtNguoi(Math.round(sm.giam * 100) / 100))}</p>
+          <p class="ds-ghi canh-bao" role="note">{t('ds.sm.canhBao')}</p>
+          {!sm.bat && batLamTron && (
+            <button type="button" class="nut-phu" title={t('gt.ds.sm.batNhanh').replace('{n}', fmtSo(sm.dungSai, { thapPhan: 2 }))} onClick={batLamTron}>{t('ds.sm.batNhanh')}</button>
+          )}
+        </>
+      )}
+    </details>
+  );
+}
+
+/**
  * Dashboard dân số của lô (panel phải mục chỉ tiêu): vòng tỉ lệ dân theo loại căn, tổng dân, dân / ngưỡng QH (thanh, vượt tô
  * `--warn`), người / căn bình quân; bảng chi tiết từng mẫu căn và căn cứ. Hàm tính: `tinh/danSo.ts`.
  */
-export function DashDanSo({ pa, tv, lo }: { pa: TrangThaiPA; tv: ThuVien | null; lo: Lo }) {
+export function DashDanSo({ pa, tv, lo, sua, chiXem, moCan }: {
+  pa: TrangThaiPA; tv: ThuVien | null; lo: Lo;
+  /** Có thì hiện nút "Bật làm tròn" ở danh sách căn sát mốc. */
+  sua?: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem?: boolean;
+  /** Mở màn Tầng tòa `toaId`, chọn ô dùng mẫu căn `canId`. */
+  moCan?: (toaId: string, canId: string) => void;
+}) {
   if (!tv) return null;
   const da = danSoDuAn(pa, tv);
   const k = da.theoLo[lo.id];
@@ -108,6 +175,9 @@ export function DashDanSo({ pa, tv, lo }: { pa: TrangThaiPA; tv: ThuVien | null;
       </div>
       <CachTinh k={k} lo={lo} />
       <TheoLoaiHinh k={k} />
+      <SatMocDS k={k} pa={pa} tv={tv} moCan={moCan}
+        batLamTron={sua && !chiXem && lo.temDat.danSo ? () => sua((p) => ({ ...p, lo: p.lo.map((l) => (l.id === lo.id && l.temDat.danSo
+          ? { ...l, temDat: { ...l.temDat, danSo: { ...l.temDat.danSo, lamTron: { bat: true, dungSai: k.satMoc.dungSai } } } } : l)) })) : undefined} />
       {k.soNgoaiBang > 0 && <p class="ds-ghi canh-bao" title={t('gt.ds.ngoaiBang')}>{t('ds.ngoaiBang').replace('{n}', fmtSo(k.soNgoaiBang))}</p>}
       <div class="ds-bang" role="table" aria-label={t('ds.vong')}>
         <div class="ds-hang dau" role="row"><span>{t('ds.cot.loai')}</span><span>{t('ds.cot.soCan')}</span><span title={t('ds.dtDung')}>{t('ds.cot.dt')}</span><span>{t('ds.cot.dan')}</span><span>%</span></div>
@@ -132,7 +202,8 @@ export function DashDanSo({ pa, tv, lo }: { pa: TrangThaiPA; tv: ThuVien | null;
             <span>{t('ds.cot.nguoiCan')}</span><span>{t('ds.cot.dan')}</span><span>{t('ds.cot.lh')}</span>
           </div>
           {k.dong.map((d) => (
-            <div class={`ds-hang${d.ngoaiBang ? ' ngoai' : ''}`} role="row" key={d.canId} title={d.dieu || t('ds.pp.heSoChung')}>
+            <div class={`ds-hang${d.ngoaiBang ? ' ngoai' : ''}`} role="row" key={d.canId}
+              title={(d.dieu || t('ds.pp.heSoChung')) + (d.lamTron && d.satMoc ? `\n${t('ds.lamTronAp').replace('{n}', fmtSo(k.satMoc.dungSai, { thapPhan: 2 }))}: ${fmtSo(d.dt, { thapPhan: 2 })} → ${fmtSo(d.satMoc.dtGoiY, { thapPhan: 2 })} m²` : '')}>
               <span title={tv.can.get(d.canId)?.ten_vi ?? d.canId}><i class="o-mau" style={{ background: `var(--u-${d.loai})` }} /> {tv.can.get(d.canId)?.ten_vi.split(' · ')[0] ?? d.canId}</span>
               <span>{fmtSo(d.so)}</span>
               <span>{fmtSo(d.dt, so1)}</span>

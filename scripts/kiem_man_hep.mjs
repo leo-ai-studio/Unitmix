@@ -7,7 +7,7 @@
  *   · NÚT BỊ CHE: tâm nút đang hiện bị phần tử khác đè (elementFromPoint) → LỖI (mã 1)
  *   · nút < 40 px (khung điện thoại / máy tính bảng)                       → cảnh báo
  * Rồi mở lần lượt mọi HỘP THOẠI / LỚP NỔI mở được (khung Leo AI — không gửi câu, bảng QH Excel — nạp tệp mẫu scripts/mau_kiem/chi_tieu_man_hep.xlsx,
- * đề bài KD, xuất CAD — chỉ mở hộp, KHÔNG bấm tải, xếp hàng loạt, chú giải / hướng dẫn / lớp góc bản vẽ, menu ⋯, menu cấp;
+ * đề bài KD, xuất CAD — chỉ mở hộp, KHÔNG bấm tải, xếp hàng loạt, so sánh mẫu tòa (không bấm Đặt), chú giải / hướng dẫn / lớp góc bản vẽ, menu ⋯, menu cấp;
  * ở trang Dự án: tạo dự án — không bấm Tạo, so sánh PA) và đo:
  *   · NÚT CHÍNH (hàng nút chân hộp .chan-hop, .nut-chinh, ✕ đóng) nằm trong khung nhìn và elementFromPoint ở tâm trả về
  *     chính nút (không bị dock / ngăn / thanh khác che); chân hộp phải thấy NGAY không cần cuộn   → LỖI
@@ -181,6 +181,15 @@ async function main() {
       await veTmb(hep);
       if (!(await bamChu('/Xếp hàng loạt|Batch/', '.panel-giua'))) boQua(k, 'hang-loat', '(nút tắt)');
       else { await cho(600); n += await doHop(k, 'hang-loat', '.tmb-hang-loat', { nut: '.hl-dong, .nut-chinh', dong: () => bam('.tmb-hang-loat .hl-dong'), banPhim: false }); }
+      // 3b. So sánh mẫu tòa (ui/SoSanhMau.tsx): mở từ Thư viện mẫu tòa (panel trái / ngăn Nhập), chờ bảng kết quả (worker)
+      await veTmb(hep); await moNhap(hep);
+      await js(`(() => { const b = [...document.querySelectorAll('button.muc-dau')].find((x) => /Thư viện mẫu tòa|Tower library/i.test(x.textContent)); if (b && b.getAttribute('aria-expanded') !== 'true') b.click(); return true; })()`);
+      await cho(400);
+      if (!(await bam('.nut-so-sanh-mau'))) boQua(k, 'so-sanh-mau', '(không có nút — chưa có lô cao tầng?)');
+      else {
+        await doiCo(`document.querySelectorAll('.ss-mau .ssm-the').length > 0`, 30000); await cho(400);
+        n += await doHop(k, 'so-sanh-mau', '.hop-thoai', { dong: () => bam('.hop-thoai .chan-hop .nut-phu') });
+      }
       // 4. Góc bản vẽ: chú giải / hướng dẫn / lớp (lớp có ở màn Tầng)
       for (const [ten, re] of [['chu-giai', '/^Chú giải|^Legend/'], ['huong-dan', '/^Hướng dẫn|^How to|^Help/'], ['lop', '/^Lớp hiển thị|^Layers/']]) {
         await veTmb(hep);

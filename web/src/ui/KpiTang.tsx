@@ -5,6 +5,8 @@ import { kpiTang } from '../tinh/kpi';
 import { MucGap } from './MucGap';
 import { fmtSo } from './so';
 import { LuoiSo, TheSo, VongKpi, pct1, useHieuSuatMin } from './TheSo';
+import { NutBieuTuong } from './NutBieuTuong';
+import { moSoSanhMau } from './SoSanhMau';
 
 const m2 = 'm²';
 const so1 = { thapPhan: 1 };
@@ -32,6 +34,9 @@ export function KpiTang({ pa, tv, toa, lo, tang, can, mucTieu, nguongLech, tenTa
       <div class="kpi-dau">
         <h3>{t('kpi.tang.tieuDe')} · {ten}</h3>
         <span class="kpi-tang-ten">{tenTang}</span>
+        {/* so sánh mẫu tòa cùng họ với tòa đang xem (không đặt lên TMB) — ui/SoSanhMau.tsx */}
+        <NutBieuTuong k="soSanhMau" ghiChu={t('gt.ssm.moNut')}
+          onClick={() => { const m = tv.toa.get(toa.mauId); if (m) moSoSanhMau({ tv, nhom: m.nhom, hinh: m.hinh }); }} />
       </div>
       <LuoiSo>
         <TheSo id="kpi-can-tang" nhan={t('kpi.canTang')} gt={k.soCanTang} donVi={t('sc.can')} tip={t('kpi.gt.canTang')}
