@@ -2,6 +2,39 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-30 · Mở 3D không giật: dịch shader nền song song, xem trước → đủ chất lượng, dựng chia mẩu, hầm / tum là phần riêng · agent Opus
+
+Người dùng: web app phải mượt, không giật. Sau đợt 3D Vật liệu v3, MỞ 3D (chưa bật lớp phân tích nào) có tác vụ dài luồng chính: máy bàn 4 tác vụ, dài nhất ~755 ms; điện thoại (CPU 4×) 10 tác vụ, dài nhất ~764 ms. Mục tiêu: máy bàn không tác vụ > 100 ms, điện thoại không tác vụ > 200 ms, frame đầu ra sớm (xem trước rẻ rồi nâng dần).
+
+- **Kịch bản đo mới `scripts/do_mo_3d.mjs`** (không trong cổng): mỗi ca một Edge headless MỚI (hồ sơ trống, `--disable-gpu-shader-disk-cache`) — `du_an` (TMB → tab 3D) và `toa` (đang 3D, bấm Công trình); máy bàn 1440×900 CPU 1× / điện thoại 390×844 @3x CPU 4×. Ghi tác vụ dài (PerformanceObserver), frame đầu (`.vung-3d.da-dung`), đủ chất lượng (`data-chat-luong="du"`), CPU profile (Profiler 200 µs) quy từng đoạn bận về hàm (self + gồm con), số chương trình shader, `--anh` chụp khi yên để so trước / sau. `window.__ve3d` = nhật ký từng lượt vẽ [ms, pha, vật liệu đang dịch, số chương trình].
+  `node scripts/do_mo_3d.mjs --url http://localhost:5735 --du-an 2mlg1a2l --ma-sua <mã> [--pa pa-1] [--chi may|dt] [--ca du_an,toa] [--lan 2] [--chi-tiet] [--anh]`
+- **Nguyên nhân (profile)**:
+  1. Lượt vẽ đầu chặn 600–800 ms trong `WebGLRenderer.render → setProgram → WebGLProgram.getUniforms → onFirstUse` (self `getProgramInfoLog` 629 ms): three dịch + nối ~31 chương trình NỐI TIẾP — mỗi chương trình tạo xong là hỏi trạng thái nối (đồng bộ) ngay. `renderer.compileAsync` không cứu được: r170 `compile()` không đặt trạng thái mặt cắt theo vật liệu → vật liệu có `clippingPlanes` (mọi vật liệu tòa) dịch SAI khoá rồi dịch lại đồng bộ lúc vẽ. Tường / đế / tum sơn ba `customProgramCacheKey` khác nhau cho cùng một mã shader → 3 chương trình giống hệt.
+  2. PMREM bầu trời đồng bộ trong lúc tạo khung: `fromScene` 80 ms (dịch shader làm mờ 50 ms).
+  3. Dựng lại CẢ dự án 3–7 lần ngay khi mở: `khoaNhe` gồm `napLoi.xong` (hình lõi nạp xong → tum) và `vHam` (worker rải hầm trả từng lô). Mỗi lần `dungDuAn` 55–75 ms máy bàn, 450 ms điện thoại (48 tòa); cây sân `diemCayTrong` thử mọi chân tòa cả dự án cho từng điểm (~25 ms). Công trình: `dungToa` một tác vụ 60 ms / ~300 ms điện thoại.
+  4. Đổi tab: `TrinhSoan` tính lại `tinhChiTieu` cả dự án mỗi lượt vẽ (48 tòa, 4×: ~40 ms).
+- **Sửa**:
+  - `ve3d/dichShader.ts` (mới): mặt cắt ngang = bản vá shader `catY` (bỏ điểm Y thế giới > `uCatY`, đồng phục chung của khung) thay `clippingPlanes`; bản vá shader gộp một khoá chương trình theo danh sách bản vá (`vaShader`, `chepVa` cho bản sao tô nhấn) — tường / đế / tum sơn dùng chung một chương trình (`tuongSon` khoá `son`). `dichDan`: tạo chương trình bằng `renderer.compile` trên vật thể giả cùng hình học + vật liệu (cùng biến thể instancing / màu từng bản / nét), mẻ ≤ 8 ms mỗi tác vụ, rồi chờ nối bằng KHR_parallel_shader_compile (hỏi COMPLETION_STATUS mỗi 8 ms, sẵn thì "dùng lần đầu" ngay lúc GPU rảnh); không có phần mở rộng thì ép nối từng chương trình một mỗi tác vụ. `dichBong`: chương trình bóng (MeshDepthMaterial theo mặt × instancing) dịch trước như lượt bóng (đích render target, cảnh không sương, cùng đèn). `locMoiTruong`: PMREM dịch trước ba chương trình (hộp nền, bầu trời, làm mờ — API riêng `_setSize` / `_allocateTargets` / `_blurMaterial` r170, thiếu thì `fromScene` thẳng) rồi mới lọc. `moiTruongGia`: kết cấu cubeUV giả 768 × 1024 để dịch đúng khoá khi PMREM chưa xong. Trạng thái renderer (bóng, đích vẽ, tone mapping, môi trường) chỉ đổi trong MỘT tác vụ đồng bộ — giữ qua `await` thì lượt vẽ chen giữa dịch sai khoá (đã gặp: 152–346 ms).
+  - `Khung3D`: vẽ theo pha — 0 chưa có ảnh; 1 XEM TRƯỚC (một Lambert ngà, không bóng, 2–3 chương trình, `scene.overrideMaterial`); 2 ĐỦ (PBR + môi trường + bóng mềm) chỉ khi mọi chương trình đã nối + PMREM xong. Ở pha 2 vật liệu mới (dựng lại, tô nhấn, lớp, gói mở rộng, lớp view) dịch nền, vật thể dùng chúng ẩn tạm tới khi sẵn — không lượt vẽ nào chờ GPU. Tạo ngữ cảnh WebGL là tác vụ riêng.
+  - Dựng chia mẩu: `ve3d/chiaNho.ts` (`chayHet` / `chayDan`), `dungDuAnTung` (yield sau mỗi lô / tòa / lô trồng cây), `dungToaTung` (bố cục tầng chưa có trong bộ nhớ hình dựng trước, yield sau mỗi căn; `dungDuAn` / `dungToa` đồng bộ giữ cho test). Khung3D `dung` trả generator thì chạy mẩu ~8 ms rồi nhường; lượt mới hơn bỏ lượt cũ.
+  - Khung3D prop `phan` (phần cảnh dựng riêng): Toàn dự án tách hầm (`dungHamDuAn`, khoá `pa.ham` + phiên bản rải nền) và tầng tum + trục thang (`dungTumDuAn`, khoá lõi nạp xong) — đổi khoá chỉ dựng lại phần đó (chia mẩu), `khoaNhe` chỉ còn tòa đang chọn. Cây: lọc vật cản theo khung bao (cùng kết quả). `SoanThao`: `tinhChiTieu` nhớ theo PA (`useMemo`).
+- **Số đo** (bản build `vite build` + `vite preview`, API 8787, dự án `2mlg1a2l` PA `pa-1` 6 lô / 9 tòa và PA tổng hợp 48 tòa `x6dqes0j` / `pa-48` (6 lô × 8 tòa tm-i1, tạo từ `UNITMIX_DO_VIEW_RA` của `tinh/doViewTang.test.ts`, chỉ trong DB local); trước = bản build từ 7f1e79b): tác vụ > 50 ms / dài nhất / frame đầu (đủ chất lượng)
+
+  | ca | trước | sau |
+  |---|---|---|
+  | máy bàn · Toàn dự án | 5 / 757 ms / 992 ms | **0 / 0** / 181–204 ms (395–433) |
+  | máy bàn · Công trình | 2 / 615 ms / 748 ms | **0 / 0** / 133–148 ms (330–350) |
+  | điện thoại 4× · Toàn dự án | 11 / 798 ms / 1 467 ms | 3–6 / **77–87 ms** / 605–613 ms (900–938) |
+  | điện thoại 4× · Công trình | 2 / 730 ms / 1 178 ms | 2 / **99–100 ms** / 463–470 ms (687–731) |
+  | 48 tòa máy bàn · Toàn dự án | 10 / 706 ms / 1 024 ms | **0 / 0** / 274 ms (496) |
+  | 48 tòa máy bàn · Công trình | 2 / 610 ms / 743 ms | **0 / 0** / 146 ms (345) |
+  | 48 tòa điện thoại · Toàn dự án | 16 / 941 ms / 2 039 ms | 5–7 / **117–148 ms** / 936–1 090 ms (1 226–1 414) |
+  | 48 tòa điện thoại · Công trình | 2 / 678 ms / 1 195 ms | 2–3 / **97–101 ms** / 488–492 ms (730–773) |
+
+  Chương trình shader Toàn dự án 31 → 23; draw call giữ nguyên (111 / 17 / 90 / 344 / 284). Ảnh đủ chất lượng trước / sau giống nhau (so điểm ảnh khung 3D: 16 / 613 350 điểm lệch > 15, khử răng cưa); cắt ngang 0,35, rê tô nhấn tòa, Lớp trục thang, kiểu Mô hình trắng: 0 tác vụ dài, ảnh như trước; Phân tích view bản mới hiện màu ngay (bản trước sau 1,5 s còn chưa hiện).
+- **Kiểm**: `node scripts/kiem.mjs` ĐẠT (tsc, web 970 + 3 bỏ, worker 14, pytest 15, build); `kiem_zoom.mjs` 10/10 ĐẠT (0 frame méo, không tác vụ > 50 ms); `kiem_man_hep.mjs` ĐẠT.
+- **Còn dở**: điện thoại còn vài tác vụ 50–150 ms: lượt vẽ đủ chất lượng đầu tiên (tạo VAO + bản đồ bóng, ~120 ms 4×, 48 tòa), một lần `renderer.compile` một chương trình (~20 ms 4×, không chia nhỏ được), `fromScene` PMREM ~60 ms 4×, lượt vẽ Preact khi đổi tab. Bấm chọn tòa trong 3D Toàn dự án vẫn dựng lại cả dự án (nay chia mẩu, không giật, nhưng ~0,5 s mới đổi góc "Cận tòa chọn"). Đổi Toàn dự án ↔ Công trình tạo ngữ cảnh WebGL mới, dịch lại ~17 chương trình (nền, không chặn). Ảnh vệ tinh nền 3D (tắt mặc định) nạp texture một lượt chưa chia frame. Chưa thử máy thật iOS / Android.
+
 ## 2026-10-30 · gộp nang-cap/architechtures (6221899) vào nhánh Vị trí · Nắng · Gió · agent Opus
 
 - Xung đột: `Khung3D` (giữ `moRong` + `phanTich` + `lop`/`lopAn` + `viDo`; mặt trời `datNang` = `moRong.nang` ?? NOAA theo `viDo`), `MoHinh3D` (giữ tum / phân tích view / Lớp, thêm `moRong`, nút ☀, hộp), `ManXepToa` (`ChuGiaiView tv` + hộp), docs (giữ cả hai).

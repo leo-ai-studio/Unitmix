@@ -38,7 +38,7 @@ const CAI = `(() => { const d = window.__do = { lt: [], mk: {} }; window.__ve3d 
     if (v.dataset.chatLuong === 'du' && !d.mk.du) d.mk.du = performance.now(); })
     .observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'data-chat-luong'] }); })();`;
 
-/** Đoạn bận liên tục trong CPU profile (mẫu không phải "(idle)", hở ≤ 2 ms) dài > 50 ms + hàm tốn nhất. */
+/** Đoạn bận liên tục trong CPU profile (giữa hai mẫu "(idle)" ≈ một tác vụ) dài > 50 ms + hàm tốn nhất. */
 function phanTichProfile(p) {
   const nut = new Map(p.nodes.map((n) => [n.id, n])), cha = new Map();
   for (const n of p.nodes) for (const c of n.children ?? []) cha.set(c, n.id);
@@ -49,7 +49,7 @@ function phanTichProfile(p) {
   const dong = () => { if (dau >= 0 && (cuoi - dau) / 1000 > 50) doan.push({ t0: dau, ms: Math.round((cuoi - dau) / 1000), ds }); dau = -1; ds = []; };
   for (let i = 0; i < mau.length; i++) {
     const [ts, id] = mau[i], n = nut.get(id), ranh = n.callFrame.functionName === '(idle)';
-    if (ranh) { if (dau >= 0 && ts - cuoi > 2000) dong(); continue; }
+    if (ranh) { if (dau >= 0) dong(); continue; } // mẫu rảnh = hết tác vụ
     if (dau < 0) dau = ts;
     cuoi = ts; ds.push([id, i + 1 < mau.length ? mau[i + 1][0] - ts : 0]);
   }

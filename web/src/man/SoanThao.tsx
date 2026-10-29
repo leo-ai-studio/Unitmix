@@ -113,7 +113,8 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
   const chiXem = kho.cheDo === 'chi_xem';
   usePhimSoan({ chiXem, hoanTac: kho.hoanTac, lamLai: kho.lamLai, luuNgay: kho.luuNgay, conChuaLuu: kho.conChuaLuu });
-  const kq: KetQuaChiTieu | null = tv ? tinhChiTieu(kho.pa, tv) : null;
+  // nhớ theo PA: đổi tab / màn (vd. mở 3D) không tính lại chỉ tiêu cả dự án (48 tòa, điện thoại CPU 4×: ~40 ms mỗi lượt vẽ)
+  const kq: KetQuaChiTieu | null = useMemo(() => (tv ? tinhChiTieu(kho.pa, tv) : null), [kho.pa, tv]);
   const [buoc, setBuocGoc] = useState<BuocSoan>('tmb');
   // bước trên cốt 0 gần nhất (menu cốt: Dưới → Trên trở lại đúng màn đang làm)
   const buocTren = useRef<'tmb' | 'tang'>('tmb');
