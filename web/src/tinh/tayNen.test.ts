@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { napThuVien, toaThu } from '../thu/thuVienThat';
 import { matBangCua, tuChinhToa, type ToaMB } from './loiThang';
-import { chayTay, DieuPhoiTay, type ThuTay, type ThuTayXong, type WorkerTay } from './tayNen';
+import { chayPhep, chayTay, datTam, DieuPhoiTay, goTam, hinhNhanh, layTam, phepTay, type PhepTay, type ThuTay, type ThuTayXong, type WorkerTay } from './tayNen';
+import { hatCua, phepNgauNhien, rng } from './phaHoaiChay';
+import { congNangTai, viTriCan } from './matBang';
 import { thangTuDongLai, xoaThangTay } from './thaoTacTay';
 import type { ThuVien, ToaDat } from './kieu';
 import type { DuLieuMB } from './loiThang';
@@ -97,5 +99,82 @@ describe('điều phối thao tác tay chạy nền (Web Worker)', () => {
     const h = dp.chay('thangTuDongLai', c, toa);
     expect(dp.dangChay).toBe(false);
     expect(ky(await h)).toBe(ky(thangTuDongLai(toa, c)));
+  });
+});
+
+// Đường chạy thao tác tay (CongCuTang `useChay`) qua worker: mọi phép, kết quả cuối phải y hệt bản đồng bộ (bài phá hoại chạy
+// `chayPhep` — cùng bảng phép — là chuẩn); lượt mới huỷ lượt cũ; mặt bằng tạm chỉ lượt đặt nó gỡ được.
+describe('điều phối mọi phép tay qua worker', () => {
+  const qua = async (ph: PhepTay) => {
+    const { ds, dp } = taoBo();
+    const h = dp.chayPhep(ph, c);
+    ds[0].chay();
+    return h;
+  };
+  const kyDu = (r: unknown) => JSON.stringify(r);
+
+  it.each(['xh-z4', 'tm-t2', 'tm-v4'])('%s: chuỗi phép ngẫu nhiên (như phá hoại) qua worker y hệt đồng bộ', async (id) => {
+    const r = rng(hatCua(id) + 909);
+    let toa = tuChinhToa(toaThu(id), tv.toa.get(id) as unknown as ToaMB, tv, dl);
+    let soPhep = 0;
+    for (let b = 0; b < 8; b++) {
+      const p = phepNgauNhien(toa, r);
+      if (!p || p.ph === 'donKhit') continue;
+      const dongBo = chayPhep(p.ph, c), nen = await qua(p.ph);
+      expect(kyDu(nen), `${id} #${b} ${p.op}`).toBe(kyDu(dongBo));
+      soPhep++;
+      if (dongBo.ok) toa = dongBo.toa;
+    }
+    expect(soPhep).toBeGreaterThan(3);
+  }, 120_000);
+
+  it('PA mới chưa có mặt bằng lưu: xoá căn / thêm thang qua worker y hệt đồng bộ', async () => {
+    for (const id of ['xh-z4', 'tm-t2']) {
+      const toa = toaThu(id), mau = tv.toa.get(id) as unknown as ToaMB;
+      const vt = viTriCan(mau, tv).filter((v) => congNangTai(v.khoa, toa) === 'can');
+      for (const ph of [phepTay('xoaCanTay', toa, null, [vt[vt.length - 1].khoa]), phepTay('themThangTay', toa, vt[2].matIdx, vt[2].khoa), phepTay('latTay', toa, null, [vt[1].khoa])]) {
+        expect(kyDu(await qua(ph)), `${id} ${ph.ten}`).toBe(kyDu(chayPhep(ph, c)));
+      }
+    }
+  }, 120_000);
+
+  it('lượt mới (phép khác) huỷ lượt cũ: lượt cũ trả null, lượt mới đúng kết quả', async () => {
+    const toa = tuChinhToa(toaThu('tm-u1'), tv.toa.get('tm-u1') as unknown as ToaMB, tv, dl);
+    const mau = tv.toa.get('tm-u1') as unknown as ToaMB;
+    const vt = viTriCan(mau, tv).filter((v) => congNangTai(v.khoa, toa) === 'can');
+    const { ds, dp } = taoBo();
+    const a = phepTay('xoaCanTay', toa, null, [vt[0].khoa]), b = phepTay('latTay', toa, null, [vt[1].khoa]);
+    const ha = dp.chayPhep(a, c);
+    expect(dp.tenDangChay).toBe('xoaCanTay');
+    const hb = dp.chayPhep(b, c);
+    expect(await ha).toBeNull();
+    expect(ds[0].daHuy).toBe(true);
+    ds[1].chay();
+    expect(kyDu(await hb)).toBe(kyDu(chayPhep(b, c)));
+    expect(dp.dangChay).toBe(false);
+  });
+
+  it('hình học nhanh: xoá / lật / đổi chỗ đổi ô ngay (chưa tự chỉnh), phép thang giữ mặt bằng cũ', () => {
+    const toa = tuChinhToa(toaThu('tm-u1'), tv.toa.get('tm-u1') as unknown as ToaMB, tv, dl);
+    const vt = viTriCan(tv.toa.get('tm-u1') as unknown as ToaMB, tv).filter((v) => congNangTai(v.khoa, toa) === 'can');
+    const xoa = hinhNhanh(phepTay('xoaCanTay', toa, null, [vt[0].khoa]))!;
+    expect(congNangTai(vt[0].khoa, xoa)).toBe('bo');
+    expect(xoa.matBang).toBe(toa.matBang);
+    expect(JSON.stringify(hinhNhanh(phepTay('latTay', toa, null, [vt[0].khoa])))).not.toBe(JSON.stringify(toa));
+    expect(hinhNhanh(phepTay('doiChoTay', toa, null, vt[0], vt[1]))).not.toBeNull();
+    expect(hinhNhanh(phepTay('xoaThangTay', toa, 'x'))).toBeNull();
+    expect(hinhNhanh(phepTay('thangTuDongLai', toa))).toBeNull();
+  });
+
+  it('mặt bằng tạm: chỉ lượt đặt nó gỡ được; tòa trong PA đổi thì không hiện', () => {
+    const goc = toaThu('tm-u1'), t1 = { ...goc, x: 1 }, t2 = { ...goc, x: 2 };
+    const a = datTam(goc, t1);
+    expect(layTam(goc)).toBe(t1);
+    const b = datTam(goc, t2); // lượt mới
+    goTam(a); // lượt cũ (bị huỷ) gỡ: không đụng tạm của lượt mới
+    expect(layTam(goc)).toBe(t2);
+    expect(layTam({ ...goc })).toBeNull();
+    goTam(b);
+    expect(layTam(goc)).toBeNull();
   });
 });

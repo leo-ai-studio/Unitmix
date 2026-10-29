@@ -59,6 +59,25 @@ type PhongVe = { khoa: string; p: Phong; ranh: Diem[]; tam: Diem; r: number; h: 
 
 type Props = { can: { vt: ViTriCan; canId: string }[]; mau: ToaCoMat; tv: ThuVien };
 
+/**
+ * Tâm vòng nội tiếp phòng (vongNoiTiep ~1 ms / phòng — cả tầng 40 căn × 6 phòng ~50–90 ms mỗi lần vẽ lại): nhớ theo HÌNH phòng dời về
+ * đỉnh đầu (mm làm tròn) — phòng cùng hình chỉ khác chỗ (căn dồn / đổi chỗ sau thao tác tay) dùng lại, tính trên hình đã dời nên kết
+ * quả không phụ thuộc lần tính đầu.
+ */
+const nhoTam = new Map<string, Diem>();
+function tamPhong(ranh: Diem[]): Diem {
+  const [x0, y0] = ranh[0];
+  const doi = ranh.map(([x, y]): Diem => [Math.round(x - x0), Math.round(y - y0)]);
+  const k = doi.join(';');
+  let o = nhoTam.get(k);
+  if (!o) {
+    o = vongNoiTiep(doi, 10).tam;
+    if (nhoTam.size > 5000) nhoTam.clear();
+    nhoTam.set(k, o);
+  }
+  return [x0 + o[0], y0 + o[1]];
+}
+
 export function LopPhong({ can, mau, tv }: Props) {
   const c = useCaiPhong();
   const g = useRef<SVGGElement>(null);
@@ -87,7 +106,7 @@ export function LopPhong({ can, mau, tv }: Props) {
       cm.phong.forEach((p, i) => {
         const chuan: Diem[] = p.ranh.map(([x, y]) => [x / cm.rong_mm, y / cm.sau_mm]);
         const ranh = veCanTaiViTri([{ cat: 'phong', pts: chuan }], vt, mau)[0].pts;
-        const { tam } = vongNoiTiep(ranh, 10);
+        const tam = tamPhong(ranh);
         const r = (p.d_min_m * 1000) / 2;
         kq.push({ khoa: `${vt.khoa}#${i}`, p, ranh, tam, r, h: Math.min(240, Math.max(90, r / 5)), ...danhGiaPhong(p, c.nguong) });
       });
