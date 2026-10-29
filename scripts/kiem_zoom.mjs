@@ -30,7 +30,8 @@ const timTrinhDuyet = () => [process.env.CHROME_PATH, 'C:/Program Files (x86)/Mi
 /** Bộ lấy mẫu trong trang: mỗi frame đọc trạng thái ĐÃ TÔ (sau rAF, ResizeObserver, tô màu → setTimeout 0). */
 const LAY_MAU = `(() => {
   window.__mau = []; window.__dai = []; window.__chay = true;
-  try { new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__chay && window.__dai.push(Math.round(e.duration)))).observe({ type: 'longtask' }); } catch {}
+  // một bộ nghe cho cả trang (mỗi màn gọi lại LAY_MAU: không thêm bộ nghe trùng → tác vụ dài không bị đếm lặp)
+  if (!window.__ngheDai) try { window.__ngheDai = true; new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__chay && window.__dai.push(Math.round(e.duration)))).observe({ type: 'longtask' }); } catch {}
   const doc2d = () => {
     const s = document.querySelector('.panel-giua .ban-ve-svg'); if (!s) return null;
     const hop = s.parentElement.getBoundingClientRect(), r = s.getBoundingClientRect(), vb = s.viewBox.baseVal, m = s.getScreenCTM();
