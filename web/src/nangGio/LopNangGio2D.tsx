@@ -199,7 +199,7 @@ function Bong2D({ pa, tv }: { pa: TrangThaiPA; tv: ThuVien }) {
   const ds = daGiacBong(khoi, huongTia(m, vt.gocBac));
   if (!ds.length) return null;
   return (
-    <g class="ng-bong" opacity="0.28" style={{ pointerEvents: 'none' }}>
+    <g class="ng-bong" opacity="0.42" style={{ pointerEvents: 'none' }}>
       {ds.map((p, i) => <polygon key={i} points={p.map(([x, y]) => `${x},${-y}`).join(' ')} fill="#1d2433" />)}
     </g>
   );

@@ -163,7 +163,9 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
       g.setIndex([0, 2, 1, 0, 3, 2]);
       const tx = new T.Texture(kq);
       tx.flipY = false; tx.colorSpace = T.SRGBColorSpace; tx.anisotropy = Math.min(8, c.R.capabilities.getMaxAnisotropy());
-      tx.generateMipmaps = true; tx.minFilter = T.LinearMipmapLinearFilter; tx.needsUpdate = true;
+      // vòng gần (2048²) không dựng mipmap: lượt nạp GPU ngắn hơn (đo: tác vụ ~54 → dưới 50 ms); vòng xa nhìn xiên cần mipmap
+      const xa = v === vong[1];
+      tx.generateMipmaps = xa; tx.minFilter = xa ? T.LinearMipmapLinearFilter : T.LinearFilter; tx.needsUpdate = true;
       tx.onUpdate = () => kq.close(); // đã lên GPU: bỏ bản CPU
       texNen.push(tx);
       const op = layNG().doMo;

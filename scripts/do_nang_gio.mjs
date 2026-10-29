@@ -108,7 +108,7 @@ async function main() {
       await bamChu('/^ ?Nắng$|^ ?Sun$/', '.hng-tab');
       await cho(400);
       t0 = await moc();
-      await bamChu('/^ ?▶/', '.hop-nang-gio'); await cho(2500); await bamChu('/❚❚/', '.hop-nang-gio');
+      await bamChu('/Chạy giờ|Play time/', '.hop-nang-gio'); await cho(2500); await bamChu('/^Dừng|^Pause/', '.hop-nang-gio');
       r.pha.bong2DChay = await dai(t0);
       await chup(`${k.ten}-3-tmb-bong-do`);
       t0 = await moc();
@@ -131,7 +131,7 @@ async function main() {
       await chup(`${k.ten}-5-3d-anh-nen-gio-nang`);
       if (!k.mobile) r.fps3D = await js(`document.querySelector('.vung-3d')._doFps?.(3)`);
       t0 = await moc();
-      await bamChu('/^ ?▶/', '.hop-nang-gio'); await cho(3000); await bamChu('/❚❚/', '.hop-nang-gio');
+      await bamChu('/Chạy giờ|Play time/', '.hop-nang-gio'); await cho(3000); await bamChu('/^Dừng|^Pause/', '.hop-nang-gio');
       r.pha.chayGio3D = await dai(t0);
       await chup(`${k.ten}-6-3d-bong-do-duong-mat-troi`);
       r.giua3D = await khungGiua();
@@ -152,7 +152,7 @@ async function main() {
       await gui('Emulation.setCPUThrottlingRate', { rate: 1 });
       console.log(k.ten, JSON.stringify(r));
     }
-    writeFileSync(join(RA, 'do.json'), JSON.stringify(kq, null, 2));
+    writeFileSync(join(RA, `do-${CHI ?? 'tat-ca'}.json`), JSON.stringify(kq, null, 2));
   } finally {
     tr.kill();
     await cho(500);
