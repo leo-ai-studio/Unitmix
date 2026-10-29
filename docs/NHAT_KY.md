@@ -2,6 +2,23 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · Điện thoại: hộp nhập bảng QH không bấm được Áp · rà mọi hộp / lớp nổi · agent Opus
+
+**Lỗi người dùng báo** (iPhone thật, iOS Safari ~390×844): màn TMB, hộp "Nhập bảng chỉ tiêu quy hoạch" sau khi nạp Excel thì thân hộp cuộn xuống dưới dock (Nhập / ↶ ↷ / Số liệu), không bấm được Áp; tiêu đề bảng xem trước đè dòng, bảng bị cắt ngang.
+
+**Nguyên nhân:** hộp render TRONG ngăn kéo đáy (`.ngan-keo`, `position: fixed; z-index: 24`) → kẹt trong lớp xếp chồng của ngăn, dưới dock (z 26) dù hộp z-index bao nhiêu; iOS còn cắt phần tử fixed trong khung cuộn `-webkit-overflow-scrolling`. Thân hộp flex cột có `max-height` + `overflow` nên bảng xem trước bị bóp còn 2 dòng (flex-shrink), tiêu đề dính đè dòng. Dòng bảng `min-width: 1060px` < tổng cột + khe (1106) nên nền tiêu đề cụt trước cột cuối. Hộp cao `100dvh` không co khi bàn phím iOS mở.
+
+**Đã làm** (`1261adf`, `39cb719`):
+- `ui/LopNoi.tsx` (portal ra `<body>`) cho hộp bảng QH, đề bài KD, xuất CAD, xem căn 3D (`man/NhapChiTieu.tsx`, `NhapDeBai.tsx`, `HopXuatCad.tsx`, `ManTang.tsx`).
+- `ui/manHep.ts` `theoDoiKhungNhin()` (gọi ở `main.tsx`): visualViewport → `--vv-h` / `--vv-y` / `--vv-duoi` + `html.ban-phim` khi đáy bị che ≥ 120 px (bỏ qua khi đang chụm phóng).
+- `styles/dien-thoai.css`: hộp z 40 trên dock, cao `--vv-h`, thân cuộn trong hộp, hàng nút chân hộp `.chan-hop` dính đáy (Huỷ · Áp chia đều, né `safe-area-inset-bottom`), điện thoại dọc ≤ 600 px thành tấm trượt từ đáy; bảng xem trước cuộn ngang / dọc trong khung riêng (cao ≤ 50 % phần nhìn thấy), tiêu đề dính nền đặc, cột ký hiệu lô dính trái (`unitmix.css`); bàn phím mở thì ngăn kéo bám mép bàn phím, dock ẩn. Đầu hộp So sánh PA dính trên.
+- Rà thêm: trang Dự án (hàng PA rộng 980 px phải vuốt ngang mới thấy Mở PA → xuống dòng, nút 44 px, ô nhập 16 px); 375 px nút ⋯ bị đẩy ra ngoài thanh trên → thanh khít hơn; xuất CAD ô nhập 12 px → 16 px, nút Tải 44 px; đề bài KD ô dán 12 px → 16 px; menu cấp `maxHeight` 100vh → `--vv-h`; nhóm nút / dòng bảng cơ cấu trong ngăn, lớp hiển thị góc bản vẽ, VI / EN trang Dự án ≥ 40 px. Desktop: hộp tạo dự án (`<form>`) nay có nền thẻ như các hộp khác.
+- `scripts/kiem_man_hep.mjs`: thêm khung 375×812; mỗi khung mở từng hộp / lớp nổi (bảng QH nạp `scripts/mau_kiem/chi_tieu_man_hep.xlsx` — số giả, đề bài KD, xếp hàng loạt, chú giải / hướng dẫn / lớp, menu ⋯ / cấp, xuất CAD chỉ mở hộp không tải, trang Dự án: tạo dự án không bấm Tạo, so sánh PA) và đo: nút chân hộp thấy ngay + `elementFromPoint` ra chính nút, nút chính khác cuộn tới được, giả bàn phím `--vv-h` 55 %, ô nhập ≥ 16 px, nút ≥ 40 px, hộp không tràn ngang, bấm đóng thì đóng. `--khong-hop` để bỏ phần hộp.
+
+**Kiểm:** `node scripts/kiem.mjs` ĐẠT (tsc, web 701, worker 9, pytest 15, build). `node scripts/kiem_man_hep.mjs --url http://127.0.0.1:5432 --du-an 2mlg1a2l --ma-sua …` (dự án thử 6 lô, 2 PA, tạo qua API ở wrangler 8787 có sẵn) ĐẠT mọi khung 375×812 / 390×844 / 430×932 / 844×390 / 768×1024 / 1024×768 / 1440×900; khung giữa không đổi (390: 0,48,390,740; 1440: 270,52,870,848). Ảnh `docs/anh/mobile/01-nhap-chi-tieu-{truoc,sau}-390.png`, `02-…-cuon-ngang`, `03-…-ban-phim-gia`, `04-danh-sach-du-an-{truoc,sau}`, `05-so-sanh-pa`, `06-tao-du-an`.
+
+**Còn dở:** chưa thử trên iPhone thật (bàn phím thật, thanh địa chỉ co giãn) — chỉ giả bằng `--vv-h`; hộp xem căn 3D (màn Tầng → chọn căn) chưa có trong kiem_man_hep; lịch sử phiên bản trong màn soạn ẩn ở màn hẹp (vẫn mở được ở trang Dự án); máy bàn chế độ chỉ xem: thông báo "Đang xem chỉ đọc" đè nhóm nút TMB (nút đã tắt, có từ trước).
+
 ## 2026-10-29 · 3D: chọn căn góc V theo hình thật · khối đế chọn được · tô nhấn theo chiều sâu · agent Opus
 
 - Ba ghi chú còn dở của đợt "3D: chọn lô… FPS" (commit 77455c6 + sau đó chỉnh độ đậm):

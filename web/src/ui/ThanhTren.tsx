@@ -229,7 +229,7 @@ function BangCap({ m, nut, dong }: { m: MenuCap; nut: HTMLElement; dong: (traFoc
   let nhom: string | undefined;
   return (
     <div class={`bang-cap${lop}`} role="menu" aria-label={m.tieuDe} ref={bang} onKeyDown={phim}
-      style={{ top: `${vt.top}px`, left: `${vt.left}px`, maxHeight: `calc(100vh - ${Math.round(vt.top) + 12}px)` }}>
+      style={{ top: `${vt.top}px`, left: `${vt.left}px`, maxHeight: `calc(var(--vv-h, 100dvh) - ${Math.round(vt.top) + 12}px)` }}>
       {m.ds.length === 0 && <div class="bang-cap-trong">{t('cap.trong')}</div>}
       {m.ds.map((x) => {
         const dau = x.nhom !== undefined && x.nhom !== nhom;

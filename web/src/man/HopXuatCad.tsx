@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { useDongHop } from '../ui/useDongHop';
+import { LopNoi } from '../ui/LopNoi';
 import type { ThuVien, ToaDat } from '../tinh/kieu';
 import { tai, taiVeCan } from '../ve/hinhHocThuVien';
 import { boCucTang, nhomTang, tangCoRieng, type NetVe } from '../tinh/matBang';
@@ -65,6 +66,7 @@ export function HopXuatCad({ toa, mau, mauTang, tv, ten, dong }: Props) {
     else taiVe(taoDxf({ ...d, ten: ten1 }), `${ten1}.dxf`, 'application/dxf');
   }, i * 300)); // tải nhiều tệp: cách nhau để trình duyệt không chặn
   return (
+    <LopNoi>
     <div class={`hop-3d${lop}`} role="dialog" aria-modal="true" aria-label={t('xcad.tieuDe')} onClick={(e) => { if (e.target === e.currentTarget) dongMem(); }}>
       <div class="hop-xuat">
         <button type="button" class="dong-hop" onClick={dongMem} aria-label={t('m3d.dong')}>×</button>
@@ -96,5 +98,6 @@ export function HopXuatCad({ toa, mau, mauTang, tv, ten, dong }: Props) {
         {!san && <p class="muted">{t('m3d.dangDung')}</p>}
       </div>
     </div>
+    </LopNoi>
   );
 }

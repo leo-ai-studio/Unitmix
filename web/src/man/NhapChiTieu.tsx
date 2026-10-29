@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { useDongHop } from '../ui/useDongHop';
+import { LopNoi } from '../ui/LopNoi';
 import { apChiTieu, chonSheet, docBangChiTieu, ghepLo, ghepTay, type BangChiTieu, type KetQuaGhep, type TruongBang } from '../nhap/bangChiTieu';
 import { docTepExcel } from '../nhap/docExcel';
 import type { Sheet } from '../nhap/luoi';
@@ -55,11 +56,12 @@ export function NhapChiTieu({ lo, dong, ap }: { lo: Lo[]; dong: () => void; ap: 
   const dongThieuLo = bang && ghep ? bang.dong.filter((d) => !d.noiBo && !d.tongHop && d.gt.dtDat && !ghep.ghep.find((g) => g.dong === d.dong)!.loIds.length) : [];
 
   return (
+    <LopNoi>
     <div class={`hop-thoai${lop}`} role="dialog" aria-modal="true" aria-labelledby="tieu-de-nct">
       <div class="hop-rong">
         <h2 id="tieu-de-nct">{t('nct.tieuDe')}</h2>
         <p class="muted" style={{ margin: 0 }}>{t('nct.giaiThich')}</p>
-        <div class="dong" style={{ gap: '8px', padding: 0 }}>
+        <div class="dong dong-tep" style={{ gap: '8px', padding: 0 }}>
           <label class="nut-phu" title={t('gt.nct.chonTep')} style={{ cursor: 'pointer', flexDirection: 'row' }}>
             {t('nct.chonTep')}
             <input type="file" accept=".xlsx,.xls,.xlsm" class="sr-only" onChange={(e) => e.currentTarget.files?.[0] && chonTep(e.currentTarget.files[0])} />
@@ -120,7 +122,7 @@ export function NhapChiTieu({ lo, dong, ap }: { lo: Lo[]; dong: () => void; ap: 
             <p class="muted" style={{ margin: 0 }}>{t('nct.ghiChuChia')}</p>
           </>
         )}
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+        <div class="chan-hop">
           <button type="button" class="nut-phu" onClick={dongMem}>{t('duAn.huy')}</button>
           <button type="button" class="nut-chinh" disabled={!bang || !ghep || !soLoGhep}
             onClick={() => { ap(apChiTieu(lo, bang!, ghep!, tep)); dongMem(); }}>
@@ -129,5 +131,6 @@ export function NhapChiTieu({ lo, dong, ap }: { lo: Lo[]; dong: () => void; ap: 
         </div>
       </div>
     </div>
+    </LopNoi>
   );
 }

@@ -17,6 +17,7 @@ import { MenuCongNang, MenuLoi } from '../ve/MenuO';
 import { ChonTang, nhanPhamVi, tenTang } from '../ui/ChonTang';
 import { nutLopPhong } from '../ve/LopPhong';
 import { MucGap } from '../ui/MucGap';
+import { LopNoi } from '../ui/LopNoi';
 import { GocBanVe } from '../ui/GocBanVe';
 import { fmtSo } from '../ui/so';
 import { MoHinhCan, MoHinhChinh, type Chon3D } from '../ve3d/MoHinh3D';
@@ -645,12 +646,14 @@ export function TangPhai(p: ChungTang) {
               <button type="button" class="nut-phu" onClick={() => { chonCan(null); if (xem) datChonToa(toa, { ds: [] }); }}>{t('tang.boChon')}</button>
             </div>
             {mo3d && (
+              <LopNoi>
               <div class="hop-3d" role="dialog" aria-modal="true" aria-label={t('m3d.xemCan')} onClick={(e) => { if (e.target === e.currentTarget) setMo3d(false); }}>
                 <div class="hop-3d-trong">
                   <button type="button" class="dong-hop" onClick={() => setMo3d(false)} aria-label={t('m3d.dong')}>×</button>
                   <MoHinhCan canId={chon.canId} tv={tv} ten={`CH-${String(chon.no).padStart(2, '0')} · ${cChon.ten_vi}`} />
                 </div>
               </div>
+              </LopNoi>
             )}
           </>
         )}
