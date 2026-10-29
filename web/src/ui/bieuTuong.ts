@@ -46,6 +46,11 @@ export const BIEU_TUONG = {
   bongDo: '☼',
   nenBanDo: '▧',
   khoaCG: '⊟', // giữ tòa trong chỉ giới khi kéo / xoay (LO-05)
+  // màn hẹp (điện thoại / máy tính bảng)
+  nganTrai: '⊟', // mở ngăn Nhập liệu (panel trái)
+  nganPhai: '▥', // mở ngăn Số liệu (panel phải)
+  dongNgan: '✕', // đóng ngăn kéo
+  menuToa: '⋯', // menu tòa (nhấn giữ)
   // xuất
   xuatCad: '◫',
   xuatXls: '▥',
