@@ -13,10 +13,12 @@ import { choTrong, type ChoTrong } from '../tinh/choTrong';
 import type { ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { mauToa } from '../tinh/canThem';
 import { boCucTang, canDangDung, type BoCuc, type ViTriCan } from '../tinh/matBang';
-import { doiChoTay, doiLoaiThangTay, doiThangTay, dsMauThem, latTay, mauThem, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from '../tinh/thaoTacTay';
+import { dieuPhoiTay } from '../tinh/tayNen';
+import { doiChoTay, doiLoaiThangTay, doiThangTay, dsMauThem, latTay, mauThem, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from '../tinh/thaoTacTay';
 import { demLoaiThang, THANG_N2, THANG_N3, type LoaiThangBo } from '../tinh/loiThang';
 import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { soLieuTang, type ToaVe } from '../ve/MatBangTang';
+import { khongDiBanVe, ngonKhiKeoO } from '../ve/camUng';
 import { baoConHien, datBaoStretch } from './baoStretch';
 import { layDuLieuMB, mauCuaToa } from './tuChinhTang';
 
@@ -69,7 +71,32 @@ const chuGoiY = (g: GoiYGiuCan, tenO: (k: string) => string, mau: ToaVe) => ' ' 
   ? t('cc.goiY.doiThang').replace('{n}', String(g.soCan)).replace('{th}', tenThang(mau, g.thang)).replace('{o}', tenO(g.sauO))
   : t('cc.goiY.tuDong').replace('{n}', String(g.soCan)).replace('{m}', String(g.soThang)));
 
-/** Chạy một thao tác tay: thành công thì ghi vào PA (một bước hoàn tác) + báo kèm căn / tầng trước → sau; không thì báo lý do, không sửa. */
+/** Ghi kết quả thao tác tay vào PA (một bước hoàn tác) + báo kèm căn / tầng trước → sau; không hợp lệ thì báo lý do, không sửa. */
+function apKetQua(q: PropsCongCu, ctx: Ctx, r: KetQuaTay, chuOk: (toaMoi: ToaDat) => string): boolean {
+  if (!r.ok) { datBaoStretch({ loai: 'loi', chu: t(`cc.loi.${r.lyDo}`).replace('{n}', r.chiTiet ?? '') }); return false; }
+  q.sua((x) => ({ ...x, toa: x.toa.map((y) => (y.id === q.toa.id ? r.toa : y)) }));
+  const k0 = q.tangs?.[0] ?? null, tenO = tenOTheo(q.can);
+  const bd = bienDongCan(q.toa, r.toa, ctx, k0);
+  // căn được trả lại chưa có ở mặt bằng trước → đánh số CH theo mặt bằng sau
+  const tenOSau = (kh: string) => {
+    const m = mauToa(q.tv, r.toa) as ToaVe | undefined;
+    return m ? tenOTheo(soLieuTang(mauCuaToa(r.toa, m, k0), boCucTang(r.toa, k0), q.tv).can)(kh) : tenO(kh);
+  };
+  const chu = chuOk(r.toa) + (r.canhBao ? t(`cc.canhBao.${r.canhBao}`) : '') + (r.chan.length ? t('cc.chan').replace('{n}', String(r.chan.length)) : '') + chuBienDong(bd, tenO, tenOSau);
+  const nhay = bd.truoc !== bd.sau || bd.goTN.length > 0;
+  const id = datBaoStretch({ loai: 'ok', chu, giuMs: nhay ? 14000 : undefined });
+  // gợi ý giữ số căn (dời thang như PC-11): chạy sau khi câu báo đã hiện, có hạn thời gian; KHÔNG tự áp
+  if (bd.sau < bd.truoc && bd.goTN.length) {
+    setTimeout(() => {
+      if (!baoConHien(id)) return;
+      const g = goiYGiuCan(r.toa, bd.goTN, bd.truoc, ctx, k0, 1500);
+      if (baoConHien(id)) datBaoStretch({ loai: 'ok', chu: chu + (g ? chuGoiY(g, tenO, q.mau) : ' ' + t('cc.goiY.khong')), giuMs: 16000 });
+    }, 60);
+  }
+  return true;
+}
+
+/** Chạy một thao tác tay (đồng bộ) rồi ghi / báo (apKetQua). Thao tác nền đang chờ (⟲) bị huỷ: mặt bằng nó dựa vào đã cũ. */
 function useChay(p: PropsCongCu) {
   const pRef = useRef(p);
   pRef.current = p;
@@ -78,35 +105,42 @@ function useChay(p: PropsCongCu) {
     if (q.chiXem) return false;
     const dl = layDuLieuMB();
     if (!dl) { datBaoStretch({ loai: 'loi', chu: t('cc.loi.chuaTai') }); return false; }
+    dieuPhoiTay.huy();
     const ctx = { tv: q.tv, dl };
-    const r = op(ctx);
-    if (!r.ok) { datBaoStretch({ loai: 'loi', chu: t(`cc.loi.${r.lyDo}`).replace('{n}', r.chiTiet ?? '') }); return false; }
-    q.sua((x) => ({ ...x, toa: x.toa.map((y) => (y.id === q.toa.id ? r.toa : y)) }));
-    const k0 = q.tangs?.[0] ?? null, tenO = tenOTheo(q.can);
-    const bd = bienDongCan(q.toa, r.toa, ctx, k0);
-    // căn được trả lại chưa có ở mặt bằng trước → đánh số CH theo mặt bằng sau
-    const tenOSau = (kh: string) => {
-      const m = mauToa(q.tv, r.toa) as ToaVe | undefined;
-      return m ? tenOTheo(soLieuTang(mauCuaToa(r.toa, m, k0), boCucTang(r.toa, k0), q.tv).can)(kh) : tenO(kh);
-    };
-    const chu = chuOk(r.toa) + (r.canhBao ? t(`cc.canhBao.${r.canhBao}`) : '') + (r.chan.length ? t('cc.chan').replace('{n}', String(r.chan.length)) : '') + chuBienDong(bd, tenO, tenOSau);
-    const nhay = bd.truoc !== bd.sau || bd.goTN.length > 0;
-    const id = datBaoStretch({ loai: 'ok', chu, giuMs: nhay ? 14000 : undefined });
-    // gợi ý giữ số căn (dời thang như PC-11): chạy sau khi câu báo đã hiện, có hạn thời gian; KHÔNG tự áp
-    if (bd.sau < bd.truoc && bd.goTN.length) {
-      setTimeout(() => {
-        if (!baoConHien(id)) return;
-        const g = goiYGiuCan(r.toa, bd.goTN, bd.truoc, ctx, k0, 1500);
-        if (baoConHien(id)) datBaoStretch({ loai: 'ok', chu: chu + (g ? chuGoiY(g, tenO, q.mau) : ' ' + t('cc.goiY.khong')), giuMs: 16000 });
-      }, 60);
-    }
-    return true;
+    return apKetQua(q, ctx, op(ctx), chuOk);
   };
+}
+
+/**
+ * Chạy NỀN thao tác nặng (tinh/tayNen.ts — ⟲ thang về tự động: PC-11 dò lại từ đầu 150–400 ms ở mẫu lớn): bản vẽ giữ mặt bằng cũ,
+ * nút hiện vòng O; xong mà tòa chưa bị sửa gì khác thì ghi như thao tác thường, không thì bỏ. Bấm lại / thao tác khác huỷ lượt cũ.
+ */
+function useChayNen(p: PropsCongCu) {
+  const pRef = useRef(p);
+  pRef.current = p;
+  const [, ve] = useState(0);
+  useEffect(() => dieuPhoiTay.nghe(() => ve((n) => n + 1)), []);
+  // rời màn / đổi tòa: huỷ lượt đang chạy của tòa này
+  useEffect(() => () => dieuPhoiTay.huy(), [p.toa.id]);
+  const chay = (ten: 'thangTuDongLai', chuOk: (toaMoi: ToaDat) => string): void => {
+    const q = pRef.current;
+    if (q.chiXem) return;
+    const dl = layDuLieuMB();
+    if (!dl) { datBaoStretch({ loai: 'loi', chu: t('cc.loi.chuaTai') }); return; }
+    const ctx = { tv: q.tv, dl }, goc = q.toa;
+    void dieuPhoiTay.chay(ten, ctx, goc).then((r) => {
+      const q2 = pRef.current;
+      if (!r || q2.toa !== goc) return; // bị huỷ, hoặc tòa đã đổi trong lúc chờ
+      apKetQua(q2, ctx, r, chuOk);
+    });
+  };
+  return { chay, dang: dieuPhoiTay.tenDangChay };
 }
 
 export function ThanhCongCuTang(p: PropsCongCu) {
   const { chiXem, toa, tangs, dsO, thangKhoa, can, bc } = p;
   const chay = useChay(p);
+  const nen = useChayNen(p);
   const [moThem, setMoThem] = useState(false);
   const [moCho, setMoCho] = useState(false);
   const [mauChon, setMauChon] = useState<string | null>(null);
@@ -261,7 +295,9 @@ export function ThanhCongCuTang(p: PropsCongCu) {
       <span class="nhom-bt">
         <NutBieuTuong k="hanhLang" bat={p.hienHL} ghiChu={ghi('hanhLang')} onClick={() => p.datHienHL(!p.hienHL)} />
         <NutBieuTuong k="thangTuDong" tat={chiXem || !toa.thangTay} ghiChu={ghi('thangTuDong')}
-          onClick={() => chay((c) => thangTuDongLai(toa, c), () => t('cc.ok.tuDong'))} />
+          onClick={() => nen.chay('thangTuDongLai', () => t('cc.ok.tuDong'))}>
+          {nen.dang === 'thangTuDongLai' && <img class="spin-o cc-dang-do" src="/brand/leo_ai_o.png" alt={t('cc.dangTuDong')} />}
+        </NutBieuTuong>
       </span>
     </div>
   );
@@ -301,12 +337,20 @@ export function useKeoTay(p: PropsCongCu) {
     return null;
   };
 
+  /** Lượt kéo căn đang theo dõi (ngón / chuột đã nhấn trên ô): id con trỏ + huỷ (ngón thứ hai chạm → chụm của bản vẽ). */
+  const phien = useRef<{ id: number; huy: () => void } | null>(null);
   const batDau = (e: PointerEvent) => {
     const q = pRef.current;
+    const nx = ngonKhiKeoO(phien.current?.id ?? null, e.pointerId, e.pointerType);
+    if (nx === 'chum') { phien.current?.huy(); return; } // ngón thứ hai: huỷ kéo căn, để BanVe chụm (không chặn sự kiện)
+    if (nx === 'bo') return;
+    // ngón không phải ngón đầu của lượt chạm (ngón đầu đặt ngoài ô, đang dời / chụm bản vẽ): không bắt đầu kéo căn
+    if (e.pointerType !== 'mouse' && !e.isPrimary) return;
     if (!q.keoBat || q.chiXem || e.button !== 0 || e.shiftKey) return;
     const el = (e.target as Element | null)?.closest?.('[data-o],[data-thang]');
     if (!el) return;
-    e.stopPropagation(); // không kéo di bản vẽ
+    // không kéo di bản vẽ: chuột thì chặn hẳn; ngón / bút thì để bản vẽ ghi nhận ngón (ngón thứ hai chụm được) mà không dời theo
+    if (e.pointerType === 'mouse') e.stopPropagation(); else khongDiBanVe.add(e);
     const khoaO = el.getAttribute('data-o'), khoaT = el.getAttribute('data-thang');
     const b = el.getBoundingClientRect();
     const c = khoaO ? q.can.find((x) => x.vt.khoa === khoaO) : undefined;
@@ -340,6 +384,7 @@ export function useKeoTay(p: PropsCongCu) {
       if (bong.current) bong.current.style.transform = `translate(${x - k.w / 2}px, ${y - k.h / 2}px)`;
     };
     const di = (ev: PointerEvent) => {
+      if (ev.pointerId !== e.pointerId) return;
       x = ev.clientX; y = ev.clientY;
       if (!dangKeo && Math.hypot(x - k.x0, y - k.y0) < 5) return;
       if (!dangKeo) { dangKeo = true; setKeo(k); }
@@ -355,13 +400,18 @@ export function useKeoTay(p: PropsCongCu) {
       clearTimeout(hen);
       if (hop && !cache.has(hop) && !cham) { const d = hop; hen = setTimeout(() => doThu(d), DO_DUNG_MS); }
     };
-    const tha = () => {
+    const go = () => {
       window.removeEventListener('pointermove', di);
       window.removeEventListener('pointerup', tha);
       window.removeEventListener('pointercancel', tha);
       cancelAnimationFrame(raf.current); raf.current = 0;
       clearTimeout(hen);
       setODich(null); setDoKq(null);
+      if (phien.current?.id === e.pointerId) phien.current = null;
+    };
+    const tha = (ev?: PointerEvent) => {
+      if (ev && ev.pointerId !== e.pointerId) return; // ngón khác nhấc lên: không phải lượt này
+      go();
       if (!dangKeo) return;
       const ph = dich ? phep(k, dich) : null;
       const daDo = dich ? cache.get(dich) : undefined;
@@ -376,6 +426,8 @@ export function useKeoTay(p: PropsCongCu) {
     window.addEventListener('pointermove', di);
     window.addEventListener('pointerup', tha);
     window.addEventListener('pointercancel', tha);
+    // ngón thứ hai chạm (chụm): bỏ lượt kéo, bóng tắt ngay, không đổi chỗ / không báo
+    phien.current = { id: e.pointerId, huy: () => { go(); dangKeo = false; setKeo(null); } };
   };
 
   const loiDich = !!doKq && doKq.tt === 'loi' && doKq.dich === oDich;
