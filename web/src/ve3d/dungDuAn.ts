@@ -19,6 +19,7 @@ import type { DoiTuong3D, ToaTrenDe } from './chon3d';
 import type { CanhDung, GocDeXuat } from './Khung3D';
 import { t } from '../i18n/i18n';
 import { mauToa } from '../tinh/canThem';
+import { chayHet, type Tung } from './chiaNho';
 
 const trong = (p: Diem, poly: Diem[]): boolean => {
   let c = false;
@@ -49,12 +50,14 @@ export function diemCay(poly: Diem[], buoc: number, toiDa: number): Diem[] {
 
 /** Ranh tum / lõi của một tòa (m bản vẽ, đã đặt lên lô) — từ mặt bằng hiệu dụng (MoHinh3D, cần hình lõi đã nạp). */
 export type TumToa = (toaId: string) => { pts: Diem[]; thang: boolean }[];
-export type TuyChonDuAn = { capDo?: CapDo3D; tumToa?: TumToa };
+/**
+ * `tach`: hầm (`dungHamDuAn`) và tầng tum + trục thang (`dungTumDuAn`) do nơi gọi dựng thành PHẦN riêng của khung (Khung3D `phan`) —
+ * kết quả rải hầm (worker, về từng lô) hay hình lõi nạp xong chỉ dựng lại phần đó (vài ms) thay vì cả dự án (60–450 ms).
+ */
+export type TuyChonDuAn = { capDo?: CapDo3D; tumToa?: TumToa; tach?: boolean };
 
-export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, pa: TrangThaiPA, tv: ThuVien, toaChon: string | null, tc: TuyChonDuAn = {}): CanhDung | null {
-  if (!pa.lo.length) return null;
-  const TS = THONG_SO_CAP[tc.capDo ?? 'cao'];
-  const trang = kieu === 'trang', vatLieu = kieu === 'vatlieu';
+/** Bộ dựng hình chung (khối đùn + viền, nét) đặt vào `goc`. */
+function cuaGoc(T: T3, goc: THREE.Object3D) {
   const shape = (pts: Diem[]) => { const s = new T.Shape(); pts.forEach((p, i) => (i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1]))); return s; };
   const khoi = (pts: Diem[] | Diem[][], cao: number, m: THREE.Material, z0: number, vien?: THREE.LineBasicMaterial) => {
     const ds = (Array.isArray(pts[0]?.[0]) ? pts : [pts]) as Diem[][];
@@ -73,6 +76,23 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     goc.add(l);
     return l;
   };
+  return { khoi, duong };
+}
+
+/** Dựng 3D toàn dự án một lượt (đồng bộ) — test, nơi không cần chia nhỏ. */
+export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, pa: TrangThaiPA, tv: ThuVien, toaChon: string | null, tc: TuyChonDuAn = {}): CanhDung | null {
+  return chayHet(dungDuAnTung(T, goc, M, kieu, pa, tv, toaChon, tc));
+}
+
+/**
+ * Dựng 3D toàn dự án, CHIA NHỎ: `yield` sau mỗi lô / tòa / lô trồng cây — Khung3D chạy từng mẩu ~8 ms rồi nhường luồng chính
+ * (điện thoại CPU 4×: một lượt dựng 48 tòa ~450 ms không còn là một tác vụ liền).
+ */
+export function* dungDuAnTung(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, pa: TrangThaiPA, tv: ThuVien, toaChon: string | null, tc: TuyChonDuAn = {}): Tung<CanhDung | null> {
+  if (!pa.lo.length) return null;
+  const TS = THONG_SO_CAP[tc.capDo ?? 'cao'];
+  const trang = kieu === 'trang', vatLieu = kieu === 'vatlieu';
+  const { khoi, duong } = cuaGoc(T, goc);
   /** Gắn đối tượng chọn được vào mesh (và nét viền của nó). */
   const gan = (o: THREE.Object3D | undefined, d: DoiTuong3D) => { if (!o) return; o.userData.chon = d; const v = o.userData.vien as THREE.Object3D | undefined; if (v) v.userData.chon = d; };
 
@@ -118,6 +138,7 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
       const r = duong(l.ranh, 0.25, netLo, true); r.userData.chon = dLo; r.userData.lop = 'ranh';
       if (l.chiGioi) duong(l.chiGioi, 0.24, netCg, true).userData.lop = 'ranh';
     }
+    yield;
   }
   const gDuong = gopHinh(T, hinhDuong);
   if (gDuong) {
@@ -126,7 +147,95 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     goc.add(me);
   }
 
-  // --- hầm: khối bán trong suốt dưới cốt 0 (ranh hầm × số tầng × cao tầng), ram và lõi ---
+  if (!tc.tach) yield* dungHamDuAn(T, goc, kieu, pa, tv);
+
+  // --- tòa: khối đế theo lô + thân tháp, vạch sàn (tô nhấn tòa chọn / rê chuột: Khung3D đổi vật liệu theo userData.chon) ---
+  let caoMax = 0;
+  const chanTat: Diem[][] = [], deTat: Diem[][] = [];
+  for (const l of pa.lo) {
+    const ts = pa.toa.filter((x) => x.loId === l.id && tv.toa.has(x.mauId));
+    if (!ts.length) continue;
+    const chans = ts.map((x) => chanToa(mauToa(tv, x)!, x));
+    chanTat.push(...chans);
+    const hDe = Math.max(0, ...ts.map((x) => x.soTangDe * x.caoDe));
+    if (hDe > 0) {
+      const de = khoiDe(chans, ts.map((x) => x.deOffset)).filter((p) => p.length >= 3);
+      // khối đế chọn được: bấm phần đế → tòa đứng trên phần đế đó (gần điểm chạm nhất), tô cùng tòa đang chọn / rê
+      const dDe: DoiTuong3D = { loai: 'de', id: l.id, toaIds: ts.map((x) => x.id) };
+      const deToa: ToaTrenDe[] = ts.map((x, i) => ({ id: x.id, loId: l.id, chan: chans[i] }));
+      for (const p of de) { const me = khoi(p, hDe, M.de, 0.2, M.line); gan(me, dDe); me.userData.deToa = deToa; deTat.push(p); }
+    }
+    for (let i = 0; i < ts.length; i++) {
+      const x = ts[i], chan = chans[i], z0 = 0.2 + x.soTangDe * x.caoDe, h = x.soTangDH * x.caoDH, dT: DoiTuong3D = { loai: 'toa', id: x.id, loId: l.id };
+      gan(khoi(chan, h, M.tuong, z0, M.line), dT);
+      if (vatLieu && x.soTangDH > 0) { // dải cửa kính theo tầng (nhìn xa)
+        const g = hinhDaiCua(T, chan as [number, number][], z0, x.caoDH, x.soTangDH, 0.75, Math.min(1.75, x.caoDH - 0.95));
+        if (g) { const me = new T.Mesh(g, M.kinhDai); me.receiveShadow = true; goc.add(me); gan(me, dT); }
+      }
+      const ln: number[] = [];
+      for (let k = 1; k < x.soTangDH; k++) {
+        const y = z0 + k * x.caoDH;
+        chan.forEach((p, j) => { const q = chan[(j + 1) % chan.length]; ln.push(p[0], y, -p[1], q[0], y, -q[1]); });
+      }
+      if (ln.length) {
+        const g = new T.BufferGeometry();
+        g.setAttribute('position', new T.BufferAttribute(new Float32Array(ln), 3));
+        const vs = new T.LineSegments(g, M.line);
+        vs.userData.chon = dT;
+        goc.add(vs);
+      }
+      // tầng tum (dungTumDuAn): tách thành phần riêng thì chưa biết có tum — chừa sẵn chiều cao tum cho cỡ cảnh / mặt cắt
+      const coTum = tc.tach ? !!tc.tumToa : !!tc.tumToa?.(x.id)?.length;
+      caoMax = Math.max(caoMax, z0 + h + (coTum ? CAO_TUM_MM / 1000 + SAN_TUM : 0));
+      yield;
+    }
+  }
+  if (!tc.tach && tc.tumToa) yield* dungTumDuAn(T, goc, M, pa, tv, tc.tumToa);
+
+  // --- cây: cây xanh trên lô CX, cây dọc đường (vỉa hè), cây sân trong lô cao tầng (ngoài chân tòa / đế, cách ≥ 4 m); trần theo bậc thiết bị ---
+  const tranh = [...chanTat, ...deTat];
+  const caySan: Diem[] = [];
+  for (const l of pa.lo) if (laCaoTang(l) && l.ranh.length >= 3) { caySan.push(...diemCayTrong(l.ranh, 11, 160, 3, tranh, 4)); yield; }
+  // bỏ cây rơi vào chân tòa / đế: thử khung bao trước (cùng kết quả, đỡ thử mọi đa giác cho từng cây)
+  const baoTranh = tranh.map((c) => { const xs = c.map((p) => p[0]), ys = c.map((p) => p[1]); return { c, a: Math.min(...xs), b: Math.max(...xs), d: Math.min(...ys), e: Math.max(...ys) }; });
+  const cayO = [...cay, ...cayDuong, ...caySan].filter((p) => !baoTranh.some((q) => p[0] >= q.a && p[0] <= q.b && p[1] >= q.d && p[1] <= q.e && trong(p, q.c))).slice(0, TS.cayToiDa);
+  dungCay(T, goc, cayO, kieu, TS.cayBong, 0.2);
+
+  // --- tâm, cỡ cảnh, góc đề xuất ---
+  const loCT = pa.lo.filter(laCaoTang);
+  const vung = (loCT.length ? loCT : pa.lo).flatMap((l) => l.ranh);
+  const xs = vung.map((p) => p[0]), ys = vung.map((p) => p[1]);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const coCanh = Math.max(80, Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), caoMax * 1.4);
+  const tam: [number, number, number] = [cx, Math.min(caoMax * 0.3, 30), -cy];
+  const ds: GocDeXuat[] = [
+    { ten: t('m3d.g.chimBayDN'), vt: [cx + coCanh * 0.75, coCanh * 0.75, -cy + coCanh * 1.0], dich: tam },
+    { ten: t('m3d.g.chimBayTB'), vt: [cx - coCanh * 0.95, coCanh * 0.6, -cy - coCanh * 0.8], dich: tam },
+    { ten: t('m3d.g.matNguoi'), vt: [cx + coCanh * 0.55, 1.7, -cy + coCanh * 0.65], dich: [cx, Math.min(caoMax * 0.55, 45), -cy], gio: 16.5 },
+    { ten: t('m3d.g.tuTren'), vt: [cx, coCanh * 1.6, -cy + 0.01], dich: [cx, 0, -cy] },
+  ];
+  const chon = pa.toa.find((x) => x.id === toaChon && tv.toa.has(x.mauId));
+  if (chon) {
+    const c = chanToa(mauToa(tv, chon)!, chon), [tx, ty] = trongTam(c);
+    const h = 0.2 + chon.soTangDe * chon.caoDe + chon.soTangDH * chon.caoDH, banKinh = Math.max(...c.map((p) => Math.hypot(p[0] - tx, p[1] - ty))), r = Math.max(60, h * 1.2, banKinh * 2.4);
+    ds.push({ ten: t('m3d.g.toaChon'), vt: [tx + r * 0.7, h * 0.65, -ty + r * 0.9], dich: [tx, h * 0.45, -ty], gio: 15 });
+  }
+  // lô chọn / rê: lớp phủ xanh mỏng trên mặt lô + viền (Khung3D · hinhNhan) — lô bán trong suốt khi bật hầm nên pha màu vật liệu gần như không thấy
+  const ranhLo = new Map(pa.lo.filter((l) => laCaoTang(l) && l.ranh.length >= 3).map((l) => [l.id, l.ranh]));
+  return {
+    tam, coCanh, cao: caoMax + 4, goc: ds, nen: true, nenLop: 'ham',
+    hinhNhan: (d) => (d.loai === 'lo' && ranhLo.has(d.id) ? { chan: ranhLo.get(d.id)! as [number, number][], y0: 0.21, y1: 0.36 } : null),
+    doiTuongChon: (c) => (!c.toaId && c.loId && ranhLo.has(c.loId) ? { loai: 'lo', id: c.loId } : null),
+  };
+}
+
+/**
+ * Hầm: khối bán trong suốt dưới cốt 0 (ranh hầm × số tầng × cao tầng), ram, lõi, thang thoát nạn, hộp gió (phần ngầm: lớp Hầm;
+ * miệng louver trên mặt đất: lớp "gio"). Rải hầm trong Web Worker: chưa xong thì vẽ khối theo ranh mặc định, xong thì dựng lại phần này.
+ */
+export function* dungHamDuAn(T: T3, goc: THREE.Object3D, kieu: KieuVe3D, pa: TrangThaiPA, tv: ThuVien): Tung<void> {
+  const trang = kieu === 'trang';
+  const { khoi, duong } = cuaGoc(T, goc);
   const rai = dieuPhoiHam.phien('3d'); // rải hầm trong Web Worker: chưa xong thì vẽ khối theo ranh mặc định, xong thì MoHinh3D dựng lại
   {
     const h = chuanHoaHam(pa.ham);
@@ -162,8 +271,9 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
       if (kq?.ram && kq.ram.poly.length >= 3) { const r = khoiH(kq.ram.poly, h.caoTang, vlRam, -h.caoTang); r.castShadow = false; }
       // Đợt 2: thang thoát nạn hầm đặt thêm (lên tới tầng 1 thành chòi thang cao 3 m), hộp gió + miệng louver nhô 1,2 m trên cốt 0.
       for (const x of kq?.thang ?? []) if (x.nguon === 'them' && x.poly.length >= 3) gom(gThang, x.poly, kh.yDuoi, -kh.yDuoi + 3);
+      yield;
       // mương / hộp gió: phần ngầm theo lớp Hầm, miệng louver nhô 1,2 m trên mặt đất là lớp riêng "Lỗ mở mương gió"
-      for (const g of kq?.ongGio ?? []) if (g.poly.length >= 3) { gom(gGioNgam, g.poly, kh.yDuoi, -kh.yDuoi); gom(gGioTren, g.poly, 0, 1.2); }
+      for (const g of kq?.ongGio ?? []) if (g.poly.length >= 3) { gom(gGioNgam, g.poly, kh.yDuoi, -kh.yDuoi); gom(gGioTren, g.poly, 0, 1.2); yield; }
     }
     // gộp: lõi / thang / hộp gió cả dự án thành 1 mesh mỗi loại (trước: mỗi hộp gió 1 mesh + 1 nét → +150 draw call)
     const dat = (ds: THREE.BufferGeometry[], m: THREE.Material, vao: THREE.Object3D, lop?: string, vien = false) => {
@@ -174,62 +284,32 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
       vao.add(me);
       if (vien) { const l = new T.LineSegments(new T.EdgesGeometry(g, 30), vienHam); if (lop) l.userData.lop = lop; vao.add(l); }
     };
-    dat(gLoi, vlLoi, nhom); dat(gThang, vlThang, nhom); dat(gGioNgam, vlGio, nhom);
+    dat(gLoi, vlLoi, nhom); dat(gThang, vlThang, nhom); yield;
+    dat(gGioNgam, vlGio, nhom); yield;
     dat(gGioTren, vlGio, goc, 'gio', true);
     goc.add(nhom);
   }
 
   rai.xong();
+}
 
-  // --- tòa: khối đế theo lô + thân tháp, vạch sàn (tô nhấn tòa chọn / rê chuột: Khung3D đổi vật liệu theo userData.chon) ---
-  let caoMax = 0;
-  const chanTat: Diem[][] = [], deTat: Diem[][] = [];
+const SAN_TUM = 0.13;
+/** Tầng tum mọi tòa (buồng thang / lõi nhô lên mái, cao 3 m + sàn mái tum) như 3D Công trình — gộp cả dự án; trục thang / lõi xuyên tòa. */
+export function* dungTumDuAn(T: T3, goc: THREE.Object3D, M: VatLieu3D, pa: TrangThaiPA, tv: ThuVien, tumToa: TumToa): Tung<void> {
   const hinhTum: THREE.BufferGeometry[] = [], hinhSanTum: THREE.BufferGeometry[] = [], trucThang: { pts: Diem[]; thang: boolean; y0: number; y1: number }[] = [];
-  for (const l of pa.lo) {
-    const ts = pa.toa.filter((x) => x.loId === l.id && tv.toa.has(x.mauId));
-    if (!ts.length) continue;
-    const chans = ts.map((x) => chanToa(mauToa(tv, x)!, x));
-    chanTat.push(...chans);
-    const hDe = Math.max(0, ...ts.map((x) => x.soTangDe * x.caoDe));
-    if (hDe > 0) {
-      const de = khoiDe(chans, ts.map((x) => x.deOffset)).filter((p) => p.length >= 3);
-      // khối đế chọn được: bấm phần đế → tòa đứng trên phần đế đó (gần điểm chạm nhất), tô cùng tòa đang chọn / rê
-      const dDe: DoiTuong3D = { loai: 'de', id: l.id, toaIds: ts.map((x) => x.id) };
-      const deToa: ToaTrenDe[] = ts.map((x, i) => ({ id: x.id, loId: l.id, chan: chans[i] }));
-      for (const p of de) { const me = khoi(p, hDe, M.de, 0.2, M.line); gan(me, dDe); me.userData.deToa = deToa; deTat.push(p); }
+  const cTum = CAO_TUM_MM / 1000, san = SAN_TUM;
+  for (const l of pa.lo) for (const x of pa.toa) {
+    if (x.loId !== l.id || !tv.toa.has(x.mauId)) continue;
+    const z0 = 0.2 + x.soTangDe * x.caoDe, h = x.soTangDH * x.caoDH;
+    for (const r of tumToa(x.id)) {
+      if (r.pts.length < 3) continue;
+      hinhTum.push(hinhDun(T, r.pts, z0 + h, cTum));
+      hinhSanTum.push(hinhDun(T, r.pts, z0 + h + cTum, san));
+      trucThang.push({ pts: r.pts, thang: r.thang, y0: 0.2, y1: z0 + h + cTum + san });
     }
-    ts.forEach((x, i) => {
-      const chan = chans[i], z0 = 0.2 + x.soTangDe * x.caoDe, h = x.soTangDH * x.caoDH, dT: DoiTuong3D = { loai: 'toa', id: x.id, loId: l.id };
-      gan(khoi(chan, h, M.tuong, z0, M.line), dT);
-      if (vatLieu && x.soTangDH > 0) { // dải cửa kính theo tầng (nhìn xa)
-        const g = hinhDaiCua(T, chan as [number, number][], z0, x.caoDH, x.soTangDH, 0.75, Math.min(1.75, x.caoDH - 0.95));
-        if (g) { const me = new T.Mesh(g, M.kinhDai); me.receiveShadow = true; goc.add(me); gan(me, dT); }
-      }
-      const ln: number[] = [];
-      for (let k = 1; k < x.soTangDH; k++) {
-        const y = z0 + k * x.caoDH;
-        chan.forEach((p, j) => { const q = chan[(j + 1) % chan.length]; ln.push(p[0], y, -p[1], q[0], y, -q[1]); });
-      }
-      if (ln.length) {
-        const g = new T.BufferGeometry();
-        g.setAttribute('position', new T.BufferAttribute(new Float32Array(ln), 3));
-        const vs = new T.LineSegments(g, M.line);
-        vs.userData.chon = dT;
-        goc.add(vs);
-      }
-      // tầng tum (buồng thang / lõi nhô lên mái, cao 3 m + sàn mái tum) như 3D Công trình — gộp cả dự án; trục thang xuyên tòa (lớp phân tích)
-      const tums = tc.tumToa?.(x.id) ?? [], cTum = CAO_TUM_MM / 1000, san = 0.13;
-      for (const r of tums) {
-        if (r.pts.length < 3) continue;
-        hinhTum.push(hinhDun(T, r.pts, z0 + h, cTum));
-        hinhSanTum.push(hinhDun(T, r.pts, z0 + h + cTum, san));
-        trucThang.push({ pts: r.pts, thang: r.thang, y0: 0.2, y1: z0 + h + cTum + san });
-      }
-      caoMax = Math.max(caoMax, z0 + h + (tums.length ? cTum + san : 0));
-    });
+    yield;
   }
-
-  // --- tầng tum gộp (1 mesh tường tum + 1 sàn mái tum + viền), trục thang / lõi (ẩn mặc định) ---
+  // tầng tum gộp (1 mesh tường tum + 1 sàn mái tum + viền), trục thang / lõi (ẩn mặc định)
   const gTum = gopHinh(T, hinhTum), gSanTum = gopHinh(T, hinhSanTum);
   if (gTum) {
     const me = new T.Mesh(gTum, M.tum); me.castShadow = true; me.receiveShadow = true; me.userData.lop = 'tum';
@@ -237,38 +317,6 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     goc.add(me, l);
   }
   if (gSanTum) { const me = new T.Mesh(gSanTum, M.san); me.castShadow = true; me.receiveShadow = true; me.userData.lop = 'tum'; goc.add(me); }
+  yield;
   dungTrucThang(T, goc, trucThang);
-
-  // --- cây: cây xanh trên lô CX, cây dọc đường (vỉa hè), cây sân trong lô cao tầng (ngoài chân tòa / đế, cách ≥ 4 m); trần theo bậc thiết bị ---
-  const tranh = [...chanTat, ...deTat];
-  const caySan = pa.lo.filter(laCaoTang).flatMap((l) => (l.ranh.length >= 3 ? diemCayTrong(l.ranh, 11, 160, 3, tranh, 4) : []));
-  const cayO = [...cay, ...cayDuong, ...caySan].filter((p) => !tranh.some((c) => trong(p, c))).slice(0, TS.cayToiDa);
-  dungCay(T, goc, cayO, kieu, TS.cayBong, 0.2);
-
-  // --- tâm, cỡ cảnh, góc đề xuất ---
-  const loCT = pa.lo.filter(laCaoTang);
-  const vung = (loCT.length ? loCT : pa.lo).flatMap((l) => l.ranh);
-  const xs = vung.map((p) => p[0]), ys = vung.map((p) => p[1]);
-  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-  const coCanh = Math.max(80, Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), caoMax * 1.4);
-  const tam: [number, number, number] = [cx, Math.min(caoMax * 0.3, 30), -cy];
-  const ds: GocDeXuat[] = [
-    { ten: t('m3d.g.chimBayDN'), vt: [cx + coCanh * 0.75, coCanh * 0.75, -cy + coCanh * 1.0], dich: tam },
-    { ten: t('m3d.g.chimBayTB'), vt: [cx - coCanh * 0.95, coCanh * 0.6, -cy - coCanh * 0.8], dich: tam },
-    { ten: t('m3d.g.matNguoi'), vt: [cx + coCanh * 0.55, 1.7, -cy + coCanh * 0.65], dich: [cx, Math.min(caoMax * 0.55, 45), -cy], gio: 16.5 },
-    { ten: t('m3d.g.tuTren'), vt: [cx, coCanh * 1.6, -cy + 0.01], dich: [cx, 0, -cy] },
-  ];
-  const chon = pa.toa.find((x) => x.id === toaChon && tv.toa.has(x.mauId));
-  if (chon) {
-    const c = chanToa(mauToa(tv, chon)!, chon), [tx, ty] = trongTam(c);
-    const h = 0.2 + chon.soTangDe * chon.caoDe + chon.soTangDH * chon.caoDH, banKinh = Math.max(...c.map((p) => Math.hypot(p[0] - tx, p[1] - ty))), r = Math.max(60, h * 1.2, banKinh * 2.4);
-    ds.push({ ten: t('m3d.g.toaChon'), vt: [tx + r * 0.7, h * 0.65, -ty + r * 0.9], dich: [tx, h * 0.45, -ty], gio: 15 });
-  }
-  // lô chọn / rê: lớp phủ xanh mỏng trên mặt lô + viền (Khung3D · hinhNhan) — lô bán trong suốt khi bật hầm nên pha màu vật liệu gần như không thấy
-  const ranhLo = new Map(pa.lo.filter((l) => laCaoTang(l) && l.ranh.length >= 3).map((l) => [l.id, l.ranh]));
-  return {
-    tam, coCanh, cao: caoMax + 4, goc: ds, nen: true, nenLop: 'ham',
-    hinhNhan: (d) => (d.loai === 'lo' && ranhLo.has(d.id) ? { chan: ranhLo.get(d.id)! as [number, number][], y0: 0.21, y1: 0.36 } : null),
-    doiTuongChon: (c) => (!c.toaId && c.loId && ranhLo.has(c.loId) ? { loai: 'lo', id: c.loId } : null),
-  };
 }
