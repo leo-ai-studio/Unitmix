@@ -210,7 +210,7 @@ export const QUY_TAC_DAN_SO: QuyTacTinh[] = [
     id: 'dnai', ten: 'Đồng Nai (cũ)', qd: 'QĐ 09/2025/QĐ-UBND', kieu: 'D', hieuLuc: '01/3/2025', daDoiChieu: true,
     phuongPhap: { qh: DN_QH, cp: DN_CP },
     bqCan: { so: 3.53, dieu: 'QĐ 09/2025/QĐ-UBND Đồng Nai, Quy định kèm theo Điều 4 khoản 1 — 3,53 người/căn hộ (giai đoạn lập quy hoạch)', giaiDoan: 'qh' },
-    ghiChu: 'QĐ không phân biệt loại hình (điểm đ chỉ giới hạn căn < 45 m² ≤ 25% ở dự án thương mại). Khoản 1: 3,53 người/căn hoặc 31,0 m²/người đô thị, 28,5 m²/người nông thôn — theo ô "Khu vực" khai ở lô (mặc định đô thị). Khoản 3 tra theo số phòng ở + DT. QĐ không định nghĩa "phòng ở" → theo QCVN 04:2021/BXD 1.4.21 ("Phòng ở là phòng ngủ và phòng sinh hoạt khác"): Studio, 1PN → 1; 2PN → 2; 2PN+ → 3 (phòng đa năng là phòng sinh hoạt khác); 3PN → 3. Không gian khách – bếp chung không đếm: các dải DT của chính khoản 3 (01 phòng ở tới 70 m², 02 phòng ở từ trên 45 m²) chỉ khớp khi đếm phòng ngủ + phòng riêng. Khoản 4: DT và số phòng không thống nhất → theo DT: app lấy cột số phòng gần nhất có dải chứa DT đó. Mốc biên theo lời văn điểm a–d (mốc trên lấy): 125 m² đúng mốc ở dải 100–125.',
+    ghiChu: 'QĐ không phân biệt loại hình (điểm đ chỉ giới hạn căn < 45 m² ≤ 25% ở dự án thương mại). Khoản 1: 3,53 người/căn hoặc 31,0 m²/người đô thị, 28,5 m²/người nông thôn — theo ô "Khu vực" khai ở lô (mặc định đô thị). Khoản 3 tra theo số phòng ở + DT. QĐ không định nghĩa "phòng ở" → theo QCVN 04:2021/BXD 1.4.21 ("Phòng ở là phòng ngủ và phòng sinh hoạt khác"): Studio, 1PN → 1; 2PN → 2; 2PN+ → 3 (phòng đa năng là phòng sinh hoạt khác); 3PN → 3. Không gian khách – bếp chung không đếm: các dải DT của chính khoản 3 (01 phòng ở tới 70 m², 02 phòng ở từ trên 45 m²) chỉ khớp khi đếm phòng ngủ + phòng riêng. Khoản 4: DT và số phòng không thống nhất → theo DT: app lấy cột số phòng gần nhất có dải chứa DT đó — đã chốt (chủ nhiệm, 29/10/2026), không đếm khách – bếp. Mốc biên theo lời văn điểm a–d (mốc trên lấy): 125 m² đúng mốc ở dải 100–125.',
   },
   {
     id: 'khac', ten: 'Tỉnh / thành khác (chưa có QĐ riêng)', qd: null, kieu: null, daDoiChieu: false, phuongPhap: null,
@@ -224,7 +224,7 @@ export const FALLBACK_QG: PhuongPhap = { kieu: 'sTb', sTb: S_TB_QUOC_GIA, dieu: 
 /**
  * Số phòng ở theo loại căn của app (tra `bangPhong`). QĐ tỉnh không định nghĩa thì theo QCVN 04:2021/BXD 1.4.21: "Phòng ở là
  * phòng ngủ và phòng sinh hoạt khác" → Studio, 1PN → 1 · 2PN → 2 · 2PN+ → 3 (phòng đa năng = phòng sinh hoạt khác) · 3PN → 3.
- * Không gian khách – bếp chung của căn không đếm (xem ghi chú Đồng Nai). Cách đếm là diễn giải, chờ chủ nhiệm xác nhận.
+ * Không gian khách – bếp chung của căn không đếm (xem ghi chú Đồng Nai). Cách đếm đã chốt (chủ nhiệm, 29/10/2026).
  */
 export const SO_PHONG_O: Record<LoaiCan, SoPhongO> = { stu: 1, '1pn': 1, '2pn': 2, '2pnp': 3, '3pn': 3 };
 export const DIEU_PHONG_O = 'QCVN 04:2021/BXD 1.4.21: phòng ở = phòng ngủ và phòng sinh hoạt khác (2PN+ = 3 phòng ở)';
