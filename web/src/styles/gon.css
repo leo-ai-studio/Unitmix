@@ -34,7 +34,9 @@
 .noi-tren > .tham-so-3d { margin: 6px 8px 0; align-self: flex-start; max-width: min(520px, calc(100% - 80px)); border: 1px solid var(--line); border-radius: 8px;
   box-shadow: 0 2px 10px rgb(0 0 0 / .08); padding: 6px 4px; }
 .tham-so-3d .tham-so-dau { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 4px; font-size: 12px; }
+.noi-tren > .tham-so-3d { width: min(460px, calc(100% - 80px)); box-sizing: border-box; }
 .tham-so-3d .luoi-tham-so { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 4px; padding: 0; }
+.tham-so-3d .luoi-tham-so label.o-so, .tham-so-3d .luoi-tham-so label.o-chon { flex-direction: row; align-items: center; gap: 8px; }
 .tham-so-3d .luoi-tham-so .o-so, .tham-so-3d .luoi-tham-so .o-chon { padding: 3px 8px; }
 .tham-so-3d .luoi-tham-so > .nut-phu { justify-self: start; margin: 4px 8px; }
 
