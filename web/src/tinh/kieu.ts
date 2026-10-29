@@ -401,6 +401,9 @@ export type CanMau = {
   stretch?: { x_mm: number; sau_tt_mm: number; sau_tim_mm: number; cung: [number, number][] };
   /** Tim cửa chính chuẩn hoá 0..1 theo mặt tiền, tiền tính bằng `tinhCuaCan` (scripts/sinh_phai_sinh_can.py). Thiếu thì tính từ can/<id>.json. */
   cua_x?: number;
+  /** Hình bao thật của căn góc V (nét `khung`), chuẩn hoá 0..1 theo rộng × sâu như nét vẽ (có thể vượt 0..1); căn chữ nhật thì
+   * thiếu. Tiền tính bằng scripts/sinh_phai_sinh_can.py — nét bao DTXD dựng theo hình này (app cũ `bienCan`). */
+  khung?: [number, number][];
   /** Có ở mẫu biến thể STRETCH (tinh/stretch.ts): id mẫu gốc + mức kéo (mm). */
   stretchGoc?: { id: string; st: number };
 };

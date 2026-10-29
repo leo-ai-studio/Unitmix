@@ -247,6 +247,16 @@ export function hinhLogia(vt: ViTriCan, mau: ToaCoMat, logia: number[][] | null 
   return L.map(([x, y]) => B.pt(vt.a0 + x, y));
 }
 
+/**
+ * Hình bao thật của căn góc V (`CanMau.khung`, chuẩn hoá theo rộng × sâu) đặt vào ô `a0..a1` trên mặt `mi`, sâu `sau`, lật gương
+ * theo `guong` — cùng phép đặt với `veCanTaiViTri`. Căn không có khung thì null (dùng ô chữ nhật).
+ */
+export function khungTaiO(mau: ToaCoMat, mi: number, a0: number, a1: number, sau: number, guong: boolean, khung: [number, number][] | undefined): Diem[] | null {
+  if (!khung || khung.length < 3) return null;
+  const m = mau.mat[mi], B = coSo(m.goc_deg, m.truc_mm), w = a1 - a0;
+  return khung.map(([x, y]) => B.pt(a0 + (guong ? 1 - x : x) * w, y * sau));
+}
+
 /** Đa giác co vào trong `d` mm (giao các cạnh đã tịnh tiến), như coDaGiac của app cũ — dùng vẽ vành tường quanh căn. */
 export function coDaGiac(P: Diem[], d: number): Diem[] {
   const n = P.length;

@@ -10,7 +10,7 @@
 import { chiSoCanThem, moRong, khoaCanThem, mauToa, rutCanThem } from './canThem';
 import { doiCanTaiViTri, doiCanTheoTang, doiChoO, doiCongNang, latO } from './doiCan';
 import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type ToaDat } from './kieu';
-import { chupThangTay, doDeKhe, ganLoaiThang, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
+import { chupThangTay, deKhung, doDeKhe, ganLoaiThang, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
 
 export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'khong_vua' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan';
@@ -18,11 +18,12 @@ export type KetQuaTay = { ok: true; toa: ToaDat; chan: ChanSua[]; canhBao?: 'nhi
 
 export type Ctx = { tv: ThuVien; dl: DuLieuMB | null | undefined };
 
-/** Đè / khe của tầng `tang` sau tự chỉnh (tinh/khe.ts). */
+/** Đè / khe của tầng `tang` sau tự chỉnh (tinh/khe.ts) + số cặp đè của căn góc V theo hình bao thật. */
 function doTang(toa: ToaDat, tang: number | null, { tv, dl }: Ctx) {
   const mau = mauToa(tv, toa) as ToaMB | undefined;
-  if (!mau) return { de: 0, mm: 0, san: 0 };
-  return doDeKhe(mau, matBangTang(toa, mau, dl, tang), dl, tv, boCucTang(toa, tang));
+  if (!mau) return { de: 0, mm: 0, san: 0, khung: 0 };
+  const mb = matBangTang(toa, mau, dl, tang), bc = boCucTang(toa, tang);
+  return { ...doDeKhe(mau, mb, dl, tv, bc), khung: deKhung(mau, mb, dl, tv, bc) };
 }
 
 /** Chạy tự chỉnh sau phép sửa tay `sau` rồi kiểm không đè / khe mới trên các tầng `ks`. */
@@ -31,7 +32,8 @@ function chotSua(truoc: ToaDat, sau: ToaDat, ks: (number | null)[], c: Ctx): Ket
   const r = tuChinhSauSua(truoc, sau, mau, c.tv, c.dl);
   for (const k of ks) {
     const a = doTang(truoc, k, c), b = doTang(r.toa, k, c);
-    if (b.de > a.de) return { ok: false, lyDo: 'de' };
+    // căn góc V đè ô khác theo hình bao thật (đổi chỗ / lật căn V sang chỗ không phải góc) cũng là đè
+    if (b.de > a.de || b.khung > a.khung) return { ok: false, lyDo: 'de' };
     if (b.mm > a.mm + 200 || b.san > a.san) return { ok: false, lyDo: 'khe', chiTiet: String(Math.round(b.mm - a.mm)) };
   }
   return { ok: true, toa: r.toa, chan: r.chan };

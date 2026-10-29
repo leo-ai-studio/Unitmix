@@ -34,6 +34,22 @@ export function phanLoai(dau: DiemCham, cuoi: DiemCham, xa: number, soNgon: numb
   return 'cham';
 }
 
+/**
+ * Sự kiện `pointerdown` của ngón đặt lên ô căn khi bật ✥ (kéo đổi chỗ, man/CongCuTang.tsx): bản vẽ (ve/BanVe.tsx) vẫn ghi nhận ngón
+ * (để ngón thứ hai chuyển sang chụm) nhưng không dời bản vẽ theo ngón đó, không hẹn nhấn giữ / chạm hai lần — ngón đó đang kéo căn.
+ */
+export const khongDiBanVe = new WeakSet<object>();
+
+/**
+ * Ngón `id` đặt xuống khi ✥ đang theo dõi lượt kéo căn của ngón `dangKeo` (null = chưa có): chưa có thì bắt đầu kéo căn;
+ * cùng ngón thì bỏ qua; ngón KHÁC (ngón thứ hai) thì huỷ kéo căn và nhường cho chụm của bản vẽ. Chuột không chụm được.
+ */
+export function ngonKhiKeoO(dangKeo: number | null, id: number, kieu: KieuTro): 'keo' | 'bo' | 'chum' {
+  if (dangKeo === null) return 'keo';
+  if (id === dangKeo) return 'bo';
+  return kieu === 'mouse' ? 'bo' : 'chum';
+}
+
 /** Chạm này nối với lần chạm trước thành chạm hai lần? (cả hai đều là chạm, gần nhau về thời gian và chỗ). */
 export function laChamDup(truoc: DiemCham | null, nay: DiemCham): boolean {
   return !!truoc && nay.t - truoc.t <= MS_DUP && nay.t >= truoc.t && Math.hypot(nay.x - truoc.x, nay.y - truoc.y) <= PX_DUP;

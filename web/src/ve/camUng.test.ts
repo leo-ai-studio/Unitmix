@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { batDauChum, bienDoi, laChamDup, MS_GIU, nhinKhiChum, nhinKhiKeo, phanLoai, raPx, zoomTu, type NhinThay } from './camUng';
+import { batDauChum, bienDoi, khongDiBanVe, laChamDup, MS_GIU, ngonKhiKeoO, nhinKhiChum, nhinKhiKeo, phanLoai, raPx, zoomTu, type NhinThay } from './camUng';
 
 const R = 390, C = 700;
 const v0: NhinThay = { cx: 50, cy: -30, w: 120 };
@@ -77,5 +77,26 @@ describe('transform bám tay khớp với vẽ lại', () => {
       const p1 = raPx(nay, R, C, x, y);
       gan(qx, p1.x); gan(qy, p1.y);
     }
+  });
+});
+
+describe('✥ kéo đổi chỗ căn + chụm hai ngón (man/CongCuTang.tsx)', () => {
+  it('chưa có lượt kéo: ngón / chuột đặt lên ô thì bắt đầu kéo căn', () => {
+    expect(ngonKhiKeoO(null, 1, 'touch')).toBe('keo');
+    expect(ngonKhiKeoO(null, 1, 'mouse')).toBe('keo');
+  });
+  it('ngón thứ hai (khác id) khi đang kéo căn: huỷ kéo, chuyển chụm', () => {
+    expect(ngonKhiKeoO(1, 2, 'touch')).toBe('chum');
+    expect(ngonKhiKeoO(7, 9, 'pen')).toBe('chum');
+  });
+  it('cùng ngón báo lại / chuột không chụm: bỏ qua, lượt kéo giữ nguyên', () => {
+    expect(ngonKhiKeoO(1, 1, 'touch')).toBe('bo');
+    expect(ngonKhiKeoO(1, 2, 'mouse')).toBe('bo');
+  });
+  it('đánh dấu sự kiện ngón kéo căn: bản vẽ nhận ra, sự kiện khác không bị dính', () => {
+    const a = {}, b = {};
+    khongDiBanVe.add(a);
+    expect(khongDiBanVe.has(a)).toBe(true);
+    expect(khongDiBanVe.has(b)).toBe(false);
   });
 });

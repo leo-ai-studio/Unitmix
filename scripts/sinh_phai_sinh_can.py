@@ -3,6 +3,9 @@
 1. `cua_x` trong can.json: tim cửa chính căn, chuẩn hoá 0..1 theo mặt tiền — đúng thuật toán `tinhCuaCan`
    (web/src/tinh/pccc.ts). App đọc thẳng từ can.json, không phải tải 34 tệp can/*.json chỉ để tính một số
    (de_xuat_hieu_nang.md P3). Test web/src/tinh/cuaCanTienTinh.test.ts đối chiếu với tinhCuaCan.
+1b. `khung` trong can.json: hình bao thật của căn góc V (nét `khung` DefPoints, chuẩn hoá theo rộng × sâu) — căn không phải
+   hình chữ nhật. Nét bao DTXD (web/src/tinh/netBao.ts, app cũ `bienCan` = c.khung || c.pts) đọc từ đây; căn không có nét
+   `khung` thì không có trường.
 2. Tách nội thất / thiết bị (nét `furn`, `equip`, `hidd` ≈ 81% dung lượng) khỏi can/<id>.json sang
    can/<id>.noithat.json; tệp chính ghi `"tach_noi_that": true`. App chỉ tải phần nội thất khi bật lớp Nội thất
    (màn Tầng) hoặc khi xuất CAD; ghép lại theo thứ tự [nét chính..., nét nội thất...]. Lúc tách, `stretch.cung`
@@ -72,6 +75,13 @@ def chay(kiem: bool) -> int:
         if c.get("cua_x") != cua:
             lech.append(f"can.json {c['id']}: cua_x {c.get('cua_x')} -> {cua}")
             c["cua_x"] = cua
+        kh = next((n["pts"] for n in ve if n.get("cat") == "khung" and len(n.get("pts") or []) >= 3), None)
+        if c.get("khung") != kh:
+            lech.append(f"can.json {c['id']}: khung {'thêm' if kh else 'bỏ'}")
+            if kh:
+                c["khung"] = kh
+            else:
+                c.pop("khung", None)
         if not j.get("tach_noi_that"):
             chinh = {k: v for k, v in j.items() if k != "ve"}
             i_chinh = [i for i, n in enumerate(ve) if n.get("cat") not in NET_NOI_THAT]

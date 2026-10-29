@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { chayRaf, easeOutCubic, giamChuyenDong, tron } from '../ui/chuyenDong';
 import type { Diem } from '../tinh/kieu';
-import { batDauChum, bienDoi, kepW, laChamDup, MS_GIU, nguongRun, nhinKhiChum, nhinKhiKeo, phanLoai, zoomTu, type DiemCham, type GocChum, type NhinThay } from './camUng';
+import { batDauChum, bienDoi, kepW, khongDiBanVe, laChamDup, MS_GIU, nguongRun, nhinKhiChum, nhinKhiKeo, phanLoai, zoomTu, type DiemCham, type GocChum, type NhinThay } from './camUng';
 
 /** Đổi điểm CAD (m, y lên) sang toạ độ SVG (y xuống). */
 export const s = ([x, y]: Diem): string => `${x},${-y}`;
@@ -265,7 +265,9 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
             kieuTro.current = e.pointerType;
             const p = viTri(e);
             diem.current.set(e.pointerId, p);
-            if (diem.current.size === 1) {
+            // ngón đang kéo ô căn (✥, khongDiBanVe): chỉ ghi nhận để ngón thứ hai chụm được — không hẹn giữ / chạm hai lần
+            if (diem.current.size === 1 && khongDiBanVe.has(e)) { clearTimeout(luotCham.current?.hen); luotCham.current = null; }
+            else if (diem.current.size === 1) {
               // lượt chạm mới: hẹn nhấn giữ (ngón / bút) — đứng yên đủ lâu thì mở menu ngữ cảnh của phần tử dưới ngón
               const l: LuotCham = { id: e.pointerId, x: p.x, y: p.y, cx: e.clientX, cy: e.clientY, t: e.timeStamp, kieu: e.pointerType, xa: 0, soNgon: 1, giu: false, hen: 0 };
               if (e.pointerType !== 'mouse') l.hen = window.setTimeout(() => nhanGiu(l), MS_GIU);
@@ -304,7 +306,7 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
             } else chamTruoc.current = nay;
           }}
           onPointerDown={(e) => {
-            if (diem.current.size !== 1) return;
+            if (diem.current.size !== 1 || khongDiBanVe.has(e)) return; // ngón kéo ô căn (✥) không dời bản vẽ
             try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch { /* bỏ qua */ }
             const p0 = viTri(e);
             batDauNen.current = { x: p0.x, y: p0.y, xa: 0 };

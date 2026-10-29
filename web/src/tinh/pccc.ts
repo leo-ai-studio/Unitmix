@@ -130,7 +130,21 @@ type Doan = { p0: Diem; p1: Diem };
 type Canh = { i: number; j: number; L: number; p0: Diem; p1: Diem; huong: Diem; noi: boolean };
 type ViTri = { e: number; i: number; j: number; di: number; dj: number; q: Diem; d: number };
 
+/**
+ * Đồ thị hành lang chỉ phụ thuộc trục / nét hành lang (không phụ thuộc căn, thang): PC-11 đo hàng trăm phương án đặt thang mà
+ * hành lang đa số trùng nhau — nhớ đồ thị (kèm bảng Dijkstra đã tính) theo đúng toạ độ đầu vào. Kết quả y hệt dựng lại.
+ */
+const nhoDoThi = new Map<string, ReturnType<typeof dungDoThi0>>();
 export function dungDoThi(toa: ToaPCCC) {
+  const k = JSON.stringify([toa.truc, toa.hanhlang_ve ?? null, toa.hanh_lang ?? null, toa.hanh_lang_mm]);
+  let G = nhoDoThi.get(k);
+  if (G) { nhoDoThi.delete(k); nhoDoThi.set(k, G); return G; }
+  G = dungDoThi0(toa);
+  nhoDoThi.set(k, G);
+  if (nhoDoThi.size > 256) nhoDoThi.delete(nhoDoThi.keys().next().value!);
+  return G;
+}
+function dungDoThi0(toa: ToaPCCC) {
   // Dựng như app cũ (regenerate + dtHanhLang): cạnh = các trục nguyên vẹn + đoạn nối (vẽ tay MDI-HANHLANG, nối góc tự sinh).
   // Không gộp đoạn thẳng hàng, không thêm giao điểm: chỉ chẻ tại đầu mút các đoạn.
   type Truc = Doan & { u: Diem; ang: number };
@@ -247,7 +261,17 @@ export function dungDoThi(toa: ToaPCCC) {
   };
 
   /** chiếu điểm lên cạnh gần nhất; `huong` cho trước thì chỉ xét cạnh song song (cửa căn / thang gán vào hành lang chạy dọc mặt) */
+  // nhớ phép chiếu theo đúng toạ độ (đồ thị được nhớ qua nhiều lần đo: cửa căn / thang không dời thì chiếu lại y hệt)
+  const nhoChieu = new Map<string, ViTri | null>();
   const chieu = (p: Diem, huong?: Diem, choNoi = false): ViTri | null => {
+    const k = `${p[0]},${p[1]},${huong ? huong[0] + ',' + huong[1] : ''},${choNoi}`;
+    if (nhoChieu.has(k)) return nhoChieu.get(k)!;
+    const r = chieu0(p, huong, choNoi);
+    if (nhoChieu.size > 4096) nhoChieu.clear();
+    nhoChieu.set(k, r);
+    return r;
+  };
+  const chieu0 = (p: Diem, huong?: Diem, choNoi = false): ViTri | null => {
     let tot: ViTri | null = null;
     canh.forEach((e, k) => {
       // như axAt/viTri app cũ: cửa căn, cửa thang gán vào trục thật song song với mặt, không vào đoạn nối
