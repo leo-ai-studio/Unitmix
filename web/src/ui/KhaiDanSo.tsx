@@ -1,5 +1,5 @@
 import { t } from '../i18n/i18n';
-import { quyTacApDung } from '../tinh/danSo';
+import { lamTronKhai, quyTacApDung } from '../tinh/danSo';
 import type { GiaiDoan, KhaiDanSo as Khai, KhuVuc, LoaiHinh, Lo, TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang } from '../tinh/loaiDat';
 import { dsTinhChon, LOAI_HINH } from '../tinh/quyTacDanSo';
@@ -26,6 +26,7 @@ const doiKhai = (p: TrangThaiPA, id: string, k: Khai | undefined): TrangThaiPA =
 export function KhaiDanSo({ lo, sua, chiXem }: Props) {
   const k = lo.temDat.danSo;
   const qt = quyTacApDung(lo);
+  const lt = lamTronKhai(lo);
   const dat = (v: Khai | undefined) => sua((p) => doiKhai(p, lo.id, v));
   const apMoiLo = () => sua((p) => ({ ...p, lo: p.lo.map((l) => (laCaoTang(l) && k ? { ...l, temDat: { ...l.temDat, danSo: { ...k } } } : l)) }));
   return (
@@ -73,6 +74,20 @@ export function KhaiDanSo({ lo, sua, chiXem }: Props) {
               </select>
             </label>
           )}
+          <div class="ds-lam-tron">
+            <label class="o-tg" title={t('gt.ds.khai.lamTron')}>
+              <input type="checkbox" disabled={chiXem} checked={lt.bat} onChange={(e) => dat({ ...k, lamTron: { ...lt, bat: e.currentTarget.checked } })} />
+              <span>{t('ds.khai.lamTron')}</span>
+            </label>
+            <label class="o-so" title={t('gt.ds.khai.dungSai')}>
+              <span>{t('ds.khai.dungSai')}</span>
+              <span class="o-so-nhap">
+                <input type="number" min="0" max="5" step="0.1" value={lt.dungSai} disabled={chiXem}
+                  onChange={(e) => { const v = Number(e.currentTarget.value); if (Number.isFinite(v) && v >= 0 && v <= 5) dat({ ...k, lamTron: { ...lt, dungSai: Math.round(v * 100) / 100 } }); }} />
+                <small>m²</small>
+              </span>
+            </label>
+          </div>
           <p class="dong muted ds-khai-ghi" title={qt?.ap?.ghiChu ?? ''}>
             {qt?.ap?.qd ?? t('ds.fallback')}
             {qt?.ap?.kieu && ` · ${t('ds.kieu').replace('{k}', qt.ap.kieu)}`}

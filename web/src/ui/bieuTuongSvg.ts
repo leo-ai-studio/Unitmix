@@ -43,6 +43,9 @@ export const SVG_BT: Record<string, string> = {
   bongDo: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   nenBanDo: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
   khoaCG: '<rect x="3" y="3" width="18" height="18" rx="1.5" stroke-dasharray="3 2.5"/><rect x="8" y="8" width="8" height="8" rx="1"/>',
+  soSanhMau: '<path d="M3 5h6v4H6.5v10H3z"/><path d="M10.5 5h3v14h-3z"/><path d="M15 5h6v14h-2.5V9H15z"/>',
+  goiYHinh: '<path d="M4 7h7v4H8v9H4z"/><path d="M17 3l1.2 3.3 3.3 1.2-3.3 1.2L17 12l-1.2-3.3-3.3-1.2 3.3-1.2z"/>',
+  satMoc: '<path d="M3 20h18"/><path d="M4 20v-5h5v-4h5V7h6"/><path d="M14 3v17" stroke-dasharray="2 2"/>',
   // màn hẹp
   nganTrai: '<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M9 4v16M5.5 8h1.5M5.5 11h1.5M5.5 14h1.5"/>',
   nganPhai: '<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M15 4v16M17 8h1.5M17 11h1.5M17 14h1.5"/>',
