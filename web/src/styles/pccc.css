@@ -12,7 +12,6 @@
   fill: var(--pc-muc);
   paint-order: stroke;
   stroke: #fff;
-  stroke-width: 120;
   stroke-linejoin: round;
   pointer-events: none;
 }

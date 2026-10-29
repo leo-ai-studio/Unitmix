@@ -70,7 +70,7 @@ const r0 = (x: number) => Math.round(x);
 const d = (pts: Diem[]) => 'M' + pts.map((p) => `${r0(p[0])} ${r0(p[1])}`).join('L');
 /** chữ trong nhóm lật y: đặt tại p, dựng thẳng lại */
 const Chu = ({ p, s, cls, co = 520 }: { p: Diem; s: string; cls: string; co?: number }) => (
-  <text x="0" y="0" class={cls} font-size={co} text-anchor="middle" transform={`translate(${r0(p[0])} ${r0(p[1])}) scale(1 -1)`}>{s}</text>
+  <text x="0" y="0" class={cls} font-size={r0(co)} stroke-width={r0(co * 0.22)} text-anchor="middle" transform={`translate(${r0(p[0])} ${r0(p[1])}) scale(1 -1)`}>{s}</text>
 );
 const MAU_CUA: Record<LoaiCuaNC, string> = { thang: 'pc-cua-thang', can: 'pc-cua-can', tmcc: 'pc-cua-tmcc', rac: 'pc-cua-rac', hanhLang: 'pc-cua-hl' };
 
@@ -94,8 +94,25 @@ export function LopPCCC({ kq, chiXem, datTuTay }: { kq: KetQuaPCCCTang | null; c
   const c = useCaiPCCC();
   const g = useRef<SVGGElement>(null);
   const [keo, setKeo] = useState<{ i: number; p: Diem } | null>(null);
-  if (!kq || !(c.thoatNan || c.thangMay || c.tu || c.cua || c.hanhLang)) return null;
+  const [pxMm, setPxMm] = useState(0);
+  const bat = !!kq && (c.thoatNan || c.thangMay || c.tu || c.cua || c.hanhLang);
+  // tỷ lệ màn hình (px / mm) như LopPhong: chữ / ký hiệu giữ cỡ tối thiểu đọc được khi thu nhỏ
+  useLayoutEffect(() => {
+    const el = g.current, svg = el?.ownerSVGElement;
+    if (!el || !svg) return;
+    const do_ = () => {
+      const m = el.getScreenCTM?.();
+      if (m) setPxMm((cu) => { const k = Math.hypot(m.a, m.b); return Math.abs(k - cu) > cu * 0.03 ? k : cu; });
+    };
+    do_();
+    const ob = typeof MutationObserver === 'undefined' ? null : new MutationObserver(do_);
+    ob?.observe(svg, { attributes: true, attributeFilter: ['viewBox', 'width', 'height'] });
+    return () => ob?.disconnect();
+  }, [bat]);
+  if (!kq || !bat) return null;
   const hl = kq.hanhLang.rong;
+  /** cỡ mm nhưng không nhỏ hơn `px` điểm ảnh trên màn hình */
+  const mm = (x: number, px: number) => (pxMm > 0 ? Math.max(x, px / pxMm) : x);
 
   const veMm = (e: PointerEvent): Diem | null => {
     const m = g.current?.getScreenCTM?.();
@@ -129,10 +146,11 @@ export function LopPCCC({ kq, chiXem, datTuTay }: { kq: KetQuaPCCCTang | null; c
       {/* hành lang: cửa chia khoang (3.3.5 / A.2.14) — vạch ngang hành lang */}
       {c.hanhLang && kq.hanhLang.cua.map((x, i) => {
         const n: Diem = [-x.huong[1], x.huong[0]], a: Diem = [x.p[0] - n[0] * hl / 2, x.p[1] - n[1] * hl / 2], b: Diem = [x.p[0] + n[0] * hl / 2, x.p[1] + n[1] * hl / 2];
+        const co = mm(480, 11);
         return (
           <g key={`hl${i}`} class="pc-cnc">
-            <path d={d([a, b])} stroke-width="260" />
-            <Chu p={[b[0] + n[0] * 700, b[1] + n[1] * 700]} s={`CNC-${String(i + 1).padStart(2, '0')}`} cls="pc-chu pc-chu-cnc" co={480} />
+            <path d={d([a, b])} stroke-width={r0(mm(260, 4))} />
+            <Chu p={[b[0] + n[0] * co * 1.3, b[1] + n[1] * co * 1.3 - co * 0.35]} s={`CNC-${String(i + 1).padStart(2, '0')}`} cls="pc-chu pc-chu-cnc" co={co} />
           </g>
         );
       })}
@@ -141,41 +159,48 @@ export function LopPCCC({ kq, chiXem, datTuTay }: { kq: KetQuaPCCCTang | null; c
         <g class="pc-thang-may">
           {kq.tmcc.batBuoc && kq.tmcc.chon.map((x, i) => <circle key={`r${i}`} class="pc-vong-tmcc" cx={r0(x.p[0])} cy={r0(x.p[1])} r={kq.tmcc.r * 1000} vector-effect="non-scaling-stroke" />)}
           {kq.thangMay.gieng.map((x, i) => {
-            const cc = kq.tmcc.batBuoc && kq.tmcc.chon.includes(x);
-            return <rect key={`g${i}`} class={cc ? 'pc-gieng tmcc' : 'pc-gieng'} x={r0(x.p[0] - 700)} y={r0(x.p[1] - 700)} width="1400" height="1400" vector-effect="non-scaling-stroke" />;
+            const cc = kq.tmcc.batBuoc && kq.tmcc.chon.includes(x), s = mm(1400, 10);
+            return <rect key={`g${i}`} class={cc ? 'pc-gieng tmcc' : 'pc-gieng'} x={r0(x.p[0] - s / 2)} y={r0(x.p[1] - s / 2)} width={r0(s)} height={r0(s)} vector-effect="non-scaling-stroke" />;
           })}
-          {kq.tmcc.batBuoc && kq.tmcc.chon.map((x, i) => <Chu key={`tl${i}`} p={[x.p[0], x.p[1] - 260]} s={t('pc.tmcc')} cls="pc-chu pc-chu-tmcc" co={560} />)}
-          {kq.tmcc.ngoai.map((p, i) => <path key={`n${i}`} class="pc-ngoai" d={`M${r0(p[0] - 350)} ${r0(p[1] - 350)}L${r0(p[0] + 350)} ${r0(p[1] + 350)}M${r0(p[0] - 350)} ${r0(p[1] + 350)}L${r0(p[0] + 350)} ${r0(p[1] - 350)}`} vector-effect="non-scaling-stroke" />)}
+          {kq.tmcc.batBuoc && kq.tmcc.chon.map((x, i) => { const co = mm(560, 12); return <Chu key={`tl${i}`} p={[x.p[0], x.p[1] - mm(1400, 10) / 2 - co * 1.1]} s={t('pc.tmcc')} cls="pc-chu pc-chu-tmcc" co={co} />; })}
+          {kq.tmcc.ngoai.map((p, i) => { const s = mm(350, 4); return <path key={`n${i}`} class="pc-ngoai" d={`M${r0(p[0] - s)} ${r0(p[1] - s)}L${r0(p[0] + s)} ${r0(p[1] + s)}M${r0(p[0] - s)} ${r0(p[1] + s)}L${r0(p[0] + s)} ${r0(p[1] - s)}`} vector-effect="non-scaling-stroke" />; })}
         </g>
       )}
       {/* tủ họng nước: vòng R 18 m (QT-77), tủ kéo được; căn chưa phủ khoanh đỏ ở cửa */}
       {c.tu && (
         <g class="pc-tu">
           {tuVe.map((p, i) => <circle key={`rt${i}`} class="pc-vong-tu" cx={r0(p[0])} cy={r0(p[1])} r={kq.tu.r * 1000} vector-effect="non-scaling-stroke" />)}
-          {kq.thoatNan.can.filter((x) => canThieuTu.has(x.so)).map((x) => <circle key={`ct${x.so}`} class="pc-thieu" cx={r0(x.p[0])} cy={r0(x.p[1])} r="600" vector-effect="non-scaling-stroke" />)}
-          {tuVe.map((p, i) => (
-            <g key={`t${i}`} class={`pc-tu-o${chiXem ? '' : ' keo'}`} onPointerDown={batDauKeo(i)}>
-              <rect x={r0(p[0] - kq.tu.rongTu / 2 - 150)} y={r0(p[1] - 350)} width={kq.tu.rongTu + 300} height="700" vector-effect="non-scaling-stroke" />
-              <Chu p={[p[0], p[1] + 520]} s={`TCC-${String(i + 1).padStart(2, '0')}`} cls="pc-chu pc-chu-tu" co={460} />
-            </g>
-          ))}
+          {kq.thoatNan.can.filter((x) => canThieuTu.has(x.so)).map((x) => <circle key={`ct${x.so}`} class="pc-thieu" cx={r0(x.p[0])} cy={r0(x.p[1])} r={r0(mm(600, 7))} vector-effect="non-scaling-stroke" />)}
+          {tuVe.map((p, i) => {
+            const w = mm(kq.tu.rongTu + 300, 14), h = mm(700, 8), co = mm(460, 11);
+            return (
+              <g key={`t${i}`} class={`pc-tu-o${chiXem ? '' : ' keo'}`} onPointerDown={batDauKeo(i)}>
+                <rect x={r0(p[0] - w / 2)} y={r0(p[1] - h / 2)} width={r0(w)} height={r0(h)} vector-effect="non-scaling-stroke" />
+                <Chu p={[p[0], p[1] + h / 2 + co * 0.4]} s={`TCC-${String(i + 1).padStart(2, '0')}`} cls="pc-chu pc-chu-tu" co={co} />
+              </g>
+            );
+          })}
         </g>
       )}
       {/* cửa ngăn cháy: dấu tại tim cửa + nhãn EI */}
-      {c.cua && kq.cuaNC.filter((x) => x.loai !== 'hanhLang').map((x, i) => (
-        <g key={`c${i}`} class={`pc-cua ${MAU_CUA[x.loai]}`}>
-          <rect x={r0(x.p[0] - 450)} y={r0(x.p[1] - 450)} width="900" height="900" transform={`rotate(${r0((Math.atan2(x.huong[1], x.huong[0]) * 180) / Math.PI)} ${r0(x.p[0])} ${r0(x.p[1])})`} vector-effect="non-scaling-stroke" />
-          {x.loai !== 'can' && <Chu p={[x.p[0], x.p[1] + 750]} s={x.ei} cls="pc-chu pc-chu-cua" co={420} />}
-        </g>
-      ))}
+      {c.cua && kq.cuaNC.filter((x) => x.loai !== 'hanhLang').map((x, i) => {
+        const s = mm(900, 7), co = mm(420, 10);
+        return (
+          <g key={`c${i}`} class={`pc-cua ${MAU_CUA[x.loai]}`}>
+            <rect x={r0(x.p[0] - s / 2)} y={r0(x.p[1] - s / 2)} width={r0(s)} height={r0(s)} transform={`rotate(${r0((Math.atan2(x.huong[1], x.huong[0]) * 180) / Math.PI)} ${r0(x.p[0])} ${r0(x.p[1])})`} vector-effect="non-scaling-stroke" />
+            {x.loai !== 'can' && <Chu p={[x.p[0], x.p[1] + s / 2 + co * 0.4]} s={x.ei} cls="pc-chu pc-chu-cua" co={co} />}
+          </g>
+        );
+      })}
       {/* thoát nạn: cự ly từng căn tại cửa căn (đỏ khi vượt), cửa buồng thang khoanh tròn */}
       {c.thoatNan && (
         <g class="pc-thoat-nan">
-          {kq.thangBo.map((x, i) => <circle key={`tb${i}`} class="pc-thang-bo" cx={r0(x.p[0])} cy={r0(x.p[1])} r="900" vector-effect="non-scaling-stroke" />)}
-          {kq.thoatNan.can.map((x) => (
-            <Chu key={`tn${x.so}`} p={[x.p[0], x.p[1] - 1100]} s={x.cuLy === null ? '—' : `${fmtSo(x.cuLy, { thapPhan: 1 })} m`}
-              cls={`pc-chu pc-chu-tn${x.vuot ? ' vuot' : ''}`} co={560} />
-          ))}
+          {kq.thangBo.map((x, i) => <circle key={`tb${i}`} class="pc-thang-bo" cx={r0(x.p[0])} cy={r0(x.p[1])} r={r0(mm(900, 9))} vector-effect="non-scaling-stroke" />)}
+          {kq.thoatNan.can.map((x) => {
+            const co = mm(560, 11);
+            return <Chu key={`tn${x.so}`} p={[x.p[0], x.p[1] - co * 0.35]} s={x.cuLy === null ? '—' : `${fmtSo(x.cuLy, { thapPhan: 1 })} m`}
+              cls={`pc-chu pc-chu-tn${x.vuot ? ' vuot' : ''}`} co={co} />;
+          })}
         </g>
       )}
     </g>
