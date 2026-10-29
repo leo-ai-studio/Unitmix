@@ -491,12 +491,12 @@ export function hocLogia(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undef
  * Nét bao bo theo ô (app cũ duongBao0 — tinh/netBao.ts): so ô đặc của mặt bằng `mb` với mặt bằng mặc định của mẫu, trừ phần
  * sàn mất (nở 700 mm, trừ lại ô còn + hành lang), cộng phần mọc thêm. Không đổi gì thì undefined (= nét bao mẫu).
  */
-function baoTheoO(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc): Diem[] | undefined | null {
+function baoTheoO(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc, dungLai = false): Diem[] | undefined | null {
   const goc = matBangMacDinh(mau, dl), a = oDacMB(mau, goc, dl, tv), b = oDacMB(mau, mb, dl, tv, bc);
   // nét bao nối dần (noiNetBao ở đầu mặt — đúng tới mm khi dãy dài ra / ngắn lại) còn khớp ô thì giữ; hỏng (gai, viền thừa quanh
   // chỗ trống, ô lòi ra ngoài) mới dựng lại bằng phép boolean như app cũ
   const P1 = mb.duongBao ?? mau.duong_bao;
-  const P = !baoHong(P1, mau, a, b) ? P1 : netBaoTheoO(mau.duong_bao, a.o, b.o, b.hl, a.hl);
+  const P = !dungLai && !baoHong(P1, mau, a, b) ? P1 : netBaoTheoO(mau.duong_bao, a.o, b.o, b.hl, a.hl);
   if (!P) return null;
   // hốc logia đi theo căn (QT-59b): căn dời / đổi chỗ / lật thì hốc cũ lấp lại, hốc mới khoét theo căn
   const Q = suaHocLogia(P, hocLogia(mau, goc, dl, tv), hocLogia(mau, mb, dl, tv, bc), b.o);
@@ -667,6 +667,24 @@ function danhGia(mauHD: ToaMB, bc: BoCuc, tv: ThuVien, cuaCan: Record<string, nu
     ok: true,
   };
   return { dg, tn, mat, khoaCan };
+}
+
+/** Cự ly thoát nạn của một căn (cửa căn → cửa buồng thang bộ gần nhất, dọc tim hành lang) để vẽ lớp CẢNH BÁO thoát nạn. */
+export type CuLyCan = { khoa: string; cuLy: number | null; nguong: number; cut: boolean; vuot: boolean; cua: Diem };
+/**
+ * Lớp thoát nạn màn Tầng (app cũ nút "Thoát nạn" `S.showEsc`: nhãn cự ly từng căn, đỏ đậm khi vượt; đánh dấu cửa thang): đo trên
+ * mặt bằng hiệu dụng `mauHD` + bố cục `bc` — chỉ để CẢNH BÁO, không chặn / không đổi mặt bằng. `thang` = cửa buồng thang bộ.
+ */
+export function cuLyThoatNan(mauHD: ToaMB, bc: BoCuc, tv: ThuVien, dl: DuLieuMB | null | undefined, H: number): { can: CuLyCan[]; thang: Diem[]; nguong: { cut: number; doi: number; canCu: string } } {
+  const cuaCan = cuaCanDung(viTriCan(mauHD, tv).map((v) => canDangDung(v, bc)), tv, dl?.cuaCan ?? {});
+  const { tn, mat, khoaCan } = danhGia(mauHD, bc, tv, cuaCan, H);
+  const matTN = mat.map((m) => ({ ...m, phan_tu: m.phan_tu.filter((q) => q.loai !== 'can' || !KHONG_KIEM_TN.has(congNangTai(q.khoa ?? '', bc))) }));
+  const cua = cuaTrenMat({ ...(mauHD as unknown as ToaPCCC), mat: matTN }, cuaCan);
+  return {
+    can: tn.can.map((c) => ({ khoa: khoaCan[c.so - 1], cuLy: c.cuLy, nguong: c.nguong, cut: c.cut, vuot: c.vuot, cua: cua.can[c.so - 1]?.p ?? [0, 0] })),
+    thang: cua.thang.map((t) => t.p),
+    nguong: { cut: tn.GH.cut, doi: tn.GH.doi, canCu: tn.GH.canCu },
+  };
 }
 
 // ---------- PC-11: thang bộ tự động ----------
@@ -1155,7 +1173,9 @@ function cuaThang(mau: ToaMB, t: ThangBoMB): Diem {
 /** `thangTruoc`: tập thang của lần tự chỉnh trước (PC-11 giữ nếu vẫn đạt — thang không nhảy chỗ khi sửa căn). */
 export type TuyChonTuChinh = { chieuCaoPCCC: number; bc: BoCuc; thangEp?: ThangBoMB[]; thangMau?: MatBangSua; giu?: string[]; chan?: string[]; thangTay?: ThangTay; loaiThang?: Record<string, string>; thangTruoc?: ThangBoMB[]; thangTruocVuot?: number;
   /** Bố cục của một tầng riêng: thang liền suốt chiều cao nên thang là mốc (không dồn qua thang — donQuaThang). */
-  tangRieng?: boolean };
+  tangRieng?: boolean;
+  /** Đầu hành lang kéo tay (`ToaDat.hanhLangTay`). */
+  hanhLangTay?: Record<string, [number, number]> };
 
 /**
  * PC-11 (QT-44): xuất phát từ thang của bản vẽ; mỗi lượt đo thật (thoatNan) rồi chọn MỘT phép tốt nhất: dời một thang tới chỗ
@@ -1655,6 +1675,56 @@ function hanhLangToiCua(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefi
   return sua;
 }
 
+/** Co kéo đầu hành lang: bước bắt (mm), nam châm về vị trí tự động, dài thêm tối đa, ngắn nhất, chừa sau cửa căn xa nhất (app cũ p14). */
+export const HL_TAY = { buoc: 100, namCham: 400, daiMax: 20000, ngan: 3000, quaCua: 500 } as const;
+/**
+ * Đầu NGOÀI của đoạn hành lang `i` (0 = p0, 1 = p1): không đoạn nào khác chạm, và cách đầu 1 m ra ngoài là ngoài nét bao `bao` (mép
+ * cuối hành lang ở mép sàn). Đầu nối góc / đầu chạm lõi, sảnh không kéo được (app cũ QT-39: chỉ hai đầu mút ngoài).
+ */
+export function dauHanhLangNgoai(hl: readonly DoanHanhLangMB[], i: number, bao: readonly Diem[]): (0 | 1)[] {
+  const s = hl[i];
+  if (!s || s.noi) return [];
+  const L = kc(s.p0, s.p1) || 1, u: Diem = [(s.p1[0] - s.p0[0]) / L, (s.p1[1] - s.p0[1]) / L];
+  const cham = (p: Diem) => hl.some((o, j) => j !== i && (kc(o.p0, p) < 400 || kc(o.p1, p) < 400 || kcDoanHL(p, o) < 400));
+  const ngoai = (k: 0 | 1) => { const p = k ? s.p1 : s.p0, g = k ? 1 : -1; return !trongDG([p[0] + u[0] * 1000 * g, p[1] + u[1] * 1000 * g], bao as Diem[]); };
+  return ([0, 1] as const).filter((k) => !cham(k ? s.p1 : s.p0) && ngoai(k));
+}
+const kcDoanHL = (p: Diem, s: DoanHanhLangMB) => {
+  const dx = s.p1[0] - s.p0[0], dy = s.p1[1] - s.p0[1], L2 = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((p[0] - s.p0[0]) * dx + (p[1] - s.p0[1]) * dy) / L2));
+  return Math.hypot(p[0] - s.p0[0] - t * dx, p[1] - s.p0[1] - t * dy);
+};
+/**
+ * Giới hạn dời đầu `dau` của đoạn hành lang `i` (mm, dương = dài ra): ngắn nhất tới cửa căn xa nhất trên đoạn + 500 mm (và đoạn còn
+ * ≥ 3 m), dài nhất +20 m (app cũ startAxDrag: dmin − 500, s1 − 3000, m0 − 20000).
+ */
+export function gioiHanHanhLang(hd: ToaMB, s: DoanHanhLangMB, dau: 0 | 1, cuaCan: Record<string, number>): [number, number] {
+  const v: Diem = [s.p1[0] - s.p0[0], s.p1[1] - s.p0[1]], L = Math.hypot(v[0], v[1]) || 1, u: Diem = [v[0] / L, v[1] / L];
+  const nuaHL = (hd.hanh_lang_mm || 1800) / 2;
+  const ts = dsCuaMB(hd, cuaCan).filter((c) => Math.abs((c.p[0] - s.p0[0]) * u[1] - (c.p[1] - s.p0[1]) * u[0]) <= nuaHL + 600)
+    .map((c) => (c.p[0] - s.p0[0]) * u[0] + (c.p[1] - s.p0[1]) * u[1]).filter((t) => t >= -1 && t <= L + 1);
+  // dời âm tối đa: còn chừa sau cửa xa nhất phía đầu đó, và đoạn còn ≥ 3 m
+  const conLai = dau ? (ts.length ? L - (Math.max(...ts) + HL_TAY.quaCua) : L - HL_TAY.ngan) : (ts.length ? Math.min(...ts) - HL_TAY.quaCua : L - HL_TAY.ngan);
+  return [-Math.max(0, Math.min(conLai, L - HL_TAY.ngan)), HL_TAY.daiMax];
+}
+/** Áp đầu hành lang kéo tay lên `mb.hanhLang` (sau XC-07). Trả số đầu đã dời. */
+function apHanhLangTay(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tay: Record<string, [number, number]>, cuaCan: Record<string, number>): number {
+  const hd = dung(mau, mb, dl);
+  let n = 0;
+  for (const [k, dd] of Object.entries(tay)) {
+    const i = Number(k), s = mb.hanhLang[i];
+    if (!s || s.noi) continue;
+    const ngoai = dauHanhLangNgoai(mb.hanhLang, i, mb.duongBao ?? mau.duong_bao);
+    const v: Diem = [s.p1[0] - s.p0[0], s.p1[1] - s.p0[1]], L = Math.hypot(v[0], v[1]) || 1, u: Diem = [v[0] / L, v[1] / L];
+    const gh0 = gioiHanHanhLang(hd, s, 0, cuaCan), gh1 = gioiHanHanhLang(hd, s, 1, cuaCan);
+    const d0 = ngoai.includes(0) ? Math.max(gh0[0], Math.min(gh0[1], dd[0] ?? 0)) : 0;
+    const d1 = ngoai.includes(1) ? Math.max(gh1[0], Math.min(gh1[1], dd[1] ?? 0)) : 0;
+    if (Math.abs(d0) > 1) { s.p0 = [s.p0[0] - u[0] * d0, s.p0[1] - u[1] * d0]; n++; }
+    if (Math.abs(d1) > 1) { s.p1 = [s.p1[0] + u[0] * d1, s.p1[1] + u[1] * d1]; n++; }
+  }
+  return n;
+}
+
 /** Đoạn hành lang không vuông góc / song song với phương mặt nào (QT-19: hành lang không chạy chéo). */
 function doanXien(mau: ToaMB, hl: DoanHanhLangMB[]): number {
   const huong = mau.mat.map((m) => coSo(m.goc_deg, 0).u);
@@ -1783,7 +1853,9 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
     hanhLangToiCua(mau, mb, dl, cuaCan);
   }
   // nét bao bo theo ô (app cũ duongBao0): phần sàn mất / mọc thêm sau mọi bước — không để gai, viền thừa quanh chỗ trống
-  const bao = baoTheoO(mau, mb, dl, tv, bc);
+  // co kéo đầu hành lang bằng tay (app cũ p14 axAdj): sau XC-07, nét bao dựng lại theo dải hành lang mới
+  const hlTay = opt.hanhLangTay ? apHanhLangTay(mau, mb, dl, opt.hanhLangTay, cuaCan) : 0;
+  const bao = baoTheoO(mau, mb, dl, tv, bc, hlTay > 0);
   if (bao !== null) mb.duongBao = bao;
   const hd = dung(mau, mb, dl);
   const cuoi = danhGia(hd, bc, tv, cuaCan, H);
@@ -1949,7 +2021,7 @@ const nhoGiam = new WeakMap<ToaMB, Map<string, KetQuaGiam>>();
  */
 export function tuChinhGiam(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | undefined, opt: TuyChonTuChinh, giamCan = true): KetQuaGiam {
   const khoaNho = JSON.stringify([opt.bc.canTheo, opt.bc.canViTri ?? {}, opt.bc.congNang ?? {}, opt.chieuCaoPCCC, opt.thangEp ?? null,
-    opt.thangMau ? [opt.thangMau.thangBo, opt.thangMau.dich ?? {}] : null, giamCan, !!dl, opt.giu ?? null, opt.chan ?? null, opt.bc.latO ?? null, opt.thangTay ?? null, opt.loaiThang ?? null, opt.thangTruoc?.map((t) => [t.khoa, t.matIdx, Math.round(t.a0 + t.dIns), t.sx]) ?? null, opt.thangTruocVuot ?? null, !!opt.tangRieng]);
+    opt.thangMau ? [opt.thangMau.thangBo, opt.thangMau.dich ?? {}] : null, giamCan, !!dl, opt.giu ?? null, opt.chan ?? null, opt.bc.latO ?? null, opt.thangTay ?? null, opt.loaiThang ?? null, opt.thangTruoc?.map((t) => [t.khoa, t.matIdx, Math.round(t.a0 + t.dIns), t.sx]) ?? null, opt.thangTruocVuot ?? null, !!opt.tangRieng, opt.hanhLangTay ?? null]);
   let theoMau = nhoGiam.get(mau);
   const co = theoMau?.get(khoaNho);
   if (co) return structuredClone(co);
@@ -2421,12 +2493,12 @@ export function tuChinhToaKq<T extends ToaDat>(toa: T, mau: ToaMB | undefined, t
     // ô người dùng tự chọn căn (bố cục trước tự chỉnh): khít đoạn kẹp không bỏ, chỉ đổi cùng loại
     const giu = (k: number | null) => Object.keys(boCucTang(goc, k).canViTri ?? {}).sort();
     const tay = goc.thangTay;
-    const rc = tuChinhGiam(mau, tv, dl, { bc: boCucTang(goc, null), chieuCaoPCCC: H, thangEp: U, thangMau: ref, giu: giu(null), chan: vuaChon?.get(null), thangTay: tay, loaiThang: goc.loaiThang,
+    const rc = tuChinhGiam(mau, tv, dl, { bc: boCucTang(goc, null), chieuCaoPCCC: H, thangEp: U, thangMau: ref, giu: giu(null), chan: vuaChon?.get(null), thangTay: tay, loaiThang: goc.loaiThang, hanhLangTay: goc.hanhLangTay,
       thangTruoc: tay || U ? undefined : toa.matBang?.thangBo, thangTruocVuot: vuotCu(toa.matBang) }, bat);
     let t1 = apThayDoi(goc, null, rc.thayDoi, ghi);
     const rf = new Map<number, KetQuaGiam>();
     for (const k of rieng) {
-      const r = tuChinhGiam(mau, tv, dl, { tangRieng: true, bc: boCucTang(t1, k), chieuCaoPCCC: H, thangEp: U, thangMau: ref, giu: giu(k), chan: vuaChon?.get(k), thangTay: tay, loaiThang: goc.loaiThang,
+      const r = tuChinhGiam(mau, tv, dl, { tangRieng: true, bc: boCucTang(t1, k), chieuCaoPCCC: H, thangEp: U, thangMau: ref, giu: giu(k), chan: vuaChon?.get(k), thangTay: tay, loaiThang: goc.loaiThang, hanhLangTay: goc.hanhLangTay,
         thangTruoc: tay || U ? undefined : (matBangRiengTang(toa, k) ?? toa.matBang)?.thangBo, thangTruocVuot: vuotCu(matBangRiengTang(toa, k) ?? toa.matBang) }, bat);
       rf.set(k, r);
       t1 = apThayDoi(t1, k, r.thayDoi, ghi);

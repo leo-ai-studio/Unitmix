@@ -123,6 +123,12 @@ export type ToaDat = {
    */
   thangTay?: ThangTay;
   /**
+   * Co kéo đầu hành lang bằng tay (app cũ p14 `S.axAdj` · QT-38 · QT-55): chỉ số đoạn hành lang (`MatBangSua.hanhLang`) → [dời đầu p0,
+   * dời đầu p1] mm so với vị trí tự động (dương = dài ra, âm = ngắn lại), áp sau XC-07. Nét bao + DTXD theo; hành lang không ngắn quá
+   * cửa căn xa nhất + 500 mm, không ngắn dưới 3 m, dài thêm tối đa 20 m. Thiếu = hành lang tự động.
+   */
+  hanhLangTay?: Record<string, [number, number]>;
+  /**
    * Loại thang bộ chọn tay (QT-63: khoá thang → 'x_tb_n2' | 'x_tb_n3'). Quy tắc mọi tòa: luôn có ít nhất một N2 và một N3 — thang chưa
    * chọn do ganLoaiThang (tinh/loiThang.ts) gán. Áp mọi tầng.
    */
