@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
-import { mauHieuDung, THANG_KHOI, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type HinhLoiMB, type ToaMB } from '../tinh/loiThang';
+import { mauHieuDung, THANG_KHOI, THANG_N2, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type HinhLoiMB, type ToaMB } from '../tinh/loiThang';
 import { coMat } from '../tinh/matBang';
 import { idLoi, tai, taiCuaCan } from '../ve/hinhHocThuVien';
 import { mauToa } from '../tinh/canThem';
@@ -17,9 +17,9 @@ const nghe = new Set<() => void>();
 
 export const layDuLieuMB = (): DuLieuMB | null => (choTai ? null : dl);
 
-/** Tên khối lõi / thang các tòa của PA cần: khối trên mặt mẫu tòa, thang thêm tay (THANG_KHOI) và khối ghi trong mặt bằng đã sửa. */
+/** Tên khối lõi / thang các tòa của PA cần: khối trên mặt mẫu tòa, thang thêm tay (THANG_KHOI) + N2 (quy tắc luôn có một N2) và khối ghi trong mặt bằng đã sửa. */
 export function khoiCuaPA(pa: TrangThaiPA, tv: ThuVien): string[] {
-  const khoi = new Set<string>([THANG_KHOI]);
+  const khoi = new Set<string>([THANG_KHOI, THANG_N2]);
   for (const t of pa.toa) {
     const m = tv.toa.get(t.mauId);
     if (m && coMat(m)) for (const f of m.mat) for (const q of f.phan_tu) if (q.loai !== 'can' && q.block) khoi.add(q.block);

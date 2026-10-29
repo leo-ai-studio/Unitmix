@@ -74,6 +74,9 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
   const { can, loai } = useMemo(() => soLieuTang(mau, toa, tv), [mau, toa.canTheo, toa.canViTri, toa.congNang, toa.latO, tv]);
   const thang = useMemo(() => mau.mat.flatMap((m, mi) => m.phan_tu.filter((q) => q.loai === 'thang_bo').map((q, i) => ({
     khoa: q.khoa ?? `${mi}:t${i}`, o: d(oThang(m, q.a0, q.a1, q.sau_mm ?? 8500)) + 'Z',
+    // nhãn loại thang N2 / N3 (QT-63) ở giữa ô
+    tam: oThang(m, q.a0, q.a1, q.sau_mm ?? 8500).reduce<Diem>((s, p) => [s[0] + p[0] / 4, s[1] + p[1] / 4], [0, 0]),
+    loai: q.block === 'x_tb_n2' ? 'N2' : q.block === 'x_tb_n3' ? 'N3' : '',
   }))), [mau]);
   const menu = (loaiMenu: 'o' | 'loi', khoa: string) => (e: MouseEvent) => {
     if (!onMenu) return;
@@ -204,6 +207,10 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
           stroke={th.khoa === oDich ? mauDich : th.khoa === thangKhoa ? 'var(--green)' : 'none'} stroke-width="3" stroke-dasharray={th.khoa === oDich ? '8 4' : undefined}
           vector-effect="non-scaling-stroke" style={{ cursor: 'pointer', opacity: th.khoa === oKeo ? 0.45 : 1 }}
           onClick={(e) => { e.stopPropagation(); onChonThang(th.khoa, e); }} />
+      ))}
+      {thang.filter((th) => th.loai).map((th) => (
+        <text key={`tbl${th.khoa}`} x="0" y="0" class="nhan-loi" text-anchor="middle" font-size="650" pointer-events="none"
+          transform={`translate(${Math.round(th.tam[0])} ${Math.round(th.tam[1])}) scale(1 -1)`}>{th.loai}</text>
       ))}
       {/* bóng xem trước chỗ thả (kéo đổi chỗ) + ô đang kéo mờ đi */}
       {lop.filter((x) => x.vt.khoa === oDich).map(({ vt, ranh }) => (

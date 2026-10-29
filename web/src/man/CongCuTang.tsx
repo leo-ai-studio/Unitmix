@@ -13,7 +13,8 @@ import { choTrong, type ChoTrong } from '../tinh/choTrong';
 import type { ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { mauToa } from '../tinh/canThem';
 import { boCucTang, canDangDung, type BoCuc, type ViTriCan } from '../tinh/matBang';
-import { doiChoTay, doiThangTay, dsMauThem, latTay, mauThem, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from '../tinh/thaoTacTay';
+import { doiChoTay, doiLoaiThangTay, doiThangTay, dsMauThem, latTay, mauThem, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from '../tinh/thaoTacTay';
+import { demLoaiThang, THANG_N2, THANG_N3, type LoaiThangBo } from '../tinh/loiThang';
 import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { soLieuTang, type ToaVe } from '../ve/MatBangTang';
 import { baoConHien, datBaoStretch } from './baoStretch';
@@ -169,6 +170,16 @@ export function ThanhCongCuTang(p: PropsCongCu) {
     if (!dsO.length) { datBaoStretch({ loai: 'loi', chu: t('cc.chonTruoc') }); return; }
     if (chay((c) => xoaCanTay(toa, tangs, dsO, c), () => t('cc.ok.xoaCan').replace('{n}', String(dsO.length)))) p.chonCan(null);
   };
+  // loại thang đang chọn (QT-63): N3 | N2 — tòa luôn giữ ít nhất một N2 + một N3
+  const loaiChon = thangKhoa ? p.mau.mat.flatMap((m) => m.phan_tu.filter((q) => q.loai === 'thang_bo' && q.khoa === thangKhoa).map((q) => q.block))[0] : undefined;
+  const doiLoai = (l: LoaiThangBo) => {
+    if (!thangKhoa || l === loaiChon) return;
+    const ten = tenThang(p.mau, thangKhoa);
+    chay((c) => doiLoaiThangTay(toa, thangKhoa, l, c), (x) => {
+      const d = demLoaiThang(x.matBang?.thangBo ?? []);
+      return t('cc.ok.doiLoai').replace('{th}', ten).replace('{l}', l === THANG_N2 ? 'N2' : 'N3').replace('{n2}', String(d.n2)).replace('{n3}', String(d.n3));
+    });
+  };
   const lat = () => {
     if (!dsO.length) { datBaoStretch({ loai: 'loi', chu: t('cc.chonTruoc') }); return; }
     chay((c) => latTay(toa, tangs, dsO, c), () => t('cc.ok.lat').replace('{n}', String(dsO.length)));
@@ -239,6 +250,14 @@ export function ThanhCongCuTang(p: PropsCongCu) {
         <NutBieuTuong k="xoa" tat={chiXem || !coChon} ghiChu={ghi('xoa')} onClick={xoa} />
         <NutBieuTuong k="lat" tat={chiXem || !dsO.length} ghiChu={ghi('lat')} onClick={lat}>{dsO.length > 1 ? <span>{dsO.length}</span> : null}</NutBieuTuong>
       </span>
+      {thangKhoa && (loaiChon === THANG_N2 || loaiChon === THANG_N3) && (
+        <span class="nhom-bt cc-loai-thang" role="group" aria-label={t('cc.loaiThang')} title={t('cc.loaiThangGt')}>
+          {([THANG_N3, THANG_N2] as const).map((l) => (
+            <button key={l} type="button" class={`nut-bt${loaiChon === l ? ' bat' : ''}`} aria-pressed={loaiChon === l} disabled={chiXem}
+              onClick={() => doiLoai(l)}>{l === THANG_N2 ? 'N2' : 'N3'}</button>
+          ))}
+        </span>
+      )}
       <span class="nhom-bt">
         <NutBieuTuong k="hanhLang" bat={p.hienHL} ghiChu={ghi('hanhLang')} onClick={() => p.datHienHL(!p.hienHL)} />
         <NutBieuTuong k="thangTuDong" tat={chiXem || !toa.thangTay} ghiChu={ghi('thangTuDong')}

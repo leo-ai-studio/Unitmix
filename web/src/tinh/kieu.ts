@@ -118,6 +118,11 @@ export type ToaDat = {
    * Có thì tự chỉnh coi tập thang là lựa chọn tay — PC-11 không dời / bỏ / thêm thang. Áp cho MỌI tầng (thang liền suốt chiều cao).
    */
   thangTay?: ThangTay;
+  /**
+   * Loại thang bộ chọn tay (QT-63: khoá thang → 'x_tb_n2' | 'x_tb_n3'). Quy tắc mọi tòa: luôn có ít nhất một N2 và một N3 — thang chưa
+   * chọn do ganLoaiThang (tinh/loiThang.ts) gán. Áp mọi tầng.
+   */
+  loaiThang?: Record<string, string>;
   /** Lật gương căn theo vị trí ở bố cục chung (khoá ô -> true = lật so với mẫu); tầng riêng ghi đè ở `BoCucTang.latO`. */
   latO?: Record<string, boolean>;
   /** Căn thêm tay (công cụ "Thêm căn" · QT-69): chèn ngay sau ô `sau` trên mặt `mat`, dãy dài ra ở đầu tự do. Mọi tầng. */

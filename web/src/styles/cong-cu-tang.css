@@ -40,3 +40,5 @@
 .bong-keo small { font-weight: 500; color: var(--muted); font-size: 11px; }
 .lop-st-bao.loi { border-color: var(--warn); }
 @media (prefers-reduced-motion: reduce) { .bong-keo { transition: none !important; } }
+/* loại thang đang chọn N3 | N2 (QT-63) — nút chữ cùng cỡ nút biểu tượng */
+.thanh-cc-tang .cc-loai-thang .nut-bt { min-width: 34px; padding: 0 8px; font-size: 12px; font-weight: 600; }

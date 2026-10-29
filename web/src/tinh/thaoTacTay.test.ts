@@ -22,6 +22,7 @@ const idLoi = (b: string) => 'loi-' + b.replace(/^x_/, '').replace(/_/g, '-');
 const dl: DuLieuMB = { loi: new Map(), cuaCan: {} };
 for (const t of toaDs) for (const m of (t as unknown as ToaMB).mat) for (const q of m.phan_tu)
   if (q.loai !== 'can' && !dl.loi.has(q.block) && existsSync(new URL(`loi/${idLoi(q.block)}.json`, lib))) dl.loi.set(q.block, doc<HinhLoiMB>(`loi/${idLoi(q.block)}.json`));
+dl.loi.set('x_tb_n2', doc<HinhLoiMB>('loi/loi-tb-n2.json')); // thang N2 (QT-63) — mẫu chỉ chèn N3
 for (const c of canDs) dl.cuaCan[c.ma_goc] = tinhCuaCan(doc<{ ve: { cat: string; pts: [number, number][] }[] }>(`can/${c.id}.json`).ve, c.rong_mm);
 const c = { tv, dl };
 
@@ -53,7 +54,9 @@ describe('Công cụ tay màn Tầng — mẫu thật', () => {
   });
 
   it('Thêm thang bộ sau căn đang chọn (QT-10 · ô 3.000 mm): +1 thang, dãy dài ra, 0 đè mới; PC-11 không dời thang tay', () => {
-    const t0 = toaThu('tm-i1'), h0 = hien(t0);
+    // tm-l1 sau PC-11 còn 2 thang (mặc định 2 — thang thứ 3 chỉ khi cần); tòa đã 3 thang thì chặn (test thangBo.test.ts)
+    const t0 = toaThu('tm-l1'), h0 = hien(t0);
+    expect(h0.mb.thangBo.length).toBe(2);
     // căn đầu tiên có thêm được (đoạn có đầu tự do)
     let r: KetQuaTay | null = null;
     for (const v of h0.vts) { r = themThangTay(t0, v.matIdx, v.khoa, c); if (r.ok) break; }
@@ -63,8 +66,8 @@ describe('Công cụ tay màn Tầng — mẫu thật', () => {
     expect(h1.deKhe.de).toBeLessThanOrEqual(h0.deKhe.de);
     expect(t1.thangTay?.them.some((e) => e.khoa === 'tay1')).toBe(true);
     // chạy lại tự chỉnh (vd sau đổi căn khác) vẫn giữ thang tay đúng chỗ
-    const t2 = tuChinhToa(t1, mauGoc('tm-i1'), tv, dl);
-    for (const t of h1.mb.thangBo) expect(matBangCua(t2, mauGoc('tm-i1'), dl).thangBo.some((u) => cungThang(u, t))).toBe(true);
+    const t2 = tuChinhToa(t1, mauGoc('tm-l1'), tv, dl);
+    for (const t of h1.mb.thangBo) expect(matBangCua(t2, mauGoc('tm-l1'), dl).thangBo.some((u) => cungThang(u, t))).toBe(true);
   });
 
   it('Xoá thang bộ: giữ ≥ 2 thang như app cũ — còn 2 thì chặn', () => {
