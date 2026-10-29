@@ -37,6 +37,8 @@ type Props = {
   dung: (c: NguCanh) => CanhDung | null;
   /** Góc (độ, chiều kim đồng hồ) từ trục +Y bản vẽ tới hướng Bắc; dùng đặt mặt trời. */
   gocBac?: number;
+  /** Vĩ độ dự án (độ, TMB › Điểm view › Cài đặt); mặc định Hà Nội 21,03°. */
+  viDo?: number;
   /** Cho đổi tham số đứng (cao cửa, lan can…) — chỉ có ý nghĩa khi cảnh là căn / tầng. */
   chinhThamSo?: boolean;
   /** Cảnh đã gộp hình (cả tòa, cả dự án) nên bỏ các nút bật / tắt chi tiết căn. */
@@ -92,7 +94,7 @@ export function gocMacDinh(c: Pick<CanhDung, 'tam' | 'coCanh' | 'cao'>): GocDeXu
 }
 
 /** Khung WebGL: xoay / di / phóng, mặt trời theo giờ, cắt ngang, kiểu Brand / mô hình trắng, góc đề xuất, lưu góc, xuất ảnh. Three.js nạp lười. */
-export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich, lop, lopAn }: Props) {
+export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich, lop, lopAn }: Props) {
   useLang();
   const hop = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -106,8 +108,8 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
   const [cat, setCat] = useState(1);
   const [deXuat, setDeXuat] = useState<GocDeXuat[]>([]);
   const [baoChep, setBaoChep] = useState('');
-  const tr = useRef({ ts, hien, gio, cat, gocBac, kieu, lopAn });
-  tr.current = { ts, hien, gio, cat, gocBac, kieu, lopAn };
+  const tr = useRef({ ts, hien, gio, cat, gocBac, kieu, lopAn, viDo });
+  tr.current = { ts, hien, gio, cat, gocBac, kieu, lopAn, viDo };
   const dungRef = useRef(dung);
   dungRef.current = dung;
   const chonRef = useRef({ chon, onChon, onMo });
@@ -282,7 +284,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         const datNang = () => {
           if (!canh) return;
           const h = new Date(); // giờ Việt Nam (UTC+7) của ngày hôm nay
-          const { gocCao, phuongVi } = viTriMatTroi(21.03, 105.85, new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate(), 0, 0, 0) + (tr.current.gio - 7) * 3600e3));
+          const { gocCao, phuongVi } = viTriMatTroi(tr.current.viDo, 105.85, new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate(), 0, 0, 0) + (tr.current.gio - 7) * 3600e3));
           const [hx, hy, hz] = huongMatTroi(gocCao, phuongVi, tr.current.gocBac); // Bắc = +Y bản vẽ = −Z three khi gocBac = 0
           const c = canh.coCanh, [tx, ty, tz] = canh.tam;
           sun.position.set(tx + c * 1.6 * hx, ty + c * 1.6 * hy, tz + c * 1.6 * hz);
@@ -497,7 +499,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
   // Đổi tham số đứng: dựng lại giữ góc nhìn. Đổi hiển thị / giờ / cắt: cập nhật nhẹ.
   useEffect(() => { he.current?.ve(); }, [khoaNhe]);
   useEffect(() => { he.current?.ve(); try { localStorage.setItem(LUU, kt); } catch { /* không lưu được */ } }, [kt]);
-  useEffect(() => { (hop.current as (HTMLDivElement & { _cap?: () => void }) | null)?._cap?.(); }, [hien, gio, cat, gocBac]);
+  useEffect(() => { (hop.current as (HTMLDivElement & { _cap?: () => void }) | null)?._cap?.(); }, [hien, gio, cat, gocBac, viDo]);
   useEffect(() => { try { localStorage.setItem(LUU_KIEU, kieu); } catch { /* không lưu được */ } }, [kieu]);
   useEffect(() => { (hop.current as (HTMLDivElement & { _nhan?: () => void }) | null)?._nhan?.(); }, [chon?.toaId, chon?.loId, chon?.tang, chon?.canKhoa]);
   useEffect(() => { (hop.current as (HTMLDivElement & { _lop?: () => void }) | null)?._lop?.(); }, [(lopAn ?? []).join()]);

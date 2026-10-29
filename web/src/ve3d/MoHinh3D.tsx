@@ -184,6 +184,6 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
     <Khung3D khoa={khoa} khoaNhe={JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '') + '|' + napLoi.xong + '|' + loiDA.join()} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
       lop={nutLop(['tum', 'ham', 'thang', 'gio', 'cay', 'duong', 'ranh'], lopAn, doiLop)} lopAn={lopAn}
-      gocBac={caiDatView(pa.huongView).gocBac} dung={({ T, goc, M, kieu, capDo }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa })} />
+      gocBac={caiDatView(pa.huongView).gocBac} viDo={caiDatView(pa.huongView).viDo} dung={({ T, goc, M, kieu, capDo }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa })} />
   );
 }
