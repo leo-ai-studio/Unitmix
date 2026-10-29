@@ -75,7 +75,7 @@ describe('toán ô bản đồ', () => {
     expect(llSangO(0, 0, 0)).toEqual([0.5, 0.5]);
     const [x, y] = llSangO(21.0285, 105.8542, 17), ll = oSangLl(x, y, 17);
     gan(ll.lat, 21.0285, 1e-9); gan(ll.lng, 105.8542, 1e-9);
-    expect(Math.floor(x)).toBe(104078);
+    expect(Math.floor(x)).toBe(104076);
   });
   it('mét / điểm ảnh, chọn mức, ô phủ', () => {
     gan(metMoiDiemAnh(0, 0), 156543.03, 0.01);
