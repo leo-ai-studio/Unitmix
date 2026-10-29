@@ -11,7 +11,7 @@ import type { Diem, ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang, loaiDat, MAU_DAT, type LoaiDat } from '../tinh/loaiDat';
 import { chuanHoaHam } from '../tinh/macDinh';
 import { hinhDaiCua, type KieuVe3D, type T3, type VatLieu3D } from './dungCan';
-import type { DoiTuong3D } from './chon3d';
+import type { DoiTuong3D, ToaTrenDe } from './chon3d';
 import type { CanhDung, GocDeXuat } from './Khung3D';
 import { t } from '../i18n/i18n';
 import { mauToa } from '../tinh/canThem';
@@ -140,7 +140,10 @@ export function dungDuAn(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuVe3D, 
     const hDe = Math.max(0, ...ts.map((x) => x.soTangDe * x.caoDe));
     if (hDe > 0) {
       const de = khoiDe(chans, ts.map((x) => x.deOffset)).filter((p) => p.length >= 3);
-      for (const p of de) khoi(p, hDe, M.de, 0.2, M.line);
+      // khối đế chọn được: bấm phần đế → tòa đứng trên phần đế đó (gần điểm chạm nhất), tô cùng tòa đang chọn / rê
+      const dDe: DoiTuong3D = { loai: 'de', id: l.id, toaIds: ts.map((x) => x.id) };
+      const deToa: ToaTrenDe[] = ts.map((x, i) => ({ id: x.id, loId: l.id, chan: chans[i] }));
+      for (const p of de) { const me = khoi(p, hDe, M.de, 0.2, M.line); gan(me, dDe); me.userData.deToa = deToa; }
     }
     ts.forEach((x, i) => {
       const chan = chans[i], z0 = 0.2 + x.soTangDe * x.caoDe, h = x.soTangDH * x.caoDH, dT: DoiTuong3D = { loai: 'toa', id: x.id, loId: l.id };

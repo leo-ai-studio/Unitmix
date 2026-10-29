@@ -128,9 +128,13 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   // 3D Công trình: căn / tầng của tòa đang xem đi qua đúng state màn Tầng (canKhoa + tầng đang xem); bấm đúp căn → màn Tầng tầng đó, chọn căn đó
   const coXem = useChonO(xemXuat?.toa ?? null);
   const tang3d = coXem.tangs?.length === 1 ? coXem.tangs[0] : null;
+  // khối đế chọn ở 3D Công trình: nhớ theo id tòa; chỉ còn hiệu lực khi chưa chọn căn / tầng khác (từ 2D, dải cấp…)
+  const [deToa3d, setDeToa3d] = useState<string | null>(null);
+  // bấm khối đế lúc đang ở màn Tầng thì panel chuyển sang Thông số tòa (TMB); bấm lại căn / tầng thì về màn Tầng
+  const deDoiBuoc = useRef(false);
   const chon3d: Chon3D = {
-    chon: { toaId, loId, tang: tang3d, canKhoa },
-    onChon: (d) => { const c = chonSauBam(d); setLoId(c.loId); setToaId(c.toaId); setCanKhoa(null); },
+    chon: { toaId, loId, tang: tang3d, canKhoa, de: !!deToa3d && deToa3d === xemXuat?.toa.id && !canKhoa && !tang3d },
+    onChon: (d) => { const c = chonSauBam(d); setLoId(c.loId); setToaId(c.toaId); setCanKhoa(null); setDeToa3d(null); },
     onMo: (d) => { if (d.loai === 'toa') { chungXep.moTang(d.id); setXemGiua('mat_bang'); } },
     onChonToa: (d) => {
       const x = xemXuat?.toa;
@@ -138,10 +142,22 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       const c = chonSauBamToa(d);
       setCanKhoa(c.canKhoa);
       chonTangToa(x, c.tang ? [c.tang] : null);
+      setDeToa3d(c.de ? x.id : null);
+      if (c.de) { // khối đế: chọn tòa + lô, panel bên cạnh ra thông số tòa như bấm tòa ở Toàn dự án
+        setLoId(x.loId); setToaId(x.id);
+        if (buoc === 'tang') { deDoiBuoc.current = true; setBuoc('tmb'); }
+      } else if (d && deDoiBuoc.current) { deDoiBuoc.current = false; if (buoc === 'tmb') setBuoc('tang'); }
     },
     onMoToa: (d) => {
       const x = xemXuat?.toa;
+      if (x && d.loai === 'de') { // bấm đúp khối đế → tổng mặt bằng 2D, tòa này đang chọn
+        deDoiBuoc.current = false;
+        setLoId(x.loId); setToaId(x.id); setCanKhoa(null); setDeToa3d(null);
+        setBuoc('tmb'); setXemGiua('mat_bang');
+        return;
+      }
       if (!x || (d.loai !== 'can' && d.loai !== 'tang')) return;
+      setDeToa3d(null); deDoiBuoc.current = false;
       const c = chonSauBamToa(d);
       setLoId(x.loId); setToaId(x.id); setCanKhoa(c.canKhoa);
       chonTangToa(x, c.tang ? [c.tang] : null);
