@@ -51,6 +51,13 @@ export const BIEU_TUONG = {
   nganPhai: '◨', // mở ngăn Số liệu (panel phải)
   dongNgan: '⌄', // đóng ngăn kéo
   menuToa: '⋯', // menu tòa (nhấn giữ)
+  // màn Dự án của tôi
+  moDuAn: '↗', // mở dự án / phương án
+  soSanh: '⇄', // so sánh phương án
+  doiTen: '✎', // đổi tên
+  chepLink: '⎘', // chép đường dẫn (link xem / link sửa)
+  boDs: '⊘', // bỏ khỏi danh sách trên máy này (không xoá dự án)
+  tim: '⌕', // tìm dự án
   // xuất
   xuatCad: '◫',
   xuatXls: '▥',

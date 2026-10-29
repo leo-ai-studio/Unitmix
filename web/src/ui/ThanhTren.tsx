@@ -1,4 +1,4 @@
-import { nhanPhienBan, PHIEN_BAN } from '../phienBan';
+import { NGAY_BUILD, nhanPhienBan, PHIEN_BAN } from '../phienBan';
 import { LICH_SU_PHIEN_BAN } from '../lichSuPhienBan';
 import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
@@ -34,9 +34,9 @@ type Props = {
   buoc?: { ds: [string, string][]; chon: string; onChon: (k: string) => void };
 };
 
-export function ThuongHieu({ dangXuLy = false }: { dangXuLy?: boolean }) {
+/** Mở / đóng bảng lịch sử phiên bản: bấm ngoài (trừ chính nút `.ban`) hoặc Esc thì đóng. */
+function useLichSu(): [boolean, (f: (m: boolean) => boolean) => void] {
   const [moLs, setMoLs] = useState(false);
-  const [lang] = useLang();
   useEffect(() => {
     if (!moLs) return;
     const dong = (e: Event) => { if (!(e.target as Element).closest?.('.lich-su-ban, .ban')) setMoLs(false); };
@@ -44,6 +44,29 @@ export function ThuongHieu({ dangXuLy = false }: { dangXuLy?: boolean }) {
     addEventListener('pointerdown', dong); addEventListener('keydown', esc);
     return () => { removeEventListener('pointerdown', dong); removeEventListener('keydown', esc); };
   }, [moLs]);
+  return [moLs, setMoLs];
+}
+
+/** Bảng lịch sử phiên bản tóm tắt (LICH_SU_PHIEN_BAN), mới nhất ở trên. */
+function BangLichSu() {
+  const [lang] = useLang();
+  return (
+    <div class="lich-su-ban" role="dialog" aria-label={t('ls.tieuDe')} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+      <b>{t('ls.tieuDe')}</b>
+      {LICH_SU_PHIEN_BAN.map((m) => (
+        <div key={m.v} class="ls-muc">
+          <div class="ls-dau"><span>v{m.v}</span><small>{m.ngay}</small></div>
+          <ul>{(lang === 'en' ? m.en : m.vi).map((x) => <li key={x}>{x}</li>)}</ul>
+        </div>
+      ))}
+      <small class="ls-chan">{nhanPhienBan()}</small>
+    </div>
+  );
+}
+
+/** Logo + tên app. `anBan`: không hiện số phiên bản dưới tên (trang đã có `TacGiaBan` cạnh nút ngôn ngữ). */
+export function ThuongHieu({ dangXuLy = false, anBan = false }: { dangXuLy?: boolean; anBan?: boolean }) {
+  const [moLs, setMoLs] = useLichSu();
   return (
     <a class="thuong-hieu" href="/" aria-label={t('app.ten')} title={`${t('app.ten')} ${nhanPhienBan()}`}>
       <span class="mark">
@@ -53,23 +76,34 @@ export function ThuongHieu({ dangXuLy = false }: { dangXuLy?: boolean }) {
       <span class="ten-ban">
         <strong>{t('app.ten').toUpperCase()}</strong>
         {/* Bấm số phiên bản (không về trang chủ) → lịch sử phiên bản tóm tắt. */}
-        <small class="ban" role="button" tabIndex={0} aria-expanded={moLs} title={t('ls.tieuDe')}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMoLs((m) => !m); }}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMoLs((m) => !m); } }}>v{PHIEN_BAN}</small>
+        {!anBan && (
+          <small class="ban" role="button" tabIndex={0} aria-expanded={moLs} title={t('ls.tieuDe')}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMoLs((m) => !m); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMoLs((m) => !m); } }}>v{PHIEN_BAN}</small>
+        )}
       </span>
-      {moLs && (
-        <div class="lich-su-ban" role="dialog" aria-label={t('ls.tieuDe')} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-          <b>{t('ls.tieuDe')}</b>
-          {LICH_SU_PHIEN_BAN.map((m) => (
-            <div key={m.v} class="ls-muc">
-              <div class="ls-dau"><span>v{m.v}</span><small>{m.ngay}</small></div>
-              <ul>{(lang === 'en' ? m.en : m.vi).map((x) => <li key={x}>{x}</li>)}</ul>
-            </div>
-          ))}
-          <small class="ls-chan">{nhanPhienBan()}</small>
-        </div>
-      )}
+      {moLs && <BangLichSu />}
     </a>
+  );
+}
+
+/** Ngày của bản đang chạy: lấy ở LICH_SU_PHIEN_BAN (đúng số PHIEN_BAN), chưa ghi thì ngày build. */
+export const ngayPhienBan = (): string => LICH_SU_PHIEN_BAN.find((m) => m.v === PHIEN_BAN)?.ngay ?? NGAY_BUILD;
+
+/** Người tạo + phiên bản + ngày — MỘT chỗ cố định trên thanh trên, cạnh nút VI / EN (trang Dự án). Bấm số phiên bản → lịch sử. */
+export function TacGiaBan() {
+  const [moLs, setMoLs] = useLichSu();
+  return (
+    <div class="tac-gia-boc">
+      {/* cả khối là một nút (đủ 40 px cho ngón tay): dòng 1 người tạo, dòng 2 phiên bản · ngày */}
+      <button type="button" class="tac-gia-ban ban" aria-expanded={moLs} aria-haspopup="dialog"
+        aria-label={`${t('app.tacGia')} · v${PHIEN_BAN} · ${ngayPhienBan()} — ${t('ls.tieuDe')}`} title={`${t('ls.tieuDe')} · ${nhanPhienBan()}`}
+        onClick={() => setMoLs((m) => !m)}>
+        <span class="tg">NghiaVT</span>
+        <span class="dong-ban"><b>v{PHIEN_BAN}</b> · {ngayPhienBan()}</span>
+      </button>
+      {moLs && <BangLichSu />}
+    </div>
   );
 }
 

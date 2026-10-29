@@ -1,20 +1,21 @@
-import { nhanPhienBan } from '../phienBan';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
-import { api, type DuAnApi } from '../api';
+import { api } from '../api';
 import { t, useLang } from '../i18n/i18n';
 import { useDongHop } from '../ui/useDongHop';
-import { dsDuAnDaMo, ghiNhoDuAn, layMaSua, linkSua, linkXem, luuMaSua, phanTichLink } from '../kho/maSua';
+import {
+  boKhoiDanhSach, dsDuAnDaMo, ghiNhoDuAn, hoanTacBo, layMaSua, linkChiaSe, linkSua, linkXem, luuMaSua, phanTichLink, type LoaiLink,
+} from '../kho/maSua';
 import { taoPAMoi } from '../tinh/macDinh';
 import { LOAI_CAN } from '../tinh/kieu';
-import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
+import { ChonLang, TacGiaBan, ThuongHieu } from '../ui/ThanhTren';
+import { BieuTuong, NutBieuTuong } from '../ui/NutBieuTuong';
 import { fmtSo } from '../ui/so';
 import { luoi } from '../ui/Luoi';
+import { locDuAn, sapDuAn, type CachSap, type DongDuAn } from './locDuAn';
 
 // So sánh PA (kèm tính chi phí): chunk riêng, tải khi mở hộp.
 const SoSanhPA = luoi(() => import('./SoSanhPA').then((m) => m.SoSanhPA), 'hop');
-
-type Dong = { ma: string; da: DuAnApi | null; loi: boolean };
 
 function ChepNut({ chu }: { chu: string }) {
   const [daChep, setDaChep] = useState(false);
@@ -85,18 +86,63 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
   );
 }
 
-/** Màn 0 · Dự án của tôi: các dự án đã mở trên máy này, mỗi dự án kèm tóm tắt phương án. */
+/** Báo nhỏ ở đáy trang (đã chép link, đã bỏ khỏi danh sách + Hoàn tác). */
+type BaoNho = { chu: string; hoanTac?: () => void };
+
+/**
+ * Nút chép đường dẫn. Máy giữ mã sửa → menu nhỏ hai lựa chọn: link chỉ xem · link có thể sửa (kèm mã sửa).
+ * Không có mã sửa → bấm là chép link xem luôn (không đưa ra lựa chọn link sửa).
+ */
+function NutChepLink({ ma, coMa, chep }: { ma: string; coMa: boolean; chep: (loai: LoaiLink) => void }) {
+  const [mo, setMo] = useState(false);
+  const boc = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!mo) return;
+    const dong = (e: Event) => { if (!boc.current?.contains(e.target as Node)) setMo(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMo(false); };
+    addEventListener('pointerdown', dong); addEventListener('keydown', esc);
+    boc.current?.querySelector<HTMLElement>('[role=menuitem]')?.focus();
+    return () => { removeEventListener('pointerdown', dong); removeEventListener('keydown', esc); };
+  }, [mo]);
+  if (!coMa) return <NutBieuTuong k="chepLink" nhan={t('duAn.chepXemNut')} onClick={() => chep('xem')} />;
+  const muc = (loai: LoaiLink) => (
+    <button type="button" role="menuitem" class={`muc-link ${loai}`} onClick={() => { setMo(false); chep(loai); }}>
+      <b>{t(loai === 'xem' ? 'duAn.chepXem' : 'duAn.chepSua')}</b>
+      <small>{t(loai === 'xem' ? 'duAn.chepXemGt' : 'duAn.chepSuaGt')}</small>
+    </button>
+  );
+  return (
+    <div class="menu-link-boc" ref={boc}>
+      <NutBieuTuong k="chepLink" moRong={mo} onClick={() => setMo((m) => !m)} />
+      {mo && <div class="menu-link" role="menu" aria-label={t('bt.chepLink')}>{muc('xem')}{muc('sua')}</div>}
+    </div>
+  );
+}
+
+/** Màn 0 · Dự án của tôi: các dự án đã mở trên máy này, mỗi dự án một thẻ kèm bảng phương án gọn. */
 export function DuAn() {
   const [lang] = useLang();
   const { route } = useLocation();
-  const [dong, setDong] = useState<Dong[]>(() => dsDuAnDaMo().map((d) => ({ ma: d.ma, da: null, loi: false })));
+  const [dong, setDong] = useState<DongDuAn[]>(() => dsDuAnDaMo().map((d) => ({ ma: d.ma, da: null, loi: false })));
   const [moTao, setMoTao] = useState(false);
   const [link, setLink] = useState('');
   const [loiLink, setLoiLink] = useState(false);
+  const [tim, setTim] = useState('');
+  const [sap, setSap] = useState<CachSap>('gan');
   const [suaDa, setSuaDa] = useState<{ ma: string; ten: string; diaDiem: string } | null>(null);
   const [suaPA, setSuaPA] = useState<{ ma: string; id: string; ten: string } | null>(null);
   const [loiHang, setLoiHang] = useState('');
   const [soSanh, setSoSanh] = useState<string | null>(null);
+  const [bao, setBao] = useState<BaoNho | null>(null);
+  const henBao = useRef(0);
+
+  /** Hiện báo nhỏ; có Hoàn tác thì giữ lâu hơn. */
+  function baoNho(b: BaoNho) {
+    clearTimeout(henBao.current);
+    setBao(b);
+    henBao.current = window.setTimeout(() => setBao(null), b.hoanTac ? 6000 : 2400);
+  }
+  useEffect(() => () => clearTimeout(henBao.current), []);
 
   const napLai = async (ma: string) => {
     const da = await api.docDuAn(ma);
@@ -131,6 +177,38 @@ export function DuAn() {
     if (!confirm(t('duAn.xoaHoi').replace('{ten}', ten))) return;
     await ghi(ma, (m) => api.xoaPA(ma, id, m));
   }
+  /** Nhân bản một phương án trong cùng dự án (cần mã sửa); lỗi thì báo, thành công thì nạp lại danh sách. */
+  async function nhanBan(ma: string, id: string) {
+    await ghi(ma, (m) => api.nhanBan(ma, id, m));
+  }
+
+  /** Chép link xem / link sửa vào bộ nhớ tạm. Link sửa chỉ dựng khi máy có mã sửa (linkChiaSe trả null nếu không). */
+  async function chep(ma: string, loai: LoaiLink) {
+    const l = linkChiaSe(location.origin, ma, loai, layMaSua(ma));
+    if (!l) return;
+    try {
+      await navigator.clipboard.writeText(l);
+      baoNho({ chu: t(loai === 'sua' ? 'duAn.daChepSua' : 'duAn.daChepXem') });
+    } catch {
+      baoNho({ chu: t('duAn.khongChep').replace('{link}', l) });
+    }
+  }
+
+  /**
+   * Bỏ khỏi danh sách — chỉ trên máy này, KHÔNG xoá dự án trên server (không có API xoá dự án; mã sửa giữ nguyên).
+   * Dự án sửa được thì hỏi lại trước; mọi trường hợp đều có Hoàn tác trong báo nhỏ.
+   */
+  function boDs(ma: string, ten: string) {
+    if (layMaSua(ma) && !confirm(t('duAn.boHoiSua').replace('{ten}', ten))) return;
+    const r = boKhoiDanhSach(ma);
+    const cu = dong;
+    setDong((ds) => ds.filter((x) => x.ma !== ma));
+    if (soSanh === ma) setSoSanh(null);
+    baoNho({
+      chu: t('duAn.daBo').replace('{ten}', ten),
+      hoanTac: r.bo ? () => { hoanTacBo(r.bo!, r.viTri); setDong(cu); setBao(null); } : undefined,
+    });
+  }
 
   useEffect(() => {
     dsDuAnDaMo().forEach((d) =>
@@ -149,86 +227,134 @@ export function DuAn() {
     route(`/du-an/${r.ma}`);
   }
 
-  /** Nhân bản một phương án trong cùng dự án (cần mã sửa); lỗi thì báo, thành công thì nạp lại danh sách. */
-  async function nhanBan(ma: string, id: string) {
-    await ghi(ma, (m) => api.nhanBan(ma, id, m));
-  }
+  const ngay = (s: string) => new Date(s).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-GB');
+  const hien = sapDuAn(locDuAn(dong, tim), sap, lang);
 
   return (
     <div class="khung">
-      <header class="thanh-tren">
-        <ThuongHieu />
+      <header class="thanh-tren tren-du-an">
+        <ThuongHieu anBan />
         <span class="gian" />
+        <TacGiaBan />
         <ChonLang />
       </header>
-      <main class="trang">
-        <h1>{t('duAn.tieuDe')}</h1>
-        <p style={{ margin: 0, textAlign: 'center', color: 'var(--muted-text)' }}>{t('duAn.moTa')}</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
-          <form onSubmit={moLink} style={{ display: 'flex', gap: '8px', flex: '1 1 360px' }}>
+      <main class="trang trang-du-an">
+        <div class="dau-trang">
+          <div class="dau-chu">
+            <h1>{t('duAn.tieuDe')}{dong.length > 0 && <span class="dem">{t('duAn.soDuAn').replace('{n}', String(dong.length))}</span>}</h1>
+            <p>{t('duAn.moTaNgan')}</p>
+          </div>
+          <button type="button" class="nut-chinh nut-tao" onClick={() => setMoTao(true)}>
+            <span aria-hidden="true" class="cong">+</span>{t('duAn.tao')}
+          </button>
+        </div>
+
+        <div class="thanh-loc">
+          {dong.length > 1 && (
+            <>
+              <label class="o-tim">
+                <BieuTuong k="tim" />
+                <input type="search" aria-label={t('bt.tim')} placeholder={t('duAn.timKiem')} value={tim} onInput={(e) => setTim(e.currentTarget.value)} />
+              </label>
+              <select class="chon-sap" aria-label={t('duAn.sapXep')} title={t('duAn.sapXep')} value={sap} onChange={(e) => setSap(e.currentTarget.value as CachSap)}>
+                {(['gan', 'sua', 'ten'] as const).map((c) => <option key={c} value={c}>{t(`duAn.sx.${c}`)}</option>)}
+              </select>
+            </>
+          )}
+          <form class="mo-link" onSubmit={moLink}>
             <input aria-label={t('duAn.danLink')} placeholder={t('duAn.danLink')} value={link}
-              onInput={(e) => { setLink(e.currentTarget.value); setLoiLink(false); }}
-              style={{ flex: 1, padding: '8px', border: '1px solid var(--line)', borderRadius: '5px' }} />
+              onInput={(e) => { setLink(e.currentTarget.value); setLoiLink(false); }} />
             <button type="submit" class="nut-phu">{t('duAn.mo')}</button>
           </form>
-          <button type="button" class="nut-chinh" onClick={() => setMoTao(true)}>{t('duAn.moi')}</button>
         </div>
         {loiLink && <p class="vuot" role="alert" style={{ margin: 0 }}>{t('duAn.linkSai')}</p>}
 
-        {!dong.length && <p style={{ color: 'var(--muted-text)' }}>{t('duAn.trong')}</p>}
-        {dong.map(({ ma, da, loi }) => {
+        {!dong.length && <p class="trong">{t('duAn.trong')}</p>}
+        {dong.length > 0 && !hien.length && <p class="trong">{t('duAn.khongKhop').replace('{tu}', tim.trim())}</p>}
+        {hien.map(({ ma, da, loi }) => {
           const coMa = !!layMaSua(ma);
+          const ten = da?.ten ?? ma;
           return (
-            <section class="bang-du-an" key={ma} aria-label={da?.ten ?? ma}>
-              <div class="hang dau">
+            <section class="the-du-an" key={ma} aria-label={ten}>
+              <div class="the-dau">
                 {suaDa?.ma === ma ? (
-                  <form class="sua-ten" style={{ flex: 1 }} onSubmit={(e) => { e.preventDefault(); luuTenDa(); }}>
+                  <form class="sua-ten" onSubmit={(e) => { e.preventDefault(); luuTenDa(); }}>
                     <input aria-label={t('duAn.ten')} value={suaDa.ten} required autoFocus onInput={(e) => setSuaDa({ ...suaDa, ten: e.currentTarget.value })} />
                     <input aria-label={t('duAn.diaDiem')} placeholder={t('duAn.diaDiem')} value={suaDa.diaDiem} onInput={(e) => setSuaDa({ ...suaDa, diaDiem: e.currentTarget.value })} />
                     <button type="submit" class="nut-chinh">{t('duAn.luu')}</button>
                     <button type="button" class="nut-phu" onClick={() => setSuaDa(null)}>{t('duAn.huy')}</button>
                   </form>
                 ) : (
-                  <>
-                    <span style={{ flex: 1 }}>{da ? `${da.ten}${da.dia_diem ? ' · ' + da.dia_diem : ''}` : ma}</span>
-                    {coMa && da && <button type="button" class="nut-phu" onClick={() => { setSuaPA(null); setSuaDa({ ma, ten: da.ten, diaDiem: da.dia_diem }); }}>{t('duAn.doiTenDA')}</button>}
-                  </>
+                  <div class="the-ten">
+                    <div class="dong-ten">
+                      <a class="ten-da" href={`/du-an/${ma}`}>{ten}</a>
+                      <span class={`nhan-quyen ${coMa ? 'sua' : 'xem'}`} title={t(coMa ? 'duAn.quyenSuaGt' : 'duAn.chiaSeGt')}>
+                        {t(coMa ? 'duAn.quyenSua' : 'duAn.chiaSe')}
+                      </span>
+                    </div>
+                    <div class="the-phu">
+                      {da?.dia_diem && <span>{da.dia_diem}</span>}
+                      <span>{t('duAn.soPANgan').replace('{n}', da ? String(da.phuong_an.length) : '—')}</span>
+                      <code title={t('duAn.chepXem')}>{ma}</code>
+                    </div>
+                  </div>
                 )}
-                {!coMa && <span class="so">{t('duAn.chiXem')}</span>}
-                <span class="so">{t('duAn.soPA')}: <b>{da ? da.phuong_an.length : '—'}</b></span>
-                {da && da.phuong_an.length >= 2 && <button type="button" class="nut-phu" onClick={() => setSoSanh(ma)}>{t('ss.nut')}</button>}
-                <code style={{ fontSize: '12px' }}>{linkXem(ma).replace(/^https?:\/\//, '')}</code>
-                <ChepNut chu={linkXem(ma)} />
-              </div>
-              {loi && <div class="hang vuot">{t('duAn.khongTai')}</div>}
-              {loiHang && (suaDa?.ma === ma || suaPA?.ma === ma || da?.phuong_an.length) ? <div class="hang vuot" role="alert">{loiHang}</div> : null}
-              {da?.phuong_an.map((p) => (
-                <div class="hang" key={p.id}>
-                  <span style={{ width: '120px' }}>{new Date(p.sua_luc).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-GB')}</span>
-                  {suaPA?.ma === ma && suaPA.id === p.id ? (
-                    <form class="sua-ten" style={{ width: '260px' }} onSubmit={(e) => { e.preventDefault(); luuTenPA(); }}>
-                      <input aria-label={t('duAn.tenPA')} value={suaPA.ten} required autoFocus onInput={(e) => setSuaPA({ ...suaPA, ten: e.currentTarget.value })} />
-                      <button type="submit" class="nut-chinh">{t('duAn.luu')}</button>
-                      <button type="button" class="nut-phu" onClick={() => setSuaPA(null)}>{t('duAn.huy')}</button>
-                    </form>
-                  ) : <b style={{ width: '200px' }}>{p.ten}</b>}
-                  <span style={{ flex: 1 }} />
-                  {LOAI_CAN.map((l) => (
-                    <span class="so" key={l}>{t(`loai.${l}`)}: <b>{fmtSo(p.tom_tat.coCau?.[l] ?? null)}</b></span>
-                  ))}
-                  <span class="so">{t('duAn.tongCan')}: <b>{fmtSo(p.tom_tat.soCan ?? null)}</b></span>
-                  <span class="so">{t('duAn.dtSan')}: <b>{fmtSo(p.tom_tat.dtSan ?? null, { donVi: 'm²' })}</b></span>
-                  {coMa && <button type="button" class="nut-phu" onClick={() => { setSuaDa(null); setSuaPA({ ma, id: p.id, ten: p.ten }); }}>{t('duAn.doiTenPA')}</button>}
-                  {coMa && <button type="button" class="nut-phu" onClick={() => nhanBan(ma, p.id)}>{t('duAn.nhanBan')}</button>}
-                  {coMa && <button type="button" class="nut-phu nut-xoa" onClick={() => xoaPA(ma, p.id, p.ten)}>{t('duAn.xoaPA')}</button>}
-                  <a class="nut-chinh" href={`/du-an/${ma}?pa=${p.id}`}>{t('duAn.moPA')}</a>
+                <div class="the-nut">
+                  {da && da.phuong_an.length >= 2 && <NutBieuTuong k="soSanh" onClick={() => setSoSanh(ma)} />}
+                  {coMa && da && <NutBieuTuong k="doiTen" nhan={t('duAn.doiTenDA')} onClick={() => { setSuaPA(null); setSuaDa({ ma, ten: da.ten, diaDiem: da.dia_diem }); }} />}
+                  <NutChepLink ma={ma} coMa={coMa} chep={(l) => chep(ma, l)} />
+                  <NutBieuTuong k="boDs" onClick={() => boDs(ma, ten)} />
+                  <NutBieuTuong k="moDuAn" nhan={t('duAn.moDuAn')} onClick={() => route(`/du-an/${ma}`)} />
                 </div>
-              ))}
+              </div>
+              {loi && <div class="the-loi vuot">{t('duAn.khongTai')}</div>}
+              {loiHang && (suaDa?.ma === ma || suaPA?.ma === ma) ? <div class="the-loi vuot" role="alert">{loiHang}</div> : null}
+              {!!da?.phuong_an.length && (
+                <div class="bang-pa">
+                  <div class="hang-pa dau" aria-hidden="true">
+                    <span>{t('duAn.soPA')}</span><span>{t('duAn.suaLuc')}</span>
+                    {LOAI_CAN.map((l) => <span class="so" key={l}>{t(`loai.${l}`)}</span>)}
+                    <span class="so">{t('duAn.tongCan')}</span><span class="so">{t('duAn.dtSan')}</span><span />
+                  </div>
+                  {da.phuong_an.map((p) => (
+                    <div class={`hang-pa${suaPA?.ma === ma && suaPA.id === p.id ? ' dang-sua' : ''}`} key={p.id}>
+                      {suaPA?.ma === ma && suaPA.id === p.id ? (
+                        <form class="sua-ten" onSubmit={(e) => { e.preventDefault(); luuTenPA(); }}>
+                          <input aria-label={t('duAn.tenPA')} value={suaPA.ten} required autoFocus onInput={(e) => setSuaPA({ ...suaPA, ten: e.currentTarget.value })} />
+                          <button type="submit" class="nut-chinh">{t('duAn.luu')}</button>
+                          <button type="button" class="nut-phu" onClick={() => setSuaPA(null)}>{t('duAn.huy')}</button>
+                        </form>
+                      ) : (
+                        <>
+                          <a class="ten-pa" href={`/du-an/${ma}?pa=${p.id}`}>{p.ten}</a>
+                          <span class="ngay">{ngay(p.sua_luc)}</span>
+                          {LOAI_CAN.map((l) => (
+                            <span class="so" key={l} data-nhan={t(`loai.${l}`)}>{fmtSo(p.tom_tat.coCau?.[l] ?? null)}</span>
+                          ))}
+                          <span class="so tong" data-nhan={t('duAn.tongCan')}>{fmtSo(p.tom_tat.soCan ?? null)}</span>
+                          <span class="so" data-nhan={t('duAn.dtSan')}>{fmtSo(p.tom_tat.dtSan ?? null, { donVi: 'm²' })}</span>
+                          <span class="nut-pa">
+                            {coMa && <NutBieuTuong k="doiTen" nhan={t('duAn.doiTenPA')} onClick={() => { setSuaDa(null); setSuaPA({ ma, id: p.id, ten: p.ten }); }} />}
+                            {coMa && <NutBieuTuong k="nhanBan" onClick={() => nhanBan(ma, p.id)} />}
+                            {coMa && <span class="nut-xoa-pa"><NutBieuTuong k="xoa" nhan={t('duAn.xoaPA')} onClick={() => xoaPA(ma, p.id, p.ten)} /></span>}
+                            <NutBieuTuong k="moDuAn" nhan={`${t('duAn.moPA')} · ${p.ten}`} onClick={() => route(`/du-an/${ma}?pa=${p.id}`)} />
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           );
         })}
       </main>
-      <footer class="chan-trang">{t('app.tacGia')} · <span class="phien-ban">{nhanPhienBan()}</span></footer>
+      {bao && (
+        <div class="bao-nho" role="status">
+          <span>{bao.chu}</span>
+          {bao.hoanTac && <button type="button" onClick={bao.hoanTac}>{t('duAn.hoanTac')}</button>}
+        </div>
+      )}
       {moTao && <HopTaoDuAn dong={() => setMoTao(false)} />}
       {soSanh && dong.find((x) => x.ma === soSanh)?.da && <SoSanhPA ma={soSanh} da={dong.find((x) => x.ma === soSanh)!.da!} dong={() => setSoSanh(null)} />}
     </div>
