@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { chayRaf, easeOutCubic, giamChuyenDong, tron } from '../ui/chuyenDong';
 import type { Diem } from '../tinh/kieu';
-import { batDauChum, bienDoi, kepW, khongDiBanVe, laChamDup, MS_GIU, nguongRun, nhinKhiChum, nhinKhiKeo, phanLoai, zoomTu, type DiemCham, type GocChum, type NhinThay } from './camUng';
+import { batDauChum, kepW, khongDiBanVe, laChamDup, MS_GIU, nguongRun, nhinKhiChum, nhinKhiKeo, phanLoai, zoomTu, type DiemCham, type GocChum, type NhinThay } from './camUng';
 
 /** Đổi điểm CAD (m, y lên) sang toạ độ SVG (y xuống). */
 export const s = ([x, y]: Diem): string => `${x},${-y}`;
@@ -60,7 +60,7 @@ function phatChuot(loai: 'dblclick' | 'contextmenu', x: number, y: number) {
 /**
  * Bản vẽ SVG theo mét. Khung cố định theo ô chứa (không phình theo nội dung); thước tỷ lệ và hoa gió là lớp phủ đứng yên.
  * Chuột: kéo để di, lăn để phóng quanh con trỏ. Cảm ứng (`ve/camUng.ts`): một ngón kéo nền để dời, hai ngón chụm để phóng / thu
- * quanh điểm giữa hai ngón (bám tay 1:1: chỉ đổi CSS transform trong rAF, nhấc tay mới vẽ lại SVG); chạm = bấm, chạm hai lần = bấm đúp
+ * quanh điểm giữa hai ngón (bám tay 1:1: mỗi frame đổi viewBox, mọi frame đúng hình — không phóng ảnh bằng CSS transform); chạm = bấm, chạm hai lần = bấm đúp
  * (dblclick), nhấn giữ = menu ngữ cảnh (contextmenu) — phát lên phần tử dưới ngón để con (tòa, lô, ô căn) dùng lại handler chuột.
  */
 export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen, chonKhung }: Props) {
@@ -69,11 +69,8 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
   const svgRef = useRef<SVGSVGElement>(null);
   const [kt, setKt] = useState({ r: 0, c: 0 }); // rộng × cao của ô chứa (px)
   const [v, setV] = useState<NhinThay>({ cx: 0, cy: 0, w: 100 });
-  const vRef = useRef(v), ktRef = useRef(kt);
-  const daVe = useRef(v); // khung nhìn SVG đang vẽ (viewBox); khác vRef khi đang bám tay bằng transform
-  if (daVe.current !== v) { daVe.current = v; vRef.current = v; }
+  const vRef = useRef(v), ktRef = useRef(kt); // vRef = khung nhìn mới nhất (đi trước state v tối đa một frame khi bám tay)
   ktRef.current = kt;
-  const rafTay = useRef(0);
   const luotCham = useRef<LuotCham | null>(null);
   const chamTruoc = useRef<DiemCham | null>(null); // lần chạm trước (nhận chạm hai lần)
   const kieuTro = useRef('mouse');
@@ -116,38 +113,22 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
   /** Gán theo tay: ghi ref ngay, gộp setV một lần mỗi frame. */
   const datV = (n: NhinThay) => {
     vRef.current = n; chuaV.current = n;
-    if (!rafV.current) rafV.current = requestAnimationFrame(() => { rafV.current = 0; if (chuaV.current) setV(chuaV.current); });
+    if (!rafV.current) rafV.current = requestAnimationFrame(() => { rafV.current = 0; if (chuaV.current) { setV(chuaV.current); chuaV.current = null; } });
   };
-  /** viewBox của khung nhìn n theo ô chứa hiện tại. */
-  const hopNhin = (n: NhinThay) => {
-    const { r, c } = ktRef.current, hh = r ? (n.w * c) / r : 0;
-    return `${n.cx - n.w / 2} ${n.cy - hh / 2} ${n.w} ${hh}`;
-  };
-  /** Bám tay (kéo / chụm / quán tính): ghi ref, mỗi frame chỉ đổi CSS transform của SVG — không vẽ lại cây SVG. */
-  const datTay = (n: NhinThay) => {
-    vRef.current = n;
-    if (rafTay.current) return;
-    rafTay.current = requestAnimationFrame(() => {
-      rafTay.current = 0;
-      const el = svgRef.current, r = ktRef.current.r;
-      if (!el || !r) return;
-      const { tx, ty, s } = bienDoi(daVe.current, vRef.current, r);
-      el.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
-    });
-  };
-  /** Nhấc tay: vẽ lại SVG theo khung nhìn cuối (đặt viewBox ngay trên DOM để toạ độ màn hình ↔ mét đúng liền), bỏ transform. */
+  /**
+   * Bám tay (kéo / chụm / quán tính): như lăn chuột — mỗi frame đổi viewBox (vẽ lại vector đúng hình), không còn CSS transform.
+   * Trước đây kéo / chụm chỉ đổi `transform: translate() scale()` của ảnh đã vẽ rồi nhấc tay mới vẽ lại: kéo thì phần ngoài khung cũ
+   * trống / bị cắt, chụm thì nét `non-scaling-stroke` + chữ phình / co theo và mờ (ảnh raster phóng), hết quán tính (~1 s) mới
+   * "thẳng lại" (NHAT_KY 2026-10-29 · zoom / pan méo). Cây con không vẽ lại: Preact bỏ qua vnode `children` không đổi.
+   */
+  const datTay = datV;
+  /** Đẩy ngay khung nhìn đang chờ frame (để hoạt ảnh bay / nhấc tay không bị frame cũ ghi đè). */
   const chot = () => {
-    cancelAnimationFrame(rafTay.current); rafTay.current = 0;
-    const n = vRef.current, el = svgRef.current;
-    if (n === daVe.current) { if (el) el.style.transform = ''; return; }
-    if (el) { el.setAttribute('viewBox', hopNhin(n)); el.style.transform = ''; }
-    daVe.current = n;
-    setV(n);
+    if (chuaV.current) { setV(chuaV.current); chuaV.current = null; }
   };
   /** Dừng mọi hoạt ảnh (bay, quán tính): chạm / kéo / chụm / lăn mới phải bám tay ngay. */
   const huyDong = () => {
     bay.current(); bay.current = () => {}; dich.current = null;
-    chuaV.current = null;
     cancelAnimationFrame(troi.current); troi.current = 0;
     chot();
   };
