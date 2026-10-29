@@ -19,7 +19,7 @@ import { napThuVien, toaThu } from '../thu/thuVienThat';
 import { mauToa } from './canThem';
 import { demCan } from './coCau';
 import type { Diem, ToaDat, TrangThaiPA } from './kieu';
-import { apMatBang, daGiacCacLoi, demLoaiThang, doDeKhe, matBangCua, matBangMacDinh, THANG_N2, THANG_N3, thangDungLuat, tuChinhToa, type ToaMB } from './loiThang';
+import { apMatBang, daGiacCacLoi, dauHanhLangNgoai, demLoaiThang, doDeKhe, matBangCua, matBangMacDinh, THANG_N2, THANG_N3, thangDungLuat, tuChinhToa, type ToaMB } from './loiThang';
 import { taoPAMoi } from './macDinh';
 import { boCucTang, canDangDung, congNangTai, hinhLogia, khungTaiO, viTriCan } from './matBang';
 import { chayPhep, phepTay, type PhepTay } from './tayNen';
@@ -111,7 +111,11 @@ function doTrangThai(toa: ToaDat) {
   });
   // + khung tường lõi (nét bao ôm lõi)
   dai.push(...daGiacCacLoi(mau, dl));
-  const dinhDs = bao.map((p) => ({ p, d: Math.min(...[...o, ...dai].map((R) => (R.length === 4 ? kcO(p, R) : trongDG(p, R) ? 0 : kcBien(p, R)))) })).sort((a, b) => b.d - a.d);
+  // + chỗ gập hành lang (hai dải chữ nhật gặp nhau theo góc để hở một cái nêm ở mép ngoài chỗ gập — nét bao đi theo mép vát đó)
+  for (const s of hd.hanh_lang ?? []) for (const q of [s.p0, s.p1]) dai.push(Array.from({ length: 8 }, (_, k): Diem => [q[0] + hl * 1.1 * Math.cos((k * Math.PI) / 4), q[1] + hl * 1.1 * Math.sin((k * Math.PI) / 4)]));
+  // đỉnh nằm trên nét bao CAD gốc của mẫu (sảnh hub tòa Y, góc lõi…) là nét bản vẽ, không phải nét bao dựng theo ô — không xét
+  const P0 = mau.duong_bao, trenP0 = (p: Diem) => P0.some((a, i) => kcDoan(p, a, P0[(i + 1) % P0.length]) <= 2);
+  const dinhDs = bao.filter((p) => !trenP0(p)).map((p) => ({ p, d: Math.min(...[...o, ...dai].map((R) => (R.length === 4 ? kcO(p, R) : trongDG(p, R) ? 0 : kcBien(p, R)))) })).sort((a, b) => b.d - a.d);
   const dinhXa = dinhDs[0]?.d ?? 0, dinhXaO = dinhDs[0]?.p.map(Math.round).join(',');
   return { mau, mb, hd, de: dk.de, kheMm: dk.mm, soCan, gocNgoai, gocXa, dinhXa, dinhXaO, dtBao: dtDG(bao) / 1e6, dtxd: hd.dtxd_m2, thang: mb.thangBo, vts };
 }
@@ -153,15 +157,22 @@ export function phepNgauNhien(toa: ToaDat, r: () => number): { op: string; ph: P
   if (x < 0.7) { const t = chon(s.thang); return { op: `xoá thang ${t.khoa}`, ph: phepTay('xoaThangTay', toa, t.khoa) }; }
   if (x < 0.8) { const t = chon(s.thang), v = chon(can); return { op: `dời thang ${t.khoa} → sau ${v.khoa}`, ph: phepTay('doiThangTay', toa, t.khoa, v.matIdx, v.khoa) }; }
   if (x < 0.88) { const t = chon(s.thang); return { op: `đổi loại ${t.khoa}`, ph: phepTay('doiLoaiThangTay', toa, t.khoa, t.block === THANG_N2 ? THANG_N3 : THANG_N2) }; }
-  if (x < 0.94) return { op: 'dồn khít (tự chỉnh lại)', ph: 'donKhit' };
+  if (x < 0.91) {
+    // co kéo đầu hành lang (app cũ p14 axAdj): đầu ngoài ngẫu nhiên, −4 … +6 m
+    const ds = (s.hd.hanh_lang ?? []).flatMap((_, i) => dauHanhLangNgoai(s.hd.hanh_lang ?? [], i, s.hd.duong_bao).map((dau) => [i, dau] as const));
+    const [i, dau] = ds.length ? chon(ds) : [0, 0 as const];
+    const d = Math.round((r() * 10 - 4) * 10) * 100;
+    if (ds.length) return { op: `kéo hành lang ${i}:${dau} ${d}`, ph: phepTay('keoHanhLangTay', toa, i, dau, d) };
+  }
+  if (x < 0.95) return { op: 'dồn khít (tự chỉnh lại)', ph: 'donKhit' };
   return { op: 'thang về tự động', ph: phepTay('thangTuDongLai', toa) };
 }
 
 /** Một bước ngẫu nhiên: trả tên phép + kết quả (chạy đồng bộ `chayPhep` — bản chuẩn của đường nền). */
-function buocNgauNhien(toa: ToaDat, r: () => number): { op: string; kq: KetQuaTay | { ok: true; toa: ToaDat; chan: [] } } | null {
+function buocNgauNhien(toa: ToaDat, r: () => number): { op: string; ph: PhepTay | 'donKhit'; kq: KetQuaTay | { ok: true; toa: ToaDat; chan: [] } } | null {
   const p = phepNgauNhien(toa, r);
   if (!p) return null;
-  return { op: p.op, kq: p.ph === 'donKhit' ? { ok: true, toa: tuChinhToa(toa, mauToa(tv, toa) as ToaMB, tv, dl), chan: [] } : chayPhep(p.ph, c) };
+  return { op: p.op, ph: p.ph, kq: p.ph === 'donKhit' ? { ok: true, toa: tuChinhToa(toa, mauToa(tv, toa) as ToaMB, tv, dl), chan: [] } : chayPhep(p.ph, c) };
 }
 
 /** Tóm tắt trạng thái để dò lỗi (PHA_HOAI_DUMP): nét bao + ô trên từng mặt. */
@@ -176,11 +187,15 @@ function tomTat(toa: ToaDat) {
  * `PHA_HOAI_HAT` cộng thêm); các hạt 101 / 202 / 303 × 24 bước nằm ở tệp test riêng để vitest chạy song song.
  */
 export { rng, hatCua };
-export function moTaPhaHoai(hatThem: number, soBuoc: number) {
+/**
+ * `opt.mau` = chỉ các mẫu khớp (vd. /^(tm|xh)-[zvtl]/ — Z, V, T, L); `opt.diVe` = sau mỗi lần đổi chỗ được nhận, đổi NGƯỢC lại hai ô
+ * đó: phải nhận và trả đúng mặt bằng trước (mẫu căn từng ô, vị trí căn, thang, nét bao — app cũ "kéo đi kéo về" QT-62).
+ */
+export function moTaPhaHoai(hatThem: number, soBuoc: number, opt: { mau?: RegExp; diVe?: boolean } = {}) {
 const SO_BUOC = Number(process.env.PHA_HOAI_BUOC) || soBuoc;
 const HAT = hatThem + (Number(process.env.PHA_HOAI_HAT) || 0);
 const dump: { id: string; op: string; loi: string[]; truoc: unknown; sau: unknown; toa: ToaDat }[] = [];
-const MAU = layMau(toaDs.filter((t) => Array.isArray((t as unknown as ToaMB).mat)).map((t) => t.id));
+const MAU = layMau(toaDs.filter((t) => Array.isArray((t as unknown as ToaMB).mat) && (!opt.mau || opt.mau.test(t.id))).map((t) => t.id));
 const tong = { buoc: 0, nhan: 0, tuChoi: 0, hoanTac: 0, vi: [] as ViPham[], msMax: 0, msOp: '', ms: [] as { mau: string; op: string; ms: number }[] };
 
 describe(`thử phá hoại công cụ tay màn Tầng (thu_pha_hoai.js app cũ) · hạt ${HAT} × ${SO_BUOC} bước`, () => {
@@ -221,6 +236,17 @@ describe(`thử phá hoại công cụ tay màn Tầng (thu_pha_hoai.js app cũ)
         // vi phạm: trả về trạng thái trước (như người dùng hoàn tác) — đếm số PHÉP vi phạm, không cộng dồn qua các bước sau
         toa = lichSu.pop()!;
         continue;
+      }
+      // đổi chỗ đi rồi đổi về: phải về đúng mặt bằng trước (app cũ QT-62 "kéo đi kéo về")
+      if (opt.diVe && p.ph !== 'donKhit' && p.ph.ten === 'doiChoTay') {
+        const [, , a, b2] = p.ph.args;
+        const vt = (x: ToaDat, k: string) => doTrangThai(x).vts.find((v) => v.khoa === k)!;
+        const ve = chayPhep(phepTay('doiChoTay', toa, null, vt(toa, a.khoa), vt(toa, b2.khoa)), c);
+        const anh = (x: ToaDat) => { const s = doTrangThai(x), bc = boCucTang(x, null);
+          return JSON.stringify([s.vts.map((v) => `${v.khoa}:${canDangDung(v, bc)}:${Math.round(v.a0)}`).sort(), s.thang.map((t) => `${t.khoa}@${t.matIdx}:${Math.round(t.a0)}`).sort(), Math.round(s.dtBao)]); };
+        if (!ve.ok) tong.vi.push({ mau: id, buoc: b, op: p.op, loi: `đổi về bị từ chối (${ve.lyDo})` });
+        else if (anh(ve.toa) !== anh(truoc)) tong.vi.push({ mau: id, buoc: b, op: p.op, loi: 'đổi đi rồi đổi về không trả đúng mặt bằng trước' });
+        else kiem(id, b, `${p.op} (đổi về)`, ve.toa, nen, tong.vi);
       }
       // dồn khít lại phải bất động (tự chỉnh chạy lại trên kết quả không đổi mặt bằng)
       const lai = tuChinhToa(toa, mauToa(tv, toa) as ToaMB, tv, dl);

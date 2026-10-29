@@ -15,7 +15,8 @@ import { mauToa } from '../tinh/canThem';
 import { boCucTang, canDangDung, type BoCuc, type ViTriCan } from '../tinh/matBang';
 import { datTam, dieuPhoiDo, dieuPhoiTay, goTam, hinhNhanh, layTam, ngheToaTam, phepTay, type PhepTay } from '../tinh/tayNen';
 import { dsMauThem, mauThem, type Ctx, type KetQuaTay } from '../tinh/thaoTacTay';
-import { demLoaiThang, THANG_N2, THANG_N3, type LoaiThangBo } from '../tinh/loiThang';
+import { demLoaiThang, matBangTang, THANG_N2, THANG_N3, type LoaiThangBo } from '../tinh/loiThang';
+import { chieuCaoPCCC, gioiHanThoatNan } from '../tinh/pccc';
 import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { soLieuTang, type ToaVe } from '../ve/MatBangTang';
 import { khongDiBanVe, ngonKhiKeoO } from '../ve/camUng';
@@ -83,8 +84,13 @@ function apKetQua(q: PropsCongCu, ctx: Ctx, r: KetQuaTay, chuOk: (toaMoi: ToaDat
     const m = mauToa(q.tv, r.toa) as ToaVe | undefined;
     return m ? tenOTheo(soLieuTang(mauCuaToa(r.toa, m, k0), boCucTang(r.toa, k0), q.tv).can)(kh) : tenO(kh);
   };
-  const chu = chuOk(r.toa) + (r.canhBao ? t(`cc.canhBao.${r.canhBao}`) : '') + (r.chan.length ? t('cc.chan').replace('{n}', String(r.chan.length)) : '') + chuBienDong(bd, tenO, tenOSau);
-  const nhay = bd.truoc !== bd.sau || bd.goTN.length > 0;
+  // cự ly thoát nạn: CHỈ cảnh báo (app cũ nhãn cự ly đỏ) — thao tác vẫn nhận, không tự bỏ căn / dời thang
+  const mauSau = mauToa(q.tv, r.toa) as ToaVe | undefined;
+  const vuot = mauSau ? matBangTang(r.toa, mauSau, ctx.dl, k0).baoCao?.vuotSau ?? 0 : 0;
+  const gh = gioiHanThoatNan(chieuCaoPCCC(r.toa.soTangDe, r.toa.caoDe, r.toa.soTangDH, r.toa.caoDH));
+  const chuTN = vuot > 0 && !bd.goTN.length ? ' ' + t('cc.canhBaoTN').replace('{n}', String(vuot)).replace('{c}', String(gh.cut)).replace('{d}', String(gh.doi)) : '';
+  const chu = chuOk(r.toa) + (r.canhBao ? t(`cc.canhBao.${r.canhBao}`) : '') + (r.chan.length ? t('cc.chan').replace('{n}', String(r.chan.length)) : '') + chuBienDong(bd, tenO, tenOSau) + chuTN;
+  const nhay = bd.truoc !== bd.sau || bd.goTN.length > 0 || vuot > 0;
   const id = datBaoStretch({ loai: 'ok', chu, giuMs: nhay ? 14000 : undefined });
   // gợi ý giữ số căn (dời thang như PC-11): chạy sau khi câu báo đã hiện, có hạn thời gian; KHÔNG tự áp
   // (chạy nền như phép tay — mỗi phép thử chạy lại tự chỉnh; phép tay mới huỷ lượt gợi ý đang dò)
@@ -119,6 +125,18 @@ function useChay(p: PropsCongCu) {
       if (!r || q2.toa !== goc) return false; // bị huỷ (lượt mới), hoặc tòa đã đổi trong lúc chờ
       return apKetQua(q2, ctx, r, chuOk);
     });
+  };
+}
+
+/**
+ * Co kéo đầu hành lang (ve/TayHanhLang.tsx thả tay nắm): chạy NỀN phép `keoHanhLangTay` như mọi phép tay (một bước hoàn tác, câu báo
+ * căn / tầng + cảnh báo cự ly). `d` = tổng độ dời đầu đó so với tự động (mm); 0 = về tự động.
+ */
+export function useKeoHanhLang(p: PropsCongCu) {
+  const chay = useChay(p);
+  return (i: number, dau: 0 | 1, d: number) => {
+    void chay(phepTay('keoHanhLangTay', p.toa, i, dau, d), () => (d === 0 ? t('cc.ok.hanhLangTuDong')
+      : t('cc.ok.hanhLang').replace('{d}', `${d > 0 ? '+' : '−'}${m1(Math.abs(d))} m`)));
   };
 }
 

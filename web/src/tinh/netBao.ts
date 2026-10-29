@@ -70,7 +70,9 @@ export function netBaoTheoO(P0: Diem[], o0: Diem[][], o1: Diem[][], hl: Diem[][]
   // bỏ dải mảnh (< 2 × MANH_MM) do làm tròn mm: hai mép ô thẳng hàng mà lệch 1–3 mm cho dải dài cả mặt, nở 700 mm thì cắt đôi nét bao
   const mat0 = lon(boManh([...(doi0.length ? tru(hop(doi0), A1) : []), ...matHL])), moi = [...(doi1.length ? lon(hop(doi1)) : []), ...moiHL];
   if (!mat0.length && !moi.length) return P0;
-  const mat = mat0.length ? tru(no(mat0, NOI_MAT_MM), [...A1, ...HL]) : [];
+  // sàn chung của bản vẽ không thuộc ô nào (sảnh hub tòa Y / T, góc nối…, dày > 600 mm): phần nới 700 mm không khoét vào đó
+  const sanChung = mat0.length ? lon(hop(no(no(tru([toPath(P0)], [...o0.filter((p) => p.length >= 3).map(toPath), ...HL0]), -300), 300))) : [];
+  const mat = mat0.length ? tru(no(mat0, NOI_MAT_MM), [...A1, ...HL, ...sanChung]) : [];
   const nen = tru([toPath(P0)], mat);
   // mảnh sàn hiện có nằm ngoài nét bao mà chạm phần mọc thêm (lan dần)
   const ngoai = lon(tru(A1, nen)), mo = moi.map(hopBao), chon: Path[] = [];
@@ -98,11 +100,20 @@ export function netBaoTheoO(P0: Diem[], o0: Diem[][], o1: Diem[][], hl: Diem[][]
  * `hoc0` ở chỗ giờ có ô đặc `o1` (căn đã dời / đổi chỗ / lật — hốc cũ nằm lại giữa căn mới, nét bao khoét vào căn), rồi khoét hốc
  * logia của căn hiện tại `hoc1` (ghép cặp trọn, đứng lẻ chừa tường căn bên cạnh). Không đổi thì trả `P`.
  */
-export function suaHocLogia(P: Diem[], hoc0: Diem[][], hoc1: Diem[][], o1: Diem[][]): Diem[] {
+export function suaHocLogia(P: Diem[], hoc0: Diem[][], hoc1: Diem[][], o1: Diem[][], P0?: Diem[]): Diem[] {
   const khoa = (ps: Diem[][]) => ps.map((p) => p.map((q) => `${Math.round(q[0])},${Math.round(q[1])}`).join(';')).sort().join('|');
-  if (khoa(hoc0) === khoa(hoc1) || P.length < 3) return P;
-  const lap = giao(hop(hoc0.map(toPath)), hop(o1.filter((p) => p.length >= 3).map(toPath)));
-  const kq = tru(hop([toPath(P), ...lap]), hoc1.map(toPath));
+  if ((khoa(hoc0) === khoa(hoc1) && P === P0) || P.length < 3) return P;
+  // lấp: hốc logia gốc giờ nằm dưới ô đặc + mọi chỗ ô đặc lọt ra ngoài nét bao dày > 300 mm (hốc của lần sửa trước, căn đã dời đi —
+  // nét bao nối dần giữ lại) — bỏ dải mảnh do nét CAD lệch vài mm so với ô mô-đun
+  // mọi đa giác vào cùng chiều dương: phép hợp NonZero của hai đa giác ngược chiều chồng nhau sẽ triệt tiêu (thành lỗ / hốc giả)
+  const tp = (d: Diem[]) => { const q = toPath(d); return ClipperLib.Clipper.Orientation(q) ? q : q.reverse(); };
+  const U = hop(o1.filter((p) => p.length >= 3).map(tp));
+  const ngoai0 = tru(U, [tp(P)]), ngoai = ngoai0.length ? lon(hop(no(no(ngoai0, -150), 150))) : [];
+  // hốc như bản vẽ và không ô nào lọt ra ngoài: giữ nét bao (không làm tròn lại toạ độ CAD)
+  if (khoa(hoc0) === khoa(hoc1) && !ngoai.length) return P;
+  const lap = [...giao(hop(hoc0.map(tp)), U), ...ngoai];
+  // bỏ gai / khe nứt mảnh < 200 mm do phép cắt (vách lệch vài chục mm giữa ô mô-đun, lõi và nét bao cũ): mở rồi đóng 100 mm
+  const kq0 = tru(hop([tp(P), ...lap]), hoc1.map(tp)), kq = kq0.length ? hop(no(no(hop(no(no(kq0, -100), 100)), 100), -100)) : kq0;
   const ngoaiCung = [...kq].sort((a, b) => dt(b) - dt(a))[0];
   return ngoaiCung && ngoaiCung.length >= 3 ? toDiem(ngoaiCung) : P;
 }

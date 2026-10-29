@@ -499,7 +499,7 @@ function baoTheoO(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, t
   const P = !dungLai && !baoHong(P1, mau, a, b) ? P1 : netBaoTheoO(mau.duong_bao, a.o, b.o, b.hl, a.hl);
   if (!P) return null;
   // hốc logia đi theo căn (QT-59b): căn dời / đổi chỗ / lật thì hốc cũ lấp lại, hốc mới khoét theo căn
-  const Q = suaHocLogia(P, hocLogia(mau, goc, dl, tv), hocLogia(mau, mb, dl, tv, bc), b.o);
+  const Q = suaHocLogia(P, hocLogia(mau, goc, dl, tv), hocLogia(mau, mb, dl, tv, bc), b.o, mau.duong_bao);
   if (Q === mau.duong_bao) return undefined;
   return Q === P1 ? mb.duongBao : gonDaGiac(Q);
 }
@@ -667,24 +667,6 @@ function danhGia(mauHD: ToaMB, bc: BoCuc, tv: ThuVien, cuaCan: Record<string, nu
     ok: true,
   };
   return { dg, tn, mat, khoaCan };
-}
-
-/** Cự ly thoát nạn của một căn (cửa căn → cửa buồng thang bộ gần nhất, dọc tim hành lang) để vẽ lớp CẢNH BÁO thoát nạn. */
-export type CuLyCan = { khoa: string; cuLy: number | null; nguong: number; cut: boolean; vuot: boolean; cua: Diem };
-/**
- * Lớp thoát nạn màn Tầng (app cũ nút "Thoát nạn" `S.showEsc`: nhãn cự ly từng căn, đỏ đậm khi vượt; đánh dấu cửa thang): đo trên
- * mặt bằng hiệu dụng `mauHD` + bố cục `bc` — chỉ để CẢNH BÁO, không chặn / không đổi mặt bằng. `thang` = cửa buồng thang bộ.
- */
-export function cuLyThoatNan(mauHD: ToaMB, bc: BoCuc, tv: ThuVien, dl: DuLieuMB | null | undefined, H: number): { can: CuLyCan[]; thang: Diem[]; nguong: { cut: number; doi: number; canCu: string } } {
-  const cuaCan = cuaCanDung(viTriCan(mauHD, tv).map((v) => canDangDung(v, bc)), tv, dl?.cuaCan ?? {});
-  const { tn, mat, khoaCan } = danhGia(mauHD, bc, tv, cuaCan, H);
-  const matTN = mat.map((m) => ({ ...m, phan_tu: m.phan_tu.filter((q) => q.loai !== 'can' || !KHONG_KIEM_TN.has(congNangTai(q.khoa ?? '', bc))) }));
-  const cua = cuaTrenMat({ ...(mauHD as unknown as ToaPCCC), mat: matTN }, cuaCan);
-  return {
-    can: tn.can.map((c) => ({ khoa: khoaCan[c.so - 1], cuLy: c.cuLy, nguong: c.nguong, cut: c.cut, vuot: c.vuot, cua: cua.can[c.so - 1]?.p ?? [0, 0] })),
-    thang: cua.thang.map((t) => t.p),
-    nguong: { cut: tn.GH.cut, doi: tn.GH.doi, canCu: tn.GH.canCu },
-  };
 }
 
 // ---------- PC-11: thang bộ tự động ----------
