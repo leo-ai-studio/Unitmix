@@ -4,6 +4,7 @@
  * Các kích thước đứng là tham số chung chỉnh được (ThamSo3D).
  */
 import type * as THREE from 'three';
+import { tuongSon } from './moiTruong';
 
 export type T3 = typeof THREE;
 
@@ -55,7 +56,8 @@ type KhoaMau = 'tuong' | 'san' | 'khung' | 'go' | 'khung2' | 'de' | 'tum' | 'kin
  * `--green` #174F52; tường be = giấy pha vàng gold (không trắng tinh), đế đậm hơn thân một bậc để tách khối.
  */
 export const BANG_MAU: Record<KieuVe3D, Record<KhoaMau, number>> = {
-  vatlieu: { tuong: 0xddd0b9, san: 0xc9bfac, khung: 0x3a3f42, go: 0x8e6f4e, khung2: 0xe6dfd1, de: 0xcbbfa6, tum: 0xd6ccb9, kinh: 0x5f7f88, lc: 0x3a3f42, lov: 0x5b6266, line: 0x022b1e, mol: 0xc7aa76, kinhDai: 0x4e6c76 },
+  // v3 (thực tế hơn): sơn be kem, mép sàn / ban công xám be đậm hơn, nhôm anode xám bạc, kính xanh xám sẫm (phản chiếu trời), đế đá ốp
+  vatlieu: { tuong: 0xe4d8c2, san: 0xbdb3a1, khung: 0x7d8388, go: 0x8a6a49, khung2: 0xe6dfd1, de: 0xc9bca2, tum: 0xd8ceba, kinh: 0x2c3f47, lc: 0x6f757a, lov: 0x8b9093, line: 0x022b1e, mol: 0xc7aa76, kinhDai: 0x33474f },
   brand: { tuong: 0xfbfaf4, san: 0xdfe3dc, khung: 0x174f52, go: 0xa7835a, khung2: 0xe9ece5, de: 0xd5e2da, tum: 0xe5eeea, kinh: 0x7fa9a3, lc: 0x174f52, lov: 0x3e6f70, line: 0x174f52, mol: 0xc7aa76, kinhDai: 0x7fa9a3 },
   trang: { tuong: 0xffffff, san: 0xf2f2f0, khung: 0xd9dcda, go: 0xe8e6e1, khung2: 0xf7f7f5, de: 0xf4f4f2, tum: 0xf7f7f5, kinh: 0xcfd8d6, lc: 0xc5cac7, lov: 0xd0d4d2, line: 0x8f9894, mol: 0xb8b0a3, kinhDai: 0xdfe5e3 },
 };
@@ -64,27 +66,34 @@ export const BANG_MAU: Record<KieuVe3D, Record<KhoaMau, number>> = {
 export function taoVatLieu(T: T3, cat: THREE.Plane[], kieu: KieuVe3D = 'brand'): VatLieu3D {
   const B = BANG_MAU[kieu], vl = kieu === 'vatlieu';
   const mt = (c: number, o: THREE.MeshStandardMaterialParameters = {}) => new T.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, clippingPlanes: cat, ...o });
-  const tuong = mt(B.tuong, { side: T.DoubleSide });
+  // Vật liệu: tường / đế / tum sơn có biến thiên nhẹ + tối chân công trình (moiTruong.tuongSon); kiểu khác giữ nguyên
+  const son = (m: THREE.MeshStandardMaterial, k: string) => (vl ? tuongSon(m, k) : m);
+  const tuong = son(mt(B.tuong, { side: T.DoubleSide, roughness: vl ? 0.92 : 0.85 }), 'tuong');
+  /** Kính thật: điện môi (metalness 0) có Fresnel — nhìn thẳng sẫm, nhìn xiên phản chiếu trời; PBR vật lý chỉ cho kiểu Vật liệu. */
+  const kinhVL = (c: number, o: THREE.MeshPhysicalMaterialParameters) => new T.MeshPhysicalMaterial({ color: c, roughness: 0.04, metalness: 0, ior: 1.52, specularIntensity: 1, envMapIntensity: 1.6, clippingPlanes: cat, side: T.DoubleSide, ...o });
   return {
     tuong, dam: tuong,
-    san: mt(B.san, { side: T.DoubleSide }),
+    san: mt(B.san, { side: T.DoubleSide, roughness: vl ? 0.8 : 0.85 }),
     top: mt(B.san, { transparent: true, opacity: 0.28, depthWrite: false }),
     // nhôm xám đậm: hơi kim loại để bắt sáng môi trường
-    khung: vl ? mt(B.khung, { roughness: 0.38, metalness: 0.65 }) : mt(B.khung, { roughness: 0.5, metalness: 0.2 }),
+    khung: vl ? mt(B.khung, { roughness: 0.32, metalness: 0.85 }) : mt(B.khung, { roughness: 0.5, metalness: 0.2 }),
     go: mt(B.go, { roughness: 0.7 }),
     khung2: mt(B.khung2, { side: T.DoubleSide }),
-    de: mt(B.de, { roughness: 0.8, side: T.DoubleSide }),
-    tum: mt(B.tum, { roughness: 0.8, side: T.DoubleSide }),
+    de: son(mt(B.de, { roughness: vl ? 0.7 : 0.8, side: T.DoubleSide }), 'de'),
+    tum: son(mt(B.tum, { roughness: vl ? 0.9 : 0.8, side: T.DoubleSide }), 'tum'),
     // kính xanh xám hơi trong, phản chiếu nhẹ (môi trường RoomEnvironment ở khung 3D, chỉ kiểu Vật liệu)
     kinh: vl
-      ? mt(B.kinh, { transparent: true, opacity: 0.62, roughness: 0.06, metalness: 0.55, envMapIntensity: 1.6, depthWrite: false, side: T.DoubleSide })
+      ? kinhVL(B.kinh, { transparent: true, opacity: 0.86, depthWrite: false })
       : mt(B.kinh, { transparent: true, opacity: kieu === 'trang' ? 0.5 : 0.42, roughness: 0.1, metalness: 0.1, depthWrite: false, side: T.DoubleSide }),
     // dải cửa khi nhìn xa: kính đặc (không trong suốt) để không lộ tường sau, vẫn phản chiếu
     // polygonOffset: dải nằm sát mặt tường, nhìn xa không nhấp nháy (z-fighting)
-    kinhDai: mt(B.kinhDai, { ...(vl ? { roughness: 0.15, metalness: 0.45, envMapIntensity: 1.1 } : { roughness: 0.3 }), side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-    lc: vl ? mt(B.lc, { roughness: 0.4, metalness: 0.6 }) : mt(B.lc, { roughness: 0.5, metalness: 0.3 }),
-    lov: mt(B.lov, { roughness: 0.6, metalness: 0.2 }),
-    line: new T.LineBasicMaterial({ color: B.line, clippingPlanes: cat, transparent: true, opacity: kieu === 'trang' ? 0.55 : vl ? 0.62 : 0.4 }),
+    kinhDai: vl
+      ? kinhVL(B.kinhDai, { roughness: 0.08, envMapIntensity: 1.3, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
+      : mt(B.kinhDai, { roughness: 0.3, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+    lc: vl ? mt(B.lc, { roughness: 0.35, metalness: 0.8 }) : mt(B.lc, { roughness: 0.5, metalness: 0.3 }),
+    lov: mt(B.lov, vl ? { roughness: 0.45, metalness: 0.6 } : { roughness: 0.6, metalness: 0.2 }),
+    // viền: Vật liệu nhạt hơn (đỡ "nét CAD", khối đọc bằng ánh sáng + bóng); vẫn đủ để đọc tầng / góc
+    line: new T.LineBasicMaterial({ color: B.line, clippingPlanes: cat, transparent: true, opacity: kieu === 'trang' ? 0.55 : vl ? 0.38 : 0.4 }),
     mol: new T.LineBasicMaterial({ color: B.mol, clippingPlanes: cat }),
   };
 }

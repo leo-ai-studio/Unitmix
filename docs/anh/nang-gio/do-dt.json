@@ -2,12 +2,12 @@
   "dt": {
     "pha": {
       "mo3DGoc": {
-        "so": 13,
-        "max": 443
+        "so": 10,
+        "max": 764
       },
       "banDo2D": {
-        "so": 2,
-        "max": 76,
+        "so": 1,
+        "max": 54,
         "anh": 53
       },
       "keoLan2D": {
@@ -15,31 +15,31 @@
         "max": 0
       },
       "bong2DChay": {
-        "so": 1,
-        "max": 56
+        "so": 0,
+        "max": 0
       },
       "gioNang": {
         "so": 1,
-        "max": 79,
-        "ms": 395,
+        "max": 62,
+        "ms": 285,
         "xong": true
       },
       "mo3D": {
-        "so": 5,
-        "max": 200
+        "so": 4,
+        "max": 175
       },
       "anhNen3D": {
         "so": 1,
-        "max": 71
+        "max": 58
       },
       "chayGio3D": {
         "so": 0,
         "max": 0
       },
       "gio": {
-        "so": 2,
-        "max": 99,
-        "ms": 4541,
+        "so": 1,
+        "max": 61,
+        "ms": 4277,
         "xong": true
       }
     },

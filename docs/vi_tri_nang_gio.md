@@ -22,6 +22,8 @@ hiển thị trên 3D luôn, và 2D có thể bật tắt. Lưu ý cần tối �
   (`tinh/huongView.ts`, của agent view, KHÔNG sửa) đọc đúng vĩ độ. `chuanHoaPA` gọi `chuanHoaViTri` (bỏ toạ độ hỏng, đồng bộ vĩ độ). PA cũ không có `viTri`:
   vĩ độ = `huongView.viDo` (mặc định 21,03), kinh độ Hà Nội 105,85, `coToaDo = false` (không hiện ảnh nền, hộp báo "tạm dùng Hà Nội").
 - **Việc khi gộp** (đề xuất cho agent view): `caiDatView` nhận thêm `viTriPA(pa)` để vĩ độ chỉ có một chỗ; ẩn ô vĩ độ trong Cài đặt view khi PA đã có `viTri`.
+- **Sau gộp `nang-cap/architechtures` (6221899)**: 3D đọc vĩ độ / góc Bắc qua `viTriPA(pa)` (`MoHinh3D`: `viDo={vt.lat}`, `gocBac={vt.gocBac}` cả Toàn dự án lẫn Công trình) — PA cũ vẫn ra `huongView.viDo` / `gocBac`. Mặt trời hoạt ảnh của hộp Nắng đi vào ĐÚNG đèn mặt trời của Khung3D (`datNang` → `moRong.nang`), nên bóng / màu nắng theo bộ vật liệu mới.
+- **3D sau gộp**: ảnh vệ tinh nằm trong nhóm `phu` của Khung3D (cùng `goc` khi áp Lớp / làm nhạt): mục **Lớp › Ảnh vệ tinh nền** trong menu Lớp 3D, bật / tắt tức thì (đổi `visible`, không tải lại); vật liệu `toneMapped: false` + sRGB (không bị NeutralToneMapping làm bạc), vẫn nhận bóng đổ; bật Phân tích view thì ảnh nền mờ về nền đất (`userData.lamNhat`). Lớp nắng / gió (MeshBasic) `toneMapped: false` để màu thang đúng.
 - Không có dữ liệu cá nhân trong URL: chỉ toạ độ; link Google dán vào không lưu.
 
 ## 3. Nguồn ảnh và điều khoản
@@ -75,6 +77,7 @@ Tác vụ dài luồng chính (> 50 ms) từng pha — số / dài nhất:
 | Pha | Máy bàn 1440×900 (CPU 1×) | Điện thoại 390×844 @3x (CPU 4×) |
 |---|---|---|
 | Mốc: mở 3D của app (chưa bật gì) | 3 / 337 ms | 13 / 443 ms |
+| — sau gộp 6221899 (vật liệu PBR, trời PMREM, cây, tum) | 4 / 755 ms | 10 / 764 ms |
 | Bật ảnh vệ tinh 2D (26 / 53 ô) | 0 | 2 / 76 ms |
 | Kéo + lăn bản vẽ có ảnh nền | 0 | 0 |
 | Chạy giờ, bóng đổ 2D | 0 | 1 / 56 ms |
@@ -82,6 +85,7 @@ Tác vụ dài luồng chính (> 50 ms) từng pha — số / dài nhất:
 | Bật ảnh nền 3D (atlas 2048² + 1024² trong worker) | 0–1 / 52 ms | 1 / 71 ms |
 | Chạy giờ 3D (bóng thật, mỗi khung) | 0 · 60 fps khi xoay (`_doFps`) | 0 |
 | Mô phỏng gió 8 hướng (GPU) | 0 (≈ 5,8 s) | 2 / 99 ms (≈ 4,5 s, lưới 128²) |
+| Sau gộp 6221899: ảnh nền 2D · giờ nắng · ảnh nền 3D · gió | 0 · 0 (0,44 s) · 0 · 0 (5,8 s); 60 fps | 1/54 · 1/62 (0,29 s) · 1/58 · 1/61 ms (4,3 s) |
 
 Khung giữa không đổi (2D / 3D: 270,52,870×848 máy bàn; 0,48,390×740 điện thoại). Chunk khởi động chỉ thêm kho trạng thái + nút (~ vài kB); hộp (33 kB), lớp 2D (6 kB),
 phần 3D (10 kB), worker nắng (4 kB), worker ảnh nền (0,6 kB) tải lười. Ảnh: `docs/anh/nang-gio/` (`may-*`, `dt-*`), số đo `do-may.json`.

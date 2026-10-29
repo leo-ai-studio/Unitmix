@@ -125,7 +125,11 @@ async function main() {
       await cho(2500);
       r.pha.mo3D = await dai(t0);
       t0 = await moc();
-      await bamChu('/^ ?Ảnh nền$|^ ?Basemap$/', '.thanh-3d');
+      // ảnh nền 3D: menu Lớp của khung 3D (góc phải dưới) › Ảnh vệ tinh nền
+      await bam('.khung-3d .goc-bv.phai .nhom-bt button', 0); await cho(300);
+      await bamChu('/Ảnh vệ tinh nền|Satellite basemap/', '.khung-3d .goc-bv-hop');
+      await cho(300); await chup(`${k.ten}-5a-3d-menu-lop`);
+      await bam('.khung-3d .goc-bv.phai .nhom-bt button', 0);
       await cho(6000);
       r.pha.anhNen3D = await dai(t0);
       await chup(`${k.ten}-5-3d-anh-nen-gio-nang`);
@@ -134,6 +138,8 @@ async function main() {
       await bamChu('/Chạy giờ|Play time/', '.hop-nang-gio'); await cho(3000); await bamChu('/^Dừng|^Pause/', '.hop-nang-gio');
       r.pha.chayGio3D = await dai(t0);
       await chup(`${k.ten}-6-3d-bong-do-duong-mat-troi`);
+      // phân tích view (lớp của gói khác) bật: cảnh + ảnh nền cùng nhạt đi
+      if (await bamChu('/Phân tích view|View analysis/', '.thanh-3d')) { await cho(4000); await chup(`${k.ten}-6b-3d-phan-tich-view-anh-nen-nhat`); await bamChu('/Phân tích view|View analysis/', '.thanh-3d'); await cho(800); }
       r.giua3D = await khungGiua();
       // --- Gió ---
       await bamChu('/^ ?Gió$|^ ?Wind$/', '.hng-tab');

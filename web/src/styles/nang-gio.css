@@ -1,8 +1,9 @@
 /* Gói Vị trí · Nắng · Gió (web/src/nangGio/*): hộp điều khiển là lớp phủ — máy bàn: thẻ phải dưới thanh công cụ; màn hẹp: tấm đáy trên dock.
    Không đổi kích thước khung giữa. Thang màu dùng chung ở thang-mau (ui/ThangMau.tsx). */
-.cho-hop-ng { position: absolute; top: 100%; right: 10px; margin-top: 6px; z-index: 5; pointer-events: none; }
+.cho-hop-ng { position: absolute; top: 100%; right: 10px; margin-top: 6px; z-index: 3; pointer-events: none; } /* dưới nút góc (Lớp) của bản vẽ / 3D */
 .cho-hop-ng.o-3d { top: 140px; margin-top: 0; }
 .cho-hop-ng > * { pointer-events: auto; }
+.cho-hop-ng.o-3d .hop-nang-gio { max-height: min(72vh, calc(100vh - 270px)); } /* chừa cụm nút góc phải dưới của khung 3D */
 .hop-nang-gio {
   width: 340px; max-height: min(72vh, calc(100vh - 190px)); display: flex; flex-direction: column; overflow: hidden;
   background: color-mix(in srgb, var(--panel) 97%, transparent); color: var(--ink); border: 1px solid var(--line); border-radius: 12px;

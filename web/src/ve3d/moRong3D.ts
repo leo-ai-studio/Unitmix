@@ -9,6 +9,10 @@ export type NguCanhMoRong = {
   T: typeof import('three');
   R: import('three').WebGLRenderer;
   scene: import('three').Scene;
+  /** Nhóm của gói mở rộng do Khung3D giữ: làm nhạt cùng cảnh khi phân tích view, ẩn / hiện theo `userData.lop`, không bị gỡ khi dựng lại. */
+  phu: import('three').Group;
+  /** Áp lại Lớp + làm nhạt (gọi sau khi thêm vật thể vào `phu`). */
+  apLop: () => void;
   cam: import('three').PerspectiveCamera;
   sun: import('three').DirectionalLight;
   /** Vẽ lại một khung (gộp theo rAF). */

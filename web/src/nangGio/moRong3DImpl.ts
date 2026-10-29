@@ -29,7 +29,10 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
   const goc = new T.Group(); goc.name = 'nang-gio';
   scene.add(goc);
   const gNen = new T.Group(), gMT = new T.Group(), gPT = new T.Group();
-  goc.add(gNen, gMT, gPT);
+  goc.add(gMT, gPT);
+  c.phu.add(gNen); // ảnh nền nằm trong nhóm Khung3D làm nhạt khi phân tích view
+  gNen.userData.lop = 'banDo';
+  let khoaNen = '';
   let canh: CanhDung | null = null;
   const yeu = mayYeu();
   // ---- lớp DOM nhỏ: ghi nguồn ảnh + số đọc ----
@@ -116,13 +119,20 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
 
   // ---- ảnh nền mặt đất ----
   let wNen: Worker | null = null, soNen = 0, texNen: THREE.Texture[] = [];
-  const xoaNen = () => { wNen?.terminate(); wNen = null; texNen.forEach((x) => x.dispose()); texNen = []; xoaNhom(gNen); ghi.hidden = true; };
+  const xoaNen = () => { wNen?.terminate(); wNen = null; texNen.forEach((x) => x.dispose()); texNen = []; gNen.traverse((o) => { const m = (o as THREE.Mesh).material as THREE.Material | undefined; if (m && (o as THREE.Mesh).isMesh) m.dispose(); }); xoaNhom(gNen); ghi.hidden = true; khoaNen = ''; };
   const ve3 = (p: Diem, y: number) => new T.Vector3(p[0], y, -p[1]);
   const dungNen = async () => {
     const s = layNG(), pa = layPA(), vt = viTriPA(pa);
+    // bật / tắt tức thì: đã dựng đúng vị trí + nguồn + cảnh thì chỉ đổi visible, không tải lại
+    const k = canh ? [vt.lat, vt.lng, vt.gocBac, vt.tyLe, vt.neo.join(), s.nguon, canh.tam.join(), canh.coCanh].join('|') : '';
+    gNen.visible = s.banDo3D;
+    ghi.hidden = !s.banDo3D || !gNen.children.length;
+    if (k === khoaNen && (gNen.children.length || wNen)) { c.ve(); return; }
+    if (!s.banDo3D) { c.ve(); return; }
     const so = ++soNen;
     xoaNen();
-    if (!canh || !s.banDo3D || !vt.coToaDo) { c.ve(); return; }
+    khoaNen = k;
+    if (!canh || !vt.coToaDo) { c.ve(); return; }
     const m = await mauO(s.nguon);
     if (so !== soNen) return;
     ghi.textContent = m.google ? 'Google' : m.ghi; ghi.hidden = false;
@@ -170,12 +180,19 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
       texNen.push(tx);
       const op = layNG().doMo;
       // ảnh vệ tinh đã có sáng tối riêng: nâng màu ~1,35 để bù đèn cảnh (vẫn nhận bóng đổ thật)
-      const vl = new T.MeshLambertMaterial({ map: tx, transparent: op < 0.999, opacity: op, depthWrite: op >= 0.999 });
-      vl.color.setScalar(1.35);
+      // ảnh vệ tinh đã mang sáng tối riêng: không qua tone mapping Neutral của cảnh (khỏi bạc màu), nâng nhẹ để bù đèn (vẫn nhận bóng đổ)
+      const vl = new T.MeshLambertMaterial({ map: tx, transparent: op < 0.999, opacity: op, depthWrite: op >= 0.999, toneMapped: false });
+      vl.color.setScalar(1.15);
       const me = new T.Mesh(g, vl);
       me.receiveShadow = true; me.renderOrder = -2;
       me.userData.nen = true;
+      // Khung3D làm nhạt cảnh khi phân tích view: ảnh nền mờ đi (về nền đất sáng), về lại khi tắt
+      me.userData.lamNhat = (m: number) => {
+        const o0 = layNG().doMo * (1 - 0.65 * m);
+        vl.opacity = o0; vl.transparent = o0 < 0.999; vl.depthWrite = o0 >= 0.999; vl.color.setScalar(1.15 - 0.15 * m); vl.needsUpdate = true;
+      };
       gNen.add(me);
+      c.apLop();
       c.ve();
     }
     w.terminate(); if (wNen === w) wNen = null;
@@ -183,6 +200,7 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
   const datDoMo = () => {
     const op = layNG().doMo;
     gNen.traverse((o) => { const m = (o as THREE.Mesh).material as THREE.MeshLambertMaterial | undefined; if (m && (o as THREE.Mesh).isMesh) { m.opacity = op; m.transparent = op < 0.999; m.depthWrite = op >= 0.999; m.needsUpdate = true; } });
+    c.apLop(); // đang phân tích view thì làm nhạt lại theo độ đậm mới
     c.ve();
   };
 
@@ -205,7 +223,7 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
       texPT.push(tx);
       const g = new T.PlaneGeometry(w, h);
       g.rotateX(-Math.PI / 2); // mặt phẳng XZ; uv v = 0 ở z dương (= y bản vẽ nhỏ = phía Nam) — khớp hàng 0 của lưới
-      const me = new T.Mesh(g, new T.MeshBasicMaterial({ map: tx, transparent: true, depthWrite: false, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+      const me = new T.Mesh(g, new T.MeshBasicMaterial({ map: tx, toneMapped: false, transparent: true, depthWrite: false, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
       me.position.set(L.x0 + w / 2, (muc > 0 ? muc : 0.2) + 0.07, -(L.y0 + h / 2));
       me.renderOrder = 5; me.userData.mat = 'dat';
       gPT.add(me); dsDo.push(me);
@@ -224,7 +242,7 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
       }
       const g = new T.BufferGeometry();
       g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('color', new T.BufferAttribute(col, 3)); g.setIndex(idx);
-      const me = new T.Mesh(g, new T.MeshBasicMaterial({ vertexColors: true, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+      const me = new T.Mesh(g, new T.MeshBasicMaterial({ vertexColors: true, toneMapped: false, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
       me.userData.mat = 'dung'; me.renderOrder = 4;
       gPT.add(me); dsDo.push(me); matInfo = M;
     }
@@ -271,14 +289,14 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
   const boNghe = ngheNG(() => {
     const s = layNG(), p = cu; cu = s;
     const vtMoi = JSON.stringify(layPA().viTri ?? null) + (layPA().huongView?.gocBac ?? 0), doiVT = vtMoi !== viTriCu; viTriCu = vtMoi;
-    if (s.luc !== p.luc) { gioDay = s.luc; c.datGio(s.luc); }
+    if (s.luc !== p.luc) { gioDay = Math.round(s.luc * 10) / 10; c.datGio(gioDay); } // thanh giờ của khung: 1 số lẻ
     if (s.luc !== p.luc || s.ngay !== p.ngay || doiVT) c.capNang();
     if (s.ngay !== p.ngay || s.duongMT !== p.duongMT || doiVT) dungDuongMT();
     if (s.banDo3D !== p.banDo3D || s.nguon !== p.nguon || doiVT) void dungNen();
     else if (s.doMo !== p.doMo) datDoMo();
     if (s.lop !== p.lop || s.hien3D !== p.hien3D || s.nang.kq !== p.nang.kq || s.gio.kq !== p.gio.kq || s.gioXem !== p.gioXem || s.matDung !== p.matDung || s.dongGio !== p.dongGio) dungPT();
   });
-  gioDay = layNG().luc; c.datGio(layNG().luc);
+  gioDay = Math.round(layNG().luc * 10) / 10; c.datGio(gioDay);
 
   return {
     canhMoi(cn) {
@@ -293,7 +311,7 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
       xoaNen(); xoaPT(); xoaNhom(gMT);
       [vlDuong, vlDuongPhu, vlVong, vlChamGio, meMT.material as THREE.Material].forEach((m) => m.dispose());
       meMT.geometry.dispose();
-      scene.remove(goc);
+      scene.remove(goc); c.phu.remove(gNen);
       ghi.remove(); doc.remove();
     },
   };

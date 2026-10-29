@@ -54,13 +54,18 @@ export function useNutNangGio(): NutHienThi[] {
   ];
 }
 
-/** Nút ở thanh công cụ 3D. */
+/** Mục "Ảnh vệ tinh nền" trong menu Lớp của 3D (GocBanVe của Khung3D) — bật / tắt tức thì (đổi visible, không tải lại). */
+export function useNutNangGio3D(): NutHienThi[] {
+  const b = useNG((x) => x.banDo3D);
+  return [{ khoa: 'banDo', nhan: t('ng.lop.banDo'), bat: b, onClick: () => datNG({ banDo3D: !layNG().banDo3D }) }];
+}
+
+/** Nút mở hộp Vị trí · Nắng · Gió ở thanh công cụ 3D. */
 export function NutNangGio3D() {
-  const s = useNG((x) => ({ m: x.moHop, b: x.banDo3D }));
+  const m = useNG((x) => x.moHop);
   return (
     <span class="nhom-3d" role="group" aria-label={t('ng.tieuDe')}>
-      <button type="button" aria-pressed={s.b} title={t('ng.nen.3d')} onClick={() => datNG({ banDo3D: !layNG().banDo3D })}>{t('ng.lop.banDo3D')}</button>
-      <button type="button" aria-pressed={s.m} title={t('ng.tieuDe')} onClick={() => datNG({ moHop: !layNG().moHop, tab: layNG().tab === 'viTri' ? 'nang' : layNG().tab })}>☀ {t('ng.nutNgan')}</button>
+      <button type="button" aria-pressed={m} title={t('ng.tieuDe')} onClick={() => datNG({ moHop: !layNG().moHop, tab: layNG().tab === 'viTri' ? 'nang' : layNG().tab })}>☀ {t('ng.nutNgan')}</button>
     </span>
   );
 }

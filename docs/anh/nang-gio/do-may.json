@@ -2,8 +2,8 @@
   "may": {
     "pha": {
       "mo3DGoc": {
-        "so": 3,
-        "max": 337
+        "so": 4,
+        "max": 755
       },
       "banDo2D": {
         "so": 0,
@@ -21,16 +21,16 @@
       "gioNang": {
         "so": 0,
         "max": 0,
-        "ms": 440,
+        "ms": 439,
         "xong": true
       },
       "mo3D": {
-        "so": 1,
-        "max": 51
+        "so": 2,
+        "max": 87
       },
       "anhNen3D": {
-        "so": 1,
-        "max": 52
+        "so": 0,
+        "max": 0
       },
       "chayGio3D": {
         "so": 0,
@@ -39,7 +39,7 @@
       "gio": {
         "so": 0,
         "max": 0,
-        "ms": 5816,
+        "ms": 5756,
         "xong": true
       }
     },
@@ -52,8 +52,8 @@
       "khung": 180,
       "msTB": 16.67,
       "ms95": 16.8,
-      "calls": 272,
-      "tris": 36216
+      "calls": 121,
+      "tris": 73466
     },
     "giua3D": "270,52,870,848",
     "loiJs": []
