@@ -17,7 +17,7 @@ import { napThuVien, toaThu } from '../thu/thuVienThat';
 import { mauToa } from './canThem';
 import { demCan } from './coCau';
 import type { Diem, ToaDat, TrangThaiPA } from './kieu';
-import { apMatBang, demLoaiThang, doDeKhe, matBangCua, THANG_N2, THANG_N3, thangDungLuat, tuChinhToa, type ToaMB } from './loiThang';
+import { apMatBang, daGiacCacLoi, demLoaiThang, doDeKhe, matBangCua, matBangMacDinh, THANG_N2, THANG_N3, thangDungLuat, tuChinhToa, type ToaMB } from './loiThang';
 import { taoPAMoi } from './macDinh';
 import { boCucTang, canDangDung, congNangTai, viTriCan } from './matBang';
 import { doiChoTay, doiLoaiThangTay, doiThangTay, latTay, mauThem, thangTuDongLai, themCanTay, themThangTay, xoaCanTay, xoaThangTay, type KetQuaTay } from './thaoTacTay';
@@ -51,6 +51,25 @@ const kcBien = (p: Diem, P: Diem[]) => P.reduce((m, a, i) => Math.min(m, kcDoan(
 /** Khoảng cách điểm tới hình chữ nhật (đa giác lồi 4 đỉnh); trong = 0. */
 const kcO = (p: Diem, R: Diem[]) => (trongDG(p, R) ? 0 : kcBien(p, R));
 
+const khoaO = (R: Diem[]) => R.map((q) => `${Math.round(q[0])},${Math.round(q[1])}`).join(';');
+const nhoMau = new Map<ToaMB, Set<string>>();
+/** Khoá các ô (căn + thang) của mặt bằng mặc định của mẫu. */
+function khoaOMau(mau: ToaMB): Set<string> {
+  let k = nhoMau.get(mau);
+  if (k) return k;
+  const hd = apMatBang(mau, matBangMacDinh(mau, dl), dl), ds: Diem[][] = [];
+  const hcn = (mi: number, a0: number, a1: number, sau: number): Diem[] => {
+    const m = hd.mat[mi], r = (m.goc_deg * Math.PI) / 180, u: Diem = [Math.cos(r), Math.sin(r)], n: Diem = [-u[1], u[0]];
+    const pt = (a: number, b: number): Diem => [u[0] * a + n[0] * (m.truc_mm + b), u[1] * a + n[1] * (m.truc_mm + b)];
+    return [pt(a0, 0), pt(a1, 0), pt(a1, sau), pt(a0, sau)];
+  };
+  for (const v of viTriCan(hd, tv)) ds.push(hcn(v.matIdx, v.a0, v.a1, tv.can.get(v.canGocId)?.sau_mm ?? v.sau ?? 8500));
+  hd.mat.forEach((m, mi) => m.phan_tu.forEach((q) => { if (q.loai === 'thang_bo') ds.push(hcn(mi, q.a0, q.a1, q.sau_mm ?? 8500)); }));
+  k = new Set(ds.map(khoaO));
+  nhoMau.set(mau, k);
+  return k;
+}
+
 /** Đo một trạng thái tòa (bố cục chung). */
 function doTrangThai(toa: ToaDat) {
   const mau = mauToa(tv, toa) as ToaMB, mb = matBangCua(toa, mau, dl), bc = boCucTang(toa, null);
@@ -70,15 +89,21 @@ function doTrangThai(toa: ToaDat) {
   }
   hd.mat.forEach((m, mi) => m.phan_tu.forEach((q) => { if (q.loai === 'thang_bo') o.push(hcn(mi, q.a0, q.a1, q.sau_mm ?? 8500)); }));
   const bao = hd.duong_bao;
-  const gocNgoai = Math.max(0, ...o.flatMap((R) => R.map((p) => (trongDG(p, bao) ? 0 : kcBien(p, bao)))));
+  // ô y nguyên như mẫu (cùng chỗ, cùng bề ngang): nét bao CAD ôm căn thật (hốc giếng trời giữa hai căn…) — không kiểm góc ô chữ nhật
+  const goc = khoaOMau(mau);
+  const gocDs = o.filter((R) => !goc.has(khoaO(R))).flatMap((R) => R.map((p) => ({ p, d: trongDG(p, bao) ? 0 : kcBien(p, bao) }))).sort((a, b) => b.d - a.d);
+  const gocNgoai = gocDs[0]?.d ?? 0, gocXa = gocDs[0]?.p.map(Math.round).join(',');
   // ô đặc cho kiểm đỉnh nét bao: căn + thang + dải hành lang (tim ± nửa bề rộng — nét bao ôm hành lang như app cũ duongBao0)
   const hl = (hd.hanh_lang_mm || 1800) / 2;
   const dai = (hd.hanh_lang ?? []).map((s) => {
     const dx = s.p1[0] - s.p0[0], dy = s.p1[1] - s.p0[1], L = Math.hypot(dx, dy) || 1, nx = (-dy / L) * hl, ny = (dx / L) * hl;
     return [[s.p0[0] + nx, s.p0[1] + ny], [s.p1[0] + nx, s.p1[1] + ny], [s.p1[0] - nx, s.p1[1] - ny], [s.p0[0] - nx, s.p0[1] - ny]] as Diem[];
   });
-  const dinhXa = Math.max(0, ...bao.map((p) => Math.min(...[...o, ...dai].map((R) => kcO(p, R)))));
-  return { mau, mb, hd, de: dk.de, kheMm: dk.mm, soCan, gocNgoai, dinhXa, dtBao: dtDG(bao) / 1e6, dtxd: hd.dtxd_m2, thang: mb.thangBo, vts };
+  // + khung tường lõi (nét bao ôm lõi)
+  dai.push(...daGiacCacLoi(mau, dl));
+  const dinhDs = bao.map((p) => ({ p, d: Math.min(...[...o, ...dai].map((R) => (R.length === 4 ? kcO(p, R) : trongDG(p, R) ? 0 : kcBien(p, R)))) })).sort((a, b) => b.d - a.d);
+  const dinhXa = dinhDs[0]?.d ?? 0, dinhXaO = dinhDs[0]?.p.map(Math.round).join(',');
+  return { mau, mb, hd, de: dk.de, kheMm: dk.mm, soCan, gocNgoai, gocXa, dinhXa, dinhXaO, dtBao: dtDG(bao) / 1e6, dtxd: hd.dtxd_m2, thang: mb.thangBo, vts };
 }
 
 type ViPham = { mau: string; buoc: number; op: string; loi: string };
@@ -87,8 +112,8 @@ function kiem(id: string, buoc: number, op: string, toa: ToaDat, nen: ReturnType
   const s = doTrangThai(toa), them = (loi: string) => vi.push({ mau: id, buoc, op, loi });
   if (s.de > nen.de) them(`đè ${nen.de} → ${s.de}`);
   if (s.kheMm > nen.kheMm + 200) them(`khe ${Math.round(nen.kheMm)} → ${Math.round(s.kheMm)} mm`);
-  if (s.gocNgoai > Math.max(700, nen.gocNgoai + 60)) them(`góc ô ra ngoài nét bao ${Math.round(nen.gocNgoai)} → ${Math.round(s.gocNgoai)} mm`);
-  if (s.dinhXa > nen.dinhXa + 60) them(`đỉnh nét bao cách ô đặc ${Math.round(nen.dinhXa)} → ${Math.round(s.dinhXa)} mm`);
+  if (s.gocNgoai > Math.max(700, nen.gocNgoai + 60)) them(`góc ô ra ngoài nét bao ${Math.round(nen.gocNgoai)} → ${Math.round(s.gocNgoai)} mm (${s.gocXa})`);
+  if (s.dinhXa > nen.dinhXa + 60) them(`đỉnh nét bao cách ô đặc ${Math.round(nen.dinhXa)} → ${Math.round(s.dinhXa)} mm (${s.dinhXaO})`);
   if (Math.abs(s.dtBao - s.dtxd) > 0.6) them(`DTXD ${s.dtxd} ≠ DT nét bao ${s.dtBao.toFixed(1)}`);
   if (toa.dtxdM2 !== undefined && Math.abs(toa.dtxdM2 - s.dtBao) > 0.6) them(`ToaDat.dtxdM2 ${toa.dtxdM2} ≠ ${s.dtBao.toFixed(1)}`);
   if (!thangDungLuat(s.thang)) them(`thang ${JSON.stringify(demLoaiThang(s.thang))}`);
@@ -126,7 +151,7 @@ function tomTat(toa: ToaDat) {
     o: [...s.vts.filter((v) => v.matIdx === mi).map((v) => `${v.khoa}:${canDangDung(v, bc)}:${Math.round(v.a0)}..${Math.round(v.a1)}`),
       ...m.phan_tu.filter((q) => q.loai !== 'can').map((q) => `${q.loai}:${q.khoa}:${Math.round(q.a0)}..${Math.round(q.a1)}`)] })) };
 }
-const dump: { id: string; op: string; loi: string[]; truoc: unknown; sau: unknown }[] = [];
+const dump: { id: string; op: string; loi: string[]; truoc: unknown; sau: unknown; toa: ToaDat }[] = [];
 const MAU = layMau(toaDs.filter((t) => Array.isArray((t as unknown as ToaMB).mat)).map((t) => t.id));
 const tong = { buoc: 0, nhan: 0, tuChoi: 0, hoanTac: 0, vi: [] as ViPham[], msMax: 0, msOp: '' };
 
@@ -161,7 +186,7 @@ describe('thử phá hoại công cụ tay màn Tầng (thu_pha_hoai.js app cũ)
       toa = p.kq.toa;
       kiem(id, b, p.op, toa, nen, tong.vi);
       if (tong.vi.length > n0) {
-        if (process.env.PHA_HOAI_DUMP && !dump.some((x) => x.id === id)) dump.push({ id, op: p.op, loi: tong.vi.slice(n0).map((v) => v.loi), truoc: tomTat(truoc), sau: tomTat(toa) });
+        if (process.env.PHA_HOAI_DUMP && !dump.some((x) => x.id === id)) dump.push({ id, op: p.op, loi: tong.vi.slice(n0).map((v) => v.loi), truoc: tomTat(truoc), sau: tomTat(toa), toa: truoc });
         // vi phạm: trả về trạng thái trước (như người dùng hoàn tác) — đếm số PHÉP vi phạm, không cộng dồn qua các bước sau
         toa = lichSu.pop()!;
         continue;

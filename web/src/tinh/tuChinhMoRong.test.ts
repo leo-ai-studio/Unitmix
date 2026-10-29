@@ -99,7 +99,9 @@ describe('Thang bộ / tự chỉnh theo từng tầng có bố cục riêng', (
     // QT-69 ở tầng 5: mặt 0 dài thêm đúng 1.700 mm ở đầu tự do (căn 5.800 → 7.500), nét bao tầng khác nét bao chung
     expect(mb5!.baoCao!.quyTac.find((q) => q.ma === 'QT-69')!.muc).toBe('da_sua');
     expect(mb5!.baoCao!.quyTac.find((q) => q.ma === 'QT-69')!.ghiChu).toMatch(/1700 mm/);
-    expect(JSON.stringify(mb5!.duongBao)).not.toBe(JSON.stringify(toa.matBang!.duongBao));
+    // … nhưng đoạn kẹp giữa thang và lõi: khít đổi căn 2PN khác sang 1PN → dãy KHÔNG dài thêm sau cùng → nét bao bo theo ô
+    // (app cũ duongBao0) = nét bao chung, không còn dải 1.700 mm trống ở đầu dãy
+    expect(JSON.stringify(mb5!.duongBao)).toBe(JSON.stringify(toa.matBang!.duongBao));
     // DTXD báo cáo của tầng = diện tích nét bao của tầng
     const dt = (P: [number, number][]) => Math.abs(P.reduce((s, p, i) => { const q = P[(i + 1) % P.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
     expect(mb5!.baoCao!.dtxdM2).toBeCloseTo(dt(mb5!.duongBao ?? m.duong_bao) / 1e6, 1);
@@ -129,7 +131,10 @@ describe('Thang bộ / tự chỉnh theo từng tầng có bố cục riêng', (
     expect(viTriCan(hd, tv).length).toBe(viTriCan(m, tv).length);
   });
   it('DT sàn tháp cộng nét bao riêng của tầng (1 tầng × phần dài thêm × hệ số phần chung)', () => {
-    const { m, toa } = tangRiengThu();
+    // tm-i1 tầng 5: 1PN ở đoạn lõi → đầu tự do (không kẹp) đổi sang 2PN → dãy dài ra thật
+    const m = mau('tm-i1');
+    const vt = viTriCan(m, tv).find((v) => v.matIdx === 0 && v.canGocId === 'tm-1pn-m1' && v.a0 > 60000)!;
+    const toa = tuChinhToa(doiCanTheoTang(toaThu(m), [5], vt, 'tm-2pn-m2', viTriCan(m, tv), false), m, tv, dl);
     const pa: TrangThaiPA = { ...taoPAMoi(), lo: [taoLo('l', 'A', 'tm', [[0, 0], [300, 0], [300, 300], [0, 300]])], toa: [toa] };
     const coRieng = tinhChiTieu(pa, tv).theoLo.l.dtSanChiTiet.thap;
     const tr = { ...toa.tangRieng!, 5: { ...toa.tangRieng![5], matBang: undefined } };

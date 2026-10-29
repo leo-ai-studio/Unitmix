@@ -1178,6 +1178,8 @@
   "cc.ngan.khong_dau_tu_do": "run has no free end",
   "cc.ngan.khong_doi": "nothing changes",
   "cc.ngan.thoat_nan": "beyond escape distance",
+  "cc.loi.khong_vua": "Cannot swap: one unit does not fit the other cell (clamped row, not enough room) — a swap must change both. Reverted.",
+  "cc.ngan.khong_vua": "unit does not fit the target cell",
   "cc.loi.nhieu_thang": "The tower already has 3 stairs — 3 at most (default 2: one N2 + one N3). Not added.",
   "cc.ngan.nhieu_thang": "already 3 stairs",
   "cc.loaiThang": "Stair type",

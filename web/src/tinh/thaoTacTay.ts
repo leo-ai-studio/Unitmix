@@ -13,7 +13,7 @@ import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type 
 import { chupThangTay, doDeKhe, ganLoaiThang, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
 
-export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan';
+export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'khong_vua' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan';
 export type KetQuaTay = { ok: true; toa: ToaDat; chan: ChanSua[]; canhBao?: 'nhieu_thang' | 'it_thang' } | { ok: false; lyDo: LyDoTay; chiTiet?: string };
 
 export type Ctx = { tv: ThuVien; dl: DuLieuMB | null | undefined };
@@ -42,7 +42,16 @@ function chotSua(truoc: ToaDat, sau: ToaDat, ks: (number | null)[], c: Ctx): Ket
 /** Đổi chỗ hai ô (kéo căn sang ô khác — QT-8 · QT-30): mẫu căn, công năng, lật đổi cho nhau; dãy dồn khít lại. */
 export function doiChoTay(toa: ToaDat, tangs: number[] | null, a: ViTriCan, b: ViTriCan, c: Ctx): KetQuaTay {
   if (a.khoa === b.khoa) return { ok: false, lyDo: 'khong_doi' };
-  return chotSua(toa, doiChoO(toa, tangs, a, b), tangs ?? [null], c);
+  const r = chotSua(toa, doiChoO(toa, tangs, a, b), tangs ?? [null], c);
+  if (!r.ok) return r;
+  // đổi chỗ là MỘT phép: căn vừa chọn không vừa ô bên kia (dãy kẹp — tự chỉnh chặn, giữ căn cũ ở ô đó) thì không nhận nửa vời
+  // (một bên đổi, một bên giữ = thành đổi mẫu căn, cơ cấu lệch)
+  const goc = (id: string) => c.tv.can.get(id)?.stretchGoc?.id ?? id;
+  for (const k of tangs ?? [null]) {
+    const bc0 = boCucTang(toa, k), bc1 = boCucTang(r.toa, k);
+    if (goc(canDangDung(a, bc1)) !== goc(canDangDung(b, bc0)) || goc(canDangDung(b, bc1)) !== goc(canDangDung(a, bc0))) return { ok: false, lyDo: 'khong_vua' };
+  }
+  return r;
 }
 
 /** Lật gương (⇄) một hoặc nhiều ô (QT-102 hàng loạt). */

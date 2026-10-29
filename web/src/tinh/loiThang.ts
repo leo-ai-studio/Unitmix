@@ -18,6 +18,7 @@
  */
 import { LOAI_CAN, type BaoCaoGiamCan, type BaoCaoKhitKep, type BaoCaoTuChinh, type CongNangO, type Diem, type DoanHanhLangMB, type KetQuaTuChinh, type LoaiCan, type MatBangSua, type SanhMB, type ThangBoMB, type ThangTay, type ThangTayThem, type ThayDoiTuDong, type ThuVien, type ToaDat } from './kieu';
 import { KHE_HL_THEM_MM, KHE_TUONG_MM, kheTrenMat, tongKhe, TUONG_CHUNG_LOI_MM } from './khe';
+import { netBaoTheoO, NOI_MAT_MM } from './netBao';
 import { boCucTang, canDangDung, chenhRong, congNangTai, doanCan, donKhit, ghiDeTang, KHIT_MM, matDaDon, tangCoRieng, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from './matBang';
 import { dtHanhLangTang } from './phanChung';
 import { chieuCaoPCCC, cuaTrenMat, dungDoThi, gioiHanThoatNan, thoatNan, TIM_CUA_THANG_MM, type MatToa, type PhanTuMat, type ToaPCCC } from './pccc';
@@ -144,6 +145,17 @@ const daGiacLoi = (K: HinhLoiMB): Diem[] | null => {
   const b = K.bao_tuong_mm;
   return b && b.length === 4 ? [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]] : null;
 };
+
+/** Đa giác khung tường các lõi của mẫu (mm thế giới) — ô đặc khi dựng / kiểm nét bao. */
+export function daGiacCacLoi(mau: ToaMB, dl: DuLieuMB | null | undefined): Diem[][] {
+  if (!dl) return [];
+  const kq: Diem[][] = [];
+  for (const { q } of dsLoi(mau)) {
+    const K = dl.loi.get(q.block), P = K && daGiacLoi(K);
+    if (P) kq.push(veLoiTaiViTri([{ cat: 'b', pts: P }], q)[0].pts);
+  }
+  return kq;
+}
 
 /** Các lõi của mẫu (bỏ lượt chèn lặp như app cũ: cùng khối, lệch < 50 mm). */
 export function dsLoi(mau: ToaMB): { khoa: string; matIdx: number; q: PhanTuMat }[] {
@@ -342,7 +354,9 @@ export function gonDaGiac(P: Diem[], tol = 2): Diem[] {
       const a = R[(k + R.length - 1) % R.length], p = R[k], c = R[(k + 1) % R.length];
       const L = kc(a, c);
       const lech = L < 1e-6 ? kc(a, p) : Math.abs((c[0] - a[0]) * (p[1] - a[1]) - (c[1] - a[1]) * (p[0] - a[0])) / L;
-      if (kc(p, a) <= 1 || lech <= tol) { R.splice(k, 1); doi = true; k--; }
+      // gai: đi tới rồi quay lại (tích vô hướng âm) gần như trên cùng đường — nét CAD lệch vài chục mm vẫn là gai
+      const quay = (p[0] - a[0]) * (c[0] - p[0]) + (p[1] - a[1]) * (c[1] - p[1]) < 0;
+      if (kc(p, a) <= 1 || lech <= tol || (quay && lech <= 60)) { R.splice(k, 1); doi = true; k--; }
     }
   }
   return R;
@@ -375,6 +389,100 @@ function gianMat(mau: ToaMB, mb: MatBangSua, mi: number, cuoi: boolean, d: numbe
   mb.duongBao = P;
   mb.mep = { ...(mb.mep ?? {}), [mi]: cuoi ? [aDau, aCuoi + d] : [aDau - d, aCuoi] };
   return true;
+}
+
+/**
+ * Nét bao BO THEO Ô (app cũ duongBao0: nét bao ôm căn thật): ở đầu mặt TỰ DO, phần mặt thừa ra ngoài vật thể đầu / cuối dãy (căn
+ * bị gỡ / xoá ở đầu kia, ép thang về chỗ cũ làm dãy dời) được gọt về khít ô — chỉ phần thừa HƠN mặt bằng mặc định của mẫu.
+ * Trả số đầu đã gọt.
+ */
+function gotDauThua(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc): number {
+  const goc = matBangMacDinh(mau, dl);
+  // ô thật (căn đã dồn khít theo bố cục — đổi mẫu khác bề ngang, STRETCH — và ô thang)
+  const oThat = (x: MatBangSua, b?: BoCuc) => {
+    const hd = dung(mau, x, dl), vts = viTriCan(hd, tv, b);
+    return (mi: number) => [...vts.filter((v) => v.matIdx === mi).map((v) => ({ a0: v.a0, w: v.a1 - v.a0 })),
+      ...x.thangBo.filter((t) => t.matIdx === mi).map((t) => ({ a0: t.a0, w: t.rong }))].sort((p, q) => p.a0 - q.a0);
+  };
+  const oMoi = oThat(mb, bc), oGoc = oThat(goc);
+  let n = 0;
+  mau.mat.forEach((m, mi) => {
+    if (!laMatThat(m)) return;
+    const ds = oMoi(mi), d0 = oGoc(mi);
+    if (!ds.length || !d0.length) return;
+    const [aDau, aCuoi] = mepMat(mau, mb, mi), [gDau, gCuoi] = mepMat(mau, goc, mi);
+    const thuaDau = ds[0].a0 - aDau - Math.max(0, d0[0].a0 - gDau);
+    const cuoiDs = ds[ds.length - 1], cuoiD0 = d0[d0.length - 1];
+    const thuaCuoi = aCuoi - (cuoiDs.a0 + cuoiDs.w) - Math.max(0, gCuoi - (cuoiD0.a0 + cuoiD0.w));
+    // thừa (> 0): gọt về khít ô; thiếu (< 0, ô dồn khít tràn qua đầu mặt): nới ra cho nét bao ôm ô
+    if (Math.abs(thuaDau) > KHIT_MM && dauTuDo(mau, mb, mi, false) && gianMat(mau, mb, mi, false, -thuaDau)) n++;
+    if (Math.abs(thuaCuoi) > KHIT_MM && dauTuDo(mau, mb, mi, true) && gianMat(mau, mb, mi, true, -thuaCuoi)) n++;
+  });
+  return n;
+}
+
+/** Ô đặc của mặt bằng (căn đã dồn khít theo bố cục, ô thang) và phần giữ (dải hành lang tim ± nửa bề rộng, lõi), mm thế giới. */
+function oDacMB(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc?: BoCuc): { o: Diem[][]; hl: Diem[][] } {
+  const hd = dung(mau, mb, dl), o: Diem[][] = [];
+  const hcn = (mi: number, a0: number, a1: number, sau: number): Diem[] => {
+    const m = mau.mat[mi], B = coSo(m.goc_deg, m.truc_mm);
+    return [B.pt(a0, 0), B.pt(a1, 0), B.pt(a1, sau), B.pt(a0, sau)];
+  };
+  for (const v of viTriCan(hd, tv, bc)) o.push(hcn(v.matIdx, v.a0, v.a1, (bc ? tv.can.get(canDangDung(v, bc))?.sau_mm : undefined) ?? v.sau ?? BAY_MM));
+  for (const t of mb.thangBo) o.push(hcn(t.matIdx, t.a0, t.a0 + t.rong, BAY_MM));
+  // khung tường lõi: ô đặc cố định — chỉ trừ khỏi phần sàn mất, không kéo nét bao ra ngoài (dải lõi chữ nhật cả bay thì quá thô:
+  // mặt kề có thể chồng bay lên dải lõi)
+  const loi = daGiacCacLoi(mau, dl);
+  const r = (mau.hanh_lang_mm || 1800) / 2;
+  const hl = (mb.hanhLang.length ? mb.hanhLang : mau.hanh_lang ?? []).map((s): Diem[] => {
+    const dx = s.p1[0] - s.p0[0], dy = s.p1[1] - s.p0[1], L = Math.hypot(dx, dy) || 1, nx = (-dy / L) * r, ny = (dx / L) * r;
+    return [[s.p0[0] + nx, s.p0[1] + ny], [s.p1[0] + nx, s.p1[1] + ny], [s.p1[0] - nx, s.p1[1] - ny], [s.p0[0] - nx, s.p0[1] - ny]];
+  });
+  return { o, hl: [...hl, ...loi] };
+}
+
+/**
+ * Nét bao bo theo ô (app cũ duongBao0 — tinh/netBao.ts): so ô đặc của mặt bằng `mb` với mặt bằng mặc định của mẫu, trừ phần
+ * sàn mất (nở 700 mm, trừ lại ô còn + hành lang), cộng phần mọc thêm. Không đổi gì thì undefined (= nét bao mẫu).
+ */
+function baoTheoO(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc): Diem[] | undefined | null {
+  const goc = matBangMacDinh(mau, dl), a = oDacMB(mau, goc, dl, tv), b = oDacMB(mau, mb, dl, tv, bc);
+  // nét bao nối dần (noiNetBao ở đầu mặt — đúng tới mm khi dãy dài ra / ngắn lại) còn khớp ô thì giữ; hỏng (gai, viền thừa quanh
+  // chỗ trống, ô lòi ra ngoài) mới dựng lại bằng phép boolean như app cũ
+  const P1 = mb.duongBao ?? mau.duong_bao;
+  if (!baoHong(P1, mau, a, b)) return mb.duongBao;
+  const P = netBaoTheoO(mau.duong_bao, a.o, b.o, b.hl);
+  if (!P) return null;
+  return P === mau.duong_bao ? undefined : gonDaGiac(P);
+}
+
+/** Khoảng cách điểm tới đa giác (trong = 0). */
+const kcDG = (p: Diem, P: Diem[]) => {
+  if (trongDG(p, P)) return 0;
+  let m = Infinity;
+  for (let i = 0; i < P.length; i++) {
+    const a = P[i], c = P[(i + 1) % P.length], dx = c[0] - a[0], dy = c[1] - a[1], L2 = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2));
+    m = Math.min(m, Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy));
+  }
+  return m;
+};
+/** Đỉnh nét bao xa ô đặc nhất (mm). */
+const dinhXaNhat = (P: Diem[], ds: Diem[][]) => Math.max(0, ...P.map((p) => Math.min(...ds.map((R) => kcDG(p, R)))));
+const nhoXaGoc = new WeakMap<ToaMB, Map<DuLieuMB | null, number>>();
+/**
+ * Nét bao `P` hỏng so với ô đặc: (1) có đỉnh cách ô đặc / hành lang / lõi xa hơn mức của chính mẫu + 60 mm (gai, viền thừa ở đầu
+ * dãy đã co); (2) góc ô đã đổi (dời / đổi mẫu / thêm) nằm ngoài nét bao quá 700 mm.
+ */
+function baoHong(P: Diem[], mau: ToaMB, a: { o: Diem[][]; hl: Diem[][] }, b: { o: Diem[][]; hl: Diem[][] }): boolean {
+  let m = nhoXaGoc.get(mau);
+  if (!m) nhoXaGoc.set(mau, (m = new Map()));
+  let xa0 = m.get(null);
+  if (xa0 === undefined) { xa0 = dinhXaNhat(mau.duong_bao, [...a.o, ...a.hl]); m.set(null, xa0); }
+  if (dinhXaNhat(P, [...b.o, ...b.hl]) > xa0 + 60) return true;
+  const khoa = (R: Diem[]) => R.map((q) => `${Math.round(q[0])},${Math.round(q[1])}`).join(';');
+  const k0 = new Set(a.o.map(khoa));
+  return b.o.some((R) => !k0.has(khoa(R)) && R.some((p) => kcDG(p, P) > NOI_MAT_MM));
 }
 
 // ---------- QT-69 · đầu dãy hở ra sân trong ----------
@@ -565,7 +673,17 @@ function choChen(mau: ToaMB, mb: MatBangSua, e: ThangTayThem): number | null {
   const s = e.sau ? ds.find((x) => x.k === e.sau) : undefined;
   if (s) return s.a0 + s.w;
   const t = e.truoc ? ds.find((x) => x.k === e.truoc) : undefined;
-  return t ? t.a0 : null;
+  if (t) return t.a0;
+  // vật thể neo đã bị bỏ (gỡ thoát nạn / xoá căn): neo theo vật thể còn lại gần nhất theo thứ tự của mẫu — thang không mất chỗ
+  const neo = e.sau ?? e.truoc;
+  const m = mau.mat[e.mat];
+  if (!neo || !m || !mb.boCan?.includes(neo)) return null;
+  const thu = m.phan_tu.map((q, i) => ({ k: `${e.mat}:${i}`, a: q.a0, can: q.loai === 'can' })).filter((x) => x.can).sort((x, y) => x.a - y.a).map((x) => x.k);
+  const i0 = thu.indexOf(neo);
+  if (i0 < 0) return null;
+  for (let i = i0 - 1; i >= 0; i--) { const v = ds.find((x) => x.k === thu[i]); if (v) return v.a0 + v.w; }
+  for (let i = i0 + 1; i < thu.length; i++) { const v = ds.find((x) => x.k === thu[i]); if (v) return v.a0; }
+  return null;
 }
 
 /**
@@ -1428,13 +1546,16 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
   const mb0 = banSaoMatBang(matBangMacDinh(mau, dl));
   // căn bỏ (giamCanThoatNan) trước: dãy co lại ở đầu tự do, rồi mới đo dãy dài ra / ngắn lại
   apBoCan(mau, mb0, dl, bcVao);
+  (globalThis as { __dbg?: (l: string, m: MatBangSua) => void }).__dbg?.('boCan', mb0); // DBG
   // thang đặt tay (công cụ màn Tầng): áp trước PC-11, PC-11 giữ nguyên tập thang
   const tay = opt.thangTay && (opt.thangTay.them.length || opt.thangTay.bo.length) ? opt.thangTay : undefined;
   const hongTay = tay ? apThangTay(mau, mb0, dl, tay) : [];
+  (globalThis as { __dbg?: (l: string, m: MatBangSua) => void }).__dbg?.('tay', mb0); // DBG
   // quy tắc 2–3 thang: thang tay (PA cũ cho đặt > 3) vượt 3 thì bỏ thang thêm sau cùng; dưới 2 thì PC-11 được tự đặt lại
   const boTay = tay ? catThangThua(mau, mb0, dl, tay) : 0;
   const tayCoDinh = !!tay && mb0.thangBo.length >= THANG_MIN && mb0.thangBo.length <= THANG_MAX;
   const d69 = noiDaiRa(mau, mb0, dl, tv, bcVao);
+  (globalThis as { __dbg?: (l: string, m: MatBangSua) => void }).__dbg?.('d69', mb0); // DBG
   const vtsGoc = viTriCan(mau, tv);
   const cuaCan0 = cuaCanDung(vtsGoc.map((v) => canDangDung(v, bcVao)), tv, dl?.cuaCan ?? {});
   const qt: KetQuaTuChinh[] = [];
@@ -1445,6 +1566,8 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
     : { ...thangTuDong(mau, mb0, dl, tv, cuaCan0, H, bcVao, tayCoDinh), khongDat: 0, thua: [] as ThangBoMB[], bc: bcVao, soNhuong: 0, conLech: 0 };
   // ép thang có thể co / giãn căn nhường chỗ (bố cục đổi): đo tiếp theo bố cục mới
   let mb = banSaoMatBang(pc.mb);
+  gotDauThua(mau, mb, dl, tv, pc.bc);
+  (globalThis as { __dbg?: (l: string, m: MatBangSua) => void }).__dbg?.('pc', mb); // DBG
   // XC-05 (thang liền các tầng thì không dời đoạn có thang; đoạn kẹp khít bằng dời trong đoạn / STRETCH — bố cục đổi)
   const optKhit: OptKhit = { khongKeo: new Set(opt.chan ?? []), giu: new Set(opt.giu ?? Object.keys(bcVao.canViTri ?? {})) };
   // thang đặt tay vẫn để XC-05 dời cả đoạn ≤ tường chung cho khít lõi (như thang mẫu); chỉ PC-11 không dời / bỏ
@@ -1457,6 +1580,7 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
   const s06 = trucQuaSanh(mau, mb, dl);
   // XC-07
   const sua07 = hanhLangToiCua(mau, mb, dl, cuaCan);
+  (globalThis as { __dbg?: (l: string, m: MatBangSua) => void }).__dbg?.('07', mb); // DBG
 
   // gác khe / đè: không được tệ hơn mặt bằng mặc định
   const kheGoc = tongKhe(dung(mau, mb0, dl), tv, pc.bc), kheMoi = tongKhe(dung(mau, mb, dl), tv, bc);
@@ -1469,6 +1593,9 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
     trucQuaSanh(mau, mb, dl);
     hanhLangToiCua(mau, mb, dl, cuaCan);
   }
+  // nét bao bo theo ô (app cũ duongBao0): phần sàn mất / mọc thêm sau mọi bước — không để gai, viền thừa quanh chỗ trống
+  const bao = baoTheoO(mau, mb, dl, tv, bc);
+  if (bao !== null) mb.duongBao = bao;
   const hd = dung(mau, mb, dl);
   const cuoi = danhGia(hd, bc, tv, cuaCan, H);
   const dai = daiLoi(mau, dl);

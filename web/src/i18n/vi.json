@@ -1178,6 +1178,8 @@
   "cc.ngan.khong_dau_tu_do": "dãy không có đầu tự do",
   "cc.ngan.khong_doi": "không đổi gì",
   "cc.ngan.thoat_nan": "vượt cự ly thoát nạn",
+  "cc.loi.khong_vua": "Không đổi chỗ được: một căn không vừa ô bên kia (dãy kẹp, không đủ chỗ) — đổi chỗ phải đổi cả hai. Đã trả về.",
+  "cc.ngan.khong_vua": "căn không vừa ô đích",
   "cc.loi.nhieu_thang": "Tòa đã đủ 3 thang bộ — tối đa 3 thang (mặc định 2: một N2 + một N3). Không thêm.",
   "cc.ngan.nhieu_thang": "đã đủ 3 thang",
   "cc.loaiThang": "Loại thang",
