@@ -81,6 +81,7 @@ async function main() {
       await gui('Emulation.setEmulatedMedia', { features: [{ name: 'display-mode', value: cd === 'standalone' ? 'standalone' : 'browser' }] });
       // hồ sơ sạch cho mỗi chế độ: xoá cache HTTP, SW, kho (standalone trên iOS có kho riêng, không chung Safari)
       await moi(URL0 + '/');
+      await cho(2500); // app đăng ký SW sau load + 1,5 s: đợi qua rồi mới gỡ, kẻo lần "đầu" đã có SW
       await js(`(async () => { for (const r of await navigator.serviceWorker?.getRegistrations?.() ?? []) await r.unregister(); for (const k of await caches?.keys?.() ?? []) await caches.delete(k); localStorage.clear(); return true; })()`);
       await gui('Network.clearBrowserCache');
       if (MA_SUA) await js(`localStorage.setItem('unitmix.maSua.${MA}', '${MA_SUA}'); true`);

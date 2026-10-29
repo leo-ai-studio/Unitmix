@@ -453,3 +453,19 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 **Kiểm:** `node scripts/kiem.mjs` ĐẠT (web 709, worker 9, pytest 15, tsc, build). Chưa xem trực tiếp trên app (server preview đang chạy là của bản checkout chính).
 
 **Chờ chủ nhiệm chốt:** Stb Phú Yên; 2PN+ = 2 phòng ở (Đồng Nai); mốc 125 m² Đồng Nai (lời văn trùng mốc); dùng mốc đô thị 31,0 cho Đồng Nai.
+
+## 2026-10-29 · iPhone: app mở từ màn hình chính (PWA) + khởi động nhẹ · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** trên iPhone (Safari, 5G) mở trong Safari thì mượt, mở từ biểu tượng "LEO-Unitmix" ở màn hình chính thì giật, chậm. Làm PWA đúng chuẩn, service worker, giảm việc lúc mở / thao tác trên máy cỡ iPhone.
+
+**Mã:**
+- `web/public/manifest.webmanifest`, `web/public/_headers` (`/assets/*` immutable 1 năm, `sw.js` no-cache, kiểu manifest), icon `web/public/brand/pwa_*.png` sinh từ `leo_ai_app_icon.png` bằng `scripts/sinh_icon_pwa.py` (chỉ đổ nền + thu nhỏ, không vẽ lại), meta iOS web app trong `web/index.html`.
+- Service worker: khuôn `web/pwa/sw.js` + plugin `web/pwa/plugin.ts` (trong `vite.config.ts`) → `dist/sw.js`, phiên bản = băm cả `dist`. Đăng ký `web/src/pwa/dangKySW.ts` (chỉ bản build, sau load + 1,5 s).
+- `ui/ThanhTren.tsx` `TabTruot`: hết ép tính bố cục sau mỗi lần vẽ lại thanh trên. `ui/so.ts` `fmtSo` + `man/CongCuTang.tsx`: dùng lại `Intl.NumberFormat`.
+- `ve3d/Khung3D.tsx`: máy cảm ứng pixelRatio ≤ 1,5, bóng 2048; bỏ `preserveDrawingBuffer`.
+- `styles/man-hinh-chinh.css` (mới, không đụng `dien-thoai.css`): standalone chặn kéo dãn trang, tắt menu giữ-lâu trên bản vẽ; `(hover: none)` bỏ filter hover dính.
+- `scripts/do_dien_thoai.mjs` (không trong cổng): đo iPhone giả lập, Safari vs standalone, lần đầu / mở lại / ngồi yên / kéo-chụm TMB / mở Tầng / mở 3D.
+
+**Kiểm:** `node scripts/kiem.mjs` ĐẠT (tsc, web 709, worker 9, pytest 15, build); `kiem_man_hep.mjs --chi 390` ĐẠT; `node --check dist/sw.js`; header kiểm qua `wrangler dev` cổng 8811. Số trước / sau: `docs/de_xuat_hieu_nang.md` mục 14 (mở lại từ biểu tượng 1.116 → 558 ms, TBT mở lại 134 → 28 ms, mở 3D TBT 402 → 264 ms, canvas 3D −44 % điểm ảnh).
+
+**Chưa làm / chưa chắc:** không có iPhone / WebKit để đo thật; Chromium không giả lập được `display-mode: standalone`, không thấy vòng resize / rAF chạy nền. Người dùng phải XOÁ biểu tượng cũ trên màn hình chính rồi thêm lại (iOS chỉ đọc manifest / icon lúc thêm). Chưa tách chunk chính 747 KB.
