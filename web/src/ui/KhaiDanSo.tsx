@@ -1,9 +1,12 @@
 import { t } from '../i18n/i18n';
 import { quyTacApDung } from '../tinh/danSo';
-import type { GiaiDoan, KhaiDanSo as Khai, LoaiHinh, Lo, TrangThaiPA } from '../tinh/kieu';
+import type { GiaiDoan, KhaiDanSo as Khai, KhuVuc, LoaiHinh, Lo, TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang } from '../tinh/loaiDat';
-import { LOAI_HINH, QUY_TAC_DAN_SO } from '../tinh/quyTacDanSo';
+import { dsTinhChon, LOAI_HINH } from '../tinh/quyTacDanSo';
 import { fmtSo } from './so';
+
+/** Tỉnh trọng điểm (HN, TP.HCM, An Giang, Hưng Yên) đứng đầu danh sách. */
+const dsTinh = dsTinhChon();
 
 type Props = { lo: Lo; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean };
 
@@ -16,7 +19,10 @@ const doiKhai = (p: TrangThaiPA, id: string, k: Khai | undefined): TrangThaiPA =
   }),
 });
 
-/** Khai tỉnh / thành (địa giới cũ), loại hình, giai đoạn để tính dân số từng căn theo QĐ tỉnh. Chưa khai = hệ số chung. */
+/**
+ * Khai tỉnh / thành, loại hình, giai đoạn (và khu vực đô thị / nông thôn khi QĐ phân biệt) để tính dân số từng căn theo QĐ tỉnh.
+ * Chưa khai = hệ số chung.
+ */
 export function KhaiDanSo({ lo, sua, chiXem }: Props) {
   const k = lo.temDat.danSo;
   const qt = quyTacApDung(lo);
@@ -28,7 +34,12 @@ export function KhaiDanSo({ lo, sua, chiXem }: Props) {
         <select value={k?.tinh ?? ''} disabled={chiXem}
           onChange={(e) => { const v = e.currentTarget.value; dat(v ? { giaiDoan: 'cp', ...k, tinh: v } : undefined); }}>
           <option value="">{t('ds.khai.chuaKhai')}</option>
-          {QUY_TAC_DAN_SO.map((q) => <option value={q.id} key={q.id}>{t(`ds.tinh.${q.id}`)}</option>)}
+          <optgroup label={t('ds.khai.nhomTrongDiem')}>
+            {dsTinh.trongDiem.map((q) => <option value={q.id} key={q.id}>{t(`ds.tinh.${q.id}`)}</option>)}
+          </optgroup>
+          <optgroup label={t('ds.khai.nhomKhac')}>
+            {dsTinh.khac.map((q) => <option value={q.id} key={q.id}>{t(`ds.tinh.${q.id}`)}</option>)}
+          </optgroup>
         </select>
       </label>
       {k && (
@@ -46,6 +57,14 @@ export function KhaiDanSo({ lo, sua, chiXem }: Props) {
               <option value="cp">{t('ds.gd.cp')}</option>
             </select>
           </label>
+          {qt?.khuVuc.phanBiet && (
+            <label class="o-chon" title={t('gt.ds.khai.khuVuc')}><span>{t('ds.khai.khuVuc')}</span>
+              <select value={qt.khuVuc.ap} disabled={chiXem} onChange={(e) => dat({ ...k, khuVuc: e.currentTarget.value as KhuVuc })}>
+                <option value="doThi">{t('ds.kv.doThi')}</option>
+                <option value="nongThon">{t('ds.kv.nongThon')}</option>
+              </select>
+            </label>
+          )}
           {qt?.bq && (
             <label class="o-chon" title={qt.bq.dieu}><span>{t('ds.khai.cach')}</span>
               <select value={k.cach ?? 'bang'} disabled={chiXem} onChange={(e) => dat({ ...k, cach: e.currentTarget.value as 'bang' | 'bq' })}>

@@ -2,6 +2,22 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · Dân số: ô Khu vực đô thị / nông thôn · Đồng Nai phòng ở + mốc biên · tỉnh trọng điểm sau sáp nhập · agent Opus
+
+**Chủ nhiệm đã chốt:** Hà Nội TĐC = mặc định quốc gia 32 m²/người; Đồng Nai thêm ô "Khu vực"; phòng ở theo QĐ địa phương, không có thì QCVN; Phú Yên bỏ qua; tỉnh trọng điểm HN, TP.HCM, An Giang (Kiên Giang, Phú Quốc), Hưng Yên.
+
+**Nguồn đã đọc (29/10/2026):** vbpl.vn trang mới (`/van-ban/chi-tiet/a--<ItemID>`; curl bị chặn, đọc qua Browser pane), danh sách gợi ý tìm kiếm "phương pháp xác định dân số" = toàn bộ QĐ địa phương trong CSDL: HN 34/2024 + 39/2026, TP.HCM 32/2025 + 83/2026, BR-VT 43/2023, Hải Dương 11/2024, Tiền Giang 80/2024, Quảng Ninh 31/2022, Đà Nẵng 19/2026, Đồng Nai 09/2025, Phú Yên 05/2025, Bình Thuận 31/2023, Huế 24/2025. Không có An Giang, Kiên Giang, Phú Quốc, Hưng Yên, Thái Bình. Công báo Hưng Yên mới / Hưng Yên cũ / Thái Bình cũ (tìm trích yếu "dân số", "chung cư"): không có. Lược đồ vbpl: QĐ 34/2024 HN chỉ bị QĐ 39/2026 tác động; QĐ 32/2025 TP.HCM chỉ bị QĐ 83/2026 sửa. QCVN 04:2021/BXD (kho local) 1.4.21 định nghĩa phòng ở, mục 4.2 giao UBND tỉnh; TT 31/2026 sửa QCVN 04 chỉ về xe điện. QCVN 01:2026/BXD (TT 46/2026, hiệu lực 01/01/2027) — chỉ lấy được trang Thông tư, chưa có thân quy chuẩn.
+
+**Mã:**
+- `KhaiDanSo.khuVuc?: 'doThi' | 'nongThon'` (`kieu.ts`, thiếu = đô thị, PA cũ không cần chuyển đổi); `PhuongPhap` `sTb.nongThon` (trị số nông thôn); `theoKhuVuc`, `coPhanBietKhuVuc` (`quyTacDanSo.ts`); `quyTacApDung().khuVuc { ap, phanBiet, sTb }`, `khuVucKhai(lo)` (`danSo.ts`). Ô "Khu vực" ở `KhaiDanSo.tsx` chỉ hiện khi phương pháp giai đoạn đang khai có hai trị số (hiện chỉ Đồng Nai giai đoạn quy hoạch: 31,0 / 28,5); Dashboard ghi "Nông thôn: 28,5 m² sàn/người".
+- Đồng Nai: `SO_PHONG_O['2pnp']` 2 → 3 theo QCVN 04:2021 1.4.21 ("phòng ở là phòng ngủ và phòng sinh hoạt khác"; phòng đa năng = phòng sinh hoạt khác; khách – bếp chung không đếm vì dải DT của khoản 3 chỉ khớp cách đếm này). `BangDanSo.tuTren` (mốc dưới "từ trên" không lấy). Khoản 4 cài đúng: DT ngoài dải cột số phòng → cột số phòng gần nhất có dải chứa DT (trước: dòng gần nhất + cờ). Mốc 125 theo lời văn điểm a–d (bảng tóm tắt bỏ trống đúng 125).
+- Tỉnh mới `ag` "An Giang (gồm Kiên Giang cũ, Phú Quốc)", `hy` "Hưng Yên (mới, gồm Thái Bình cũ)": `qd: null` → mặc định quốc gia mọi loại hình, ghi chú nơi đã rà. `QuyTacTinh.trongDiem` + `dsTinhChon()`: danh sách chọn tỉnh có nhóm "Tỉnh trọng điểm" (HN, TP.HCM ×2, An Giang, Hưng Yên) đứng đầu.
+- Test `danSo.test.ts` +18 ca (tính tay: 2.820 m² / 31 = 90,97; / 28,5 = 98,95; / 32 = 88,125; Đồng Nai 2PN+ 85 → 3,5, 68 → 2,5 khoản 4, 2PN 45 → 1,5, 125 → 3,5, 3PN 70 → 2,5). Đổi kỳ vọng cũ: 2PN+ 130 m² 4,5 → 5; 1PN 80 m² 2 (cờ trên) → 3 (khoản 4).
+
+**Kiểm:** `node scripts/kiem.mjs` ĐẠT (tsc, web 727, worker 9, pytest 15, build). Trên app (vite worktree 5391 + wrangler 8787, dự án thử `78tmpsaf`): danh sách tỉnh có hai nhóm; Đồng Nai giai đoạn cấp phép không có ô Khu vực, giai đoạn quy hoạch có; chọn Nông thôn → dashboard "Nông thôn: 28,5 m² sàn/người", tải lại trang vẫn giữ.
+
+**Chờ chủ nhiệm:** cách đếm phòng ở (2PN+ = 3, khách – bếp không đếm) là diễn giải QCVN 04 1.4.21; khoản 4 Đồng Nai chọn "cột số phòng gần nhất" khi một dòng DT có nhiều cột; S ÷ 32 không làm tròn. Khi An Giang / Hưng Yên ban hành QĐ dân số chung cư thì thay mục `ag` / `hy`. Đọc thân QCVN 01:2026 khi có bản trong kho.
+
 ## 2026-10-29 · Điện thoại: hộp nhập bảng QH không bấm được Áp · rà mọi hộp / lớp nổi · agent Opus
 
 **Lỗi người dùng báo** (iPhone thật, iOS Safari ~390×844): màn TMB, hộp "Nhập bảng chỉ tiêu quy hoạch" sau khi nạp Excel thì thân hộp cuộn xuống dưới dock (Nhập / ↶ ↷ / Số liệu), không bấm được Áp; tiêu đề bảng xem trước đè dòng, bảng bị cắt ngang.
