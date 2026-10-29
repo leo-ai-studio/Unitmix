@@ -366,7 +366,7 @@ function KhoiGiamCan({ bcTc, toa, coRieng, chiXem, datToa, tenO, tenCan }: {
   tenO: (khoa: string) => string; tenCan: (id: string) => string;
 }) {
   const g = bcTc?.giamCan, l = bcTc?.thangLien, kk = bcTc?.khitKep;
-  const bat = toa.giamCanTN !== false;
+  const bat = toa.giamCanTN === true;
   const coCau = g ? LOAI_CAN.filter((k) => g.coCauTruoc[k] || g.coCauSau[k]).map((k) => `${NHAN_LOAI[k]} ${g.coCauTruoc[k]}→${g.coCauSau[k]}`).join(' · ') : '';
   return (
     <div class="khoi-giam-can">
@@ -381,7 +381,7 @@ function KhoiGiamCan({ bcTc, toa, coRieng, chiXem, datToa, tenO, tenCan }: {
       ) : <p class="dong vuot" role="status" style={{ margin: 0 }}>{t('tc.giam.tat').replace('{v}', String(g.vuotSau))}</p>)}
       <label class="o-tg" title={t('tc.giam.gt')}>
         <input type="checkbox" id="giam-can-tn" disabled={chiXem} checked={bat}
-          onChange={(e) => { const on = e.currentTarget.checked; datToa((x) => ({ ...x, giamCanTN: on ? undefined : false })); }} />
+          onChange={(e) => { const on = e.currentTarget.checked; datToa((x) => ({ ...x, giamCanTN: on ? true : undefined })); }} />
         <span>{t('tc.giam.nut')}</span>
       </label>
       {l && (

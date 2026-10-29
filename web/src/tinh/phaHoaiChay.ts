@@ -21,7 +21,7 @@ import { demCan } from './coCau';
 import type { Diem, ToaDat, TrangThaiPA } from './kieu';
 import { apMatBang, daGiacCacLoi, demLoaiThang, doDeKhe, matBangCua, matBangMacDinh, THANG_N2, THANG_N3, thangDungLuat, tuChinhToa, type ToaMB } from './loiThang';
 import { taoPAMoi } from './macDinh';
-import { boCucTang, canDangDung, congNangTai, khungTaiO, viTriCan } from './matBang';
+import { boCucTang, canDangDung, congNangTai, hinhLogia, khungTaiO, viTriCan } from './matBang';
 import { chayPhep, phepTay, type PhepTay } from './tayNen';
 import { mauThem, type KetQuaTay } from './thaoTacTay';
 
@@ -79,7 +79,7 @@ function khoaOMau(mau: ToaMB): Set<string> {
 function doTrangThai(toa: ToaDat) {
   const mau = mauToa(tv, toa) as ToaMB, mb = matBangCua(toa, mau, dl), bc = boCucTang(toa, null);
   const hd = apMatBang(mau, mb, dl), dk = doDeKhe(mau, mb, dl, tv, bc);
-  const o: Diem[][] = [];
+  const o: Diem[][] = [], oThat: Diem[][] = [];
   const hcn = (mi: number, a0: number, a1: number, sau: number): Diem[] => {
     const m = hd.mat[mi], r = (m.goc_deg * Math.PI) / 180, u: Diem = [Math.cos(r), Math.sin(r)], n: Diem = [-u[1], u[0]];
     const pt = (a: number, b: number): Diem => [u[0] * a + n[0] * (m.truc_mm + b), u[1] * a + n[1] * (m.truc_mm + b)];
@@ -90,14 +90,18 @@ function doTrangThai(toa: ToaDat) {
   for (const v of vts) {
     // căn góc V: hình bao thật (CanMau.khung), không phải ô chữ nhật
     const id = canDangDung(v, bc), cm = tv.can.get(id), sau = cm?.sau_mm ?? v.sau ?? 8500;
-    o.push(khungTaiO(hd, v.matIdx, v.a0, v.a1, sau, v.guong, cm?.khung) ?? hcn(v.matIdx, v.a0, v.a1, sau));
+    const R = khungTaiO(hd, v.matIdx, v.a0, v.a1, sau, v.guong, cm?.khung) ?? hcn(v.matIdx, v.a0, v.a1, sau);
+    o.push(R);
+    // góc ô ra ngoài nét bao: căn logia theo hình thật trừ hốc logia (QT-59b — nét bao khoét hốc theo căn); đỉnh nét bao đo tới ô mô-đun
+    // (app cũ bienCan) nên đỉnh trong hốc logia vẫn là của căn
+    oThat.push(cm?.khung ? R : hinhLogia({ ...v, sau }, hd, cm?.logia_lui) ?? R);
     if (congNangTai(v.khoa, bc) === 'can') soCan++;
   }
-  hd.mat.forEach((m, mi) => m.phan_tu.forEach((q) => { if (q.loai === 'thang_bo') o.push(hcn(mi, q.a0, q.a1, q.sau_mm ?? 8500)); }));
+  hd.mat.forEach((m, mi) => m.phan_tu.forEach((q) => { if (q.loai === 'thang_bo') { const R = hcn(mi, q.a0, q.a1, q.sau_mm ?? 8500); o.push(R); oThat.push(R); } }));
   const bao = hd.duong_bao;
   // ô y nguyên như mẫu (cùng chỗ, cùng bề ngang): nét bao CAD ôm căn thật (hốc giếng trời giữa hai căn…) — không kiểm góc ô chữ nhật
   const goc = khoaOMau(mau);
-  const gocDs = o.filter((R) => !goc.has(khoaO(R))).flatMap((R) => R.map((p) => ({ p, d: trongDG(p, bao) ? 0 : kcBien(p, bao) }))).sort((a, b) => b.d - a.d);
+  const gocDs = oThat.filter((_, i) => !goc.has(khoaO(o[i]))).flatMap((R) => R.map((p) => ({ p, d: trongDG(p, bao) ? 0 : kcBien(p, bao) }))).sort((a, b) => b.d - a.d);
   const gocNgoai = gocDs[0]?.d ?? 0, gocXa = gocDs[0]?.p.map(Math.round).join(',');
   // ô đặc cho kiểm đỉnh nét bao: căn + thang + dải hành lang (tim ± nửa bề rộng — nét bao ôm hành lang như app cũ duongBao0)
   const hl = (hd.hanh_lang_mm || 1800) / 2;

@@ -27,8 +27,11 @@ function doTang(toa: ToaDat, tang: number | null, { tv, dl }: Ctx) {
 }
 
 /** Chạy tự chỉnh sau phép sửa tay `sau` rồi kiểm không đè / khe mới trên các tầng `ks`. */
-function chotSua(truoc: ToaDat, sau: ToaDat, ks: (number | null)[], c: Ctx): KetQuaTay {
-  const mau = mauToa(c.tv, sau) as ToaMB | undefined;
+function chotSua(truoc: ToaDat, sau0: ToaDat, ks: (number | null)[], c: Ctx): KetQuaTay {
+  const mau = mauToa(c.tv, sau0) as ToaMB | undefined;
+  // sửa tay KHÔNG tự dời / thêm / bớt thang (app cũ: thang là một ô trong dãy, chỉ người dùng dời): chưa có thang tay thì chụp tập
+  // thang đang có → PC-11 chạy `coDinh`. Thang về tự động chỉ khi người dùng bấm ⟲ (thangTuDongLai bỏ `thangTay`).
+  const sau = sau0.thangTay || !mau ? sau0 : { ...sau0, thangTay: thangTayCua(truoc, c) };
   const r = tuChinhSauSua(truoc, sau, mau, c.tv, c.dl);
   for (const k of ks) {
     const a = doTang(truoc, k, c), b = doTang(r.toa, k, c);

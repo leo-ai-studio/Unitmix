@@ -93,6 +93,20 @@ export function netBaoTheoO(P0: Diem[], o0: Diem[][], o1: Diem[][], hl: Diem[][]
   return toDiem(ngoaiCung);
 }
 
+/**
+ * Hốc logia đi THEO CĂN (app cũ QT-59b `hocDay` + `apDungLuiLogia`): nét bao `P` (đã bo theo ô) lấp lại hốc logia của mặt bằng gốc
+ * `hoc0` ở chỗ giờ có ô đặc `o1` (căn đã dời / đổi chỗ / lật — hốc cũ nằm lại giữa căn mới, nét bao khoét vào căn), rồi khoét hốc
+ * logia của căn hiện tại `hoc1` (ghép cặp trọn, đứng lẻ chừa tường căn bên cạnh). Không đổi thì trả `P`.
+ */
+export function suaHocLogia(P: Diem[], hoc0: Diem[][], hoc1: Diem[][], o1: Diem[][]): Diem[] {
+  const khoa = (ps: Diem[][]) => ps.map((p) => p.map((q) => `${Math.round(q[0])},${Math.round(q[1])}`).join(';')).sort().join('|');
+  if (khoa(hoc0) === khoa(hoc1) || P.length < 3) return P;
+  const lap = giao(hop(hoc0.map(toPath)), hop(o1.filter((p) => p.length >= 3).map(toPath)));
+  const kq = tru(hop([toPath(P), ...lap]), hoc1.map(toPath));
+  const ngoaiCung = [...kq].sort((a, b) => dt(b) - dt(a))[0];
+  return ngoaiCung && ngoaiCung.length >= 3 ? toDiem(ngoaiCung) : P;
+}
+
 /** Số cặp chồng > 0,2 m² giữa các căn góc V (`khung`, hình bao thật) với nhau và với ô / lõi `khac`. */
 export function soChongKhung(khung: Diem[][], khac: Diem[][]): number {
   const K = khung.map(toPath), X = khac.filter((p) => p.length >= 3).map(toPath);

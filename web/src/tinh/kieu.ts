@@ -101,8 +101,9 @@ export type ToaDat = {
   /** false = tắt tự chỉnh mặt bằng tầng; thiếu = bật (như app cũ). */
   tuChinhMB?: boolean;
   /**
-   * false = KHÔNG tự gỡ căn vượt cự ly thoát nạn (giữ nguyên căn, chỉ báo "vượt"); thiếu = bật như app cũ: xếp lại dãy căn
-   * (giữ cơ cấu) rồi giamCanThoatNan (bỏ căn giữa gần mép / đổi ô thành phòng kỹ thuật).
+   * true = tự gỡ căn vượt cự ly thoát nạn: xếp lại dãy căn (giữ cơ cấu) rồi giamCanThoatNan (bỏ căn giữa gần mép / đổi ô thành
+   * phòng kỹ thuật). Thiếu / false = KHÔNG gỡ — cự ly chỉ CẢNH BÁO (nhãn cự ly, căn vượt tô đỏ), như sửa tay ở app cũ (chủ nhiệm
+   * 29/10/2026: "chỉ cảnh báo, không được chặn thay đổi").
    */
   giamCanTN?: boolean;
   /** Thang bộ liền suốt chiều cao khi có tầng riêng: 'hop' (mặc định) = hợp thang mọi tầng; 'chung' = ép theo tầng chung. */
@@ -212,6 +213,8 @@ export type MatBangSua = {
   thangBo: ThangBoMB[];
   /** Độ dời dọc mặt (mm) của căn theo khoá vị trí do thêm / bớt / dời thang. */
   dich?: Record<string, number>;
+  /** Đầu neo của đoạn căn (khoá căn đầu đoạn) khi dồn khít qua thang bộ (donQuaThang): 'dau' / 'cuoi' — donKhit dồn về đầu đó. */
+  neo?: Record<string, 'dau' | 'cuoi'>;
   /** Mép đầu / cuối mặt sau khi dài ra, ngắn đi (mm, hệ mặt) theo chỉ số mặt. */
   mep?: Record<number, [number, number]>;
   /** Nét bao sàn sau khi mặt dài ra / ngắn đi; thiếu = nét bao mẫu. */
