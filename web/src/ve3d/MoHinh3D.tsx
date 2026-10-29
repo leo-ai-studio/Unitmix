@@ -14,7 +14,12 @@ import { chonTiaToa, doiTuongDangChonToa, hinhNhanToa, type DangChon3D, type Doi
 import { dtVung, khoiDe } from '../tinh/hinhHoc';
 import { tenTang } from '../ui/ChonTang';
 import { fmtSo } from '../ui/so';
-import { Khung3D } from './Khung3D';
+import { Khung3D, type PhanTich3D } from './Khung3D';
+import { CAO_TANG_DE_MM } from './dungToa';
+import { dungHinhView, oDuAn, type OView } from './lopView3d';
+import { datLopView, TheDiemCan, ThanhMauView, useLocView, useLopView, useViewTang } from '../man/lopView';
+import { gradientCss } from '../tinh/mauView';
+import type { KetQuaViewPA } from '../tinh/huongView';
 import { khoi3dTheoId } from './stretch3d';
 import { caiDatView } from '../tinh/huongView'; // góc Bắc dự án (TMB › Điểm view › Cài đặt): mặt trời 3D cả dự án quay theo
 
@@ -35,6 +40,48 @@ export function useNap3d(canIds: string[], loiIds: string[], tv?: ThuVien | null
     return () => { huy = true; };
   }, [khoa, tv]);
   return kq;
+}
+
+// ---------- phân tích view 3D ----------
+const soKq = new WeakMap<KetQuaViewPA, number>();
+let demKq = 0;
+const idKq = (kq: KetQuaViewPA) => { let n = soKq.get(kq); if (!n) soKq.set(kq, (n = ++demKq)); return n; };
+
+/** Nút "Phân tích view" trên thanh 3D (bật chung với lớp view TMB / màn Tầng). */
+function NutPhanTich() {
+  const bat = useLopView();
+  return (
+    <span class="nhom-3d" role="group" aria-label={t('view.phanTich')}>
+      <button type="button" class="nut-phan-tich-view" aria-pressed={bat} title={t('gt.view.phanTich3d')} onClick={() => datLopView(!bat)}>
+        <i class="cham-thang" aria-hidden="true" style={{ background: gradientCss() }} />{t('view.phanTich')}
+      </button>
+    </span>
+  );
+}
+
+/** Chú giải lớp phân tích 3D: tiêu đề + thang màu (lọc được) + số ô, gợi ý rê chuột. */
+function ChuGiai3D({ kq, soO, phamVi }: { kq: KetQuaViewPA; soO: number; phamVi: string }) {
+  return (
+    <>
+      <div class="cg3-dau">
+        <b>{t('view.phanTich')}</b><span class="muted">{phamVi}</span>
+        <span class="gian" />
+        <button type="button" class="nut-dong-view" aria-label={t('view.tatLop')} title={t('view.tatLop')} onClick={() => datLopView(false)}>×</button>
+      </div>
+      <ThanhMauView cai={kq.cai} />
+      <div class="cg3-chan muted">{t('view.soO').replace('{n}', fmtSo(soO))} · {t('view.goiYRe')}</div>
+    </>
+  );
+}
+
+/** Bong bóng một ô: tên tòa / căn, tầng (dải), điểm + thành phần của dải đó. */
+function docO(o: OView, kq: KetQuaViewPA, tenToa: (id: string) => string, tenCan: (o: OView) => string, soTangDe: (id: string) => number) {
+  const b = o.d.bang!, i = o.bang, de = soTangDe(o.toaId);
+  const tang = o.tu === o.den ? t('oc.tr.tang').replace('{n}', String(de + o.tu)) : t('view.tuTang').replace('{a}', String(de + o.tu)).replace('{b}', String(de + o.den));
+  return (
+    <TheDiemCan tieuDe={`${tenToa(o.toaId)} · ${tenCan(o)}`} phu={tang} tong={b.tong[i]} huong={o.d.huong} thoang={b.thoang[i]} canh={b.canh[i]} nang={b.nang[i]}
+      h8={o.d.h8} kcCan={b.kcCan[i]} gioNang={b.gioNang[i]} cai={kq.cai} />
+  );
 }
 
 type LuuGoc = { gocLuu?: GocNhin[]; onLuuGoc?: (g: Omit<GocNhin, 'id' | 'che' | 'toaId'>) => void; onXoaGoc?: (id: string) => void };
@@ -63,7 +110,9 @@ export function thongTinChonToa(toa: ToaDat, mau: ToaVe, mauTang: ((tang: number
 }
 
 /** Tab Mô hình: 3D cả tòa đang xem (khối đế + tầng điển hình + mái + tum). Có `chon3d` thì bấm chọn căn / tầng, bấm đúp mở mặt bằng. */
-export function MoHinhToa({ toa, mau, mauTang, tv, dauThanh, chon3d, ...luu }: PropsToa & { chon3d?: Chon3D }) {
+export function MoHinhToa({ toa, mau, mauTang, tv, pa, dauThanh, chon3d, ...luu }: PropsToa & { chon3d?: Chon3D }) {
+  const bat = useLopView(), loc = useLocView();
+  const vt = useViewTang(pa, tv, bat);
   // căn của mọi bố cục tầng (chung + tầng riêng); chữ ký bố cục vào khoá để dựng lại khi đổi theo tầng / công năng ô
   const canIds = useMemo(() => [...new Set(nhomTang(toa).flatMap(({ tang }) => { const bc = boCucTang(toa, tang); return viTriCan(mau, tv).map((vt) => canDangDung(vt, bc)); }))], [mau, toa.canTheo, toa.canViTri, toa.tangRieng, tv]);
   // khối lõi / thang của mọi mặt bằng tầng (thang PC-11 thêm có thể là khối khác bản vẽ)
@@ -73,8 +122,31 @@ export function MoHinhToa({ toa, mau, mauTang, tv, dauThanh, chon3d, ...luu }: P
   const khoa = ['toa', mau.id, toa.soTangDe, toa.soTangDH, canIds.join(), JSON.stringify([toa.canTheo, toa.canViTri, toa.congNang, toa.tangRieng]), chuKyMatBang(toa)].join('|');
   const c = chon3d?.chon, tang = c?.tang ?? null, canKhoa = c?.canKhoa ?? null;
   const chu = chon3d ? thongTinChonToa(toa, mau, mauTang, tv, { tang, canKhoa, de: c?.de }) ?? t('m3d.goiYChonToa') : null;
+  const kq = vt.kq, dt = kq?.daiTang?.get(toa.id);
+  const canToa = kq ? kq.can.filter((d) => d.toaId === toa.id && d.bang) : [];
+  const phanTich: PhanTich3D = {
+    bat, loc, khoa: kq ? `${idKq(kq)}|${mau.id}|${khoa}` : '',
+    dung: kq && dt && canToa.length ? (T, P) => {
+      const K = 0.001, hDe = toa.soTangDe * CAO_TANG_DE_MM * K, ht = P.tang * K;
+      const theoKhoa = new Map(canToa.map((d) => [d.khoa, d]));
+      const o: OView[] = [];
+      for (const v of viTriCan(mau, tv, boCucTang(toa, null))) {
+        const d = theoKhoa.get(v.khoa), m = mau.mat[v.matIdx];
+        if (!d?.bang || !m) continue;
+        const r = (m.goc_deg * Math.PI) / 180, n: [number, number] = [-Math.sin(r), Math.cos(r)];
+        const A: [number, number] = [v.goc[3][0] * K, v.goc[3][1] * K], B: [number, number] = [v.goc[2][0] * K, v.goc[2][1] * K];
+        dt.tu.forEach((tu, i) => o.push({ toaId: toa.id, A, B, n, y0: hDe + (tu - 1) * ht, y1: hDe + dt.den[i] * ht, v: d.bang!.tong[i], d, bang: i, tu, den: dt.den[i] }));
+      }
+      return dungHinhView(T, o);
+    } : null,
+    doc: (o) => {
+      const vts = viTriCan(mau, tv, boCucTang(toa, null)), no = soCanChuVi(mau.duong_bao, vts).get(o.d.khoa) ?? 0;
+      return docO(o, kq!, () => mau.ten_vi.split(' · ')[0], (x) => `CH-${String(no).padStart(2, '0')} · ${x.d.loai ? t(`loai.${x.d.loai}`) : '—'}`, () => toa.soTangDe);
+    },
+    chuGiai: kq ? <ChuGiai3D kq={kq} soO={canToa.length * (dt?.tu.length ?? 0)} phamVi={mau.ten_vi.split(' · ')[0]} /> : null,
+  };
   return (
-    <Khung3D khoa={khoa} gocBac={toa.gocDo} chinhThamSo toaNguyen dauThanh={dauThanh} {...luu} tenAnh={`Unitmix-${mau.id}`}
+    <Khung3D khoa={khoa} gocBac={toa.gocDo} chinhThamSo toaNguyen dauThanh={<>{dauThanh}<NutPhanTich /></>} {...luu} tenAnh={`Unitmix-${mau.id}`} phanTich={phanTich}
       tieuDe={`${mau.ten_vi.split(' · ')[0]} · ${toa.soTangDe ? toa.soTangDe + ' + ' : ''}${toa.soTangDH} ${t('m3d.tang')}`}
       chon={c} onChon={chon3d?.onChonToa} onMo={chon3d?.onMoToa} chuThich={chu}
       dung={({ T, goc, M, G, P }) => {
@@ -118,6 +190,8 @@ type PropsChinh = { pa: TrangThaiPA; tv: ThuVien; sua: (fn: (p: TrangThaiPA) => 
 export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, chon3d }: PropsChinh) {
   const [che, setChe] = useState<'du_an' | 'toa'>('du_an');
   const [hienHam, setHienHam] = useState(true);
+  const bat = useLopView(), loc = useLocView();
+  const vt = useViewTang(pa, tv, bat && che === 'du_an');
   const vHam = useNgheHam('3d'); // hầm rải trong Web Worker: có kết quả mới thì dựng lại (khoaNhe)
   const xem = che === 'toa' && toa && mau ? 'toa' : 'du_an';
   const gocLuu = (pa.gocNhin ?? []).filter((g) => g.che === xem && (xem === 'du_an' || g.toaId === toa?.id));
@@ -139,10 +213,21 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
     </span>
   );
   if (xem === 'toa' && toa && mau) return <MoHinhToa pa={pa} tv={tv} toa={toa} mau={mau} mauTang={mauTang} dauThanh={nut} chon3d={chon3d} {...luu} />;
+  const kq = vt.kq;
+  const phanTich: PhanTich3D = {
+    bat, loc, khoa: kq ? String(idKq(kq)) : '',
+    dung: kq?.daiTang ? (T) => dungHinhView(T, oDuAn(kq.can, kq.daiTang!, new Map(pa.toa.map((x) => [x.id, { z0: 0.2 + x.soTangDe * x.caoDe, caoDH: x.caoDH }])))) : null,
+    doc: (o) => {
+      const x = pa.toa.find((q) => q.id === o.toaId), lo = pa.lo.find((l) => l.id === o.d.loId);
+      return docO(o, kq!, () => `${x ? tv.toa.get(x.mauId)?.ten_vi.split(' · ')[0] ?? x.mauId : '—'}${lo ? ` · ${lo.temDat.kyHieu}` : ''}`,
+        (q) => (q.d.loai ? t(`loai.${q.d.loai}`) : '—'), (id) => pa.toa.find((q) => q.id === id)?.soTangDe ?? 0);
+    },
+    chuGiai: kq ? <ChuGiai3D kq={kq} soO={kq.can.reduce((s, d) => s + (d.bang?.tong.length ?? 0), 0)} phamVi={t('m3d.duAn')} /> : null,
+  };
   // tòa đang xem không vào khoá: đổi tòa (kể cả bấm chọn trong 3D) chỉ dựng lại nhẹ, giữ góc nhìn (góc "Cận tòa chọn" theo tòa mới)
   const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';')].join('|');
   return (
-    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '')} toaNguyen dauThanh={<>{nut}{nutHam}</>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`}
+    <Khung3D khoa={khoa} khoaNhe={String(hienHam) + JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '')} toaNguyen dauThanh={<>{nut}{nutHam}<NutPhanTich /></>} {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
       gocBac={caiDatView(pa.huongView).gocBac} dung={({ T, goc, M, kieu }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, hienHam)} />
   );
