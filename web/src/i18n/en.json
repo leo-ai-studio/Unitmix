@@ -2057,5 +2057,6 @@
   "ng.h16.12": "W",
   "ng.h16.13": "WNW",
   "ng.h16.14": "NW",
-  "ng.h16.15": "NNW"
+  "ng.h16.15": "NNW",
+  "ng.vt.viDoTheoViTri": "Latitude comes from the project location (Location · Sun · Wind box) — edit it there."
 }
