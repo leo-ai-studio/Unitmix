@@ -139,3 +139,5 @@
   .tren-du-an .thuong-hieu strong { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .menu-link, .bao-nho { animation: none; } }
+/* màn chạm cỡ bất kỳ (máy tính bảng): nút người tạo · phiên bản đủ 40 px */
+@media (pointer: coarse) { .tac-gia-ban { min-height: 40px; } }
