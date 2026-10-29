@@ -6,6 +6,8 @@ import { chanToa, dienTich, khoiDe } from '../tinh/hinhHoc';
 import { hopLo, taoToaTrenLo, vungDat } from '../tinh/hopLo';
 import { LOAI_CAN, type Diem, type Lo, type LoaiCan, type ThuVien, type ToaDat, type ToaMau, type TrangThaiPA } from '../tinh/kieu';
 import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
+import { nguongRun } from '../ve/camUng';
+import { HopNoi } from '../ve/MenuO';
 import { MucGap } from '../ui/MucGap';
 import { GocBanVe } from '../ui/GocBanVe';
 import { NutBieuTuong } from '../ui/NutBieuTuong';
@@ -198,6 +200,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   const [dk, setDk] = useState<DieuKhienVe | null>(null);
   const [hien, setHien] = useState<HienKeo | null>(null);
   const [diemDo, setDiemDo] = useState<Diem[]>([]);
+  const [menuToa, setMenuToa] = useState<{ id: string; x: number; y: number } | null>(null); // menu ngữ cảnh tòa (chuột phải / nhấn giữ)
   const luot = useRef<LuotKeo | null>(null);
   const hienRef = useRef<HienKeo | null>(null);
   hienRef.current = hien;
@@ -382,7 +385,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
     if (!l) return;
     const p = raMet(l, e);
     if (!l.di) {
-      if (Math.hypot(p[0] - l.p0[0], p[1] - l.p0[1]) * l.pxM < 3) return; // run tay dưới 3 px = bấm
+      if (Math.hypot(p[0] - l.p0[0], p[1] - l.p0[1]) * l.pxM < (e.pointerType === 'mouse' ? 3 : nguongRun(e.pointerType))) return; // run tay dưới 3 px (ngón 10 px) = bấm
       l.di = true;
     }
     l.pCuoi = p; l.shift = e.shiftKey; l.alt = e.altKey;
@@ -426,7 +429,15 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
 
   // đo: bắt vào đỉnh tòa / lô / chỉ giới
   const dinhBat = (): Diem[] => [...pa.lo.flatMap((l) => [...l.ranh, ...(l.chiGioi ?? [])]), ...hinh.flatMap((h) => h.F)];
-  const bamNen = (p: Diem) => {
+  const bamNen = (p: Diem, e: PointerEvent) => {
+    // Cảm ứng: chạm tòa CHƯA chọn để bản vẽ dời được khi kéo (không kéo nhầm tòa) — chạm không kéo thì chọn tòa / lô dưới ngón ở đây.
+    if (!tc.do && e.pointerType !== 'mouse') {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const idToa = el?.closest('[data-toa]')?.getAttribute('data-toa');
+      if (idToa) { chon([idToa], idToa); return; }
+      const idLo = el?.closest('[data-lo]')?.getAttribute('data-lo');
+      if (idLo && idLo !== lo?.id) { chonLo(idLo); chon([], null); datCanhChon(null); return; }
+    }
     if (tc.do) {
       const q = batDiem(p, dinhBat(), (buocM * 0.12));
       setDiemDo(diemDo.length >= 2 ? [q] : [...diemDo, q]);
@@ -464,7 +475,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
           const loai = loaiDat(l), caoTang = loai === 'o_cao_tang', chonL = l.id === lo?.id;
           const [nen, vien] = MAU_DAT[loai];
           return (
-            <g key={l.id} onClick={() => !tc.do && caoTang && !chonL && (chonLo(l.id), chon([], null))} style={{ cursor: caoTang ? 'pointer' : 'default' }}>
+            <g key={l.id} data-lo={caoTang ? l.id : undefined} onClick={() => !tc.do && caoTang && !chonL && (chonLo(l.id), chon([], null))} style={{ cursor: caoTang ? 'pointer' : 'default' }}>
               <polygon points={sPoly(l.ranh)} fill={chonL ? 'var(--soft)' : caoTang ? 'var(--panel)' : nen} stroke={chonL ? 'var(--green)' : vien}
                 stroke-width={chonL ? 2.5 : caoTang ? 1.6 : 1} vector-effect="non-scaling-stroke" />
               {caoTang && l.chiGioi && <polygon points={sPoly(l.chiGioi)} fill="none" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="8 5" vector-effect="non-scaling-stroke" />}
@@ -486,8 +497,16 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
           return (
             <g key={x.id} class="tmb-toa" data-toa={x.id} style={{ cursor: tc.do ? 'crosshair' : chiXem || x.khoa ? 'pointer' : 'move' }}
               onDblClick={(e) => { if (tc.do) return; e.stopPropagation(); moTang?.(x.id); }}
+              onContextMenu={(e) => {
+                if (tc.do) return;
+                e.preventDefault(); e.stopPropagation();
+                if (!sel.includes(x.id)) chon([x.id], x.id);
+                setMenuToa({ id: x.id, x: e.clientX, y: e.clientY });
+              }}
               onPointerDown={(e) => {
                 if (tc.do || e.button !== 0) return; // đo: để bản vẽ nhận bấm
+                // ngón tay trên tòa chưa chọn: để bản vẽ dời (kéo) / chọn khi chạm (bamNen) — chỉ tòa đã chọn mới kéo bằng một ngón
+                if (e.pointerType === 'touch' && !sel.includes(x.id)) return;
                 e.stopPropagation();
                 const ctrl = e.ctrlKey || e.metaKey;
                 // bấm tòa ngoài lựa chọn → chọn nó ngay để kéo (Shift / Ctrl: thêm vào lựa chọn); trong lựa chọn: kéo cả nhóm,
@@ -578,6 +597,24 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
       </div>
       <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null}
         chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
+      {menuToa && (() => {
+        const dong = () => setMenuToa(null);
+        const muc = (k: string, nhan: string, tat: boolean, lam: () => void) => (
+          <button key={k} type="button" role="menuitem" disabled={tat} onClick={() => { lam(); dong(); }}>{nhan}</button>
+        );
+        const sua0 = !chiXem && diDuoc.length > 0;
+        return (
+          <HopNoi x={menuToa.x} y={menuToa.y} dong={dong} nhan={t('bt.menuToa')}>
+            <div class="menu-o-dau">{tenToa(menuToa.id)}</div>
+            {muc('mo', t('bt.moTang'), !moTang, () => moTang?.(menuToa.id))}
+            {muc('xoay', `${t('bt.xoay')} 90°`, !sua0, () => xoay(90))}
+            {muc('lat', t('bt.lat'), !sua0, lat)}
+            {muc('nhan', t('bt.nhanBan'), chiXem || !sel.length, nhanBan)}
+            {muc('khoa', t(tatCaKhoa ? 'bt.moKhoa' : 'bt.khoa'), chiXem || !sel.length, khoa)}
+            {muc('xoa', t('bt.xoa'), !sua0, xoa)}
+          </HopNoi>
+        );
+      })()}
     </>
   );
 }

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { chayRaf, easeOutCubic, giamChuyenDong, tron } from '../ui/chuyenDong';
 import type { Diem } from '../tinh/kieu';
+import { batDauChum, bienDoi, kepW, laChamDup, MS_GIU, nguongRun, nhinKhiChum, nhinKhiKeo, phanLoai, zoomTu, type DiemCham, type GocChum, type NhinThay } from './camUng';
 
 /** Đổi điểm CAD (m, y lên) sang toạ độ SVG (y xuống). */
 export const s = ([x, y]: Diem): string => `${x},${-y}`;
@@ -35,14 +36,14 @@ type Props = {
   chonKhung?: { bat: boolean; onXong: (a: Diem, b: Diem, them: boolean) => void };
 };
 
-type NhinThay = { cx: number; cy: number; w: number }; // tâm (m, y đã lật) và bề rộng nhìn thấy (m); bề cao suy từ khung bản vẽ
 type CuChi =
-  | { loai: 'keo'; x: number; y: number; cx: number; cy: number }
+  | { loai: 'keo'; x: number; y: number; v0: NhinThay }
   | { loai: 'khung'; x: number; y: number; them: boolean }
-  | { loai: 'chum'; d0: number; mx: number; my: number; w: number; cx: number; cy: number };
+  | { loai: 'chum'; g: GocChum };
+/** Một lượt chạm (từ ngón đầu đặt xuống tới khi nhấc hết): để nhận chạm / chạm hai lần / nhấn giữ. */
+type LuotCham = { id: number; x: number; y: number; cx: number; cy: number; t: number; kieu: string; xa: number; soNgon: number; giu: boolean; hen: number };
 
-const W_TOI_THIEU = 2, W_TOI_DA = 100000;
-const kep = (w: number) => Math.min(W_TOI_DA, Math.max(W_TOI_THIEU, w));
+const kep = kepW;
 const MS_BAY = 240, HE_MA_SAT = 0.92, V_TOI_DA = 4; // thời gian bay (ms); quán tính ×0,92 mỗi frame 16,7 ms; vận tốc trôi tối đa (px/ms)
 
 /** Khung nhìn trung gian: tâm nội suy tuyến tính, bề rộng theo tỷ lệ (phóng đều tay). */
@@ -50,16 +51,17 @@ export function noiSuyNhin(a: NhinThay, b: NhinThay, p: number): NhinThay {
   return { cx: tron(a.cx, b.cx, p), cy: tron(a.cy, b.cy, p), w: a.w * (b.w / a.w) ** p };
 }
 
-/** Phóng / thu hệ số k quanh điểm (px, py) trong ô r × c; điểm đó giữ nguyên vị trí trên màn hình. */
-function zoomTu(o: NhinThay, r: number, c: number, k: number, px: number, py: number): NhinThay {
-  const m0 = o.w / r, wx = o.cx + (px - r / 2) * m0, wy = o.cy + (py - c / 2) * m0;
-  const w = kep(o.w * k), m1 = w / r;
-  return { w, cx: wx - (px - r / 2) * m1, cy: wy - (py - c / 2) * m1 };
+/** Phát sự kiện chuột giả lên phần tử dưới điểm chạm (chạm hai lần → dblclick, nhấn giữ → contextmenu): con của bản vẽ dùng lại đúng handler chuột. */
+function phatChuot(loai: 'dblclick' | 'contextmenu', x: number, y: number) {
+  const el = document.elementFromPoint(x, y);
+  el?.dispatchEvent(new MouseEvent(loai, { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, button: loai === 'contextmenu' ? 2 : 0, detail: loai === 'dblclick' ? 2 : 0, view: window }));
 }
 
 /**
  * Bản vẽ SVG theo mét. Khung cố định theo ô chứa (không phình theo nội dung); thước tỷ lệ và hoa gió là lớp phủ đứng yên.
- * Chuột: kéo để di, lăn để phóng quanh con trỏ. Cảm ứng: một ngón di, hai ngón chụm / kéo để phóng và di.
+ * Chuột: kéo để di, lăn để phóng quanh con trỏ. Cảm ứng (`ve/camUng.ts`): một ngón kéo nền để dời, hai ngón chụm để phóng / thu
+ * quanh điểm giữa hai ngón (bám tay 1:1: chỉ đổi CSS transform trong rAF, nhấc tay mới vẽ lại SVG); chạm = bấm, chạm hai lần = bấm đúp
+ * (dblclick), nhấn giữ = menu ngữ cảnh (contextmenu) — phát lên phần tử dưới ngón để con (tòa, lô, ô căn) dùng lại handler chuột.
  */
 export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen, chonKhung }: Props) {
   const goc = khung ?? [0, 0, 100, 60];
@@ -68,8 +70,13 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
   const [kt, setKt] = useState({ r: 0, c: 0 }); // rộng × cao của ô chứa (px)
   const [v, setV] = useState<NhinThay>({ cx: 0, cy: 0, w: 100 });
   const vRef = useRef(v), ktRef = useRef(kt);
-  vRef.current = v;
+  const daVe = useRef(v); // khung nhìn SVG đang vẽ (viewBox); khác vRef khi đang bám tay bằng transform
+  if (daVe.current !== v) { daVe.current = v; vRef.current = v; }
   ktRef.current = kt;
+  const rafTay = useRef(0);
+  const luotCham = useRef<LuotCham | null>(null);
+  const chamTruoc = useRef<DiemCham | null>(null); // lần chạm trước (nhận chạm hai lần)
+  const kieuTro = useRef('mouse');
   const diem = useRef(new Map<number, { x: number; y: number }>());
   const cuChi = useRef<CuChi | null>(null);
   const bay = useRef<() => void>(() => {}); // huỷ hoạt ảnh bay đang chạy
@@ -111,11 +118,38 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
     vRef.current = n; chuaV.current = n;
     if (!rafV.current) rafV.current = requestAnimationFrame(() => { rafV.current = 0; if (chuaV.current) setV(chuaV.current); });
   };
+  /** viewBox của khung nhìn n theo ô chứa hiện tại. */
+  const hopNhin = (n: NhinThay) => {
+    const { r, c } = ktRef.current, hh = r ? (n.w * c) / r : 0;
+    return `${n.cx - n.w / 2} ${n.cy - hh / 2} ${n.w} ${hh}`;
+  };
+  /** Bám tay (kéo / chụm / quán tính): ghi ref, mỗi frame chỉ đổi CSS transform của SVG — không vẽ lại cây SVG. */
+  const datTay = (n: NhinThay) => {
+    vRef.current = n;
+    if (rafTay.current) return;
+    rafTay.current = requestAnimationFrame(() => {
+      rafTay.current = 0;
+      const el = svgRef.current, r = ktRef.current.r;
+      if (!el || !r) return;
+      const { tx, ty, s } = bienDoi(daVe.current, vRef.current, r);
+      el.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+    });
+  };
+  /** Nhấc tay: vẽ lại SVG theo khung nhìn cuối (đặt viewBox ngay trên DOM để toạ độ màn hình ↔ mét đúng liền), bỏ transform. */
+  const chot = () => {
+    cancelAnimationFrame(rafTay.current); rafTay.current = 0;
+    const n = vRef.current, el = svgRef.current;
+    if (n === daVe.current) { if (el) el.style.transform = ''; return; }
+    if (el) { el.setAttribute('viewBox', hopNhin(n)); el.style.transform = ''; }
+    daVe.current = n;
+    setV(n);
+  };
   /** Dừng mọi hoạt ảnh (bay, quán tính): chạm / kéo / chụm / lăn mới phải bám tay ngay. */
   const huyDong = () => {
     bay.current(); bay.current = () => {}; dich.current = null;
     chuaV.current = null;
     cancelAnimationFrame(troi.current); troi.current = 0;
+    chot();
   };
   const bayToi = (d: NhinThay) => {
     huyDong();
@@ -159,36 +193,57 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
   const batDauKeo = (id: number) => {
     const p = diem.current.get(id);
     mau.current = [];
-    if (p) cuChi.current = { loai: 'keo', x: p.x, y: p.y, cx: vRef.current.cx, cy: vRef.current.cy };
+    if (p) cuChi.current = { loai: 'keo', x: p.x, y: p.y, v0: vRef.current };
   };
   /** Thả tay khi đang kéo nhanh: trôi tiếp rồi chậm dần (×0,92 mỗi frame). */
   const troiTiep = (luc: number) => {
     const m = mau.current, b = m[m.length - 1];
     mau.current = [];
-    if (!b || m.length < 2 || giamChuyenDong() || luc - b.t > 60) return; // dừng tay trước khi thả thì không trôi
+    if (!b || m.length < 2 || giamChuyenDong() || luc - b.t > 60) return chot(); // dừng tay trước khi thả thì không trôi
     const a = m.find((x) => x !== b && b.t - x.t <= 100) ?? m[0], dt = b.t - a.t;
-    if (dt <= 0) return;
+    if (dt <= 0) return chot();
     let vx = (b.x - a.x) / dt, vy = (b.y - a.y) / dt;
     const toc = Math.hypot(vx, vy);
-    if (toc < 0.15) return;
+    if (toc < 0.15) return chot();
     if (toc > V_TOI_DA) { vx *= V_TOI_DA / toc; vy *= V_TOI_DA / toc; }
     let truoc = performance.now();
     const buoc = (now: number) => {
       const d = Math.min(now - truoc, 50), f = HE_MA_SAT ** (d / 16.7);
       truoc = now; vx *= f; vy *= f;
-      if (Math.hypot(vx, vy) < 0.02 || !ktRef.current.r) { troi.current = 0; return; }
-      const o = vRef.current, mm = o.w / ktRef.current.r;
-      ganV({ ...o, cx: o.cx - vx * d * mm, cy: o.cy - vy * d * mm });
+      if (Math.hypot(vx, vy) < 0.02 || !ktRef.current.r) { troi.current = 0; chot(); return; }
+      datTay(nhinKhiKeo(vRef.current, vx * d, vy * d, ktRef.current.r));
       troi.current = requestAnimationFrame(buoc);
     };
     troi.current = requestAnimationFrame(buoc);
+  };
+
+  /** Nhấn giữ một ngón đủ lâu không đi: dừng dời bản vẽ, mở menu ngữ cảnh của phần tử dưới ngón; nhấc tay không tính là bấm. */
+  const nhanGiu = (l: LuotCham) => {
+    if (luotCham.current !== l || l.soNgon > 1 || l.xa > nguongRun(l.kieu) || !diem.current.has(l.id)) return;
+    l.giu = true;
+    cuChi.current = null; mau.current = [];
+    chot();
+    // nhấc tay sau nhấn giữ trình duyệt vẫn phát click — trúng mục menu vừa mở ngay dưới ngón. Nuốt đúng một click đó (ở cửa sổ),
+    // bỏ nuốt khi có lần đặt ngón mới hoặc quá 1,5 s.
+    const thoi = () => { removeEventListener('click', nuot, true); removeEventListener('pointerdown', thoi, true); clearTimeout(hen); };
+    const nuot = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); thoi(); };
+    const hen = window.setTimeout(thoi, 1500);
+    addEventListener('click', nuot, true);
+    addEventListener('pointerdown', thoi, true);
+    chamTruoc.current = null;
+    navigator.vibrate?.(12);
+    phatChuot('contextmenu', l.cx, l.cy);
+  };
+  /** Cảm ứng: trình duyệt cũng tự phát contextmenu (giữ) / dblclick (chạm hai lần) — bỏ bản gốc, chỉ giữ bản do BanVe phát cho khỏi mở hai lần. */
+  const chanGoc = (e: Event) => {
+    if (e.isTrusted && kieuTro.current !== 'mouse') { e.preventDefault(); e.stopPropagation(); }
   };
 
   const h = kt.r ? (v.w * kt.c) / kt.r : 0;
   const pxMoiMet = kt.r && v.w ? kt.r / v.w : 0;
   const doDai = tyLeM * pxMoiMet;
   return (
-    <div class="ban-ve" ref={hop}>
+    <div class="ban-ve" ref={hop} onContextMenuCapture={chanGoc} onDblClickCapture={chanGoc}>
       {daDo && (
         <svg
           ref={svgRef}
@@ -207,13 +262,46 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
           }}
           onPointerDownCapture={(e) => {
             huyDong();
-            diem.current.set(e.pointerId, viTri(e));
+            kieuTro.current = e.pointerType;
+            const p = viTri(e);
+            diem.current.set(e.pointerId, p);
+            if (diem.current.size === 1) {
+              // lượt chạm mới: hẹn nhấn giữ (ngón / bút) — đứng yên đủ lâu thì mở menu ngữ cảnh của phần tử dưới ngón
+              const l: LuotCham = { id: e.pointerId, x: p.x, y: p.y, cx: e.clientX, cy: e.clientY, t: e.timeStamp, kieu: e.pointerType, xa: 0, soNgon: 1, giu: false, hen: 0 };
+              if (e.pointerType !== 'mouse') l.hen = window.setTimeout(() => nhanGiu(l), MS_GIU);
+              clearTimeout(luotCham.current?.hen);
+              luotCham.current = l;
+            }
             if (diem.current.size !== 2) return;
             // Ngón thứ hai chạm: chuyển sang chụm. Con trỏ đầu có thể đang kéo một tòa — giật lại về bản vẽ để tòa không bị kéo theo.
+            if (luotCham.current) { luotCham.current.soNgon = 2; clearTimeout(luotCham.current.hen); }
             const [a, b] = [...diem.current.values()], ids = [...diem.current.keys()];
-            cuChi.current = { loai: 'chum', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, w: vRef.current.w, cx: vRef.current.cx, cy: vRef.current.cy };
+            cuChi.current = { loai: 'chum', g: batDauChum(vRef.current, a, b) };
+            batDauNen.current = null;
             try { svgRef.current?.setPointerCapture(ids[0]); } catch { /* con trỏ đã hết */ }
             e.stopPropagation();
+          }}
+          onPointerMoveCapture={(e) => {
+            const l = luotCham.current;
+            if (!l || l.id !== e.pointerId) return;
+            const p = viTri(e);
+            l.xa = Math.max(l.xa, Math.hypot(p.x - l.x, p.y - l.y));
+            if (l.xa > nguongRun(l.kieu)) clearTimeout(l.hen);
+            // đã nhấn giữ (menu đang mở): ngón đi tiếp không kéo tòa / căn, không dời bản vẽ
+            if (l.giu) e.stopPropagation();
+          }}
+          onPointerUpCapture={(e) => {
+            const l = luotCham.current;
+            if (!l || l.id !== e.pointerId) return;
+            clearTimeout(l.hen);
+            if (l.giu || l.kieu === 'mouse') return;
+            const p = viTri(e), nay = { x: p.x, y: p.y, t: e.timeStamp };
+            if (phanLoai(l, nay, l.xa, l.soNgon, l.kieu) !== 'cham') { chamTruoc.current = null; return; }
+            if (laChamDup(chamTruoc.current, nay)) {
+              chamTruoc.current = null;
+              const x = e.clientX, y = e.clientY;
+              setTimeout(() => phatChuot('dblclick', x, y), 0); // sau click của lần chạm thứ hai, như chuột
+            } else chamTruoc.current = nay;
           }}
           onPointerDown={(e) => {
             if (diem.current.size !== 1) return;
@@ -237,14 +325,11 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
             if (g.loai === 'khung') { setHcn([g.x, g.y, pm.x, pm.y]); return; }
             if (g.loai === 'chum' && diem.current.size >= 2) {
               const [a, b] = [...diem.current.values()];
-              const d = Math.hypot(a.x - b.x, a.y - b.y) || 1, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-              const m0 = g.w / r, wx = g.cx + (g.mx - r / 2) * m0, wy = g.cy + (g.my - c / 2) * m0; // điểm thế giới dưới trung điểm lúc bắt đầu
-              const w = kep((g.w * g.d0) / d), m1 = w / r;
-              datV({ w, cx: wx - (mx - r / 2) * m1, cy: wy - (my - c / 2) * m1 });
+              datTay(nhinKhiChum(g.g, a, b, r, c));
             } else if (g.loai === 'keo' && diem.current.size === 1) {
-              const p = diem.current.get(e.pointerId)!, m = vRef.current.w / r;
+              const p = diem.current.get(e.pointerId)!;
               mau.current = [...mau.current.slice(-3), { x: p.x, y: p.y, t: e.timeStamp }];
-              datV({ ...vRef.current, cx: g.cx - (p.x - g.x) * m, cy: g.cy - (p.y - g.y) * m });
+              datTay(nhinKhiKeo(g.v0, p.x - g.x, p.y - g.y, r));
             }
           }}
           onPointerUp={(e) => {
@@ -257,7 +342,7 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
               else onBamNen?.(raMet(p.x, p.y), e);
               return;
             }
-            if (g?.loai === 'keo' && bn && bn.xa < 4 && diem.current.size === 1) onBamNen?.(raMet(p.x, p.y), e);
+            if (g?.loai === 'keo' && bn && bn.xa <= nguongRun(e.pointerType) && diem.current.size === 1 && !luotCham.current?.giu) onBamNen?.(raMet(p.x, p.y), e);
             ketThuc(e.pointerId, e.timeStamp);
           }}
           onPointerCancel={(e) => { if (cuChi.current?.loai === 'khung') { setHcn(null); cuChi.current = null; } batDauNen.current = null; ketThuc(e.pointerId); }}
@@ -292,7 +377,7 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
     if (con.length === 1) batDauKeo(con[0]); // rời một ngón khi đang chụm: tiếp tục di bằng ngón còn lại, không giật
     else if (!con.length) {
       cuChi.current = null;
-      if (keo && luc !== undefined) troiTiep(luc);
+      if (keo && luc !== undefined) troiTiep(luc); else chot();
     }
   }
 }

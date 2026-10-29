@@ -108,15 +108,20 @@ function TabTruot({ lop, nhan, children }: { lop: string; nhan: string; children
   );
 }
 
-/** Menu "⋯" khi thanh hẹp: lớp phủ cố định dưới nút, không đẩy gì và không bị thanh cuộn ngang cắt. */
-function MenuThem({ onXls, onCad }: { onXls?: () => void; onCad?: () => void }) {
+/**
+ * Menu "⋯" khi thanh hẹp: lớp phủ cố định dưới nút, không đẩy gì và không bị thanh cuộn ngang cắt.
+ * Màn hẹp (≤ 1024 px) gom thêm phần ít dùng của thanh vào đây (`hep`): dải cấp, chế độ sửa, trạng thái lưu (CSS `.chi-hep`).
+ */
+function MenuThem({ onXls, onCad, hep }: { onXls?: () => void; onCad?: () => void; hep?: ComponentChildren }) {
   const [mo, setMo] = useState(false);
   const [vt, setVt] = useState({ top: 0, right: 0 });
   const nut = useRef<HTMLButtonElement>(null);
   const [lang, datLang] = useLang();
   useEffect(() => {
     if (!mo) return;
-    const dong = () => setMo(false);
+    // điện thoại ẩn / hiện thanh địa chỉ cũng bắn resize: chỉ đóng khi bề ngang đổi (xoay máy, kéo cửa sổ)
+    const w0 = window.innerWidth;
+    const dong = () => { if (window.innerWidth !== w0) setMo(false); };
     const phim = (e: KeyboardEvent) => { if (e.key === 'Escape') setMo(false); };
     const ngoai = (e: Event) => { if (!(e.target as Element).closest?.('.menu-them')) setMo(false); };
     document.addEventListener('keydown', phim);
@@ -133,7 +138,9 @@ function MenuThem({ onXls, onCad }: { onXls?: () => void; onCad?: () => void }) 
     <span class="menu-them">
       <button class="nut-chu nut-them" type="button" ref={nut} aria-haspopup="menu" aria-expanded={mo} aria-label={t('menu.them')} title={t('menu.them')} onClick={bam}>⋯</button>
       {mo && (
-        <div class="menu-them-bang" role="menu" style={{ top: `${vt.top}px`, right: `${vt.right}px` }} onClick={() => setMo(false)}>
+        <div class="menu-them-bang" role="menu" style={{ top: `${vt.top}px`, right: `${vt.right}px`, maxHeight: `calc(100dvh - ${Math.round(vt.top) + 8}px)` }}
+          onClick={(e) => { if ((e.target as Element).closest?.('[role=menuitem], [role=menuitemradio], .menu-them-lang button, .che-do button')) setMo(false); }}>
+          {hep && <div class="chi-hep menu-them-hep">{hep}</div>}
           <button type="button" role="menuitem" onClick={onXls}>{t('xuat.xls')}</button>
           <button type="button" role="menuitem" disabled={!onCad} onClick={onCad}>{t('xuat.cad')}</button>
           <div class="menu-them-lang" role="group" aria-label={t('lang.chon')}>
@@ -237,6 +244,9 @@ function BangCap({ m, nut, dong }: { m: MenuCap; nut: HTMLElement; dong: (traFoc
   );
 }
 
+/** Nhãn ngắn của tab bước cho màn hẹp (`buoc.ngan.<khoá>`); thiếu thì dùng nhãn đủ. */
+const nhanNgan = (k: string, nhan: string) => { const x = t(`buoc.ngan.${k}`); return x === `buoc.ngan.${k}` ? nhan : x; };
+
 export function ThanhTren(p: Props) {
   useLang();
   const xem: [CheDoXem, string][] = [['mat_bang', 'xem.matBang'], ['mo_hinh', 'xem.moHinh'], ['chi_phi', 'xem.chiPhi']];
@@ -251,15 +261,29 @@ export function ThanhTren(p: Props) {
     setDangXls(true);
     r.catch((e) => console.error('xuat xls:', e)).finally(() => setDangXls(false));
   };
+  const nhomCheDo = p.cheDo && (
+    <div class="nhom-nut che-do" role="group" aria-label={t('cheDo.nhom')}>
+      {cheDo.map(([k, nhan]) => (
+        <button type="button" key={k} aria-pressed={p.cheDo === k} title={t(nhan)} disabled={p.duocSua === false && k !== 'chi_xem'} onClick={() => p.onCheDo?.(k)}>{t(nhan)}</button>
+      ))}
+    </div>
+  );
+  const chuLuu = (vai: boolean) => luu && (
+    <span key={luu} class={`trang-thai-luu${luu === 'chua_luu_duoc' ? ' loi' : luu === 'dang_luu' ? ' dang' : ' da'}`} role={vai ? 'status' : undefined}>
+      {t(luu === 'da_luu' ? 'luu.daLuu' : luu === 'dang_luu' ? 'luu.dangLuu' : 'luu.chuaLuuDuoc')}
+    </span>
+  );
   return (
     <header class="thanh-tren">
       <ThuongHieu dangXuLy={p.dangXuLy} />
-      <button class="nut-chu" type="button" aria-label={t('nut.hoanTac')} title={t('nut.hoanTac')} disabled={!p.onHoanTac || p.cheDo === 'chi_xem'} onClick={p.onHoanTac}>↶</button>
-      <button class="nut-chu" type="button" aria-label={t('nut.lamLai')} title={t('nut.lamLai')} disabled={!p.onLamLai || p.cheDo === 'chi_xem'} onClick={p.onLamLai}>↷</button>
+      <button class="nut-chu nut-hoan" type="button" aria-label={t('nut.hoanTac')} title={t('nut.hoanTac')} disabled={!p.onHoanTac || p.cheDo === 'chi_xem'} onClick={p.onHoanTac}>↶</button>
+      <button class="nut-chu nut-hoan" type="button" aria-label={t('nut.lamLai')} title={t('nut.lamLai')} disabled={!p.onLamLai || p.cheDo === 'chi_xem'} onClick={p.onLamLai}>↷</button>
       {p.buoc && (
         <TabTruot lop="tab-buoc" nhan={t('buoc.nhom')}>
           {p.buoc.ds.map(([k, nhan]) => (
-            <button type="button" key={k} aria-pressed={p.buoc!.chon === k} onClick={() => p.buoc!.onChon(k)}>{nhan}</button>
+            <button type="button" key={k} aria-pressed={p.buoc!.chon === k} title={nhan} onClick={() => p.buoc!.onChon(k)}>
+              <span class="nhan-dai">{nhan}</span><span class="nhan-ngan" aria-hidden="true">{nhanNgan(k, nhan)}</span>
+            </button>
           ))}
         </TabTruot>
       )}
@@ -269,27 +293,18 @@ export function ThanhTren(p: Props) {
         ))}
       </TabTruot>
       {/* Chế độ sửa đứng ngay cạnh 2D / 3D / Chi phí (bên trái); bên phải chỉ còn lưu / xuất / ngôn ngữ. */}
-      {p.cheDo && (
-        <div class="nhom-nut che-do" role="group" aria-label={t('cheDo.nhom')}>
-          {cheDo.map(([k, nhan]) => (
-            <button type="button" key={k} aria-pressed={p.cheDo === k} title={t(nhan)} disabled={p.duocSua === false && k !== 'chi_xem'} onClick={() => p.onCheDo?.(k)}>{t(nhan)}</button>
-          ))}
-        </div>
-      )}
+      {nhomCheDo}
       <span class="gian" />
       {p.capDo && <DaiCap c={p.capDo} />}
       <span class="gian" />
-      {luu && (
-        <span key={luu} class={`trang-thai-luu${luu === 'chua_luu_duoc' ? ' loi' : luu === 'dang_luu' ? ' dang' : ' da'}`} role="status">
-          {t(luu === 'da_luu' ? 'luu.daLuu' : luu === 'dang_luu' ? 'luu.dangLuu' : 'luu.chuaLuuDuoc')}
-        </span>
-      )}
+      {chuLuu(true)}
       <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatXls || dangXls} aria-busy={dangXls} onClick={xuatXls}>
         {dangXls && <img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '14px', height: '14px', verticalAlign: '-2px', marginRight: '6px' }} />}{t('xuat.xls')}
       </button>
       <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatCad} onClick={p.onXuatCad}>{t('xuat.cad')}</button>
       <span class="nhom-xuat"><ChonLang /></span>
-      <MenuThem onXls={p.onXuatXls && xuatXls} onCad={p.onXuatCad} />
+      <MenuThem onXls={p.onXuatXls && xuatXls} onCad={p.onXuatCad}
+        hep={<>{p.capDo && <DaiCap c={p.capDo} />}{nhomCheDo}{chuLuu(false)}</>} />
     </header>
   );
 }
