@@ -1,0 +1,53 @@
+{
+  "dt": {
+    "pha": {
+      "mo3DGoc": {
+        "so": 12,
+        "max": 428
+      },
+      "banDo2D": {
+        "so": 1,
+        "max": 61,
+        "anh": 53
+      },
+      "keoLan2D": {
+        "so": 0,
+        "max": 0
+      },
+      "bong2DChay": {
+        "so": 0,
+        "max": 0
+      },
+      "gioNang": {
+        "so": 1,
+        "max": 67,
+        "ms": 333,
+        "xong": true
+      },
+      "mo3D": {
+        "so": 4,
+        "max": 101
+      },
+      "anhNen3D": {
+        "so": 1,
+        "max": 55
+      },
+      "chayGio3D": {
+        "so": 0,
+        "max": 0
+      },
+      "gio": {
+        "so": 2,
+        "max": 86,
+        "ms": 4341,
+        "xong": true
+      }
+    },
+    "giua2D": [
+      "0,48,390,740",
+      "0,48,390,740"
+    ],
+    "giua3D": "0,48,390,740",
+    "loiJs": []
+  }
+}

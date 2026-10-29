@@ -87,6 +87,10 @@ void main() {
 
 export type BoGiai = {
   N: number; U0: number;
+  /** Chờ trình điều khiển dịch xong shader (KHR_parallel_shader_compile — không chặn luồng chính). */
+  sanSang: () => Promise<void>;
+  /** Nạp ô rắn mới (`mask[y * N + x]` = 1) và khởi tạo lại trường + bộ cộng dồn — dùng lại shader / texture giữa các hướng gió. */
+  batDau: (mask: Uint8Array) => void;
   /** Chạy thêm `n` bước (chỉ xếp lệnh GPU, không chờ). `cong` = cộng dồn trung bình sau mỗi bước. */
   chay: (n: number, cong: boolean) => void;
   /** Đọc trường trung bình (N × N × 4: Σux, Σuy, Σ|u|, số mẫu) không chặn: đọc qua PBO + fence, thăm dò mỗi khung. */
@@ -104,26 +108,29 @@ export function hoTroLBM(): boolean {
   } catch { return false; }
 }
 
-/** Tạo bộ giải N × N; `mask[y * N + x]` = 1 là ô rắn. Null nếu thiết bị không hỗ trợ. */
-export function taoBoGiai(N: number, mask: Uint8Array, U0 = 0.08, tau0 = 0.515, cs = 0.16): BoGiai | null {
+/** Tạo bộ giải N × N (gọi `batDau(mask)` trước khi chạy). Null nếu thiết bị không hỗ trợ. */
+export function taoBoGiai(N: number, U0 = 0.08, tau0 = 0.515, cs = 0.16): BoGiai | null {
   const cv = document.createElement('canvas');
   cv.width = 1; cv.height = 1;
   const gl = cv.getContext('webgl2', { antialias: false, depth: false, stencil: false, alpha: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
   if (!gl || !gl.getExtension('EXT_color_buffer_float')) return null;
-  const sh = (loai: number, src: string) => {
-    const s = gl.createShader(loai)!;
-    gl.shaderSource(s, src); gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error('LBM shader: ' + gl.getShaderInfoLog(s));
-    return s;
-  };
+  // dịch song song (KHR_parallel_shader_compile): không hỏi trạng thái ngay — hỏi sau khi trình điều khiển báo xong, khỏi chặn luồng chính
+  const ss = gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null;
+  const sh = (loai: number, src: string) => { const x = gl.createShader(loai)!; gl.shaderSource(x, src); gl.compileShader(x); return x; };
   const vs = sh(gl.VERTEX_SHADER, VS);
+  const dsSh: WebGLShader[] = [vs];
   const ct = (fs: string) => {
-    const p = gl.createProgram()!;
-    gl.attachShader(p, vs); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error('LBM link: ' + gl.getProgramInfoLog(p));
+    const p = gl.createProgram()!, f = sh(gl.FRAGMENT_SHADER, fs);
+    dsSh.push(f);
+    gl.attachShader(p, vs); gl.attachShader(p, f); gl.linkProgram(p);
     return p;
   };
   const pKhoi = ct(FS_KHOI), pBuoc = ct(FS_BUOC), pCong = ct(FS_CONG);
+  const kiemLink = () => {
+    for (const p of [pKhoi, pBuoc, pCong]) if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+      throw new Error('LBM shader: ' + (gl.getProgramInfoLog(p) || dsSh.map((x) => gl.getShaderInfoLog(x)).join(' ')));
+    }
+  };
   const tex = (fmt: number, type: number, iFmt: number, data: ArrayBufferView | null) => {
     const t = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D, t);
@@ -134,9 +141,7 @@ export function taoBoGiai(N: number, mask: Uint8Array, U0 = 0.08, tau0 = 0.515, 
     return t;
   };
   const f32 = () => tex(gl.RGBA, gl.FLOAT, gl.RGBA32F, null);
-  const m8 = new Uint8Array(N * N);
-  for (let i = 0; i < N * N; i++) m8[i] = mask[i] ? 255 : 0;
-  const tMask = tex(gl.RED, gl.UNSIGNED_BYTE, gl.R8, m8);
+  const tMask = tex(gl.RED, gl.UNSIGNED_BYTE, gl.R8, new Uint8Array(N * N));
   const bo = [[f32(), f32(), f32()], [f32(), f32(), f32()]];
   const cong = [f32(), f32()];
   const fbBo = bo.map((ts) => {
@@ -164,16 +169,34 @@ export function taoBoGiai(N: number, mask: Uint8Array, U0 = 0.08, tau0 = 0.515, 
     ['f0', 'f1', 'f2'].forEach((k, i) => { gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, nguon ? nguon[i] : null); gl.uniform1i(u(k), i); });
     gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, tMask); gl.uniform1i(u('msk'), 3);
   };
-  // khởi tạo cân bằng
-  gl.bindFramebuffer(gl.FRAMEBUFFER, fbBo[0]);
-  datChung(pKhoi, null);
-  gl.drawArrays(gl.TRIANGLES, 0, 3);
-  let cur = 0, curC = 0;
+  let cur = 0, curC = 0, daKiem = false;
   const pbo = gl.createBuffer();
   let mat = false;
   cv.addEventListener('webglcontextlost', () => { mat = true; });
   return {
     N, U0,
+    sanSang() {
+      return new Promise((ok, loi) => {
+        const tham = () => {
+          if (ss && ![pKhoi, pBuoc, pCong].every((p) => gl.getProgramParameter(p, ss.COMPLETION_STATUS_KHR))) { requestAnimationFrame(tham); return; }
+          try { kiemLink(); daKiem = true; ok(); } catch (e) { loi(e); }
+        };
+        tham();
+      });
+    },
+    batDau(mask) {
+      if (!daKiem) { kiemLink(); daKiem = true; }
+      const m8 = new Uint8Array(N * N);
+      for (let i = 0; i < N * N; i++) m8[i] = mask[i] ? 255 : 0;
+      gl.bindTexture(gl.TEXTURE_2D, tMask);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, N, N, gl.RED, gl.UNSIGNED_BYTE, m8);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbBo[0]);
+      datChung(pKhoi, null);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      cur = 0;
+      fbCong.forEach((fb) => { gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); });
+      curC = 0;
+    },
     chay(n, congDon) {
       if (mat) return;
       for (let k = 0; k < n; k++) {
@@ -220,6 +243,7 @@ export function taoBoGiai(N: number, mask: Uint8Array, U0 = 0.08, tau0 = 0.515, 
       [...bo.flat(), ...cong, tMask].forEach((t) => gl.deleteTexture(t));
       [...fbBo, ...fbCong].forEach((f) => gl.deleteFramebuffer(f));
       [pKhoi, pBuoc, pCong].forEach((p) => gl.deleteProgram(p));
+      dsSh.forEach((x) => gl.deleteShader(x));
       gl.deleteBuffer(pbo);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     },

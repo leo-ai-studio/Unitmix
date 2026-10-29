@@ -1,7 +1,7 @@
 /* Gói Vị trí · Nắng · Gió (web/src/nangGio/*): hộp điều khiển là lớp phủ — máy bàn: thẻ phải dưới thanh công cụ; màn hẹp: tấm đáy trên dock.
    Không đổi kích thước khung giữa. Thang màu dùng chung ở thang-mau (ui/ThangMau.tsx). */
 .cho-hop-ng { position: absolute; top: 100%; right: 10px; margin-top: 6px; z-index: 5; pointer-events: none; }
-.cho-hop-ng.o-3d { top: 92px; margin-top: 0; }
+.cho-hop-ng.o-3d { top: 140px; margin-top: 0; }
 .cho-hop-ng > * { pointer-events: auto; }
 .hop-nang-gio {
   width: 340px; max-height: min(72vh, calc(100vh - 190px)); display: flex; flex-direction: column; overflow: hidden;
@@ -22,7 +22,9 @@
 .hng-hang { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
 .hng-hang input[type='text'], .hng-hang input[type='range'] { flex: 1; min-width: 0; }
 .hng-hang.hng-boc { flex-wrap: wrap; }
-.hng-chinh input[type='number'] { width: 70px; }
+.hng-chinh { flex-wrap: wrap; }
+.hng-chinh input[type='number'] { width: 70px; flex: none; }
+.hng-chinh .nut-phu { padding-left: 8px; padding-right: 8px; }
 .hng-luoi2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .hng-luoi2 label { display: flex; flex-direction: column; gap: 3px; color: var(--muted); }
 .hng-goi-y { margin: 0; color: var(--muted); line-height: 1.4; }

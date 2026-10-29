@@ -167,7 +167,10 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
       tx.onUpdate = () => kq.close(); // đã lên GPU: bỏ bản CPU
       texNen.push(tx);
       const op = layNG().doMo;
-      const me = new T.Mesh(g, new T.MeshLambertMaterial({ map: tx, transparent: op < 0.999, opacity: op, depthWrite: op >= 0.999 }));
+      // ảnh vệ tinh đã có sáng tối riêng: nâng màu ~1,35 để bù đèn cảnh (vẫn nhận bóng đổ thật)
+      const vl = new T.MeshLambertMaterial({ map: tx, transparent: op < 0.999, opacity: op, depthWrite: op >= 0.999 });
+      vl.color.setScalar(1.35);
+      const me = new T.Mesh(g, vl);
       me.receiveShadow = true; me.renderOrder = -2;
       me.userData.nen = true;
       gNen.add(me);

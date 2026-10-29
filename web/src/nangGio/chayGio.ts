@@ -81,15 +81,17 @@ export async function chayGio(pa: TrangThaiPA, tv: ThuVien): Promise<void> {
   const thuTu = [huongXem, ...HUONG_MP.map((_, i) => i).filter((i) => i !== huongXem)]; // hướng chủ đạo trước — hiện kết quả sớm
   const kq: KetQuaGio = { luoi, lop: new Uint8Array(nO).fill(255), k: new Float32Array(nO).fill(NaN), kHuong: [], huongXem: huongXem * 2, dong: [], daXong: 0, tong: HUONG_MP.length };
   datNG((t) => ({ lop: 'gio', gio: { ...t.gio, dang: true, loi: '', kq: { ...kq } } }));
+  // một bộ giải cho cả 8 hướng (shader dịch một lần, song song nếu trình duyệt hỗ trợ)
+  let bg: BoGiai | null;
+  try { bg = taoBoGiai(N); if (bg) { dangGiai = bg; await bg.sanSang(); } } catch (e) { datNG((t) => ({ gio: { ...t.gio, dang: false, loi: String((e as Error).message) } })); return; }
+  if (!bg) { datNG((t) => ({ gio: { ...t.gio, dang: false, loi: 'khongWebGL2' } })); return; }
+  if (!conChay()) return;
   for (const iH of thuTu) {
     if (!conChay()) return;
     const tr = heTrucGio(HUONG_MP[iH], vt.gocBac, c, dx, N);
     const mask = new Uint8Array(N * N);
     for (const k of khoi) toDaGiac(k.chan.map(tr.sangLuoi), { x0: 0, y0: 0, buoc: 1, nx: N, ny: N }, (i) => { mask[i] = 1; });
-    let bg: BoGiai | null;
-    try { bg = taoBoGiai(N, mask); } catch (e) { datNG((t) => ({ gio: { ...t.gio, dang: false, loi: String((e as Error).message) } })); return; }
-    if (!bg) { datNG((t) => ({ gio: { ...t.gio, dang: false, loi: 'khongWebGL2' } })); return; }
-    dangGiai = bg;
+    bg.batDau(mask);
     let da = 0, moiKhung = yeu ? 20 : 60, t0 = performance.now();
     while (da < tongBuoc) {
       if (!conChay()) return;
@@ -103,7 +105,6 @@ export async function chayGio(pa: TrangThaiPA, tv: ThuVien): Promise<void> {
     }
     let tb: Float32Array;
     try { tb = await bg.doc(); } catch (e) { datNG((t) => ({ gio: { ...t.gio, dang: false, loi: String((e as Error).message) } })); return; }
-    bg.huy(); dangGiai = null;
     if (!conChay()) return;
     // vận tốc trung bình (đơn vị lưới) → hệ số K = tốc độ TB / U0 trên lưới bản vẽ (nội suy song tuyến)
     const u = new Float32Array(N * N * 2), sp = new Float32Array(N * N);
@@ -124,6 +125,7 @@ export async function chayGio(pa: TrangThaiPA, tv: ThuVien): Promise<void> {
     datNG((t) => ({ gio: { ...t.gio, kq: { ...kq } } }));
     await khung();
   }
+  bg.huy(); dangGiai = null;
   if (!conChay()) return;
   // 16 hướng: hướng chẵn = mô phỏng, hướng lẻ = trung bình hai hướng kề
   const kHuong: Float32Array[] = [];
@@ -136,9 +138,9 @@ export async function chayGio(pa: TrangThaiPA, tv: ThuVien): Promise<void> {
   const vuot = vuotTheoHuong(p), hs = heSoCaoDiBo();
   const kh = new Float32Array(SO_HUONG);
   // tính lớp theo từng khúc, nhường luồng chính giữa các khúc (không tác vụ dài > 50 ms)
-  for (let i0 = 0; i0 < nO; i0 += 4000) {
+  for (let i0 = 0; i0 < nO; i0 += 1500) {
     if (!conChay()) return;
-    for (let i = i0; i < Math.min(nO, i0 + 4000); i++) {
+    for (let i = i0; i < Math.min(nO, i0 + 1500); i++) {
       if (trong[i] || !Number.isFinite(kHuong[0][i])) continue;
       for (let s = 0; s < SO_HUONG; s++) kh[s] = kHuong[s][i];
       kq.lop[i] = lopTienNghi(kh, vuot, hs).lop;

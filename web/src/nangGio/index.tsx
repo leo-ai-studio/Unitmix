@@ -8,6 +8,8 @@ import { useEffect, useMemo, useRef } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { luoi } from '../ui/Luoi';
+import { LopNoi } from '../ui/LopNoi';
+import { useManHep } from '../ui/manHep';
 import type { NutHienThi } from '../ui/ThanhHienThi';
 import type { GanMoRong, MoRong3D } from '../ve3d/moRong3D';
 import type { CanhDung } from '../ve3d/Khung3D';
@@ -19,8 +21,11 @@ const HopNangGioLuoi = luoi(() => import('./HopNangGio').then((m) => m.default),
 type PropsHop = { pa: TrangThaiPA; tv: ThuVien | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; la3D?: boolean };
 /** Hộp Vị trí · Nắng · Gió — chỉ tải mã khi mở lần đầu. */
 export function HopNangGioCho(p: PropsHop) {
-  const mo = useNG((x) => x.moHop);
-  return mo ? <div class={p.la3D ? 'cho-hop-ng o-3d' : 'cho-hop-ng'}><HopNangGioLuoi {...p} /></div> : null;
+  const mo = useNG((x) => x.moHop), hep = useManHep();
+  if (!mo) return null;
+  const hop = <div class={p.la3D ? 'cho-hop-ng o-3d' : 'cho-hop-ng'}><HopNangGioLuoi {...p} /></div>;
+  // màn hẹp: tấm đáy ra thẳng <body> (khỏi kẹt dưới nút góc bản vẽ / lớp xếp chồng của khung giữa)
+  return hep ? <LopNoi>{hop}</LopNoi> : hop;
 }
 
 /** Nút trong danh sách Lớp (GocBanVe) của TMB: ảnh nền 2D + mở hộp Vị trí · Nắng · Gió. */
