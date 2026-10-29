@@ -72,3 +72,8 @@
   .ss-mau .ssm-the { flex-basis: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .ss-mau * { transition: none !important; } }
+/* máy bàn: hộp cao, cuộn trong — hàng Đóng / So sánh dính đáy hộp, luôn thấy (kiem_man_hep: chân hộp phải thấy ngay) */
+@media (min-width: 1025px) {
+  .ss-mau > .chan-hop { position: sticky; bottom: -22px; z-index: 3; margin: 0 -22px -22px; padding: 10px 22px; background: var(--panel); border-top: 1px solid var(--line); border-radius: 0 0 10px 10px; }
+  .ss-mau .ssm-bang thead th { z-index: 2; }
+}
