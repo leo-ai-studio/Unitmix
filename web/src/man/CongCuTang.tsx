@@ -18,6 +18,7 @@ import { doiChoTay, doiLoaiThangTay, doiThangTay, dsMauThem, latTay, mauThem, th
 import { demLoaiThang, THANG_N2, THANG_N3, type LoaiThangBo } from '../tinh/loiThang';
 import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { soLieuTang, type ToaVe } from '../ve/MatBangTang';
+import { khongDiBanVe, ngonKhiKeoO } from '../ve/camUng';
 import { baoConHien, datBaoStretch } from './baoStretch';
 import { layDuLieuMB, mauCuaToa } from './tuChinhTang';
 
@@ -336,12 +337,20 @@ export function useKeoTay(p: PropsCongCu) {
     return null;
   };
 
+  /** Lượt kéo căn đang theo dõi (ngón / chuột đã nhấn trên ô): id con trỏ + huỷ (ngón thứ hai chạm → chụm của bản vẽ). */
+  const phien = useRef<{ id: number; huy: () => void } | null>(null);
   const batDau = (e: PointerEvent) => {
     const q = pRef.current;
+    const nx = ngonKhiKeoO(phien.current?.id ?? null, e.pointerId, e.pointerType);
+    if (nx === 'chum') { phien.current?.huy(); return; } // ngón thứ hai: huỷ kéo căn, để BanVe chụm (không chặn sự kiện)
+    if (nx === 'bo') return;
+    // ngón không phải ngón đầu của lượt chạm (ngón đầu đặt ngoài ô, đang dời / chụm bản vẽ): không bắt đầu kéo căn
+    if (e.pointerType !== 'mouse' && !e.isPrimary) return;
     if (!q.keoBat || q.chiXem || e.button !== 0 || e.shiftKey) return;
     const el = (e.target as Element | null)?.closest?.('[data-o],[data-thang]');
     if (!el) return;
-    e.stopPropagation(); // không kéo di bản vẽ
+    // không kéo di bản vẽ: chuột thì chặn hẳn; ngón / bút thì để bản vẽ ghi nhận ngón (ngón thứ hai chụm được) mà không dời theo
+    if (e.pointerType === 'mouse') e.stopPropagation(); else khongDiBanVe.add(e);
     const khoaO = el.getAttribute('data-o'), khoaT = el.getAttribute('data-thang');
     const b = el.getBoundingClientRect();
     const c = khoaO ? q.can.find((x) => x.vt.khoa === khoaO) : undefined;
@@ -375,6 +384,7 @@ export function useKeoTay(p: PropsCongCu) {
       if (bong.current) bong.current.style.transform = `translate(${x - k.w / 2}px, ${y - k.h / 2}px)`;
     };
     const di = (ev: PointerEvent) => {
+      if (ev.pointerId !== e.pointerId) return;
       x = ev.clientX; y = ev.clientY;
       if (!dangKeo && Math.hypot(x - k.x0, y - k.y0) < 5) return;
       if (!dangKeo) { dangKeo = true; setKeo(k); }
@@ -390,13 +400,18 @@ export function useKeoTay(p: PropsCongCu) {
       clearTimeout(hen);
       if (hop && !cache.has(hop) && !cham) { const d = hop; hen = setTimeout(() => doThu(d), DO_DUNG_MS); }
     };
-    const tha = () => {
+    const go = () => {
       window.removeEventListener('pointermove', di);
       window.removeEventListener('pointerup', tha);
       window.removeEventListener('pointercancel', tha);
       cancelAnimationFrame(raf.current); raf.current = 0;
       clearTimeout(hen);
       setODich(null); setDoKq(null);
+      if (phien.current?.id === e.pointerId) phien.current = null;
+    };
+    const tha = (ev?: PointerEvent) => {
+      if (ev && ev.pointerId !== e.pointerId) return; // ngón khác nhấc lên: không phải lượt này
+      go();
       if (!dangKeo) return;
       const ph = dich ? phep(k, dich) : null;
       const daDo = dich ? cache.get(dich) : undefined;
@@ -411,6 +426,8 @@ export function useKeoTay(p: PropsCongCu) {
     window.addEventListener('pointermove', di);
     window.addEventListener('pointerup', tha);
     window.addEventListener('pointercancel', tha);
+    // ngón thứ hai chạm (chụm): bỏ lượt kéo, bóng tắt ngay, không đổi chỗ / không báo
+    phien.current = { id: e.pointerId, huy: () => { go(); dangKeo = false; setKeo(null); } };
   };
 
   const loiDich = !!doKq && doKq.tt === 'loi' && doKq.dich === oDich;
