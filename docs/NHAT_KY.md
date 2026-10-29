@@ -2,6 +2,15 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 · 3D: chọn căn góc V theo hình thật · khối đế chọn được · tô nhấn theo chiều sâu · agent Opus
+
+- Ba ghi chú còn dở của đợt "3D: chọn lô… FPS" (commit 77455c6 + sau đó chỉnh độ đậm):
+  - **Căn góc V / chữ L**: `CanChon.hinh` = `khungTaiO` (khung thật của mẫu căn, chiều sâu `sau_mm` như khối 3D), `canTaiDiem` / `hinhNhanToa` dùng `hinhCan` (hình thật, căn chữ nhật vẫn ô `goc`). Mỗi tầng dò theo nét bao của chính nó (`BanDoChonToa.chanTang` ← `mauTang(t).duong_bao`, tầng tự chỉnh / tầng riêng bớt căn thì tia đi qua chỗ trống). Test 5 tòa V (tm-v1…v4, xh-v1, 10 căn V): bắn tia vào giữa 137 cạnh ngoài → đúng 137 (dò ô chữ nhật cũ: 121). tm-t2 nay đúng mọi căn (trước chịu sai 2). Trên app tm-v4, quét lưới 12 px khung Công trình: điểm ra căn V 18 → 531, ra "tầng" (trượt khỏi căn) 525 → 30.
+  - **Khối đế**: `DoiTuong3D` thêm `de`. Công trình: `chonTiaToa` trả `DE_TOA` khi đế che trước; bấm → chọn tòa + lô, panel sang Thông số tòa (đang ở màn Tầng thì chuyển TMB, bấm lại căn / tầng thì về Tầng), chip "Khối đế · n tầng · DT một sàn đế" (`m3d.chonDe`, `khoiDe` + `dtVung` như chỉ tiêu lô); bấm đúp → TMB 2D. Toàn dự án: mesh khối đế gắn `userData.chon = de` + `deToa`; bấm → tòa gần điểm chạm (`toaGanDiem`, đế chung nhiều tòa), tô đế theo tòa chọn / rê (`trungRo`). Trước đây tia xuyên đế chọn tòa / lô phía sau.
+  - **Tô nhấn không xuyên vật che**: bỏ `depthTest: false` (`xuyen`); khối `theTich` vẽ kiểu shadow volume bằng stencil (mặt sau sau mặt cảnh +1, mặt trước −1, tô chỗ ≠ 0 rồi xoá) — chỉ tô mặt nhìn thấy trong khối, khối lõm vẫn đúng, mặt cắt ngang vẫn lộ sàn trong căn. Khối nở 0,25 m, hạ 3 cm. `WebGLRenderer({ stencil: true })` (three r170 mặc định tắt). Thêm 2 lượt vẽ khi có chọn / rê; cảnh gộp hình không đổi (Công trình tm-v4: 20 → 21 draw call khi đang chọn căn, dựng lại vẫn nhớ hình).
+- Kiểm trên app (vite 5430, API 8787 có sẵn, Edge headless + CDP, dự án `zutlg8xr` pa-1 tm-v4, chỉ xem): ảnh `docs/anh/3d/10-cong-trinh-chon-khoi-de.png`, `11-chon-can-{truoc,sau}.png`, `12-can-bi-che-{truoc,sau}.png` (góc Tây Bắc, căn chọn ở mặt sau: trước hiện xuyên tòa, sau không thấy). Test `ve3d/chonToa3d.test.ts` +5 ca.
+- Còn dở: tô nhấn khi camera nằm trong khối (rất gần) tô cả phần phía sau; khối đế Công trình vẽ theo chân tháp (chưa nới `deOffset` như Toàn dự án); chưa thử stencil trên máy thật iOS / Android.
+
 ## 2026-10-29 · câu báo "0 → N" ở thao tác đầu tiên · mọi phép tay màn Tầng chạy nền · agent Opus
 
 - **Câu báo "Căn / tầng: 0 → N"** (commit d761166): `baoThaoTac.soCanTang` lấy `baoCao.soCan` của mặt bằng lưu. PA chưa có `ToaDat.matBang` thì mặt bằng mặc định không có báo cáo, nên ra 0. Giờ khi thiếu báo cáo thì đếm căn trên mặt bằng hiệu dụng đang vẽ (`mauHieuDung` + `boCucTang`), giống số trên nhãn màn Tầng. Test `tinh/baoThaoTac.test.ts`: tm-u1 / xh-z4 / tm-t2 trên PA mới, xoá một căn ra N → N-1. Trên app xh-z4 PA mới xoá căn báo 23 → 22 (trước 0 → 22).

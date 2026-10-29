@@ -186,7 +186,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
             ...chung, colorWrite: false, side, depthFunc: T.GreaterEqualDepth, stencilFunc: T.AlwaysStencilFunc, stencilZPass: op, stencilZFail: T.KeepStencilOp, stencilFail: T.KeepStencilOp,
           });
           const to = new T.MeshBasicMaterial({
-            ...chung, color: XANH, opacity: dam ? 0.42 : 0.22, side: T.BackSide, depthTest: false,
+            ...chung, color: XANH, opacity: dam ? 0.55 : 0.28, side: T.BackSide, depthTest: false,
             stencilFunc: T.NotEqualStencilFunc, stencilRef: 0, stencilZPass: T.ZeroStencilOp, stencilFail: T.KeepStencilOp, stencilZFail: T.ZeroStencilOp,
           });
           return [dem(T.BackSide, T.IncrementWrapStencilOp), dem(T.FrontSide, T.DecrementWrapStencilOp), to] as const;
