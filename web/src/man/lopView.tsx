@@ -263,7 +263,6 @@ export function ChuGiaiView({ pa, tv }: { pa: TrangThaiPA; tv?: ThuVien | null }
     <div class="chu-giai-view" role="note" aria-label={t('view.chuGiai')}>
       <div class="cgv-dau">
         <b>{t('view.phanTich')}</b>
-        <span class="muted">{t('view.diem0100')}</span>
         <span class="gian" />
         <label class="cgv-tia" title={t('gt.view.tia')}><input type="checkbox" checked={s.tia} onChange={(e) => datTiaView(e.currentTarget.checked)} />{t('view.tia')}</label>
         <button type="button" class="nut-dong-view" aria-label={t('view.tatLop')} title={t('view.tatLop')} onClick={() => datLopView(false)}>×</button>
