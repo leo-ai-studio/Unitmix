@@ -144,6 +144,9 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         scene.add(goc);
         const ctl = new OrbitControls(cam, R.domElement);
         ctl.enableDamping = !giamChuyenDong(); ctl.dampingFactor = 0.08; ctl.maxPolarAngle = Math.PI / 2 - 0.01;
+        // Cảm ứng: một ngón xoay, hai ngón chụm phóng + dời (canvas touch-action: none nên trang không phóng theo).
+        ctl.touches = { ONE: T.TOUCH.ROTATE, TWO: T.TOUCH.DOLLY_PAN };
+        ctl.enablePan = true; ctl.screenSpacePanning = true;
         let canh: CanhDung | null = null, G = nhomMoi(), cho = 0;
         // --- chọn trong 3D: mesh / nét có userData.chon; tô nhấn bằng cách đổi vật liệu (nhớ vật liệu gốc), không dựng lại ---
         type VL = import('three').Material;
@@ -247,8 +250,15 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         // bấm / chạm: chỉ thêm nghe sự kiện, không đổi điều khiển camera (OrbitControls vẫn nhận đủ, không chặn lan truyền)
         let xuong: DiemBam | null = null, bamTruoc: (DiemBam & { d: DoiTuong3D | null }) | null = null, choRo = 0, roXY = [0, 0];
         const cv0 = R.domElement;
-        const onDown = (e: PointerEvent) => { xuong = e.isPrimary && e.button <= 0 ? { x: e.clientX, y: e.clientY, t: performance.now(), kieu: e.pointerType } : null; };
+        // ngón đang đặt: thêm ngón thứ hai (chụm / dời camera) thì cả lượt không còn là chạm — nhấc ngón đầu không chọn nhầm
+        const dangCham = new Set<number>();
+        const onDown = (e: PointerEvent) => {
+          dangCham.add(e.pointerId);
+          if (dangCham.size > 1) { xuong = null; bamTruoc = null; return; }
+          xuong = e.isPrimary && e.button <= 0 ? { x: e.clientX, y: e.clientY, t: performance.now(), kieu: e.pointerType } : null;
+        };
         const onUp = (e: PointerEvent) => {
+          dangCham.delete(e.pointerId);
           const x0 = xuong; xuong = null;
           const cb = chonRef.current;
           if (!x0 || !e.isPrimary || !cb.onChon) return;
@@ -270,7 +280,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
           });
         };
         const onLeave = () => { if (ro) { ro = null; cv0.style.cursor = ''; apNhan(); ve(); } };
-        const onCancel = () => { xuong = null; };
+        const onCancel = (e: PointerEvent) => { dangCham.delete(e.pointerId); xuong = null; };
         cv0.addEventListener('pointerdown', onDown);
         cv0.addEventListener('pointerup', onUp);
         cv0.addEventListener('pointermove', onMove);
