@@ -25,7 +25,7 @@ body { font-size: 13px; line-height: 1.45; }
 .thuong-hieu { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--green); }
 .thuong-hieu .mark { position: relative; height: 30px; }
 .thuong-hieu .mark img { height: 30px; width: auto; display: block; }
-.thuong-hieu .mark .brand-o { position: absolute; left: 52.93%; top: .88%; width: 46.11%; height: auto; }
+.thuong-hieu .mark .brand-o { position: absolute; left: 52.93%; top: .88%; width: 46.11%; height: auto; aspect-ratio: 1; }
 .thuong-hieu strong { font-size: 15px; font-weight: 600; letter-spacing: .08em; }
 /* Phiên bản mảnh dưới tên app (rê logo xem đủ mã commit · ngày build). */
 .thuong-hieu .ten-ban { display: flex; flex-direction: column; line-height: 1.05; }

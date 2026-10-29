@@ -519,3 +519,37 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 **Kiểm:** `node scripts/kiem.mjs` ĐẠT (tsc, web 737, worker 9, pytest 15, build); test mới `kho/chiaSe.test.ts`, `man/locDuAn.test.ts`; `kiem_man_hep.mjs` 390 ĐẠT (trang-du-an, tao-du-an, so-sanh). Trên app (Edge headless): link sửa chép ra `…/du-an/2mlg1a2l?sua=…`, dự án chia sẻ chỉ có "Chép link xem", bỏ khỏi danh sách + Hoàn tác trả đúng chỗ. Ảnh trước / sau: `docs/anh/du-an/`.
 
 **Chưa làm:** không có API xoá cả dự án trên server (chỉ xoá PA) — dự án của mình cũng chỉ "bỏ khỏi danh sách"; chưa có ảnh thu nhỏ mặt bằng trên thẻ (Architechtures có).
+## 2026-10-29 · Leo AI — trợ lý Claude điều khiển app · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** thêm trợ lý AI ("Leo AI", thương hiệu LEO) trong app, dùng Claude, thao tác THẬT mọi tính năng như người dùng (xếp tòa, sửa tầng, hầm, chi phí, PA…); khoá riêng hoặc khoá chung máy chủ; giao diện như Claude (chảy chữ, Markdown, bước công cụ, dừng, lịch sử, sửa / thử lại, đính kèm), giọng nói, chọn mô hình (mặc định Sonnet 5.5 · Cân bằng) + gợi ý mô hình 0 token khi gõ, chạy tốt trên điện thoại.
+
+**Mã:** chi tiết ở `docs/tro_ly_ai.md`.
+- `kho/khoLoi.ts` — lõi thuần của `useKho` (sửa luôn trên bản mới nhất, trả có / không đổi); `useKho` dùng lõi này, trả thêm `loi`, `layCheDo`.
+- `troLy/congCu/*` — 45 công cụ (đọc, điều hướng, TMB, tầng, hầm, chi phí, PA, xuất, hoàn tác, UI dự phòng) gọi đúng hàm các màn; `troLy/vongLap.ts` vòng tác tử (stop_reason, gom tool_result, Dừng, gọn lịch sử); `troLy/khachThat.ts` SDK `@anthropic-ai/sdk` 1.3 (khoá riêng thẳng Anthropic / khoá chung qua Worker); `troLy/LeoAI.tsx` + `styles/leo-ai.css`; `troLy/giongNoi.ts`, `uiDom.ts`, `markdown.ts`, `hoiThoai.ts`, `goiYMoHinh.ts`, `moHinh.ts`, `heThong.ts`, `nguCanhSoan.ts`.
+- Nối vào trình soạn: nút Leo AI trên `ThanhTren` (máy tính) / dock dưới `KhungSoan` (màn hẹp), khung là `lopPhu` cố định — không đụng `DuAn.tsx`, phần `ThuongHieu`. `man/ManTang.tsx` thêm `tangDangXem`; `man/tuChinhTang.ts` thêm `choDuLieuMB`.
+- Worker: `worker/src/ai.ts` (`GET /api/ai/trang-thai`, `POST /api/ai/v1/messages`), migration `0002_ai_luot.sql`.
+- `scripts/leo_ai_e2e.mjs` (E2E mô hình giả, ảnh `docs/anh/tro-ly/`), `scripts/kiem_man_hep.mjs` thêm hộp `leo-ai`.
+
+**Kiểm:** web vitest (công cụ 50 ca + vòng 11 + gợi ý 6 + markdown 3 + kho 2), worker 14/14 (5 mới), `tsc` 0; E2E Leo AI ĐẠT (1440×900 + 390×844); `kiem_man_hep.mjs` 390 / 768 / 844 / 1440 ĐẠT; `node scripts/kiem.mjs` ĐẠT (tsc, web 799, worker 14, pytest 15, build); `kiem_man_hep.mjs` đủ 7 khung ĐẠT (hộp leo-ai đạt mọi khung).
+
+**Chủ app phải làm:** `npx wrangler secret put ANTHROPIC_API_KEY` và `npx wrangler d1 migrations apply unitmix --remote` (bảng `ai_luot`). Không đặt thì người dùng dán khoá riêng.
+
+**Còn dở / chưa chắc:** chưa chạy với Claude thật; vài thao tác chỉ có trên bản vẽ (vẽ ranh hầm, kéo tự do) đi qua `ui_*`; giá Haiku 5.5 theo bảng chủ nhiệm đưa, cần đối chiếu trang giá Anthropic.
+
+**Đề xuất:** (1) nút "Leo AI giải thích" ở các cảnh báo LO-01/02/05 và chỉ tiêu vượt — mở khung với câu hỏi sẵn; (2) công cụ vẽ / sửa ranh hầm và nhập chỉ tiêu từ ảnh chụp bảng QH (Claude đọc ảnh → `update_lot`); (3) đo `usage.cache_read_input_tokens` hiện ở Cài đặt (chi phí thật mỗi cuộc); (4) học Forma: "Leo AI so sánh 3 phương án xếp tòa" chạy `suggest_arrangements` rồi `compare_pas` trên PA nhân bản; (5) nhật ký thao tác Leo AI theo PA (ai sửa gì) để chủ nhiệm duyệt.
+
+## 2026-10-29 · PCCC + thang máy trên mặt bằng tầng · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** hiện số thang máy (70 căn / 200 người mỗi thang, tra đúng điều), xác định cửa ngăn cháy và thang máy chữa cháy, kiểm bán kính 60 m, cách đặt tủ PCCC, cửa chia khoang hành lang (ngăn khói) theo chiều cao PCCC; học app cũ trước, thiếu thì lấy quy chuẩn.
+
+**Căn cứ (kho `E:\OneDrive\_QCVN-TCVN`, PyMuPDF):** QCVN 04:2021 2.4.1 (≥ 5 tầng 1 thang, ≥ 10 tầng 2), 2.4.2 (1 thang / 200 người hoặc / 70 căn — app cũ ghi nhầm là "bảng chuẩn Viện"), 2.4.3 + QCVN 06 6.13 (TMCC khi H > 50 m với F1.3; bán kính ≤ 60 m; A.2.12 nhà > 75 m ≤ 45 m), QCVN 04 2.5.3 (họng chờ → cửa căn xa nhất ≤ 45 m theo đường đi), QCVN 06 3.3.5 (hành lang > 60 m phải chia) / A.3.1.7 → A.2.14 (khối căn hộ ≤ 30 m, nhà > 75 m), 3.2.11 (cửa buồng thang loại 1), 3.3.5 (cửa mở ra hành lang EI ≥ vách), Bảng 2 / Bảng 3, 4.24, A.3.1.12, A.2.30.2, D.2 a (hút khói hành lang > 28 m). TT 31/2026 không sửa 2.4 / 2.5.3. Không có TCVN 4451 / 7628 / 6396-72/73 trong kho.
+
+**App cũ:** QT-94 min(căn/70, dân/200), QT-76 tính cả TMCC + thang hàng, QT-64 đếm giếng theo hình; TMCC chỉ là ô số (không chỉ định giếng, không kiểm bán kính); không đánh dấu cửa ngăn cháy; tủ QT-77 (R 18 m chủ nhiệm chốt); cửa hành lang QT-95/98/100–105 (30 / 60 m, DP chính xác). Không có kiểm 60 m nào ngoài chiều dài hành lang.
+
+**Mã:** `tinh/thangMay.ts` (giếng từ `loi/*.json` `vi_tri_gieng`, số cần, chọn TMCC phủ tham lam, hoà → gần N3), `tinh/chiaHanhLang.ts` (đặt cửa từ lá về gốc, `doKhoang`), `tinh/pcccTang.ts` (`phanTichPCCCTang` gom mọi lớp, nhớ theo mặt bằng hiệu dụng; `soLieuToaPCCC`, `thangMayToa`), `ve/LopPCCC.tsx` (5 lớp trong nút Lớp, chú giải, chữ giữ cỡ tối thiểu theo px/mm, tủ kéo bám tường → `ToaDat.tuPCCCTay`), `ui/KpiPCCC.tsx` (khối panel phải + cảnh báo), `ui/ThangMayLo.tsx` (TMB), Leo AI `check_rules` thêm `pccc` từng tòa. `ManTang.tsx` chỉ thêm vài dòng gắn lớp / khối. Luật: `chep_quy_tac.py` sửa nguồn CT-05/06/07, PC-07, hàm PC-05/06/08 + 5 luật bổ sung (`qcvn04_241_thang_toi_thieu`, `qcvn06_613_ban_kinh_tmcc`, `qcvn04_253_hong_cho_45`, `qcvn06_cua_ngan_chay`, `qcvn06_D2_hut_khoi_hl`).
+
+**Kiểm:** `tinh/pcccTang.test.ts` 17 ca (2.4.1 / 2.4.2 tay, ngưỡng 50 m, R 60/45, chọn giếng, giếng xoay / lật, chia 50 / 130 m / chữ T, dời cửa, tòa thật tm-z3 24 và 12 tầng, tủ đặt tay). Ảnh Z3 24 tầng (H 81,8 m) `docs/anh/pccc/` (Edge headless, vite 5393 + API 8787, dự án 2mlg1a2l — đã đặt thêm một tòa Z3 vào lô NO-01 của PA thử). Z3: thang máy 5 / 9 (thiếu), TMCC 1 giếng 42,6 / 45 m, họng chờ 32,1 / 45 m, 5 tủ, 2 cửa CNC khoang 28,5 / 30 m, 5 căn vượt thoát nạn.
+
+**Chờ chủ nhiệm chốt:** `docs/pccc_tang.md` mục 8 (đo bán kính TMCC thẳng hay theo đường đi; giữ min hay max hai cách tính thang máy; giếng thứ 5 lõi z3_tm_06; cửa phòng KT nhà ≤ 75 m; N2 có làm nguồn họng chờ; cửa hành lang theo đủ R1–R7 app cũ; bổ sung TCVN 4451 / 7628 / 6396).
+
+**Đề xuất:** (1) chép DP cửa hành lang của app cũ (cộng sảnh thang máy, R4 không quét cửa) thay bản tham lam; (2) giếng thang tách loại (khách / chữa cháy / hàng / băng ca) bằng dữ liệu lõi để đếm và gán TMCC chắc hơn — học Forma "core schedule"; (3) gợi ý đổi lõi khác cùng hình khi thiếu thang máy (lõi tm_09, tm_13); (4) lớp PCCC trên 3D (khoang hành lang tô màu) và xuất CAD layer `MDI-PCCC-*` như app cũ; (5) nút "Leo AI giải thích" cho từng cảnh báo PCCC.

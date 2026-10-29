@@ -45,6 +45,15 @@ function napChoPA(khoi: string[], tv: ThuVien): void {
   });
 }
 
+/** Chờ dữ liệu tự chỉnh đủ cho các khối PA `pa` dùng (trợ lý Leo AI gọi trước phép tay; giao diện dùng `useDuLieuMB`). */
+export function choDuLieuMB(pa: TrangThaiPA, tv: ThuVien): Promise<DuLieuMB> {
+  napChoPA(khoiCuaPA(pa, tv), tv);
+  return new Promise((xong) => {
+    const thu = () => { const d = layDuLieuMB(); if (d) { nghe.delete(thu); xong(d); return true; } return false; };
+    if (!thu()) nghe.add(thu);
+  });
+}
+
 /** Hook: tải dữ liệu (lõi theo PA `pa`) và vẽ lại khi xong. Không truyền `pa` thì chỉ nghe (nơi khác đã tải). */
 export function useDuLieuMB(tv: ThuVien | null, pa?: TrangThaiPA): DuLieuMB | null {
   const [, ve] = useState(0);
