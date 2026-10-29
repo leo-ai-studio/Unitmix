@@ -153,7 +153,7 @@ function tomTat(toa: ToaDat) {
 }
 const dump: { id: string; op: string; loi: string[]; truoc: unknown; sau: unknown; toa: ToaDat }[] = [];
 const MAU = layMau(toaDs.filter((t) => Array.isArray((t as unknown as ToaMB).mat)).map((t) => t.id));
-const tong = { buoc: 0, nhan: 0, tuChoi: 0, hoanTac: 0, vi: [] as ViPham[], msMax: 0, msOp: '' };
+const tong = { buoc: 0, nhan: 0, tuChoi: 0, hoanTac: 0, vi: [] as ViPham[], msMax: 0, msOp: '', ms: [] as { mau: string; op: string; ms: number }[] };
 
 describe('thử phá hoại công cụ tay màn Tầng (thu_pha_hoai.js app cũ)', () => {
   // PHA_HOAI_GHI=<tệp> thì ghi tổng kết (số bước nhận / từ chối / hoàn tác, vi phạm, phép chậm nhất) để so mốc
@@ -177,6 +177,7 @@ describe('thử phá hoại công cụ tay màn Tầng (thu_pha_hoai.js app cũ)
       const t0 = performance.now();
       const p = buocNgauNhien(toa, r);
       const ms = performance.now() - t0;
+      if (p) tong.ms.push({ mau: id, op: p.op.split(' ')[0], ms: Math.round(ms) });
       if (ms > tong.msMax) { tong.msMax = ms; tong.msOp = `${id} ${p?.op}`; }
       if (!p) continue;
       if (!p.kq.ok) { tong.tuChoi++; continue; }
@@ -193,8 +194,13 @@ describe('thử phá hoại công cụ tay màn Tầng (thu_pha_hoai.js app cũ)
       }
       // dồn khít lại phải bất động (tự chỉnh chạy lại trên kết quả không đổi mặt bằng)
       const lai = tuChinhToa(toa, mauToa(tv, toa) as ToaMB, tv, dl);
-      if (JSON.stringify(matBangCua(lai, mauToa(tv, lai) as ToaMB, dl).thangBo) !== JSON.stringify(matBangCua(toa, mauToa(tv, toa) as ToaMB, dl).thangBo)
-        || doTrangThai(lai).soCan !== doTrangThai(toa).soCan) tong.vi.push({ mau: id, buoc: b, op: p.op, loi: 'tự chỉnh lại không bất động (thang / số căn đổi)' });
+      // (so tập thang theo khoá, mặt, điểm chèn làm tròn 2 mm, chiều cửa, loại — thứ tự trong mảng không tính)
+      const ky = (x: ToaDat) => matBangCua(x, mauToa(tv, x) as ToaMB, dl).thangBo.map((t) => `${t.khoa}@${t.matIdx}:${Math.round((t.a0 + t.dIns) / 2)}:${t.sx}:${t.block}`).sort().join('|');
+      if (ky(lai) !== ky(toa)
+        || doTrangThai(lai).soCan !== doTrangThai(toa).soCan) {
+        tong.vi.push({ mau: id, buoc: b, op: p.op, loi: 'tự chỉnh lại không bất động (thang / số căn đổi)' });
+        if (process.env.PHA_HOAI_DUMP && !dump.some((x) => x.id === id)) dump.push({ id, op: p.op, loi: ['bất động'], truoc: tomTat(truoc), sau: tomTat(toa), toa: truoc });
+      }
     }
     const cua = tong.vi.filter((v) => v.mau === id);
     expect(cua.map((v) => `#${v.buoc} ${v.op}: ${v.loi}`), id).toEqual([]);

@@ -243,6 +243,9 @@ export function doiThangTay(toa: ToaDat, khoa: string, mat: number, sau: string,
   return r;
 }
 
-/** Bỏ thang đặt tay: PC-11 lại tự đặt thang. */
-export const thangTuDongLai = (toa: ToaDat, c: Ctx): KetQuaTay =>
-  toa.thangTay ? chotSua(toa, { ...toa, thangTay: undefined }, [null], c) : { ok: false, lyDo: 'khong_doi' };
+/** Bỏ thang đặt tay: PC-11 lại tự đặt thang (dò lại từ đầu — bỏ cả tập thang giữ từ lần tự chỉnh trước). */
+export const thangTuDongLai = (toa: ToaDat, c: Ctx): KetQuaTay => {
+  if (!toa.thangTay) return { ok: false, lyDo: 'khong_doi' };
+  const tangRieng = toa.tangRieng && Object.fromEntries(Object.entries(toa.tangRieng).map(([k, g]) => { const { matBang: _b, ...con } = g; void _b; return [k, con]; }));
+  return chotSua(toa, { ...toa, thangTay: undefined, matBang: undefined, ...(tangRieng ? { tangRieng } : {}) }, [null], c);
+};
