@@ -1,4 +1,4 @@
-import { chuanHoaMatBang } from './loiThang';
+import { chuanHoaMatBang, ganLoaiThang, goTuDong, laLoaiThang, loaiTheoChung, THANG_MAX, THANG_MIN } from './loiThang';
 import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiPhiPA, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type ToaDat, type TrangThaiPA } from './kieu';
 
 /** Chỉ tiêu mặc định khi chưa nhập (giá trị tạm, ghi rõ trên giao diện là chờ chủ nhiệm chốt). */
@@ -126,15 +126,44 @@ export const taoPAMoi = (): TrangThaiPA => ({
 export const loDangChonHoacDatO = (ds: Lo[], id: string | null): Lo | null =>
   ds.find((l) => l.id === id) ?? ds.find((l) => l.temDat.chucNang !== 'khac') ?? ds[0] ?? null;
 
+/**
+ * Quy tắc thang bộ MỌI tòa / MỌI phương án khi mở PA cũ (chủ nhiệm 2026-10-29): 2–3 thang, luôn có ít nhất một N2 + một N3.
+ * `loaiThang` sai giá trị thì bỏ. Mặt bằng tự chỉnh đã lưu (chung / tầng riêng) có số thang ngoài 2…3 (PA cũ cho đặt tay > 3) thì
+ * bỏ mặt bằng đã lưu + nét bao riêng + thay đổi tự ghi — tòa về theo mẫu (2–3 thang) và tự chỉnh lại ở lần sửa sau, thang tay > 3
+ * bị cắt (catThangThua). Số thang đúng thì chỉ gán lại loại (ganLoaiThang — đổi `block`, không căn nào xê dịch).
+ */
+export function chuanHoaThang(t: ToaDat): ToaDat {
+  const lt0 = t.loaiThang && typeof t.loaiThang === 'object' ? Object.entries(t.loaiThang).filter(([, v]) => laLoaiThang(v)) : [];
+  const loaiThang = lt0.length ? Object.fromEntries(lt0) : undefined;
+  const sai = (m: unknown) => {
+    const ds = (m as { thangBo?: unknown[] } | undefined)?.thangBo;
+    return Array.isArray(ds) && (ds.length < THANG_MIN || ds.length > THANG_MAX);
+  };
+  const t1: ToaDat = { ...t, loaiThang };
+  if (sai(t.matBang) || Object.values(t.tangRieng ?? {}).some((g) => sai(g?.matBang))) {
+    const g = goTuDong(t1);
+    const tangRieng = g.tangRieng && Object.fromEntries(Object.entries(g.tangRieng).map(([k, x]) => { const { matBang: _b, ...con } = x ?? {}; void _b; return [k, con]; }));
+    return { ...g, matBang: undefined, duongBao: undefined, dtxdM2: undefined, ...(tangRieng ? { tangRieng } : {}) };
+  }
+  const mb = t1.matBang as ToaDat['matBang'] | undefined;
+  return mb && Array.isArray(mb.thangBo) ? { ...t1, matBang: { ...mb, thangBo: ganLoaiThang(mb.thangBo, loaiThang) } } : t1;
+}
+
 /** Bố cục theo tầng: bỏ khoá không phải số tầng nguyên dương (PA cũ không có trường này thì giữ nguyên). */
-const chuanHoaToa = (t: ToaDat): ToaDat => {
+const chuanHoaToa = (t0: ToaDat): ToaDat => {
+  const t = chuanHoaThang(t0);
   // mặt bằng tự chỉnh + nét bao riêng (tinh/loiThang.ts): sai cấu trúc thì bỏ, về theo mẫu tòa
   const diem = (p: unknown) => Array.isArray(p) && p.length === 2 && p.every((x) => typeof x === 'number' && Number.isFinite(x));
   const duongBao = Array.isArray(t.duongBao) && t.duongBao.length >= 3 && t.duongBao.every(diem) ? t.duongBao : undefined;
   const mb = { matBang: chuanHoaMatBang(t.matBang), duongBao, dtxdM2: duongBao && typeof t.dtxdM2 === 'number' && Number.isFinite(t.dtxdM2) ? t.dtxdM2 : undefined };
   if (!t.tangRieng) return { ...t, ...mb, canTheo: t.canTheo ?? {} };
   const tangRieng = Object.fromEntries(Object.entries(t.tangRieng).filter(([k, g]) => Number.isInteger(Number(k)) && Number(k) >= 1 && g && typeof g === 'object')
-    .map(([k, g]) => { const { matBang, ...con } = g; const m = chuanHoaMatBang(matBang); return [k, m ? { ...con, matBang: m } : con]; }));
+    .map(([k, g]) => {
+      const { matBang, ...con } = g;
+      const m = chuanHoaMatBang(matBang);
+      // thang liền: loại thang tầng riêng theo thang cùng chỗ ở tầng chung
+      return [k, m ? { ...con, matBang: mb.matBang ? { ...m, thangBo: loaiTheoChung(m.thangBo, mb.matBang.thangBo) } : m } : con];
+    }));
   return { ...t, ...mb, canTheo: t.canTheo ?? {}, tangRieng: Object.keys(tangRieng).length ? tangRieng : undefined };
 };
 

@@ -38,6 +38,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 4. **Hiệu ứng**: không thư viện; CSS + `requestAnimationFrame`; đang kéo / chụm bám tay 1:1; tôn trọng `prefers-reduced-motion`; tải dùng vòng O `img.spin-o` (kit LEO), không spinner tròn.
 5. Mã: tên tiếng Việt không dấu (`vuaKhung`, `dtSanChiTiet`), chú thích ngắn tiếng Việt; chữ hiển thị qua i18n ở CẢ `vi.json` và `en.json`; ô trống ra "—" (`fmtSo`), không `undefined` / `NaN`.
 6. Tự chỉnh như app cũ: tối ưu / sắp xếp tự động bật mặc định, theo logic `MDI_Unitmix_v4` (QT-81 STRETCH, MT-05 lập PA) — người dùng đã yêu cầu rõ.
+7. **Thang bộ — mọi tòa, mọi phương án** (chủ nhiệm 2026-10-29): mặc định **2 thang**, tối đa **3** (PC-11 chỉ thêm thang thứ 3 khi 2 thang tối ưu vị trí vẫn còn căn vượt cự ly QCVN 06 — như `datThangBo` app cũ; thêm tay quá 3 thì chặn `nhieu_thang`; hợp thang liền các tầng không vượt 3); xoá chặn ở 2; luôn có **ít nhất một N2 (`x_tb_n2`) và một N3 (`x_tb_n3`)** — `ganLoaiThang` (tinh/loiThang.ts) gán ở mặt bằng mẫu, sau mọi tự chỉnh, khi mở PA (`chuanHoaThang` trong `tinh/macDinh.ts`: PA cũ sai số thang thì bỏ mặt bằng lưu, về mẫu). Đổi loại theo từng ô như QT-63 (`doiLoaiThangTay`, `ToaDat.loaiThang`): ô 3.000 mm, điểm chèn giữ nguyên; đổi N2 duy nhất thì thang gần nhất đổi sang N2. Test `tinh/thangBo.test.ts`.
 
 ## Bẫy đã gặp (đừng lặp lại)
 

@@ -50,6 +50,40 @@ export const LUOT_RONG = 4;
 /** Khối thang bộ mặc định và nửa bề ngang khung tường của nó (x_tb_n3: bao −100…3.030 → giữa 1.465; app cũ chenThang). */
 export const THANG_KHOI = 'x_tb_n3';
 const THANG_GIUA_MM = 1465;
+
+// ---------- loại thang bộ N2 / N3 (QT-63 app cũ: loại của TỪNG ô, bao / điểm chèn / cửa hành lang giống nhau) ----------
+/** Thang N3 (có buồng đệm) và N2 (không buồng đệm) của thư viện — cùng khung bao [−100…3.030] × [0…8.500]. */
+export const THANG_N3 = THANG_KHOI;
+export const THANG_N2 = 'x_tb_n2';
+export type LoaiThangBo = typeof THANG_N2 | typeof THANG_N3;
+export const laLoaiThang = (b: unknown): b is LoaiThangBo => b === THANG_N2 || b === THANG_N3;
+
+/**
+ * Quy tắc thang bộ MỌI tòa / MỌI phương án (chủ nhiệm 2026-10-29): 2–3 thang (mặc định 2), luôn có ít nhất MỘT N2 và MỘT N3.
+ * Loại theo lựa chọn tay `chon` (khoá thang → loại, `ToaDat.loaiThang`); thang chưa chọn là N3, rồi nếu chưa có N2 thì thang thứ hai
+ * theo thứ tự (mặt, vị trí) — không phải thang chọn tay — thành N2; chưa có N3 thì tương tự. Chỉ đổi `block` (ô 3.000 mm, điểm chèn
+ * giữ nguyên nên không căn nào xê dịch, DTXD không đổi). Trả mảng mới (đối tượng thang đổi loại được chép), không đổi `ds`.
+ */
+export function ganLoaiThang(ds: readonly ThangBoMB[], chon?: Readonly<Record<string, string>> | null): ThangBoMB[] {
+  const thu = [...ds.keys()].sort((i, j) => ds[i].matIdx - ds[j].matIdx || ds[i].a0 - ds[j].a0);
+  const coChon = (i: number) => laLoaiThang(chon?.[ds[i].khoa]);
+  const loai: string[] = ds.map((t) => (laLoaiThang(chon?.[t.khoa]) ? chon![t.khoa] : THANG_N3));
+  const bu = (can: LoaiThangBo, uuTien: number) => {
+    if (ds.length < 2 || loai.includes(can)) return;
+    // thang chưa chọn tay, gần vị trí ưu tiên nhất (thứ tự mặt rồi vị trí); hết thì đành đổi thang chọn tay cuối cùng
+    const ung = thu.filter((i) => !coChon(i)), ds2 = ung.length ? ung : [...thu].reverse();
+    const k = ds2.slice().sort((a, b) => Math.abs(thu.indexOf(a) - uuTien) - Math.abs(thu.indexOf(b) - uuTien))[0];
+    if (k !== undefined) loai[k] = can;
+  };
+  bu(THANG_N2, 1);
+  bu(THANG_N3, 0);
+  return ds.map((t, i) => (t.block === loai[i] ? t : { ...t, block: loai[i] }));
+}
+/** Đếm loại thang: số thang, số N2, số N3 (khối khác — lõi tmdv… — không tính loại). */
+export const demLoaiThang = (ds: readonly ThangBoMB[]) =>
+  ({ so: ds.length, n2: ds.filter((t) => t.block === THANG_N2).length, n3: ds.filter((t) => t.block === THANG_N3).length });
+/** Tập thang đúng quy tắc: 2 ≤ số ≤ 3, có N2 và N3. */
+export const thangDungLuat = (ds: readonly ThangBoMB[]) => { const d = demLoaiThang(ds); return d.so >= THANG_MIN && d.so <= THANG_MAX && d.n2 > 0 && d.n3 > 0; };
 /**
  * Gỡ căn vượt cự ly (app cũ giamCanThoatNan): ô không có người ở thường xuyên (phòng kỹ thuật, ô trống, căn bỏ) không đo cự ly
  * thoát nạn — QCVN 06 đo từ cửa CĂN HỘ; coi phòng kỹ thuật như vậy là giá trị tạm, chờ chủ nhiệm chốt. SHCĐ / thương mại vẫn đo.
@@ -408,6 +442,8 @@ export function matBangMacDinh(mau: ToaMB, dl?: DuLieuMB | null): MatBangSua {
     t.rong = O_THANG_MM;
     t.dIns = dInsThang(t.sx);
   }
+  // loại thang mặc định: một N2 + một N3 (mẫu tòa chỉ chèn N3)
+  mb.thangBo = ganLoaiThang(mb.thangBo);
   if (!theoDl) nhoMacDinh.set(mau, (theoDl = new Map()));
   theoDl.set(dl ?? null, mb);
   return mb;
@@ -542,6 +578,21 @@ export function apThangTay(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | und
     Object.assign(mb, thu);
   }
   return hong;
+}
+
+/**
+ * Quy tắc tối đa 3 thang (THANG_MAX) cho thang đặt tay: mặt bằng `mb` (đã áp thang tay) còn > 3 thang thì bỏ thang THÊM tay sau
+ * cùng (thứ tự `tt.them` ngược), rồi thang khác bỏ được ở đầu tự do. Trả số thang đã bỏ.
+ */
+function catThangThua(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tt: ThangTay): number {
+  const dai = daiLoi(mau, dl);
+  let n = 0;
+  const thu = [...tt.them].reverse().map((e) => e.khoa).filter((k) => !tt.them.find((e) => e.khoa === k)?.tu);
+  for (const k of [...thu, ...mb.thangBo.map((t) => t.khoa).reverse()]) {
+    if (mb.thangBo.length <= THANG_MAX) break;
+    if (mb.thangBo.some((t) => t.khoa === k) && boThang(mau, mb, dai, k)) n++;
+  }
+  return n;
 }
 
 /**
@@ -844,7 +895,8 @@ function cuaThang(mau: ToaMB, t: ThangBoMB): Diem {
  * đổi sang loại khác, không vừa thì báo chặn (`KetQuaGiam.chan`). Bộ tối ưu tự động không truyền `chan` nên vẫn được đổi loại.
  */
 /** `thangTay`: thang người dùng đặt tay — áp lên mặt bằng xuất phát, PC-11 giữ nguyên tập thang (lựa chọn tay). */
-export type TuyChonTuChinh = { chieuCaoPCCC: number; bc: BoCuc; thangEp?: ThangBoMB[]; thangMau?: MatBangSua; giu?: string[]; chan?: string[]; thangTay?: ThangTay };
+/** `loaiThang`: loại thang chọn tay (khoá → N2 / N3, `ToaDat.loaiThang`) — ganLoaiThang giữ ≥ 1 N2 + ≥ 1 N3. */
+export type TuyChonTuChinh = { chieuCaoPCCC: number; bc: BoCuc; thangEp?: ThangBoMB[]; thangMau?: MatBangSua; giu?: string[]; chan?: string[]; thangTay?: ThangTay; loaiThang?: Record<string, string> };
 
 /**
  * PC-11 (QT-44): xuất phát từ thang của bản vẽ; mỗi lượt đo thật (thoatNan) rồi chọn MỘT phép tốt nhất: dời một thang tới chỗ
@@ -877,51 +929,10 @@ function thangTuDong(mau: ToaMB, mb0: MatBangSua, dl: DuLieuMB | null | undefine
     if (mb !== mb0) { const k = tongKhe(hd, tv, bc); if (k.de > kheGoc.de || k.mm > kheGoc.mm + 200) r.dg = { ...r.dg, vuot: 1e6 }; }
     return r;
   };
-  let cur = mb0, dgCur = xet(cur);
-  const truoc = dgCur.dg;
-  let soThem = 0, soDoi = 0, soBo = 0;
-  // thang đặt tay (coDinh): tập thang là lựa chọn của người dùng — không dời / thêm / chuyển / bớt, chỉ đo
-  for (let luot = 0; luot < (coDinh ? 0 : LUOT_MAX) && dgCur.dg.vuot > 0; luot++) {
-    let tot1: { mb: MatBangSua; r: ReturnType<typeof xet>; loai: 'doi' | 'them' } | null = null;
-    const thu = (mb: MatBangSua, loai: 'doi' | 'them') => {
-      const r = xet(mb);
-      if (tot(r.dg, dgCur.dg) && (!tot1 || tot(r.dg, tot1.r.dg))) tot1 = { mb, r, loai };
-    };
-    // (1) dời từng thang trong đoạn của nó
-    for (const t of cur.thangBo) {
-      const dn = doanTai(mau, cur, dai, t.matIdx, t.a0 + t.rong / 2);
-      for (const p of choCat(vatThe(mau, cur, t.matIdx), dn, chenh)) {
-        for (const sx of [1, -1] as const) {
-          if ((Math.abs(p - t.a0) < 1 || Math.abs(p - t.a0 - t.rong) < 1) && sx === t.sx) continue;
-          const mb = banSaoMatBang(cur);
-          if (doiThang(mau, mb, t.khoa, p, sx) && hopLe(mb, t.khoa)) thu(mb, 'doi');
-        }
-      }
-    }
-    // (2) thêm một thang cạnh căn tệ nhất (mặt của căn đó), nếu còn chỗ trong số thang cho phép
-    if (cur.thangBo.length < THANG_MAX) {
-      const xau = dgCur.tn.can.filter((c) => c.vuot).sort((a, b) => (b.cuLy ?? 1e9) - b.nguong - ((a.cuLy ?? 1e9) - a.nguong))[0];
-      const vts = viTriCan(dung(mau, cur, dl), tv), kXau = xau && dgCur.khoaCan[xau.so - 1];
-      const vtXau = kXau ? vts.find((v) => v.khoa === kXau) : undefined;
-      if (vtXau) {
-        const mi = vtXau.matIdx, khoa = `tb${luot}:${mi}:${Math.round(vtXau.a0)}`;
-        const dn = doanTai(mau, cur, dai, mi, (vtXau.a0 + vtXau.a1) / 2);
-        for (const p of choCat(vatThe(mau, cur, mi), dn, chenh)) {
-          if (Math.abs(p - (vtXau.a0 + vtXau.a1) / 2) > kcMin) continue;
-          for (const sx of [1, -1] as const) {
-            const mb = banSaoMatBang(cur);
-            if (themThang(mau, mb, dai, mi, p, sx, khoa) && hopLe(mb, khoa)) thu(mb, 'them');
-          }
-        }
-      }
-    }
-    if (!tot1) break;
-    const t1 = tot1 as { mb: MatBangSua; r: ReturnType<typeof xet>; loai: 'doi' | 'them' };
-    cur = t1.mb; dgCur = t1.r;
-    if (t1.loai === 'them') soThem++; else soDoi++;
-  }
-  // Còn căn vượt: dò rộng như datThangBo app cũ — thêm thang ở BẤT KỲ đoạn nào (mọi mặt), hoặc CHUYỂN một thang sang mặt /
-  // đoạn khác (bỏ ở đoạn cũ: dãy co lại ở đầu tự do; đặt ở chỗ cắt mới: dãy dài ra ở đầu tự do). Chỉ nhận phép làm tốt hơn.
+  const truoc = xet(mb0).dg;
+  type Loai = 'doi' | 'them' | 'chuyen';
+  type Dem = { doi: number; them: number; chuyen: number };
+  type KqLeo = { c: MatBangSua; dg: ReturnType<typeof xet>; dem: Dem };
   const daXet = new Map<string, ReturnType<typeof xet>>();
   const xetNho = (mb: MatBangSua) => {
     const k = JSON.stringify([mb.thangBo.map((t) => [t.matIdx, Math.round(t.a0), t.sx]).sort(), mb.dich, mb.mep]);
@@ -929,18 +940,61 @@ function thangTuDong(mau: ToaMB, mb0: MatBangSua, dl: DuLieuMB | null | undefine
     if (!r) { r = xet(mb); daXet.set(k, r); }
     return r;
   };
-  type Loai = 'doi' | 'them' | 'chuyen';
-  /** Leo dốc từ `goc`: mỗi lượt lấy phép tốt nhất trong dời / thêm (mọi đoạn) / chuyển thang sang đoạn / mặt khác. */
-  const doRong = (goc: MatBangSua, dgGoc: ReturnType<typeof xet>) => {
+  /** Leo gần: mỗi lượt MỘT phép tốt nhất — dời một thang trong đoạn (lật cửa), hoặc (choThem) thêm một thang cạnh căn tệ nhất. */
+  const leoGan = (goc: MatBangSua, dgGoc: ReturnType<typeof xet>, choThem: boolean): KqLeo => {
+    let cur = goc, dgCur = dgGoc;
+    const dem: Dem = { doi: 0, them: 0, chuyen: 0 };
+    for (let luot = 0; luot < LUOT_MAX && dgCur.dg.vuot > 0; luot++) {
+      let tot1: { mb: MatBangSua; r: ReturnType<typeof xet>; loai: 'doi' | 'them' } | null = null;
+      const thu = (mb: MatBangSua, loai: 'doi' | 'them') => {
+        const r = xetNho(mb);
+        if (tot(r.dg, dgCur.dg) && (!tot1 || tot(r.dg, tot1.r.dg))) tot1 = { mb, r, loai };
+      };
+      for (const t of cur.thangBo) {
+        const dn = doanTai(mau, cur, dai, t.matIdx, t.a0 + t.rong / 2);
+        for (const p of choCat(vatThe(mau, cur, t.matIdx), dn, chenh)) {
+          for (const sx of [1, -1] as const) {
+            if ((Math.abs(p - t.a0) < 1 || Math.abs(p - t.a0 - t.rong) < 1) && sx === t.sx) continue;
+            const mb = banSaoMatBang(cur);
+            if (doiThang(mau, mb, t.khoa, p, sx) && hopLe(mb, t.khoa)) thu(mb, 'doi');
+          }
+        }
+      }
+      if (choThem && cur.thangBo.length < THANG_MAX) {
+        const xau = dgCur.tn.can.filter((c) => c.vuot).sort((a, b) => (b.cuLy ?? 1e9) - b.nguong - ((a.cuLy ?? 1e9) - a.nguong))[0];
+        const vts = viTriCan(dung(mau, cur, dl), tv), kXau = xau && dgCur.khoaCan[xau.so - 1];
+        const vtXau = kXau ? vts.find((v) => v.khoa === kXau) : undefined;
+        if (vtXau) {
+          const mi = vtXau.matIdx, khoa = `tb${luot}:${mi}:${Math.round(vtXau.a0)}`;
+          const dn = doanTai(mau, cur, dai, mi, (vtXau.a0 + vtXau.a1) / 2);
+          for (const p of choCat(vatThe(mau, cur, mi), dn, chenh)) {
+            if (Math.abs(p - (vtXau.a0 + vtXau.a1) / 2) > kcMin) continue;
+            for (const sx of [1, -1] as const) {
+              const mb = banSaoMatBang(cur);
+              if (themThang(mau, mb, dai, mi, p, sx, khoa) && hopLe(mb, khoa)) thu(mb, 'them');
+            }
+          }
+        }
+      }
+      if (!tot1) break;
+      const t1 = tot1 as { mb: MatBangSua; r: ReturnType<typeof xet>; loai: 'doi' | 'them' };
+      cur = t1.mb; dgCur = t1.r; dem[t1.loai]++;
+    }
+    return { c: cur, dg: dgCur, dem };
+  };
+  /**
+   * Dò rộng như datThangBo app cũ: dời trong đoạn, CHUYỂN một thang sang mặt / đoạn khác (bỏ ở đoạn cũ: dãy co lại ở đầu tự do; đặt
+   * ở chỗ cắt mới: dãy dài ra), kẹt thì dời HAI thang cùng lúc; `choThem` = được thêm một thang (≤ 3) ở bất kỳ đoạn nào.
+   */
+  const doRong = (goc: MatBangSua, dgGoc: ReturnType<typeof xet>, choThem: boolean): KqLeo => {
     let c = goc, dg = dgGoc;
-    const dem = { doi: 0, them: 0, chuyen: 0 };
+    const dem: Dem = { doi: 0, them: 0, chuyen: 0 };
     for (let luot = 0; luot < LUOT_RONG && dg.dg.vuot > 0; luot++) {
       let tot2: { mb: MatBangSua; r: ReturnType<typeof xet>; loai: Loai } | null = null;
       const thu = (mb: MatBangSua, loai: Loai) => {
         const r = xetNho(mb);
         if (tot(r.dg, dg.dg) && (!tot2 || tot(r.dg, tot2.r.dg))) tot2 = { mb, r, loai };
       };
-      /** Đặt một thang `khoa` vào mọi chỗ cắt của mọi đoạn có đầu tự do trên mọi mặt của `nen`. */
       const datMoiCho = (nen: MatBangSua, khoa: string, loai: Loai) => {
         mau.mat.forEach((m, mi) => {
           if (!laMatThat(m)) return;
@@ -953,7 +1007,6 @@ function thangTuDong(mau: ToaMB, mb0: MatBangSua, dl: DuLieuMB | null | undefine
           }
         });
       };
-      // dời trong đoạn (tinh chỉnh sau khi thêm / chuyển, như bước dò ±1.500 mm của app cũ)
       for (const t of c.thangBo) {
         const dn = doanTai(mau, c, dai, t.matIdx, t.a0 + t.rong / 2);
         for (const p of choCat(vatThe(mau, c, t.matIdx), dn, chenh)) for (const sx of [1, -1] as const) {
@@ -962,13 +1015,12 @@ function thangTuDong(mau: ToaMB, mb0: MatBangSua, dl: DuLieuMB | null | undefine
           if (doiThang(mau, mb, t.khoa, p, sx) && hopLe(mb, t.khoa)) thu(mb, 'doi');
         }
       }
-      if (c.thangBo.length < THANG_MAX) datMoiCho(c, `tbr${luot}`, 'them');
+      if (choThem && c.thangBo.length < THANG_MAX) datMoiCho(c, `tbr${luot}`, 'them');
       for (const t of c.thangBo) {
         const bo = banSaoMatBang(c);
         if (boThang(mau, bo, dai, t.khoa)) datMoiCho(bo, t.khoa, 'chuyen');
       }
-      // kẹt (không phép đơn nào tốt hơn): dời HAI thang cùng lúc trong đoạn của chúng (giữ chiều cửa) — app cũ thoát kẹt bằng
-      // cách thử lại từng thang trên cả tập vị trí sau mỗi lượt; ở đây dãy co giãn theo thang nên cần phép đôi
+      // kẹt (không phép đơn nào tốt hơn): dời HAI thang cùng lúc trong đoạn của chúng (giữ chiều cửa)
       if (!tot2) {
         const cats = c.thangBo.map((t) => choCat(vatThe(mau, c, t.matIdx), doanTai(mau, c, dai, t.matIdx, t.a0 + t.rong / 2), chenh));
         for (let i = 0; i < c.thangBo.length; i++) for (let j = i + 1; j < c.thangBo.length; j++) {
@@ -977,7 +1029,6 @@ function thangTuDong(mau: ToaMB, mb0: MatBangSua, dl: DuLieuMB | null | undefine
             if (Math.abs(p - ti.a0) < 1 || Math.abs(p - ti.a0 - ti.rong) < 1) continue;
             const mi = banSaoMatBang(c);
             if (!doiThang(mau, mi, ti.khoa, p, ti.sx)) continue;
-            // chỗ cắt của thang j đọc lại sau khi thang i dời (cùng mặt thì các vật thể giữa đã xê dịch)
             for (const q of choCat(vatThe(mau, mi, tj.matIdx), doanTai(mau, mi, dai, tj.matIdx, mi.thangBo[j].a0 + tj.rong / 2), chenh)) {
               const tj1 = mi.thangBo[j];
               if (Math.abs(q - tj1.a0) < 1 || Math.abs(q - tj1.a0 - tj1.rong) < 1) continue;
@@ -993,25 +1044,68 @@ function thangTuDong(mau: ToaMB, mb0: MatBangSua, dl: DuLieuMB | null | undefine
     }
     return { c, dg, dem };
   };
-  let soChuyen = 0;
-  if (dgCur.dg.vuot > 0 && !coDinh) {
-    // hai điểm xuất phát (app cũ cũng thử nhiều hạt giống): kết quả leo dốc gần căn tệ ở trên, và thang của bản vẽ
-    const a = doRong(cur, dgCur), b = doRong(mb0, xet(mb0));
-    const kq = tot(b.dg.dg, a.dg.dg) ? { ...b, goc: true } : { ...a, goc: false };
-    if (kq.goc) { soThem = 0; soDoi = 0; }
-    cur = kq.c; dgCur = kq.dg;
-    soThem += kq.dem.them; soDoi += kq.dem.doi; soChuyen = kq.dem.chuyen;
+  const cong = (a: Dem, b: Dem): Dem => ({ doi: a.doi + b.doi, them: a.them + b.them, chuyen: a.chuyen + b.chuyen });
+  /** Tối ưu từ `goc`: leo gần rồi (còn vượt) dò rộng từ hai điểm xuất phát (kết quả leo gần và chính `goc`). */
+  const toiUu = (goc: MatBangSua, choThem: boolean, nhanh = false): KqLeo => {
+    const dg0 = xetNho(goc);
+    const a = leoGan(goc, dg0, choThem);
+    if (a.dg.dg.vuot === 0 || nhanh) return a;
+    const r1 = doRong(a.c, a.dg, choThem);
+    if (a.c === goc || r1.dg.dg.vuot === 0) return { ...r1, dem: cong(a.dem, r1.dem) };
+    const r2 = doRong(goc, dg0, choThem);
+    return tot(r2.dg.dg, r1.dg.dg) ? r2 : { ...r1, dem: cong(a.dem, r1.dem) };
+  };
+  // Mặc định 2 thang bộ (app cũ datThangBo: hạt giống là từng CẶP thang của bản vẽ, tối ưu vị trí với 2 thang); chỉ khi 2 thang
+  // vẫn còn căn vượt cự ly mới thử thang thứ 3 (≤ THANG_MAX) và nhận nếu tốt hơn.
+  let kq: KqLeo = { c: mb0, dg: xetNho(mb0), dem: { doi: 0, them: 0, chuyen: 0 } };
+  let soBo = 0;
+  if (!coDinh) {
+    const hat: { mb: MatBangSua; bo: number }[] = [];
+    if (mb0.thangBo.length <= THANG_MIN) hat.push({ mb: mb0, bo: 0 });
+    else {
+      // bỏ bớt thang cho còn 2: mọi cặp thang của bản vẽ (bỏ được ở đầu tự do)
+      const thuBo = (nen: MatBangSua, con: string[], bo: number) => {
+        if (nen.thangBo.length <= THANG_MIN) { hat.push({ mb: nen, bo }); return; }
+        con.forEach((k, i) => {
+          const mb = banSaoMatBang(nen);
+          if (boThang(mau, mb, dai, k)) thuBo(mb, con.slice(i + 1), bo + 1);
+        });
+      };
+      thuBo(mb0, mb0.thangBo.map((t) => t.khoa), 0);
+    }
+    let tot2: (KqLeo & { bo: number }) | null = null;
+    // mẫu vẽ 3 thang: cặp thang thử nhanh (leo gần) — dò rộng dành cho tập 3 thang của bản vẽ
+    const ba = mb0.thangBo.length > THANG_MIN;
+    for (const h of hat) {
+      const r = toiUu(h.mb, false, ba);
+      if (!tot2 || tot(r.dg.dg, tot2.dg.dg)) tot2 = { ...r, bo: h.bo };
+      if (tot2.dg.dg.vuot === 0) break;
+    }
+    if (tot2) { kq = tot2; soBo = tot2.bo; }
+    if (kq.dg.dg.vuot > 0) {
+      // 3 thang: thêm một thang vào kết quả 2 thang, hoặc giữ 3 thang của bản vẽ và tối ưu vị trí
+      let them = toiUu(kq.c, true, ba);
+      // hạt giống thứ hai: thang của bản vẽ (2 thang) rồi thêm thang thứ 3 cạnh căn tệ nhất
+      if (!ba && kq.c !== mb0) { const b = toiUu(mb0, true); if (tot(b.dg.dg, them.dg.dg)) them = b; }
+      const giu = mb0.thangBo.length > THANG_MIN && mb0.thangBo.length <= THANG_MAX ? toiUu(mb0, false) : null;
+      if (giu && tot(giu.dg.dg, kq.dg.dg) && !tot(them.dg.dg, giu.dg.dg)) { kq = giu; soBo = 0; }
+      else if (tot(them.dg.dg, kq.dg.dg)) kq = { ...them, dem: cong(kq.dem, them.dem) };
+    }
   }
+  let cur = kq.c, dgCur = kq.dg;
+  let soThem = kq.dem.them;
+  const soDoi = kq.dem.doi, soChuyen = kq.dem.chuyen;
   // cắt bớt: thứ tự cố định (mặt rồi vị trí), giữ ≥ 2 thang, không thêm căn vượt
   if (cur.thangBo.length > THANG_MIN && dgCur.dg.vuot === 0 && !coDinh) {
     for (const t of [...cur.thangBo].sort((a, b) => a.matIdx - b.matIdx || a.a0 - b.a0)) {
       if (cur.thangBo.length <= THANG_MIN) break;
       const mb = banSaoMatBang(cur);
       if (!boThang(mau, mb, dai, t.khoa)) continue;
-      const r = xet(mb);
+      const r = xetNho(mb);
       if (r.dg.vuot === 0 && r.dg.khongToi <= dgCur.dg.khongToi) { cur = mb; dgCur = r; soBo++; }
     }
   }
+  if (soThem && soBo) { const n = Math.min(soThem, soBo); soThem -= n; soBo -= n; }
   return { mb: cur, truoc, sau: dgCur.dg, tn: dgCur.tn, soThem, soDoi, soBo, soChuyen };
 }
 
@@ -1320,6 +1414,9 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
   // thang đặt tay (công cụ màn Tầng): áp trước PC-11, PC-11 giữ nguyên tập thang
   const tay = opt.thangTay && (opt.thangTay.them.length || opt.thangTay.bo.length) ? opt.thangTay : undefined;
   const hongTay = tay ? apThangTay(mau, mb0, dl, tay) : [];
+  // quy tắc 2–3 thang: thang tay (PA cũ cho đặt > 3) vượt 3 thì bỏ thang thêm sau cùng; dưới 2 thì PC-11 được tự đặt lại
+  const boTay = tay ? catThangThua(mau, mb0, dl, tay) : 0;
+  const tayCoDinh = !!tay && mb0.thangBo.length >= THANG_MIN && mb0.thangBo.length <= THANG_MAX;
   const d69 = noiDaiRa(mau, mb0, dl, tv, bcVao);
   const vtsGoc = viTriCan(mau, tv);
   const cuaCan0 = cuaCanDung(vtsGoc.map((v) => canDangDung(v, bcVao)), tv, dl?.cuaCan ?? {});
@@ -1328,7 +1425,7 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
   // PC-11 (hoặc ép tập thang liền suốt chiều cao)
   const ep = opt.thangEp;
   const pc = ep ? epThang(mau, mb0, dl, tv, cuaCan0, H, bcVao, ep, opt.thangMau)
-    : { ...thangTuDong(mau, mb0, dl, tv, cuaCan0, H, bcVao, !!tay), khongDat: 0, thua: [] as ThangBoMB[], bc: bcVao, soNhuong: 0, conLech: 0 };
+    : { ...thangTuDong(mau, mb0, dl, tv, cuaCan0, H, bcVao, tayCoDinh), khongDat: 0, thua: [] as ThangBoMB[], bc: bcVao, soNhuong: 0, conLech: 0 };
   // ép thang có thể co / giãn căn nhường chỗ (bố cục đổi): đo tiếp theo bố cục mới
   let mb = banSaoMatBang(pc.mb);
   // XC-05 (thang liền các tầng thì không dời đoạn có thang; đoạn kẹp khít bằng dời trong đoạn / STRETCH — bố cục đổi)
@@ -1395,13 +1492,15 @@ export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | un
   const lechEp = !!ep && (pc.conLech > 0 || kheMoi.de > kheGoc.de || kheMoi.mm > kheGoc.mm + 200);
   qt.push({ ma: 'PC-11', muc: boPC11 ? 'canh_bao' : cuoi.dg.vuot ? 'vuot' : lechEp ? 'canh_bao' : soPC ? 'da_sua' : 'ok', sua: boPC11 ? 0 : soPC,
     ghiChu: (boPC11 ? 'bỏ thang tự động vì tạo khe / đè · ' : '')
-      + (tay ? `thang đặt tay (giữ nguyên, không tự dời)${hongTay.length ? ` · ${hongTay.length} thao tác thang không áp được (đoạn kẹp, không có đầu tự do)` : ''} · ` : '')
+      + (tay ? `thang đặt tay (giữ nguyên, không tự dời)${hongTay.length ? ` · ${hongTay.length} thao tác thang không áp được (đoạn kẹp, không có đầu tự do)` : ''}${boTay ? ` · bỏ ${boTay} thang tay vượt ${THANG_MAX} thang` : ''} · ` : '')
       + (ep ? `${nT} thang liền suốt chiều cao (đặt thêm ${pc.soThem}, dời ${pc.soDoi}, bớt ${pc.soBo}${pc.khongDat ? `, KHÔNG đặt được ${pc.khongDat}` : ''}${pc.thua.length ? `, giữ thêm ${pc.thua.length} thang của mẫu` : ''}${pc.soNhuong ? `, căn nhường chỗ ${pc.soNhuong}` : ''}${pc.conLech ? `, còn lệch ${pc.conLech} mm không khít được — cần chủ nhiệm xem` : ''})`
         : `${nT} thang (thêm ${boPC11 ? 0 : pc.soThem}, dời ${boPC11 ? 0 : pc.soDoi}, chuyển mặt ${boPC11 ? 0 : pc.soChuyen}, bớt ${boPC11 ? 0 : pc.soBo})`)
       + (ep && (kheMoi.de > kheGoc.de || kheMoi.mm > kheGoc.mm + 200) ? ` · khe ${Math.round(kheMoi.mm)} mm / đè ${kheMoi.de}` : '')
       + ` · căn vượt cự ly ${pc.truoc.vuot} → ${cuoi.dg.vuot}`
       + ` · xa nhất ${r1(cuoi.dg.xaNhat)} m · ${gioiHanThoatNan(H).canCu}` + (cuoi.dg.vuot ? ` · ${lyDoVuot(mau, mb, dl, cuoi, nT)}` : '') });
 
+  // loại thang: ≥ 1 N2 + ≥ 1 N3 (QT-63 · quy tắc thang bộ), theo lựa chọn tay
+  mb.thangBo = ganLoaiThang(mb.thangBo, opt.loaiThang);
   const baoCao: BaoCaoTuChinh = {
     quyTac: qt,
     soThangTruoc: mb0.thangBo.length,
@@ -1517,7 +1616,7 @@ const nhoGiam = new WeakMap<ToaMB, Map<string, KetQuaGiam>>();
  */
 export function tuChinhGiam(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | undefined, opt: TuyChonTuChinh, giamCan = true): KetQuaGiam {
   const khoaNho = JSON.stringify([opt.bc.canTheo, opt.bc.canViTri ?? {}, opt.bc.congNang ?? {}, opt.chieuCaoPCCC, opt.thangEp ?? null,
-    opt.thangMau ? [opt.thangMau.thangBo, opt.thangMau.dich ?? {}] : null, giamCan, !!dl, opt.giu ?? null, opt.chan ?? null, opt.bc.latO ?? null, opt.thangTay ?? null]);
+    opt.thangMau ? [opt.thangMau.thangBo, opt.thangMau.dich ?? {}] : null, giamCan, !!dl, opt.giu ?? null, opt.chan ?? null, opt.bc.latO ?? null, opt.thangTay ?? null, opt.loaiThang ?? null]);
   let theoMau = nhoGiam.get(mau);
   const co = theoMau?.get(khoaNho);
   if (co) return structuredClone(co);
@@ -1874,6 +1973,8 @@ export function hopThang(mau: ToaMB, mbC: MatBangSua, dl: DuLieuMB | null | unde
   let khongDat = 0;
   for (const e of them) {
     if (mb.thangBo.some((t) => cungThang(t, e) || chongThang(t, e))) continue;
+    // quy tắc thang bộ: tối đa 3 thang — hợp thang các tầng không vượt THANG_MAX (thang tầng chung giữ)
+    if (mb.thangBo.length >= THANG_MAX) continue;
     const mi = e.matIdx;
     const dn = doanTai(mau, mb, dai, mi, e.a0 + e.rong / 2);
     const cuts = choCat(vatThe(mau, mb, mi), dn, chenh).sort((a, b) => Math.abs(a - e.a0) - Math.abs(b - e.a0) || a - b);
@@ -1962,11 +2063,11 @@ export function tuChinhToaKq<T extends ToaDat>(toa: T, mau: ToaMB | undefined, t
     // ô người dùng tự chọn căn (bố cục trước tự chỉnh): khít đoạn kẹp không bỏ, chỉ đổi cùng loại
     const giu = (k: number | null) => Object.keys(boCucTang(goc, k).canViTri ?? {}).sort();
     const tay = goc.thangTay;
-    const rc = tuChinhGiam(mau, tv, dl, { bc: boCucTang(goc, null), chieuCaoPCCC: H, thangEp: U, thangMau: ref, giu: giu(null), chan: vuaChon?.get(null), thangTay: tay }, bat);
+    const rc = tuChinhGiam(mau, tv, dl, { bc: boCucTang(goc, null), chieuCaoPCCC: H, thangEp: U, thangMau: ref, giu: giu(null), chan: vuaChon?.get(null), thangTay: tay, loaiThang: goc.loaiThang }, bat);
     let t1 = apThayDoi(goc, null, rc.thayDoi, ghi);
     const rf = new Map<number, KetQuaGiam>();
     for (const k of rieng) {
-      const r = tuChinhGiam(mau, tv, dl, { bc: boCucTang(t1, k), chieuCaoPCCC: H, thangEp: U, thangMau: ref, giu: giu(k), chan: vuaChon?.get(k), thangTay: tay }, bat);
+      const r = tuChinhGiam(mau, tv, dl, { bc: boCucTang(t1, k), chieuCaoPCCC: H, thangEp: U, thangMau: ref, giu: giu(k), chan: vuaChon?.get(k), thangTay: tay, loaiThang: goc.loaiThang }, bat);
       rf.set(k, r);
       t1 = apThayDoi(t1, k, r.thayDoi, ghi);
     }
@@ -2005,7 +2106,9 @@ export function tuChinhToaKq<T extends ToaDat>(toa: T, mau: ToaMB | undefined, t
       const r = rf.get(Number(k));
       // mặt bằng riêng của tầng: lưu khi khác hình chung, hoặc có gỡ căn riêng (báo cáo của tầng khác tầng chung)
       const g2 = r?.baoCao.giamCan, coGiam = !!g2 && g2.xepLai + g2.doi + g2.bo > 0;
-      moi[Number(k)] = r && (!cungHinh(r.matBang, matBang) || coGiam || r.baoCao.thangLien) ? { ...conLai, matBang: { ...r.matBang, baoCao: r.baoCao } } : conLai;
+      // thang liền suốt chiều cao: loại thang của tầng riêng theo thang cùng chỗ ở tầng chung
+      const mbR = r && { ...r.matBang, thangBo: loaiTheoChung(r.matBang.thangBo, matBang.thangBo) };
+      moi[Number(k)] = r && mbR && (!cungHinh(mbR, matBang) || coGiam || r.baoCao.thangLien) ? { ...conLai, matBang: { ...mbR, baoCao: r.baoCao } } : conLai;
     }
     tangRieng = moi;
   }
@@ -2013,6 +2116,16 @@ export function tuChinhToaKq<T extends ToaDat>(toa: T, mau: ToaMB | undefined, t
   const bao = matBang.duongBao;
   const chan: ChanSua[] = [...rc.chan.map((c) => ({ ...c, tang: null })), ...[...rf].flatMap(([k, r]) => r.chan.map((c) => ({ ...c, tang: k })))];
   return { toa: { ...t1, matBang, duongBao: bao, dtxdM2: bao ? Math.round(dtDG(bao) / 1e4) / 100 : undefined, ...(tangRieng ? { tangRieng } : {}), tuDong: ghi.length ? ghi : undefined }, chan };
+}
+
+/** Loại thang của tập `ds` theo thang cùng khoá / cùng chỗ trong `chung` (vẫn giữ ≥ 1 N2 + ≥ 1 N3). */
+export function loaiTheoChung(ds: readonly ThangBoMB[], chung: readonly ThangBoMB[]): ThangBoMB[] {
+  const chon: Record<string, string> = {};
+  for (const t of ds) {
+    const c = chung.find((u) => u.khoa === t.khoa) ?? chung.find((u) => cungThang(u, t));
+    if (c && laLoaiThang(c.block)) chon[t.khoa] = c.block;
+  }
+  return ganLoaiThang(ds, chon);
 }
 
 /** Ô căn người dùng đổi tay giữa hai trạng thái tòa (bố cục sau khi gỡ tự chỉnh, từng tầng chung / riêng): tầng → khoá ô. */

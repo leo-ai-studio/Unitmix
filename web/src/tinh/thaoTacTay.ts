@@ -10,10 +10,10 @@
 import { chiSoCanThem, moRong, khoaCanThem, mauToa, rutCanThem } from './canThem';
 import { doiCanTaiViTri, doiCanTheoTang, doiChoO, doiCongNang, latO } from './doiCan';
 import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type ToaDat } from './kieu';
-import { chupThangTay, doDeKhe, matBangCua, matBangTang, THANG_MIN, tuChinhSauSua, type ChanSua, type DuLieuMB, type ToaMB } from './loiThang';
+import { chupThangTay, doDeKhe, ganLoaiThang, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
 
-export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'it_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan';
+export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan';
 export type KetQuaTay = { ok: true; toa: ToaDat; chan: ChanSua[]; canhBao?: 'nhieu_thang' | 'it_thang' } | { ok: false; lyDo: LyDoTay; chiTiet?: string };
 
 export type Ctx = { tv: ThuVien; dl: DuLieuMB | null | undefined };
@@ -156,8 +156,12 @@ function thangTayCua(toa: ToaDat, c: Ctx): ThangTay {
 const soThang = (toa: ToaDat, c: Ctx) => { const mau = mauToa(c.tv, toa) as ToaMB; return matBangCua(toa, mau, c.dl).thangBo.length; };
 const coThang = (toa: ToaDat, khoa: string, c: Ctx) => { const mau = mauToa(c.tv, toa) as ToaMB; return matBangCua(toa, mau, c.dl).thangBo.some((t) => t.khoa === khoa); };
 
-/** Thêm thang bộ (p17d · QT-10): ô 3.000 mm chèn ngay sau ô `sau` (căn / thang) trên mặt `mat`; > 3 thang thì cảnh báo (không chặn). */
+/**
+ * Thêm thang bộ (p17d · QT-10): ô 3.000 mm chèn ngay sau ô `sau` (căn / thang) trên mặt `mat`. Quy tắc thang bộ mọi tòa: tối đa 3
+ * thang (THANG_MAX) — đã đủ 3 thì CHẶN (`nhieu_thang`). Thang mới là N3 trừ khi tòa chưa có N2 (ganLoaiThang).
+ */
 export function themThangTay(toa: ToaDat, mat: number, sau: string, c: Ctx): KetQuaTay {
+  if (soThang(toa, c) >= THANG_MAX) return { ok: false, lyDo: 'nhieu_thang' };
   const tt = thangTayCua(toa, c);
   const dang = new Set([...tt.them.map((e) => e.khoa), ...(matBangCua(toa, mauToa(c.tv, toa) as ToaMB, c.dl).thangBo.map((t) => t.khoa))]);
   let n = 1;
@@ -167,7 +171,7 @@ export function themThangTay(toa: ToaDat, mat: number, sau: string, c: Ctx): Ket
   const r = chotSua(toa, { ...toa, thangTay: tt }, [null], c);
   if (!r.ok) return r;
   if (!coThang(r.toa, khoa, c)) return { ok: false, lyDo: 'khong_dat_thang' };
-  return soThang(r.toa, c) > 3 ? { ...r, canhBao: 'nhieu_thang' } : r;
+  return r;
 }
 
 /** Xoá thang bộ: giữ ≥ 2 thang (THANG_MIN, như app cũ cảnh báo dưới 2) — còn 2 thì chặn. */
@@ -177,10 +181,40 @@ export function xoaThangTay(toa: ToaDat, khoa: string, c: Ctx): KetQuaTay {
   const e = tt.them.find((x) => x.khoa === khoa);
   tt.them = tt.them.filter((x) => x.khoa !== khoa);
   if (!e || e.tu) if (!tt.bo.includes(khoa)) tt.bo.push(khoa);
-  const r = chotSua(toa, { ...toa, thangTay: tt }, [null], c);
+  // loại chọn tay của thang bị xoá bỏ theo (thang còn lại vẫn ≥ 1 N2 + ≥ 1 N3 — ganLoaiThang trong tự chỉnh)
+  const lt = toa.loaiThang && Object.fromEntries(Object.entries(toa.loaiThang).filter(([k]) => k !== khoa));
+  const r = chotSua(toa, { ...toa, thangTay: tt, loaiThang: lt && Object.keys(lt).length ? lt : undefined }, [null], c);
   if (!r.ok) return r;
   if (coThang(r.toa, khoa, c)) return { ok: false, lyDo: 'khong_bo' };
   return r;
+}
+
+/**
+ * Đổi loại thang bộ N3 ↔ N2 (QT-63 `doiThangBo`): loại của TỪNG ô, ô 3.000 mm và điểm chèn giữ nguyên nên không căn nào xê dịch,
+ * DTXD không đổi; hình thang, cửa (buồng đệm N3 / một cửa N2), 3D, CAD đổi theo. Quy tắc mọi tòa: sau khi đổi vẫn phải có ít nhất
+ * một N2 và một N3 — đổi thang N2 duy nhất sang N3 thì thang N3 gần nhất (thứ tự mặt, vị trí) đổi sang N2 (đổi chỗ hai loại).
+ * Ghi đủ loại mọi thang vào `ToaDat.loaiThang`; mặt bằng đã tự chỉnh chỉ đổi `block` (không chạy lại tự chỉnh — nhanh).
+ */
+export function doiLoaiThangTay(toa: ToaDat, khoa: string, loai: LoaiThangBo, c: Ctx): KetQuaTay {
+  const mau = mauToa(c.tv, toa) as ToaMB | undefined;
+  if (!mau || !laLoaiThang(loai)) return { ok: false, lyDo: 'khong_doi' };
+  const ds = matBangCua(toa, mau, c.dl).thangBo;
+  const t = ds.find((x) => x.khoa === khoa);
+  if (!t || t.block === loai) return { ok: false, lyDo: 'khong_doi' };
+  const chon: Record<string, string> = Object.fromEntries(ds.map((x) => [x.khoa, laLoaiThang(x.block) ? x.block : THANG_N3]));
+  chon[khoa] = loai;
+  const khac = loai === THANG_N2 ? THANG_N3 : THANG_N2;
+  if (!Object.values(chon).includes(khac)) {
+    const thu = [...ds].sort((a, b) => a.matIdx - b.matIdx || a.a0 - b.a0), i0 = thu.indexOf(t);
+    const doi = thu.filter((x) => x !== t).sort((a, b) => Math.abs(thu.indexOf(a) - i0) - Math.abs(thu.indexOf(b) - i0))[0];
+    if (!doi) return { ok: false, lyDo: 'it_thang' };
+    chon[doi.khoa] = khac;
+  }
+  const sua: ToaDat = { ...toa, loaiThang: chon };
+  if (!toa.matBang) return chotSua(toa, sua, [null], c);
+  const datLoai = (mb: NonNullable<ToaDat['matBang']>) => ({ ...mb, thangBo: ganLoaiThang(mb.thangBo, chon) });
+  const tangRieng = toa.tangRieng && Object.fromEntries(Object.entries(toa.tangRieng).map(([k, g]) => [k, g.matBang ? { ...g, matBang: datLoai(g.matBang) } : g]));
+  return { ok: true, toa: { ...sua, matBang: datLoai(toa.matBang), ...(tangRieng ? { tangRieng } : {}) }, chan: [] };
 }
 
 /** Dời thang bộ (kéo thang thả lên ô khác): thang đứng ngay sau ô `sau`. */

@@ -25,6 +25,7 @@ const idLoi = (b: string) => 'loi-' + b.replace(/^x_/, '').replace(/_/g, '-');
 const dl: DuLieuMB = { loi: new Map(), cuaCan: {} };
 for (const t of toaDs) for (const m of (t as unknown as ToaMB).mat) for (const q of m.phan_tu)
   if (q.loai !== 'can' && !dl.loi.has(q.block) && existsSync(new URL(`loi/${idLoi(q.block)}.json`, lib))) dl.loi.set(q.block, doc<HinhLoiMB>(`loi/${idLoi(q.block)}.json`));
+dl.loi.set('x_tb_n2', doc<HinhLoiMB>('loi/loi-tb-n2.json')); // thang N2 (QT-63) — mẫu chỉ chèn N3
 for (const c of canDs) dl.cuaCan[c.ma_goc] = tinhCuaCan(doc<{ ve: { cat: string; pts: [number, number][] }[] }>(`can/${c.id}.json`).ve, c.rong_mm);
 
 const mau = (id: string) => tv.toa.get(id) as unknown as ToaMB;
@@ -139,7 +140,8 @@ describe('Việc 2 · thang bộ liền suốt chiều cao (tòa có tầng riê
     // tầng riêng tự chỉnh riêng có thang khác tầng chung → hợp → cùng điểm chèn, cùng chiều cửa ở mọi tầng
     expect(thangLechChung(mb5, chung)).toBe(false);
     expect(kyThang(mb5)).toBe(kyThang(chung));
-    expect(mb5.baoCao!.thangLien).toMatchObject({ cheDo: 'hop', soThang: 4, soTang: 1, khongDat: 0, conLech: 0 });
+    // quy tắc thang bộ: hợp thang các tầng không vượt 3 thang
+    expect(mb5.baoCao!.thangLien).toMatchObject({ cheDo: 'hop', soThang: 3, soTang: 1, khongDat: 0, conLech: 0 });
     expect(mb5.baoCao!.thangLien!.nhuong).toBeGreaterThan(0);
     // dồn khít bằng tinh/khe.ts: không khe, không đè ở cả hai bố cục; kiểm lại thoát nạn từng tầng
     expect(khe(m, mb5, boCucTang(toa, 5))).toEqual({ mm: 0, de: 0 });
@@ -148,19 +150,19 @@ describe('Việc 2 · thang bộ liền suốt chiều cao (tòa có tầng riê
     expect(vuotDoc(m, chung, boCucTang(toa, null))).toBe(0);
     // dòng báo kết quả thay cảnh báo "thang khác tầng chung"
     const q = mb5.baoCao!.quyTac.find((x) => x.ma === 'PC-11')!;
-    expect(q.ghiChu).toMatch(/4 thang liền suốt chiều cao/);
+    expect(q.ghiChu).toMatch(/3 thang liền suốt chiều cao/);
     expect(q.ghiChu).not.toMatch(/thang khác bố cục chung/);
     // căn nhường chỗ giữ cơ cấu: chỉ đổi biến thể STRETCH cùng loại, ghi ở tuDong của tầng 5
     expect(toa.tuDong!.every((d) => d.tang === 5 && d.truong === 'canViTri')).toBe(true);
     for (const d of toa.tuDong!) expect(tv.can.get(d.moi)!.loai).toBe(tv.can.get(d.cu ?? viTriCan(m, tv).find((v) => v.khoa === d.khoa)!.canGocId)!.loai);
   });
 
-  it('hợp không bỏ thang nào: mọi thang riêng của tầng (không chồng chỗ) có trong tập chung; tm-l1 1PN → 2PN thêm thang, không khe', () => {
+  it('hợp thang ≤ 3 (quy tắc thang bộ): thang riêng của tầng vào tập chung tới đủ 3; tm-l1 1PN → 2PN, không khe', () => {
     const { m, toa } = tangRieng('tm-l1', 'tm-1pn-m1', 'tm-2pn-m2', '0:1');
     const mb5 = matBangRiengTang(toa, 5)!, chung = toa.matBang!;
     expect(kyThang(mb5)).toBe(kyThang(chung));
     const rieng = tuChinhMatBang(m, tv, dl, { bc: boCucTang(toa, 5), chieuCaoPCCC: H24 }).matBang.thangBo;
-    expect(chung.thangBo.length).toBeGreaterThan(3);
+    expect(chung.thangBo.length).toBeLessThanOrEqual(3);
     expect(chung.thangBo.length).toBe(mb5.baoCao!.thangLien!.soThang);
     void rieng;
     for (const [mb, k] of [[mb5, 5], [chung, null]] as const) {
