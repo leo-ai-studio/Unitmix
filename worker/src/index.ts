@@ -1,8 +1,9 @@
 import { Hono, type Context } from 'hono';
 import { bam, bangNhau, chuoiNgauNhien, taoMaDuAn, taoMaSua } from './maSua';
 import { tuyenAI, type EnvAI } from './ai';
+import { cauHinhBanDo, type EnvBanDo } from './banDo';
 
-type Env = { Bindings: EnvAI };
+type Env = { Bindings: EnvAI & EnvBanDo };
 const app = new Hono<Env>();
 const GIOI_HAN_BODY = 2_000_000; // byte
 
@@ -137,6 +138,8 @@ app.delete('/api/du-an/:ma/pa/:id', async (c) => {
 
 // Leo AI bằng khoá chung (worker/src/ai.ts): trạng thái + cổng Messages cho SDK (baseURL /api/ai).
 app.get('/api/ai/trang-thai', tuyenAI.trangThai);
+// bản đồ nền: khoá Google Maps trình duyệt nếu chủ app đã đặt (worker/src/banDo.ts)
+app.get('/api/ban-do/cau-hinh', (c) => cauHinhBanDo(c as never));
 app.post('/api/ai/v1/messages', tuyenAI.chuyen);
 
 app.notFound((c) => c.json({ loi: 'khong_co' }, 404));

@@ -2,6 +2,32 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-30 · gộp nang-cap/architechtures (6221899) vào nhánh Vị trí · Nắng · Gió · agent Opus
+
+- Xung đột: `Khung3D` (giữ `moRong` + `phanTich` + `lop`/`lopAn` + `viDo`; mặt trời `datNang` = `moRong.nang` ?? NOAA theo `viDo`), `MoHinh3D` (giữ tum / phân tích view / Lớp, thêm `moRong`, nút ☀, hộp), `ManXepToa` (`ChuGiaiView tv` + hộp), docs (giữ cả hai).
+- Khung3D: nhóm `phu` cho gói mở rộng — `apLop` / `lamNhat` duyệt cả `goc` và `phu`; vật thể có `userData.lamNhat(m)` tự làm nhạt. Ngữ cảnh `moRong` thêm `phu`, `apLop`.
+- Ảnh vệ tinh 3D: vào menu **Lớp** 3D (`useNutNangGio3D`), bật / tắt tức thì; `toneMapped: false`; mờ khi Phân tích view. Bỏ nút "Ảnh nền" riêng trên thanh 3D. Thanh giờ khung làm tròn 0,1 h.
+- Vĩ độ / góc Bắc 3D qua `viTriPA` (một nguồn, PA cũ vẫn đọc `huongView`). Hộp ở 3D nằm dưới cụm nút góc (z-index 3) để menu Lớp mở đè lên.
+- Kiểm: `kiem.mjs` ĐẠT (web 970 + 3 bỏ qua, worker 14, pytest 15, build), `kiem_zoom.mjs` ĐẠT (10 ca), `kiem_man_hep.mjs` ĐẠT, `do_nang_gio.mjs` máy bàn + điện thoại (số ở `docs/vi_tri_nang_gio.md` mục 6). Ảnh mới: `may-5a-3d-menu-lop`, `may-6-3d-bong-do-duong-mat-troi`, `may-6b-3d-phan-tich-view-anh-nen-nhat`.
+- Còn dở: lớp giờ nắng mặt đứng và lớp ô view 3D cùng bật thì chồng nhau (chưa tự ẩn bên kia); mặt trời fallback (Công trình) dùng kinh độ 105,85.
+
+## 2026-10-30 · Vị trí dự án (link Google Maps / Earth) · ảnh vệ tinh nền 2D / 3D · nắng (bóng đổ, đường mặt trời, giờ nắng) · gió (hoa gió, tiện nghi Lawson) kiểu Forma · agent Opus
+
+**Yêu cầu:** đánh giá nắng, gió như Autodesk Forma; đặt toạ độ đúng Google Maps / Google Earth, hiện trên 3D, 2D bật / tắt; chạy mượt. Tài liệu đầy đủ: `docs/vi_tri_nang_gio.md` (nguồn, điều khoản, việc chủ app, phương pháp, số đo).
+
+**Mã (gói mới `web/src/nangGio/*` + `tinh/viTri.ts`, `tinh/matTroi.ts`, `tinh/nangGio/*`, điểm gắn nhỏ):**
+- `tinh/viTri.ts`: `TrangThaiPA.viTri` (lat, lng, neo, tyLe) — góc Bắc vẫn ở `huongView.gocBac`; `ganViTri` soi vĩ độ sang `huongView.viDo` (điểm view đọc đúng, không sửa `huongView.ts`), `chuanHoaViTri` trong `chuanHoaPA`; đọc link (`@lat,lng`, `!3d!4d`, `?q=`, `query=`, `/place/`, Google Earth, chuỗi số, DMS, báo link rút gọn); bản vẽ ↔ Đông/Bắc ↔ kinh vĩ (ellipsoid WGS84); khớp hai điểm; toán ô Web Mercator.
+- `tinh/matTroi.ts` (bọc NOAA `ba_chieu/nang.ts`): theo ngày / giờ / múi, mọc-lặn, đường đi, bước nắng. `tinh/nangGio/gioNang.ts` (+ worker): giờ nắng mặt đất / mái (bóng Minkowski tô quét dòng) + mặt đứng (tia); `daGiacBong` bóng 2D. `tinh/nangGio/gio.ts`: hoa gió, hướng chủ đạo, vượt ngưỡng, lớp Lawson. `tinh/nangGio/khoiPA.ts`: khối tháp + đế.
+- `nangGio/`: `kho.ts` (trạng thái chung), `nguonBanDo.ts` (Esri mặc định, OSM, Google khi có khoá), `LopNangGio2D.tsx` (ô ảnh trong `<BanVe>` theo viewBox, lót z−3, lớp phân tích, bóng 2D, chọn điểm, ghi nguồn, số đọc; tải lười), `HopNangGio.tsx` (hộp 3 tab; màn hẹp tấm đáy qua `LopNoi`), `moRong3DImpl.ts` (mặt trời theo vị trí + ngày, đường mặt trời, ảnh nền 2 vòng ghép trong `anhNen.worker.ts`, lớp phân tích 3D, số đọc), `lbm.ts` (D2Q9 WebGL2, dịch shader song song, đọc PBO + fence), `chayGio.ts`, `chayNang.ts`, `taiGio.ts` (Open-Meteo, nhớ localStorage), `HoaGio.tsx`, `mau.ts`, `hienThi.ts`. `ui/ThangMau.tsx` (thang màu + cột, dùng chung được với view). CSS `styles/nang-gio.css`.
+- Điểm gắn: `ve3d/moRong3D.ts` + Khung3D prop `moRong` (gắn / cảnh mới / mặt trời / huỷ — 14 dòng), `ve3d/MoHinh3D.tsx` (Toàn dự án: `moRong`, nút thanh 3D, hộp), `man/ManXepToa.tsx` (lớp 2D con đầu `<BanVe>`, 2 nút Lớp, hộp), `main.tsx` (CSS), `worker/src/banDo.ts` + `GET /api/ban-do/cau-hinh` (khoá `GOOGLE_MAPS_KEY` nếu chủ app đặt), i18n `ng.*` (117 khoá ×2).
+
+**Kiểm:** test `tinh/nangGio/nangGio.test.ts` 22 ca (link, tham chiếu, khớp hai điểm, ô bản đồ, mặt trời Hà Nội Hạ / Đông chí + mọc lặn, bóng / mặt đứng / che, hoa gió, Lawson). Trên app (vite 5631 + wrangler 8791 với bản sao DB local; dự án `2mlg1a2l` pa-1 đặt ở 21,0122, 105,7865 — chỉ trong bản sao DB của worktree), kịch bản `scripts/do_nang_gio.mjs` (Edge headless, CDP): số tác vụ dài và ảnh ở `docs/vi_tri_nang_gio.md` mục 6, ảnh `docs/anh/nang-gio/`. `kiem_man_hep.mjs` ĐẠT; `node scripts/kiem.mjs` ĐẠT.
+
+**Chủ app:** (1) muốn ảnh Google: bật Map Tiles API + billing, khoá giới hạn referrer, `wrangler secret put GOOGLE_MAPS_KEY`; (2) Open-Meteo miễn phí chỉ phi thương mại — cân nhắc gói trả phí; (3) Esri: nên tạo khoá ArcGIS Location Platform (`VITE_ESRI_KEY`).
+
+**Còn dở / chờ chốt:** Photorealistic 3D Tiles; VN-2000 từ DXF; nhà xung quanh làm vật che; hệ số α = 0,22 và ngưỡng an toàn 15 m/s (giá trị tạm); kết quả phân tích không tự tính lại khi sửa tòa (bấm lại); điểm view nên đọc `viTriPA` trực tiếp khi gộp (agent view).
+
+**Đề xuất:** (1) giờ nắng theo từng căn (Đông chí ≥ 2 h) vào điểm view + giá bán; (2) Leo AI `get_sun_hours` / `get_wind_comfort`; (3) so sánh PA theo % sân ≥ 2 h nắng và % diện tích "ngồi / đứng" gió; (4) tự đặt vị trí từ toạ độ VN-2000 của DXF; (5) cache gió trong D1.
 ## 2026-10-30 · zoom / pan 2D + 3D hết méo vỡ · 3D Vật liệu thực tế hơn · TMB 3D có tầng tum + menu Lớp + cây · agent Opus
 
 Người dùng: (1) "Khi zoom / pan, giao diện 2D và 3D hình bị méo vỡ. Một lúc ổn định nó mới thẳng lại được." (2) "Style view 3D vật liệu chưa đúng thực tế lắm." (3) TMB 3D thiếu tầng tum như 3D Công trình; cần tắt lớp như 2D (hầm, trục thang bộ, lỗ mở mương gió trên mặt đất), bật / tắt cây xanh.

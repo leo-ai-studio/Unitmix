@@ -506,7 +506,7 @@ export function KpiView({ pa, tv, lo, sua, chiXem, toaId, chonToa }: {
           <p class="dong muted ghi-heuristic">{t('view.heuristic')}</p>
           <div class="luoi-o">
             <OSo nhan={t('view.gocBac')} tip={t('gt.view.gocBac')} gt={c.gocBac} buoc={1} min={-360} max={360} donVi="°" tat={chiXem} onDoi={(v) => luu({ gocBac: ((v % 360) + 360) % 360 })} />
-            <OSo nhan={t('view.viDo')} tip={t('gt.view.viDo')} gt={c.viDo} buoc={0.1} min={-66} max={66} donVi="°" tat={chiXem} onDoi={(v) => luu({ viDo: v })} />
+            <OSo nhan={t('view.viDo')} tip={pa.viTri ? t('ng.vt.viDoTheoViTri') : t('gt.view.viDo')} gt={c.viDo} buoc={0.1} min={-66} max={66} donVi="°" tat={chiXem || !!pa.viTri} onDoi={(v) => luu({ viDo: v })} />
             <OSo nhan={t('view.nguongGan')} tip={t('gt.view.nguongGan')} gt={c.nguongGan} buoc={1} min={1} max={200} donVi="m" tat={chiXem} onDoi={(v) => luu({ nguongGan: v })} />
             <OSo nhan={t('view.nguongTot')} tip={t('gt.view.nguong')} gt={c.nguongTot} buoc={5} min={0} max={100} tat={chiXem} onDoi={(v) => luu({ nguongTot: v })} />
             <OSo nhan={t('view.nguongKha')} tip={t('gt.view.nguong')} gt={c.nguongKha} buoc={5} min={0} max={100} tat={chiXem} onDoi={(v) => luu({ nguongKha: v })} />

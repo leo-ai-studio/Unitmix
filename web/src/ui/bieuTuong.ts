@@ -87,6 +87,7 @@ export const BIEU_TUONG = {
   ham3d: '⊔', // hiện hầm
   khac: '…', // menu thêm (xuất ảnh, prompt render, tham số)
   xuatAnh: '⇩',
+  nangGio: '☁︎', // Vị trí · Nắng · Gió (nangGio/*)
 } as const;
 
 export type KhoaBieuTuong = keyof typeof BIEU_TUONG;

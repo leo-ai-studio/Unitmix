@@ -1,3 +1,4 @@
+import { chuanHoaViTri } from './viTri';
 import { chuanHoaMatBang, ganLoaiThang, goTuDong, laLoaiThang, loaiTheoChung, THANG_MAX, THANG_MIN } from './loiThang';
 import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiPhiPA, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type ToaDat, type TrangThaiPA } from './kieu';
 
@@ -194,7 +195,7 @@ export const chuanHoaCanhDuong = (l: Lo): Lo => {
  * PA chưa có `phanHam` lưu từ khi hệ số hầm chưa dùng tới: chuyển sang tính hầm vào HSSDĐ theo QCVN 01 1.4.21.
  */
 export const chuanHoaPA = (pa: TrangThaiPA): TrangThaiPA => ({
-  ...pa,
+  ...chuanHoaViTri(pa), // vị trí bản đồ hỏng thì bỏ; có thì vĩ độ view theo nó (tinh/viTri.ts)
   heSo: pa.phanHam ? pa.heSo : { ...pa.heSo, ham: HE_SO_MAC_DINH.ham, apMai: pa.heSo.apMai ?? HE_SO_MAC_DINH.apMai },
   phanHam: pa.phanHam ?? { ...PHAN_HAM_MAC_DINH },
   ham: chuanHoaHam(pa.ham ?? HAM_MAC_DINH),

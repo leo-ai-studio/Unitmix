@@ -83,5 +83,6 @@ export const SVG_BT: Record<string, string> = {
   nangCat: '<path d="M3 15h18"/><path d="M7 15a5 5 0 0110 0"/><path d="M12 5v2M5.6 8.6l1.4 1.4M18.4 8.6L17 10"/><path d="M5 19h14" stroke-dasharray="2.5 2"/>',
   ham3d: '<path d="M3 11h18"/><path d="M6 11V5h12v6"/><path d="M6 11v8h12v-8" stroke-dasharray="2.5 2"/>',
   khac: '<circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/>',
+  nangGio: '<circle cx="8" cy="8" r="3"/><path d="M8 2.5V3.8M2.5 8h1.3M4.1 4.1l.9.9M11.9 4.1l-.9.9"/><path d="M4 15h11a3 3 0 10-3-3M4 19h13a2.5 2.5 0 11-2.5 2.5"/>',
   xuatAnh: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 15l-4.5-4.5L9 18"/>',
 };
