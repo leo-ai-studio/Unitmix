@@ -12,6 +12,8 @@
 import type { CongNangO, Diem, ThuVien } from '../tinh/kieu';
 import { canDangDung, congNangTai, viTriCan, type BoCuc, type NetVe, type ToaCoMat } from '../tinh/matBang';
 import { laBienThe } from '../tinh/stretch';
+import { KHOI_TCC, khoiTu, nhanTu, tenKhoiTu, type TuPCCC } from '../tinh/tuHongNuoc';
+import { khoiCNC } from '../tinh/cuaNganChay';
 
 export const LE_CLIP_MM = 1200;
 /** Thư mục thư viện XREF mặc định, tương đối so với thư mục đặt bản vẽ ghép. */
@@ -30,7 +32,13 @@ export type DuLieuXuat = {
   hinh: Map<string, NetVe[]>;
   /** Hình học lõi (mm cục bộ) theo tên block. */
   loi?: Map<string, { paths: NetVe[] }>;
+  /** Tủ PCCC + cửa ngăn cháy hành lang đang thấy trên mặt bằng (lớp PCCC màn Tầng) — chỉ `.dxf`. */
+  pccc?: { tu: TuPCCC[]; cua: { so: string; p: Diem; huong: Diem; w: number; bu: number[] | null }[] };
 };
+/** Lớp PCCC như app cũ (shell.src.html ~16243): tủ (viền + nhãn), chi tiết block tủ, tường xây sau tủ, cửa ngăn cháy hành lang. */
+export const LOP_PCCC: [string, number][] = [['MDI-PCCC-TCC', 1], ['MDI-PCCC-TCC-CT', 1], ['MDI-PCCC-TUONG', 8], ['MDI-PCCC-CNC', 1]];
+/** Tên BLOCK tủ trong DXF (block CAD gốc data/dwg/tu-pccc.dwg: pccc-800x200 / pccc-500x200). */
+const khoiTuTen = (ten: string) => ten.toUpperCase();
 
 const rad = (d: number) => (d * Math.PI) / 180;
 /** Bỏ dấu, chỉ giữ ASCII in được: tên tệp và chú thích. */
@@ -272,6 +280,7 @@ export function taoDxf(d: DuLieuXuat): string {
   const lops = new Map<string, number>([['MDI-BAO', 1], ['MDI-HANHLANG', 30], ['MDI-NHAN', 2], ['MDI-LOI', 8], [LOP_NHAN_CAN, 3]]);
   const oc = oCongNang(d);
   if (oc.length) lops.set(LOP_CONG_NANG, 5);
+  if (d.pccc) for (const [l, c] of LOP_PCCC) lops.set(l, c);
   for (const [l, c] of Object.values(LOP_THEO_NET)) lops.set(l, c);
   let s = nhom([0, 'SECTION'], [2, 'HEADER'], [9, '$ACADVER'], [1, 'AC1009'], [9, '$INSUNITS'], [70, 4], [9, '$MEASUREMENT'], [70, 1], [0, 'ENDSEC']);
   s += nhom([0, 'SECTION'], [2, 'TABLES'], [0, 'TABLE'], [2, 'LAYER'], [70, lops.size]);
@@ -289,6 +298,16 @@ export function taoDxf(d: DuLieuXuat): string {
       if (!lop || n.pts.length < 2) continue;
       s += polyDxf(lop, n.pts.map(([x, y]): Diem => [x * it.rong, y * it.sau]), false);
     }
+    s += nhom([0, 'ENDBLK'], [8, '0']);
+  }
+  // tủ PCCC: block CAD gốc (thân từng hộp + nét chéo + cánh mở), y = 0 mặt tường hành lang, y < 0 vào trong tường
+  const khoiDung = new Set((d.pccc?.tu ?? []).map((x) => tenKhoiTu(x.loai)));
+  for (const ten of khoiDung) {
+    const b = KHOI_TCC[ten];
+    if (!b) continue;
+    s += nhom([0, 'BLOCK'], [8, '0'], [2, khoiTuTen(ten)], [70, 0], ...diemDxf([0, 0]));
+    for (const q of b.than) s += polyDxf('MDI-PCCC-TCC-CT', q, true);
+    for (const q of b.net) s += polyDxf('MDI-PCCC-TCC-CT', q, false);
     s += nhom([0, 'ENDBLK'], [8, '0']);
   }
   s += nhom([0, 'ENDSEC']);
@@ -317,6 +336,20 @@ export function taoDxf(d: DuLieuXuat): string {
     s += polyDxf(LOP_CONG_NANG, o.goc, true) + polyDxf(LOP_CONG_NANG, [o.goc[0], o.goc[2]], false) + polyDxf(LOP_CONG_NANG, [o.goc[1], o.goc[3]], false);
     s += textDxf(LOP_CONG_NANG, o.x, o.y + CAO_CHU_NHAN_MM * 0.7, o.ten);
     s += textDxf(LOP_CONG_NANG, o.x, o.y - CAO_CHU_NHAN_MM * 0.7, o.dt);
+  }
+  for (const x of d.pccc?.tu ?? []) {
+    // INSERT: trục x block = hướng tường (huong), trục y block = −vao (ra hành lang); lật y khi hai trục không theo chiều thuận
+    const h = x.huong, v = x.vao, lat = (-v[0]) * -h[1] + (-v[1]) * h[0] < 0 ? -1 : 1;
+    if (KHOI_TCC[tenKhoiTu(x.loai)]) s += nhom([0, 'INSERT'], [8, 'MDI-PCCC-TCC'], [2, khoiTuTen(tenKhoiTu(x.loai))], ...diemDxf(x.W), [41, 1], [42, lat], [50, +((Math.atan2(h[1], h[0]) * 180) / Math.PI).toFixed(4)]);
+    const k = khoiTu(x);
+    if (k.tuong) s += polyDxf('MDI-PCCC-TUONG', k.tuong, true);
+    const nh = [x.W[0] - v[0] * 520, x.W[1] - v[1] * 520];
+    s += nhom([0, 'TEXT'], [8, 'MDI-PCCC-TCC'], ...diemDxf(nh as Diem), [40, 300], [1, asciiHoa(nhanTu(x))], [72, 1], [11, +nh[0].toFixed(4)], [21, +nh[1].toFixed(4)], [31, 0], [73, 2]);
+  }
+  for (const c of d.pccc?.cua ?? []) {
+    const k = khoiCNC(c);
+    for (const q of k.net) s += polyDxf('MDI-PCCC-CNC', q, false);
+    s += nhom([0, 'TEXT'], [8, 'MDI-PCCC-CNC'], ...diemDxf(k.nhan), [40, 260], [1, asciiHoa(c.so)], [72, 1], [11, +k.nhan[0].toFixed(4)], [21, +k.nhan[1].toFixed(4)], [31, 0], [73, 2]);
   }
   s += nhom([0, 'ENDSEC'], [0, 'EOF']);
   return s;

@@ -103,9 +103,8 @@ describe('tòa thật tm-z3 — phân tích đủ lớp', () => {
     expect(kq.hanhLang.gioiHan).toBe(30);
     expect(Math.max(...kq.hanhLang.khoang)).toBeLessThanOrEqual(30.01);
     expect(kq.hongCho.apDung).toBe(true);
-    expect(kq.tu.viTri.length).toBeGreaterThan(0);
+    expect(kq.tu.tu.length).toBeGreaterThan(0);
     expect(kq.tu.thieu).toEqual([]);
-    expect(kq.cuaNC.filter((c) => c.loai === 'thang')).toHaveLength(kq.thangBo.length);
     expect(kq.thoatNan.can.length).toBeGreaterThan(10);
   });
   it('12 tầng (H ≤ 50 m): không đòi TMCC / họng chờ 45 m, khoang hành lang 60 m', () => {
@@ -118,7 +117,7 @@ describe('tòa thật tm-z3 — phân tích đủ lớp', () => {
   });
   it('tủ đặt tay: dùng vị trí tay, tủ quá xa báo căn chưa phủ; kết quả nhớ theo đầu vào', () => {
     const { kq } = chay(24, [[0, 0]]);
-    expect(kq.tu.tuDat).toBe(false);
+    expect(kq.tu.tay).toBe(true);
     expect(kq.tu.thieu.length).toBeGreaterThan(0);
     expect(chay(24, [[0, 0]]).kq).toBe(kq);
   });

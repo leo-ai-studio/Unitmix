@@ -844,3 +844,54 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 **Đề xuất:** (1) thu hẹp luật kit LEO tại nguồn (`.form-card label`, `.hop-thoai .o-form label`) sau khi `kiem_man_hep` đã có kiểm ô tích lệch dòng + đo thêm "label có ô nhập mà nhãn trên ô trong panel" → cảnh báo; (2) một thành phần `HangSo` (nhãn · ô · đơn vị) thay ~6 bản `O`/`OSo` rải ở ManLo / ManHam / ManXepToa / lopView để không lặp lỗi; (3) thanh TMB / Tầng dùng chung `MenuNut` cho cụm ít dùng (xoay / lật / khoá) như Forma, chỉ giữ 6–8 nút thường dùng; (4) thẻ mẫu tòa có ảnh nét mặt bằng nhỏ 40 px (Architechtures hiện thumbnail) thay dòng chữ; (5) nhớ trạng thái gập từng mục panel theo máy (localStorage) — người dùng mở mục nào thì lần sau vẫn mở.
 
 **Gộp nang-cap/architechtures (Vị trí · Nắng · Gió) — cùng ngày:** xung đột `main.tsx` (giữ cả `nang-gio.css` và `gon.css`, gon nạp sau cùng), `ManXepToa.tsx` (cả tệp do khác kiểu dòng — `sed -i` của Git Bash đã đổi CRLF → LF ở bản của tôi; gộp bằng `git merge-file` trên bản bỏ `\r`, ghi lại CRLF; giữ móc ảnh nền / nắng gió + đánh số tòa + thư viện gọn), `Khung3D.tsx` / `MoHinh3D.tsx`. Một prop `moRong` duy nhất = gói cảnh `MoRong3D` của nhánh kia (ảnh nền, đường mặt trời, lớp nắng / gió); bỏ prop `moRong` dạng nút của tôi — nút cắm vào nhóm phân tích qua `nutPhanTich`. Nút chữ "☀ Nắng · Gió" thành biểu tượng `nangGio` (mây + mặt trời) cùng kho `nangGio/kho` (không sửa tệp của gói). Một thanh giờ: Toàn dự án dùng thanh giờ + chạy trong hộp Vị trí · Nắng · Gió (đồng bộ `datGio`), menu ☀ của khung chỉ còn Cắt ngang (`Khung3D gioNgoai`); Công trình vẫn có thanh giờ trong menu ☀. Điện thoại: nút Hầm ẩn khỏi thanh (đã có ở menu Lớp, `NutBieuTuong lop="an-dt"`) để thanh 3D vừa 390 px. Hộp Vị trí · Nắng · Gió: hàng Góc Bắc [ô] −1° −0,1° +0,1° +1° một dòng (kit LEO ép ô ≥ 100 px), nút ngày nhanh gọn, "Nguồn ảnh" nhãn trái / ô phải, ô Vĩ độ / Kinh độ không tràn trên điện thoại (`gon.css`). Ảnh: `docs/anh/gon/3d-may-1440.png`, `3d-dien-thoai-390.png` (làm mới), `hop-vi-tri-nang-gio*.png`.
+
+## 2026-10-30 · Tủ PCCC + cửa ngăn cháy hành lang làm lại như app cũ (luật + cách thể hiện) · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** "Làm lại phần tủ phòng cháy chữa cháy. Phần sắp xếp cửa ngăn hành lang. Bố trí và cách thể hiện giống như app cũ đi. Lấy các quy tắc sắp đặt vào như app cũ. Làm xấu quá đi." Thêm: "Cả phần cửa phòng cháy chữa cháy, cửa thang máy chữa cháy bỏ đi, quá xấu." · "Tủ phòng cháy chữa cháy có thư viện, hình ảnh giống như app cũ nhé."
+
+**App cũ (shell.src.html):**
+- Tủ: `tuCC0` dòng ~4752 (điểm phủ, 4 loại ứng viên, tham lam), `tccToiUu` ~4677 (nhánh–cận nhiều tia), `tccChanCua` / `tccCuaLyTuong` ~4660 (QT-77f tủ né cửa), `tccTruM2` ~4578 (QT-77g trừ DT), `tccKhoi` / `tccHinh` ~4610 (block tu-pccc.dwg), `tccBam` / `tccDoi` / `tccTachGop` ~4640, 5755–5778 (QT-77e/f kéo, tách / gộp).
+- Vẽ tủ ~7074, Vòi CC ~7160.
+- Cửa: `cncKhoi` ~5734, `cncBam` / `cncTaoTay` / `cncTayKq` / `cncThem` / `cncXoa` ~5470–5751 (QT-101), `cncDoHL` ~5794 (Đo HL); vẽ ~7120–7160.
+- Menu "⚑ PCCC" ~1301: Tủ PCCC / Cửa NC bật, Đo HL / Vòi CC tắt.
+- Xuất CAD lớp MDI-PCCC-* ~16243.
+
+**Mã:**
+- `tinh/tuHongNuoc.ts`: chép đủ `tuCC0` + `tccToiUu` + `tccKhoi` + `tccBam` + `tccTachGop` + `tccTruM2`.
+  - Nét mẫu căn cần cho ứng viên (tường sát HL, ô hộp KT lớp hidd, điểm cửa sâu ≤ 1,5 m) là trường mới `tcc` trong `can.json`, sinh bởi `scripts/sinh_phai_sinh_can.py`. `chep_thu_vien.py` ghi `tcc` / `cua_hl` gọn một dòng.
+  - Thư viện block tủ chép vào `tinh/khoiTuPCCC.json` (Vite không cho import `public/`).
+- `tinh/pcccTang.ts`: thứ tự app cũ, cửa lý tưởng → tủ → cửa thật. Thêm `ToaDat.cncTay`, `tuPCCCTay` có nhãn tách / gộp. Bỏ `cuaNC` và `phongRac`.
+- `tinh/cuaNganChay.ts`: thêm `cncBam` / `cncDatDuoc` / `cncTaoTay` / `cuaNganChayTay` / `keoCuaTay` / `themCuaTay` / `doHanhLang` / `khoiCNC`.
+- `tinh/pcccNen.ts`: phân tích chạy nền, dùng chung `thaoTay.worker.ts` (tên `phanTichPCCC`), không huỷ lượt đang chạy, giữ lượt mới nhất.
+- `ve/LopPCCC.tsx` viết lại theo app cũ:
+  - 5 lớp: Tủ PCCC, Cửa ngăn cháy HL, Đo HL, Vòi CC, Thoát nạn. Khoá lưu mới `unitmix.lopPCCC.v2`.
+  - Màu hex như app cũ, nét non-scaling, chữ mm.
+  - Kéo tủ gộp theo khung hình; kích đúp tách / gộp; kéo / bấm đúp xoá / bấm đúp thêm cửa.
+  - Giữ hình nháp tới khi kết quả nền về.
+- Bỏ khỏi mặt bằng lớp thang máy / TMCC và lớp cửa ngăn cháy EI (KPI giữ dòng thang máy, TMCC, họng chờ).
+- `ui/KpiPCCC.tsx`: dòng tủ "N vị trí · M hộp", "Căn trừ DT (tường sau tủ)", "Cánh cửa NC HL che cửa"; nút "Cửa NC tự đặt lại".
+- `xuat/xuatCad.ts`: `.dxf` thêm lớp MDI-PCCC-*, tủ là INSERT block. i18n vi / en.
+- `pccc.css` theo màu app cũ. Luật quy_tac: PC-08 / PC-12 / PC-14 / QT-101 ghi hàm mới; `qcvn06_cua_ngan_chay` chỉ còn là yêu cầu cấu tạo.
+
+**Kiểm:**
+- `tinh/tuHongNuoc.test.ts`: đối chiếu app cũ headless (`scripts/tcc_cu.js` → `thu/tcc_cu.json`) trên 33 mẫu gốc, 25 tầng.
+  - Kết quả: 139 / 139 vị trí, số hộp bằng nhau, 136 / 139 tủ khớp ≤ 0,3 m cùng loại.
+  - Lệch duy nhất ở tm-v3: ứng viên trùng hệt, khác ở cửa lý tưởng V.
+  - Test thêm: kéo bám tường, tách / gộp, block và DT trừ.
+- `cuaNganChay.test.ts` +6 ca: block cửa, bù tường, kéo / thêm cửa, không vào sảnh, bộ cửa tay, Đo HL.
+- Đo: tự đặt Z3 14 ms, T2 213 ms, U3 186 ms (chạy nền); kéo tủ 16–34 ms một lần, gộp theo khung hình. Mở tầng: 0 tác vụ dài.
+- Ảnh cũ / mới: `docs/anh/pccc/cu-moi-{z3,t1,v1,l1}{,-mac-dinh,-zoom}.png`, chụp bằng `scripts/chup_pccc.mjs`. Ảnh app cũ chụp bằng CDP headless.
+  - Dự án thử local `ha0wovcr` (mã sửa ở localStorage khi chụp) có 4 tòa T1 / V1 / L1 / Z3, 25 tầng.
+  - Số tủ / cửa bằng app cũ: Z3 4 / 3, T1 5 / 4, V1 4 / 3, L1 4 / 3.
+
+**Không khớp được:**
+- tm-v3: 3 tủ, do cửa ngăn cháy lý tưởng ở tòa V khác app cũ (đã biết từ đợt cửa).
+- App cũ nổ block tủ thành nét khi xuất CAD; app mới ghi INSERT block.
+- Chú giải: app cũ không có mục TCC / CNC (chỉ tooltip); app mới giữ chú giải gọn với ký hiệu y như bản vẽ.
+
+**Đề xuất:**
+1. Dựng hộp KT căn từ nét thật cho căn STRETCH (đang dời theo đường cắt).
+2. Tô DT trừ tủ vào nhãn DT thông thủy căn trên tem ("mẫu đặc biệt" như app cũ HĐMB).
+3. Đưa cửa ngăn cháy lý tưởng V về khớp app cũ (nét bao căn V theo khung) để tm-v3 khớp 139 / 139.
+4. Lớp "Vòi CC" theo đường đi (QT-77 cũ, PC07) để so với R 18 m đo thẳng.
+5. Xuất `.scr` / đồng bộ AutoCAD lớp MDI-PCCC-* như app cũ.

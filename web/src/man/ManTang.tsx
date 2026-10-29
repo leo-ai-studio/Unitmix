@@ -337,7 +337,9 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
             deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2}
             thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} dichLoi={keoTay.dichLoi} oKeo={keoTay.oKeo} hienHanhLang={hienHL} choSang={choSang} canVuot={canVuot} />
-          <g transform="scale(0.001 -0.001)"><LopPCCC kq={pccc} chiXem={chiXem} datTuTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, tuPCCCTay: ds ?? undefined })))} /></g>
+          <g transform="scale(0.001 -0.001)"><LopPCCC kq={pccc} chiXem={chiXem} toa={toa}
+            datTuTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, tuPCCCTay: ds ?? undefined })))}
+            datCncTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, cncTay: ds ?? undefined })))} /></g>
           {!chiXem && !tam && <g transform="scale(0.001 -0.001)"><TayHanhLang mau={mauVe} hanhLangTay={toa.hanhLangTay} onKeo={keoHL} /></g>}
           <LopViewTang pa={pa} tv={tv} toa={toa} mau={mauVe} bc={bcVe} tang={k0} />
         </BanVe>

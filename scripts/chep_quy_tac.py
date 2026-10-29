@@ -260,8 +260,8 @@ LUAT = [
          nguon="QCVN 06:2022 5.2 · Bảng 11 · 5.2.4 · 5.2.7 · 5.2.11 · 5.2.14 · thẩm duyệt PC07 (R 18 m)",
          nguong=[N(18, "m", "bán kính phục vụ ĐO THẲNG từ tủ tới mọi điểm phải bảo vệ"), N(2, "tia", "mỗi điểm khi số tia tính toán ≥ 2", "="),
                  N(3, "m", "hai vị trí tủ cách nhau tối thiểu", ">="), N(800, "mm", "tủ đôi / cụm 2 hộp × 200", "="), N(500, "mm", "tủ đơn × 200", "=")],
-         ma_kiem="phu_tu_pccc", cach_tinh="điểm phải phủ: cửa căn, 4 góc trong căn (lùi 150 / 150 / 300 mm), hành lang mỗi 3 m; KHÔNG cộng tầm tia (tia đặc 6 m H ≤ 50 m / 8 m H > 50 m chỉ là yêu cầu áp lực); Bảng 11: ≤ 16 tầng HL ≤ 10 m 1 tia, > 10 m 2 tia; 17–25 tầng 2 / 3 tia; > 25 tầng chủ nhiệm chốt 2 tia; ưu tiên tường HL trước phòng KT trong lõi, rồi hộp KT căn, cuối cùng giữa tường căn; không đặt ở cửa buồng thang không nhiễm khói; ít vị trí nhất",
-         ma_cu=["qcvn06_52_hong_nuoc", "QT-77", "QT-77b", "QT-77c", "QT-77d", "QT-77e", "QT-77f"], yaml="qcvn06_52_hong_nuoc", ham="pccc.ts · tuPCCC (phủ tham lam, chưa ưu tiên lõi / HKT) · lớp kéo tay ve/LopPCCC.tsx"),
+         ma_kiem="phu_tu_pccc", cach_tinh="điểm phải phủ: cửa căn, 4 góc trong căn (lùi 150 / 150 / 300 mm), hành lang mỗi 3 m; KHÔNG cộng tầm tia (tia đặc 6 m H ≤ 50 m / 8 m H > 50 m chỉ là yêu cầu áp lực); Bảng 11: ≤ 16 tầng HL ≤ 10 m 1 tia, > 10 m 2 tia; 17–25 tầng 2 / 3 tia; > 25 tầng chủ nhiệm chốt 2 tia; ứng viên theo ưu tiên (chép tuCC0 app cũ): (1) tường lõi quay ra HL trước phòng KT / KTĐ / KTN — tủ đôi (cạnh lõi ≥ 1.400, cách tâm phòng ≤ 3 m, mặt tường cách tim HL ½ HL ± 150, cách cửa lõi ≥ 700, cách giếng thang máy ≥ 1,6 m); (2) hộp KT căn giáp HL (ô gạch chéo, sát tường HL ≤ 600) — không trừ DT; (3) sát tường ngăn hai căn (chữ L); (4) giữa tường căn cách ranh ≥ 350 (chữ U), bước 250; mọi ứng viên cách cửa căn / thang ≥ ½ tủ + 600, cách nét cửa CAD ≥ ½ tủ + 500, không trên vách BT (tường HL dày > 200), không lấn tường ngăn căn, đoạn tủ → tim HL không xuyên căn / thang / lõi; chọn ÍT HỘP NHẤT: tham lam (lợi / ưu tiên 1 · 1,15 · 2,2, dàn tủ ≥ 3 m) làm cận trên rồi nhánh–cận chính xác (chi phí 100.000 × hộp + 10.000 × cửa ngăn cháy lý tưởng bị chắn + 5.000 × m² DT trừ + 10 × ưu tiên; ngân sách 500.000 nút); đánh số TCC-xx theo đường hành lang; kéo tay bám tường HL (sát lõi ≤ 300 = tủ đôi), kích đúp tách cụm thành 2 tủ đơn cách 3 m / gộp 2 tủ đơn",
+         ma_cu=["qcvn06_52_hong_nuoc", "QT-77", "QT-77b", "QT-77c", "QT-77d", "QT-77e", "QT-77f"], yaml="qcvn06_52_hong_nuoc", ham="tuHongNuoc.ts · datTuPCCC (chép tuCC0 + tccToiUu; 33 mẫu: 139 / 139 vị trí, 136 / 139 khớp ≤ 0,3 m) · kéo / tách / gộp ve/LopPCCC.tsx"),
     dict(id="mdi_hpccc", buoc="pccc", nhom="mdi", bat_buoc=True, ap_dung="ca_hai",
          ten_vi="Chiều cao PCCC trong phạm vi QCVN 06", ten_en="Firefighting height",
          nguon="QCVN 06:2022 1.4.9 · nhà F1.3 75–150 m thuộc sheet 4", nguong=[N(150, "m")],
@@ -282,7 +282,7 @@ LUAT = [
          nguon="MDI · QT-105 (R1–R7)", nguong=[N(1800, "mm", "cửa tm = bề rộng HL", "="), N(1600, "mm", "cửa xh", "="), N(150, "mm", "bù tường", "="),
                                                N(600, "mm", "mép cửa căn / thang / lõi / tủ cách tim cửa ngăn", ">="), N(5, "m", "khoang tối thiểu", ">="), N(5, "°", "lệch vuông góc tối đa")],
          ma_kiem="dat_cua_ngan", cach_tinh="hai cánh mở hai chiều; không trong sảnh thang máy (cách mép sảnh ≥ một cánh + 1 m); không đứng trên ô cửa; không trong lõi trừ lối xuyên lõi; vuông góc hành lang; ít cửa nhất, không khoang vụn",
-         ma_cu=["QT-105", "QT-103", "QT-99", "QT-100", "QT-104", "QT-104c"], ham=None),
+         ma_cu=["QT-105", "QT-103", "QT-99", "QT-100", "QT-104", "QT-104c"], ham="cuaNganChay.ts · cuaNganChay · kéo / thêm / xoá tay (QT-101) cuaNganChayTay · keoCuaTay · themCuaTay"),
     dict(id="mdi_cnc_quet", buoc="pccc", nhom="mdi", bat_buoc=False, ap_dung="ca_hai",
          ten_vi="Cánh cửa ngăn cháy HL che cửa căn / thang", ten_en="Corridor fire-door swing blocks doors",
          nguon="MDI · chủ nhiệm 19/10/2026 · QT-105 R4b", nguong=[N(0, "cửa", "cửa có cánh quét qua cửa căn / buồng đệm / lõi / tủ", "=")],
@@ -292,7 +292,7 @@ LUAT = [
          ten_vi="Tủ PCCC ở tường căn: trừ DT thông thủy, căn thành mẫu đặc biệt", ten_en="Cabinet in unit wall reduces net area",
          nguon="MDI · QT-77g", nguong=[N(295, "mm", "sâu tủ + tường xây sau + hoàn thiện", "="), N(95, "mm", "chữ L thêm một bên", "="), N(190, "mm", "chữ U thêm hai bên", "=")],
          ma_kiem="tru_dt_tu", cach_tinh="TH1 hộp KT căn / lõi: không trừ; TH3 sát tường ngăn: chữ L, trừ (tủ + 95) × (295 − tường HL − 15); TH2 giữa tường căn: chữ U, trừ (tủ + 190) × (295 − tường HL − 15)",
-         ma_cu=["QT-77g"], ham=None),
+         ma_cu=["QT-77g"], ham="tuHongNuoc.ts · truM2 · khoiTu (tường xây sau tủ) · khối PCCC panel phải"),
 
     # ---------------- Hầm: app cũ chưa có luật ----------------
 
@@ -373,7 +373,7 @@ BO = {
     "QT-93": ("tinh_nang", None, "chạy nền có tiến độ"),
     "QT-95": ("thay_the", "QT-98", "đo khoang theo từng trục riêng; QT-98 đo trên đồ thị"),
     "QT-97": ("giao_dien", None, "chọn nhiều căn"),
-    "QT-101": ("giao_dien", None, "kéo tay cửa ngăn cháy (ràng buộc vị trí = mdi_cua_ngan_chay)"),
+    "QT-101": ("giao_dien", None, "kéo / thêm (bấm đúp hành lang) / xoá (bấm đúp cửa) cửa ngăn cháy tay, bước 100 mm, không vào lõi / sảnh — đã làm: cuaNganChay.ts cuaNganChayTay, ToaDat.cncTay"),
     "QT-102": ("giao_dien", None, "xoá / lật hàng loạt"),
     "QT-104b": ("thay_the", "QT-104c", "cửa miệng sảnh TM — QT-104c bỏ hẳn"),
     "QT-106": ("tinh_nang", None, "kho mẫu dự án + hàng chờ"),
@@ -434,7 +434,7 @@ LUAT_BO_SUNG += [
          nguon="QCVN 06:2022 3.2.11 · 3.3.5 · 6.13 · Bảng 2 · Bảng 3 · 4.24 · A.3.1.12 · A.2.30.2",
          nguong=[N("EI 60", "", "cửa buồng thang bộ — cửa ngăn cháy loại 1 (bậc chịu lửa I, II)", "="), N("EI 30", "", "cửa căn hộ mở ra hành lang (≥ vách hành lang EI 30)", "="),
                  N("EI 30", "", "cửa sảnh thang máy chữa cháy (khoang đệm loại 1 → chèn bịt loại 2)", "="), N("EI 60", "", "phòng ống đổ rác, nhà > 75 m (A.2.30.2)", "=")],
-         ma_kiem="cua_ngan_chay", cach_tinh="đánh dấu trên lớp Cửa ngăn cháy; nhà > 75 m: cửa khoang đệm → buồng thang N, sảnh thang máy, phòng rác loại 2 (A.3.1.12 b), cửa giếng thang máy kín khói (A.3.1.12 c)", ham="pcccTang.ts · cuaNC", **_PC),
+         ma_kiem="cua_ngan_chay", cach_tinh="chỉ là yêu cầu cấu tạo (không vẽ trên mặt bằng — người dùng 30/10/2026 bỏ lớp đánh dấu cửa ngăn cháy / cửa thang máy chữa cháy, app cũ cũng không vẽ); nhà > 75 m: cửa khoang đệm → buồng thang N, sảnh thang máy, phòng rác loại 2 (A.3.1.12 b), cửa giếng thang máy kín khói (A.3.1.12 c)", ham=None, **_PC),
     dict(id="qcvn06_D2_hut_khoi_hl", buoc="pccc", nhom="qcvn06", bat_buoc=True, ten_vi="Hút khói hành lang nhà > 28 m", ten_en="Corridor smoke extraction > 28 m",
          nguon="QCVN 06:2022 Phụ lục D.2 a) · D.4 a)", nguong=[N(28, "m", "chiều cao PCCC từ đó phải hút khói hành lang (trừ hành lang bên)", ">"), N(60, "m", "mỗi đoạn hành lang tính lưu lượng")],
          ma_kiem="hut_khoi_hl", cach_tinh="chỉ ghi chú ở khối PCCC (chưa thiết kế hệ thống)", ham=None, **_PC),
@@ -571,8 +571,9 @@ Chỗ lệch và lý do:
   cạnh trong app cũ.) Cự ly xa nhất không đổi; chỉ phân loại cụt / đôi khác. Cần chủ nhiệm xác nhận theo bản vẽ.
 - **tm-v4, xh-z5:** app cũ nới ô thang thiếu cho đủ 3.000 mm (QT-60) và kéo đầu hành lang theo Circle CAD (QT-54, dữ liệu
   `hanhlang_moc` chưa chép sang app mới) nên cửa buồng đệm dời vài trăm mm. App mới đọc đúng điểm chèn trong `toa.json`.
-- **Tủ PCCC:** app mới mới làm phủ tham lam trên tường hai bên hành lang (bước 600 mm, cách cửa ≥ ½ tủ + 600 mm). App cũ có thêm
-  ưu tiên lõi / hộp KT, ràng buộc đầu cột, né cửa ngăn cháy và lời giải phủ chính xác (QT-77e/f/g) — chưa chuyển.
+- **Tủ PCCC (30/10/2026):** đã chép đủ bộ đặt tủ app cũ (`tuCC0` + `tccToiUu`, QT-77 / 77e / 77f / 77g → `tinh/tuHongNuoc.ts`).
+  Đối chiếu 33 mẫu, 25 tầng (`scripts/tcc_cu.js` → `web/src/thu/tcc_cu.json`): số vị trí 139 / 139, số hộp bằng, 136 / 139 tủ khớp
+  ≤ 0,3 m và cùng loại; lệch duy nhất tm-v3 (3 tủ) vì cửa ngăn cháy lý tưởng ở V khác app cũ (ứng viên giống hệt, khác số cửa bị chắn).
 - **Mạng hành lang liền (3.3.5):** app mới cộng cả đoạn nét vẽ tay thò ra ngoài trục; app cũ cộng đoạn sảnh thang máy. Hai số khác
   nhau 0–52 m, nhưng kết luận giống nhau: tm-i2 < 60 m ở cả hai app, 32 tòa còn lại > 60 m (phải chia).
 """

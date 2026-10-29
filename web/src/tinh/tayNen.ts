@@ -10,6 +10,7 @@ import { doiChoO, doiCongNang, latO } from './doiCan';
 import type { DuLieuMB, LoaiThangBo } from './loiThang';
 import type { ThuVien, ToaDat } from './kieu';
 import type { ViTriCan } from './matBang';
+import { phanTichPCCCTang, type DauVaoPCCCTang } from './pcccTang';
 import { doiChoTay, doiLoaiThangTay, doiThangTay, hanhLangTuDong, keoHanhLangTay, latTay, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from './thaoTacTay';
 
 type Tangs = number[] | null;
@@ -29,12 +30,14 @@ export const BANG_TAY = {
   hanhLangTuDong: (c: Ctx, toa: ToaDat) => hanhLangTuDong(toa, c),
   /** Gợi ý giữ số căn (tinh/baoThaoTac.ts) — bọc trong object để null "không có gợi ý" khác null "bị huỷ". */
   goiYGiuCan: (c: Ctx, sau: ToaDat, goTN: string[], canTruoc: number, tang: number | null, hanMs: number) => ({ g: goiYGiuCan(sau, goTN, canTruoc, c, tang, hanMs) as GoiYGiuCan | null }),
+  /** Phân tích PCCC một tầng (tinh/pcccTang.ts: hai lượt giải cửa hành lang + phủ tủ chính xác ≈ 100–300 ms) — tinh/pcccNen.ts. */
+  phanTichPCCC: (c: Ctx, v: Omit<DauVaoPCCCTang, 'tv' | 'dl'>) => phanTichPCCCTang({ ...v, tv: c.tv, dl: c.dl ?? null }),
 } as const;
 export type TenTay = keyof typeof BANG_TAY;
 export type DoiSoTay<T extends TenTay> = Parameters<(typeof BANG_TAY)[T]> extends [Ctx, ...infer R] ? R : never;
 export type KqTay<T extends TenTay> = ReturnType<(typeof BANG_TAY)[T]>;
-/** Phép tay trả KetQuaTay (mọi tên trừ gợi ý). */
-export type TenPhep = Exclude<TenTay, 'goiYGiuCan'>;
+/** Phép tay trả KetQuaTay (mọi tên trừ gợi ý, phân tích PCCC). */
+export type TenPhep = Exclude<TenTay, 'goiYGiuCan' | 'phanTichPCCC'>;
 /** Một phép tay dạng dữ liệu (tên + đối số) — chép được sang worker, chạy đồng bộ được bằng `chayPhep`. */
 export type PhepTay = { [T in TenPhep]: { ten: T; args: DoiSoTay<T> } }[TenPhep];
 export const phepTay = <T extends TenPhep>(ten: T, ...args: DoiSoTay<T>): PhepTay => ({ ten, args } as unknown as PhepTay);

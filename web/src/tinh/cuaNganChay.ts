@@ -633,6 +633,87 @@ export function cuaNganChay(v: DauVaoCNC, K0: number, boTM = false, noi = false)
   return kq;
 }
 
+// ---------- QT-101 · cửa ngăn cháy kéo tay ----------
+/** cncBam: chiếu p lên tim tuyến gần nhất (cách ≤ ½ bề rộng + tol) → cạnh `ci` + tham số `t` trên tuyến. */
+export function cncBam(dt: DoThiCNC, p: Diem, tol: number): { ci: number; t: number } | null {
+  let tot: { ti: number; t: number; d: number } | null = null;
+  dt.tuyen.forEach((tu, ti) => {
+    const t = Math.max(tu.lo, Math.min(tu.hi, (p[0] - tu.o[0]) * tu.u[0] + (p[1] - tu.o[1]) * tu.u[1]));
+    const d = dai(tru(p, cong(tu.o, nhan(tu.u, t))));
+    if (d <= tu.w / 2 + tol && (!tot || d < tot.d)) tot = { ti, t, d };
+  });
+  const b = tot as { ti: number; t: number; d: number } | null;
+  if (!b) return null;
+  const ci = dt.canh.findIndex((c) => c.ti === b.ti && b.t >= c.ta - 1 && b.t <= c.tb + 1);
+  return ci < 0 ? null : { ci, t: b.t };
+}
+/** Chỗ (ci, t) đặt / kéo cửa tay được: không trong lõi (trừ lối xuyên lõi), có vách hai bên hoặc bù tường được, không trong sảnh TM. */
+export function cncDatDuoc(dt: DoThiCNC, ci: number, t: number) {
+  const tu = dt.tuyen[dt.canh[ci].ti];
+  return !((tu.camLoi(t) && !tu.xuyen(t)) || (!tu.bam(t) && !tu.buOK(t)) || tu.camSanh(t));
+}
+/** cncTaoTay: cửa tay tại (ci, t) — cờ như bộ giải nới (bù tường / xuyên lõi). */
+export function cncTaoTay(dt: DoThiCNC, ci: number, t: number, corr: number): CuaCNC & { tay: true } {
+  const tu = dt.tuyen[dt.canh[ci].ti];
+  return { ci, ti: dt.canh[ci].ti, t, p: cong(tu.o, nhan(tu.u, t)), u: tu.u, w: corr || tu.w, tuong: tu.ung.some((v) => Math.abs(v - t) < 1),
+    sach: tu.sach(t), loi: tu.camLoi(t) && !tu.xuyen(t), bu: tu.buDo(t), xuyen: tu.xuyen(t), tay: true };
+}
+/** cncTayKq: khoang theo bộ cửa người dùng đặt (tim cửa); cửa xa hành lang (> ½ HL + 600) bỏ, không bám bừa. */
+export function cuaNganChayTay(v: DauVaoCNC, K: number, ds: Diem[]): KetQuaCNC {
+  const dt = hlDoThi(v), cua: CuaCNC[] = [];
+  ds.forEach((p) => { const h = cncBam(dt, p, 600); if (h) cua.push(cncTaoTay(dt, h.ci, h.t, v.corr)); });
+  const { mang, cuaMang } = cncDem(dt, cua);
+  return mang.map((m) => ({ L: m.L, doan: m.doan, K, cua: cua.filter((x) => cuaMang(x) === m.goc).sort((x, y) => x.ti - y.ti || x.t - y.t),
+    toiThieu: Math.max(0, Math.ceil((m.L - 1) / K) - 1) }));
+}
+/** Kéo cửa tay: điểm p (mm) → tim cửa mới bám tim hành lang, làm tròn 100 mm; null = không đặt được ở đó (lõi / sảnh / không vách). */
+export function keoCuaTay(dt: DoThiCNC, p: Diem, tol = 3000): Diem | null {
+  const h = cncBam(dt, p, tol);
+  if (!h) return null;
+  const tu = dt.tuyen[dt.canh[h.ci].ti], t = Math.round(h.t / 100) * 100;
+  if (!cncDatDuoc(dt, h.ci, t)) return null;
+  const q = cong(tu.o, nhan(tu.u, t));
+  return [Math.round(q[0]), Math.round(q[1])];
+}
+/** Thêm cửa tay (bấm đúp lên hành lang): chỉ khi p nằm trong lòng hành lang (tol 0) và chỗ đặt được. */
+export function themCuaTay(dt: DoThiCNC, p: Diem): Diem | null {
+  const h = cncBam(dt, p, 0);
+  if (!h || !cncDatDuoc(dt, h.ci, h.t)) return null;
+  const tu = dt.tuyen[dt.canh[h.ci].ti], q = cong(tu.o, nhan(tu.u, h.t));
+  return [Math.round(q[0]), Math.round(q[1])];
+}
+/** BLOCK cửa ngăn cháy hành lang (cncKhoi): hai cánh mở hai chiều, mỗi tường một bản lề, nửa vòng tròn; bù tường 150 khi hẹp hơn HL. */
+export function khoiCNC(c: { p: Diem; huong: Diem; w: number; bu: number[] | null }) {
+  const u = c.huong, n: Diem = [-u[1], u[0]], r = c.w / 2, K = 60, net: Diem[][] = [];
+  const Q = (a: Diem, ...v: [Diem, number][]): Diem => v.reduce<Diem>((s, [e, k]) => cong(s, nhan(e, k)), a);
+  for (const s of [1, -1]) {
+    const C = Q(c.p, [n, s * r]), D: Diem = [-n[0] * s, -n[1] * s];
+    net.push([Q(C, [u, -r]), Q(C, [u, -K]), Q(C, [u, -K], [D, K]), Q(C, [u, K], [D, K]), Q(C, [u, K]), Q(C, [u, r])]);
+    net.push(Array.from({ length: 17 }, (_, k) => { const a = (Math.PI * k) / 16; return Q(C, [u, -r * Math.cos(a)], [D, r * Math.sin(a)]); }));
+  }
+  (c.bu ?? []).forEach((d, i) => {
+    const s = i === 0 ? 1 : -1;
+    if (!(d > r + 20) || !isFinite(d)) return;
+    const a = Q(c.p, [n, s * r]), b = Q(c.p, [n, s * d]);
+    net.push([Q(a, [u, -75]), Q(b, [u, -75]), Q(b, [u, 75]), Q(a, [u, 75]), Q(a, [u, -75])]);
+  });
+  return { net, nhan: Q(c.p, [u, r + 450]), vung: [Q(c.p, [u, -r], [n, -r]), Q(c.p, [u, r], [n, -r]), Q(c.p, [u, r], [n, r]), Q(c.p, [u, -r], [n, r])] };
+}
+
+/**
+ * NÉT ĐO HÀNH LANG (cncDoHL, QT-98): mỗi khoang = các khúc tim hành lang giữa cửa / đầu trục / nút giao, cùng số dùng tính khoang.
+ * Trả khoang dài trước: {L, K, vuot, khuc: [{a, b, L, u}]}.
+ */
+export function doHanhLang(v: DauVaoCNC, K: number, cua: Pick<CuaCNC, 'ci' | 't'>[]) {
+  const dt = hlDoThi(v), { manh } = cncDem(dt, cua), kh = new Map<string, { L: number; K: number; vuot: boolean; khuc: { a: Diem; b: Diem; L: number; u: Diem }[] }>();
+  manh.forEach((m) => {
+    const c = dt.canh[m.ci], tu = dt.tuyen[c.ti];
+    if (!kh.has(m.kh)) kh.set(m.kh, { L: m.khL, K, vuot: m.khL > K + 1, khuc: [] });
+    kh.get(m.kh)!.khuc.push({ a: cong(tu.o, nhan(tu.u, m.t0)), b: cong(tu.o, nhan(tu.u, m.t1)), L: m.L, u: tu.u });
+  });
+  return [...kh.values()].sort((x, y) => y.L - x.L);
+}
+
 /**
  * Nét cửa căn NẰM TRÊN tường hành lang (app cũ `cncVatCan`: khuôn / ô cửa vào, sâu ≤ 300 mm), toạ độ thế giới. `ve(ma)` = nét
  * chuẩn hoá 0..1 của mẫu căn (can/<id>.json `ve`); thiếu nét thì căn đó dùng tim cửa ± 450 (bỏ qua ở đây).

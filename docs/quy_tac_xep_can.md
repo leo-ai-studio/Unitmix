@@ -76,17 +76,17 @@ Cột *Hàm app mới*: ✔ = đã có hàm (ghi tên), — = chưa làm.
 | PC-05 | Khoang hành lang căn hộ | có | 30 m (chỉ áp khi H > 75 m) | QCVN 06:2022 A.2.14 (qua A.3.1.7) | qcvn06_A214_corridor, QT-95, QT-98, QT-100, QT-104, QT-104c | ✔ cuaNganChay.ts · cuaNganChay (bộ giải app cũ chép đủ: tham lam + tinh chỉnh + quy hoạch động trên cây cầu, chế độ nới; sảnh TM theo khối lõi tinh/sanhHL.json; đối chiếu 33 tòa thu/cnc_cu.json) |
 | PC-06 | Chia hành lang dài > 60 m | có | 60 m (mọi chiều cao) | QCVN 06:2022 3.3.5 | qcvn06_335_corridor, QT-98 | ✔ cuaNganChay.ts · cuaNganChay (bộ giải app cũ chép đủ: tham lam + tinh chỉnh + quy hoạch động trên cây cầu, chế độ nới; sảnh TM theo khối lõi tinh/sanhHL.json; đối chiếu 33 tòa thu/cnc_cu.json) |
 | PC-07 | Thang máy chữa cháy | có | >= 1 thang (khi H PCCC > 50 m (nhóm F1.3) hoặc hầm sâu > 9 m) | QCVN 06:2022 (SĐ1:2023) 6.13 · QCVN 04:2021 2.4.3 | qcvn06_613_firelift | ✔ thangMay.ts · canTMCC / chonThangChuaChay |
-| PC-08 | Họng nước chữa cháy trong nhà (tủ âm tường) | có | 18 m (bán kính phục vụ ĐO THẲNG từ tủ tới mọi điểm phải bảo vệ); 2 tia (mỗi điểm khi số tia tính toán ≥ 2); >= 3 m (hai vị trí tủ cách nhau tối thiểu); 800 mm (tủ đôi / cụm 2 hộp × 200); 500 mm (tủ đơn × 200) | QCVN 06:2022 5.2 · Bảng 11 · 5.2.4 · 5.2.7 · 5.2.11 · 5.2.14 · thẩm duyệt PC07 (R 18 m) | qcvn06_52_hong_nuoc, QT-77, QT-77b, QT-77c, QT-77d, QT-77e, QT-77f | ✔ pccc.ts · tuPCCC (phủ tham lam, chưa ưu tiên lõi / HKT) · lớp kéo tay ve/LopPCCC.tsx |
+| PC-08 | Họng nước chữa cháy trong nhà (tủ âm tường) | có | 18 m (bán kính phục vụ ĐO THẲNG từ tủ tới mọi điểm phải bảo vệ); 2 tia (mỗi điểm khi số tia tính toán ≥ 2); >= 3 m (hai vị trí tủ cách nhau tối thiểu); 800 mm (tủ đôi / cụm 2 hộp × 200); 500 mm (tủ đơn × 200) | QCVN 06:2022 5.2 · Bảng 11 · 5.2.4 · 5.2.7 · 5.2.11 · 5.2.14 · thẩm duyệt PC07 (R 18 m) | qcvn06_52_hong_nuoc, QT-77, QT-77b, QT-77c, QT-77d, QT-77e, QT-77f | ✔ tuHongNuoc.ts · datTuPCCC (chép tuCC0 + tccToiUu; 33 mẫu: 139 / 139 vị trí, 136 / 139 khớp ≤ 0,3 m) · kéo / tách / gộp ve/LopPCCC.tsx |
 | PC-09 | Chiều cao PCCC | có | 150 m | QCVN 06:2022 1.4.9 · nhà F1.3 75–150 m thuộc sheet 4 | mdi_hpccc | ✔ pccc.ts · chieuCaoPCCC |
 | PC-15 | Bán kính phục vụ thang máy chữa cháy | có | 60 m (H PCCC ≤ 75 m); 45 m (H PCCC > 75 m) | QCVN 06:2022 (SĐ1:2023) 6.13 · A.2.12 (nhà > 75 m) |  | ✔ thangMay.ts · chonThangChuaChay |
 | PC-16 | Họng chờ chữa cháy tới cửa căn xa nhất | có | 45 m (nhà có chiều cao PCCC > 50 m, tính theo đường di chuyển) | QCVN 04:2021/BXD 2.5.3 |  | ✔ pcccTang.ts · phanTichPCCCTang |
-| PC-17 | Cửa ngăn cháy trên tầng căn hộ | có | EI 60 (cửa buồng thang bộ — cửa ngăn cháy loại 1 (bậc chịu lửa I, II)); EI 30 (cửa căn hộ mở ra hành lang (≥ vách hành lang EI 30)); EI 30 (cửa sảnh thang máy chữa cháy (khoang đệm loại 1 → chèn bịt loại 2)); EI 60 (phòng ống đổ rác, nhà > 75 m (A.2.30.2)) | QCVN 06:2022 3.2.11 · 3.3.5 · 6.13 · Bảng 2 · Bảng 3 · 4.24 · A.3.1.12 · A.2.30.2 |  | ✔ pcccTang.ts · cuaNC |
+| PC-17 | Cửa ngăn cháy trên tầng căn hộ | có | EI 60 (cửa buồng thang bộ — cửa ngăn cháy loại 1 (bậc chịu lửa I, II)); EI 30 (cửa căn hộ mở ra hành lang (≥ vách hành lang EI 30)); EI 30 (cửa sảnh thang máy chữa cháy (khoang đệm loại 1 → chèn bịt loại 2)); EI 60 (phòng ống đổ rác, nhà > 75 m (A.2.30.2)) | QCVN 06:2022 3.2.11 · 3.3.5 · 6.13 · Bảng 2 · Bảng 3 · 4.24 · A.3.1.12 · A.2.30.2 |  | — |
 | PC-18 | Hút khói hành lang nhà > 28 m | có | > 28 m (chiều cao PCCC từ đó phải hút khói hành lang (trừ hành lang bên)); 60 m (mỗi đoạn hành lang tính lưu lượng) | QCVN 06:2022 Phụ lục D.2 a) · D.4 a) |  | — |
 | PC-10 | Số thang thoát nạn | MDI | 2 thang (đạt); 3 thang (tối đa (3 = cảnh báo)) | MDI slide 40 · chủ nhiệm 12/9/2026 · QT-57 | qcvn06_escape_stairs, QT-57 | ✔ pccc.ts · kiemTraPCCC |
 | PC-11 | Thang bộ tự động: thêm cạnh căn tệ nhất, cắt bớt giữ ≥ 2 | MDI | >= 2 thang (tối thiểu sau khi cắt bớt) | MDI · QT-44 · QT-63 | QT-44, QT-63 | — |
-| PC-12 | Quy tắc đặt cửa ngăn cháy hành lang | MDI | 1800 mm (cửa tm = bề rộng HL); 1600 mm (cửa xh); 150 mm (bù tường); >= 600 mm (mép cửa căn / thang / lõi / tủ cách tim cửa ngăn); >= 5 m (khoang tối thiểu); 5 ° (lệch vuông góc tối đa) | MDI · QT-105 (R1–R7) | QT-105, QT-103, QT-99, QT-100, QT-104, QT-104c | — |
+| PC-12 | Quy tắc đặt cửa ngăn cháy hành lang | MDI | 1800 mm (cửa tm = bề rộng HL); 1600 mm (cửa xh); 150 mm (bù tường); >= 600 mm (mép cửa căn / thang / lõi / tủ cách tim cửa ngăn); >= 5 m (khoang tối thiểu); 5 ° (lệch vuông góc tối đa) | MDI · QT-105 (R1–R7) | QT-105, QT-103, QT-99, QT-100, QT-104, QT-104c | ✔ cuaNganChay.ts · cuaNganChay · kéo / thêm / xoá tay (QT-101) cuaNganChayTay · keoCuaTay · themCuaTay |
 | PC-13 | Cánh cửa ngăn cháy HL che cửa căn / thang | MDI | 0 cửa (cửa có cánh quét qua cửa căn / buồng đệm / lõi / tủ) | MDI · chủ nhiệm 19/10/2026 · QT-105 R4b | mdi_cnc_quet, QT-99 | ✔ cuaNganChay.ts · sachQuet (cờ sach) · khối PCCC panel phải |
-| PC-14 | Tủ PCCC ở tường căn: trừ DT thông thủy, căn thành mẫu đặc biệt | MDI | 295 mm (sâu tủ + tường xây sau + hoàn thiện); 95 mm (chữ L thêm một bên); 190 mm (chữ U thêm hai bên) | MDI · QT-77g | QT-77g | — |
+| PC-14 | Tủ PCCC ở tường căn: trừ DT thông thủy, căn thành mẫu đặc biệt | MDI | 295 mm (sâu tủ + tường xây sau + hoàn thiện); 95 mm (chữ L thêm một bên); 190 mm (chữ U thêm hai bên) | MDI · QT-77g | QT-77g | ✔ tuHongNuoc.ts · truM2 · khoiTu (tường xây sau tủ) · khối PCCC panel phải |
 
 ## HA · Hầm
 
@@ -142,7 +142,7 @@ App cũ chưa có luật cho bước này (sức chứa hầm đang tính ở `r
 | QT-93 | tính năng thao tác, không phải luật | — | chạy nền có tiến độ |
 | QT-95 | bị QT sau thay | QT-98 → PC-05 | đo khoang theo từng trục riêng; QT-98 đo trên đồ thị |
 | QT-97 | chỉ dành cho giao diện / cách vẽ app cũ | — | chọn nhiều căn |
-| QT-101 | chỉ dành cho giao diện / cách vẽ app cũ | — | kéo tay cửa ngăn cháy (ràng buộc vị trí = mdi_cua_ngan_chay) |
+| QT-101 | chỉ dành cho giao diện / cách vẽ app cũ | — | kéo / thêm (bấm đúp hành lang) / xoá (bấm đúp cửa) cửa ngăn cháy tay, bước 100 mm, không vào lõi / sảnh — đã làm: cuaNganChay.ts cuaNganChayTay, ToaDat.cncTay |
 | QT-102 | chỉ dành cho giao diện / cách vẽ app cũ | — | xoá / lật hàng loạt |
 | QT-104b | bị QT sau thay | QT-104c → PC-05 | cửa miệng sảnh TM — QT-104c bỏ hẳn |
 | QT-106 | tính năng thao tác, không phải luật | — | kho mẫu dự án + hàng chờ |
@@ -183,7 +183,8 @@ Chỗ lệch và lý do:
   cạnh trong app cũ.) Cự ly xa nhất không đổi; chỉ phân loại cụt / đôi khác. Cần chủ nhiệm xác nhận theo bản vẽ.
 - **tm-v4, xh-z5:** app cũ nới ô thang thiếu cho đủ 3.000 mm (QT-60) và kéo đầu hành lang theo Circle CAD (QT-54, dữ liệu
   `hanhlang_moc` chưa chép sang app mới) nên cửa buồng đệm dời vài trăm mm. App mới đọc đúng điểm chèn trong `toa.json`.
-- **Tủ PCCC:** app mới mới làm phủ tham lam trên tường hai bên hành lang (bước 600 mm, cách cửa ≥ ½ tủ + 600 mm). App cũ có thêm
-  ưu tiên lõi / hộp KT, ràng buộc đầu cột, né cửa ngăn cháy và lời giải phủ chính xác (QT-77e/f/g) — chưa chuyển.
+- **Tủ PCCC (30/10/2026):** đã chép đủ bộ đặt tủ app cũ (`tuCC0` + `tccToiUu`, QT-77 / 77e / 77f / 77g → `tinh/tuHongNuoc.ts`).
+  Đối chiếu 33 mẫu, 25 tầng (`scripts/tcc_cu.js` → `web/src/thu/tcc_cu.json`): số vị trí 139 / 139, số hộp bằng, 136 / 139 tủ khớp
+  ≤ 0,3 m và cùng loại; lệch duy nhất tm-v3 (3 tủ) vì cửa ngăn cháy lý tưởng ở V khác app cũ (ứng viên giống hệt, khác số cửa bị chắn).
 - **Mạng hành lang liền (3.3.5):** app mới cộng cả đoạn nét vẽ tay thò ra ngoài trục; app cũ cộng đoạn sảnh thang máy. Hai số khác
   nhau 0–52 m, nhưng kết luận giống nhau: tm-i2 < 60 m ở cả hai app, 32 tòa còn lại > 60 m (phải chia).

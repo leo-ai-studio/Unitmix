@@ -1,17 +1,22 @@
 # PCCC và thang máy trên mặt bằng tầng
 
-Màn Tầng có năm lớp PCCC trong nút **Lớp** ở góc bản vẽ: thoát nạn, thang máy và thang chữa cháy, tủ họng nước, cửa ngăn cháy, chia khoang hành lang. Bật lớp nào thì nút **Chú giải** hiện ký hiệu của lớp đó. Panel phải có khối **PCCC · thang máy** ngay dưới KPI. TMB có bảng **Thang máy theo tòa**. Mọi mục chỉ là cảnh báo, không chặn thao tác.
+Màn Tầng có năm lớp PCCC trong nút **Lớp** ở góc bản vẽ, đặt tên và bật / tắt như menu "⚑ PCCC" của app cũ: **Tủ PCCC** (bật sẵn), **Cửa ngăn cháy HL** (bật sẵn), **Đo HL**, **Vòi CC** (R 18 m) và **Thoát nạn**. Bật lớp nào thì nút **Chú giải** hiện ký hiệu của lớp đó. Panel phải có khối **PCCC · thang máy** ngay dưới KPI. TMB có bảng **Thang máy theo tòa**. Mọi mục chỉ là cảnh báo, không chặn thao tác.
+
+Người dùng 30/10/2026: "Cả phần cửa phòng cháy chữa cháy, cửa thang máy chữa cháy bỏ đi, quá xấu" → đã bỏ khỏi mặt bằng lớp đánh dấu cửa ngăn cháy EI (cửa thang / căn / sảnh / phòng rác) và lớp thang máy / thang máy chữa cháy (giếng, vòng 60 / 45 m). App cũ cũng không vẽ hai thứ này. Số thang máy, yêu cầu thang máy chữa cháy và kiểm bán kính 60 / 45 m vẫn còn, nhưng chỉ là dòng chữ ở khối PCCC và bảng thang máy TMB.
+
+Phân tích (hai lần giải cửa hành lang + bài phủ tủ chính xác, 100–300 ms ở mẫu lớn) chạy trong Web Worker (`tinh/pcccNen.ts`, dùng chung `thaoTay.worker.ts`). Luồng chính nhớ kết quả theo mặt bằng. Khi đang chờ thì vẽ kết quả gần nhất của tòa. Đo khi mở tầng Z3 / T1 / V1 / L1: không có tác vụ dài nào trên 50 ms.
 
 Các số được tính trên đúng mặt bằng mà KPI dùng: `mauCuaToa` hiệu dụng cộng `matDaDon`. Kết quả được nhớ theo mặt bằng, nên sửa xong là số cập nhật ngay. Mã nằm ở:
 
 - `web/src/tinh/thangMay.ts`
 - `web/src/tinh/cuaNganChay.ts` (bộ giải cửa hành lang chép app cũ) + `web/src/tinh/sanhHL.json` (đoạn sảnh thang máy theo khối lõi)
-- `web/src/tinh/pcccTang.ts`
+- `web/src/tinh/tuHongNuoc.ts` (bộ đặt tủ chép app cũ) + `web/src/tinh/khoiTuPCCC.json` (thư viện block tủ, bản của `web/public/lib/pccc.json`)
+- `web/src/tinh/pcccTang.ts`, `web/src/tinh/pcccNen.ts` (chạy nền)
 - `web/src/ve/LopPCCC.tsx`
 - `web/src/ui/KpiPCCC.tsx`
 - `web/src/ui/ThangMayLo.tsx`
 
-Test ở `web/src/tinh/pcccTang.test.ts` và `web/src/tinh/cuaNganChay.test.ts`. Ảnh chụp tòa Z3 điển hình 24 tầng (H = 81,8 m) ở `docs/anh/pccc/`.
+Test ở `web/src/tinh/pcccTang.test.ts`, `web/src/tinh/cuaNganChay.test.ts` và `web/src/tinh/tuHongNuoc.test.ts`. Ảnh so sánh cũ / mới ở `docs/anh/pccc/cu-moi-*.png`, chụp bằng `scripts/chup_pccc.mjs`. Ảnh cũ trước đợt này: `z3-*.png`.
 
 Văn bản tra trong kho `E:\OneDrive\_QCVN-TCVN`, trích chữ bằng PyMuPDF:
 
@@ -38,7 +43,7 @@ Ghi chú: "không kể số người ở tầng 1" chưa trừ, vì tầng 1 là
 |---|---|
 | Căn cứ | QCVN 06 6.13: "chiều cao PCCC lớn hơn 28 m (lớn hơn 50 m đối với nhà nhóm F1.3)" thì mỗi khoang cháy phải có ≥ 1 thang. Bán kính phục vụ "không vượt quá 60 m". Nhà > 75 m theo A.2.12: "(bán kính phục vụ) không vượt quá 45 m". QCVN 04 2.4.3 cũng dùng ngưỡng 50 m. |
 | App cũ | Chỉ có ô số `fireLifts`, mặc định 1, và luật `qcvn06_613_firelift` (H > 50 m). Không chỉ định giếng nào là thang chữa cháy, không kiểm bán kính. |
-| App mới | **Đã chốt (29/10/2026): bán kính đo THẲNG** từ tâm giếng. Chọn giếng theo luật: giếng phủ nhiều điểm nhất trong bán kính (cửa căn và 4 góc trong căn). Nếu hoà thì lấy giếng gần cửa thang N3, vì 6.13 cho gộp sảnh với khoang đệm thang N (≥ 6 m²). Chọn thêm giếng cho đến khi phủ hết. Trên bản vẽ: giếng tô đỏ ghi "TMCC", vòng bán kính nét đứt, điểm ngoài bán kính đánh ✕. |
+| App mới | **Đã chốt (29/10/2026): bán kính đo THẲNG** từ tâm giếng. Chọn giếng theo luật: giếng phủ nhiều điểm nhất trong bán kính (cửa căn và 4 góc trong căn). Nếu hoà thì lấy giếng gần cửa thang N3, vì 6.13 cho gộp sảnh với khoang đệm thang N (≥ 6 m²). Chọn thêm giếng cho đến khi phủ hết. Từ 30/10/2026 không vẽ trên mặt bằng nữa, chỉ còn dòng "Thang máy chữa cháy" (số giếng · xa nhất / R) ở khối PCCC. |
 | Ví dụ | Z3: H = 81,8 m, R = 45 m, chọn 1 giếng ở lõi giữa, điểm xa nhất 42,6 m → đạt. |
 
 ## 3. Họng chờ cách cửa căn ≤ 45 m
@@ -53,7 +58,47 @@ App mới đo dọc tim hành lang, từ cửa thang N3 và từ giếng thang c
 |---|---|
 | Căn cứ | QCVN 06 5.2.1 và Bảng 11 (số tia), 5.2.4, 5.2.11 (hai tia từ hai tủ cạnh nhau khi hành lang > 10 m), 5.2.14 (đặt ở lối vào hành lang, sảnh). Bán kính 18 m đo thẳng là quyết định của chủ nhiệm ngày 20/10/2026, theo thẩm duyệt PC07 Đồng Quan, không phải điều khoản. |
 | App cũ | QT-77 / 77e / 77f / 77g: phủ chính xác bằng nhánh cận, ưu tiên tường lõi trước phòng KT, rồi hộp KT căn, tường chung, giữa tường. |
-| App mới | Giữ `tuPCCC` (phủ tham lam) như trước. Thêm: vẽ tủ "TCC-xx" và vòng 18 m, khoanh đỏ cửa căn chưa phủ. Tủ kéo được, thả xuống thì bám tường hành lang gần nhất; vị trí lưu ở `ToaDat.tuPCCCTay`. Nút "Tủ PCCC về tự đặt" ở panel phải. |
+| App mới (30/10/2026) | **Chép đủ bộ đặt tủ app cũ** `tuCC0` + `tccToiUu` → `tinh/tuHongNuoc.ts` `datTuPCCC`, cùng thứ tự và ưu tiên (xem bảng dưới). Thứ tự giải như app cũ: cửa ngăn cháy lý tưởng (chưa có tủ) → tủ né chỗ cửa đó → cửa thật tránh tủ. |
+
+Luật đặt tủ (app cũ, dòng ~4530–4950 `prototype/shell.src.html`):
+
+| Bước | Luật | Hàm app cũ |
+|---|---|---|
+| Điểm phải phủ | cửa căn + góc trong căn (lùi 150 mép bên / 150 tường HL / 300 tường ngoài; căn góc V lấy đỉnh khung) + tim mỗi trục hành lang mỗi 3 m | `tccDiemCan`, `tuCC0` |
+| Số tia | Bảng 11: ≤ 16 tầng HL > 10 m 2 tia; 17–25 tầng 2 / 3; > 25 tầng 2 (chủ nhiệm). Mỗi điểm cần `can` = 1 hoặc 2 tia | `tccSoTia` |
+| Loại tủ | tủ đôi 800 × 200 ở lõi; cụm 2 hộp 800 × 200 khi cần 2 tia; tủ đơn 500 × 200 (1 tia) | `TCC_LOAI`, `tccLoaiUu` |
+| (1) lõi | cạnh BAO-TM gần phòng KT / KTĐ / KTN (≤ 3 m), cạnh ≥ 1.400, mặt tường cách tim HL ½ HL ± 150, cách cửa lõi ≥ 700, cách giếng thang máy ≥ 1,6 m | `tuCC0` (1) |
+| (2) hộp KT căn | ô gạch chéo lớp hidd sát tường HL (≤ 600), bề rộng tới mép ngoài tường xây HKT; đủ 800 → cụm, đủ 500 → tủ đơn; không trừ DT | `tuCC0` (2) |
+| (3) tường ngăn | sát tường ngăn hai căn: chữ L, trừ DT (tủ + 95) × (295 − tường HL − 15) | `tuCC0` (3), `tccTruM2` |
+| (4) giữa tường căn | bước 250, cách ranh căn ≥ 350: chữ U, trừ DT (tủ + 190) × (…) | `tuCC0` (4) |
+| Loại trừ | cách cửa căn / thang ≥ ½ tủ + 600; cách nét cửa CAD sâu ≤ 1,5 m ≥ ½ tủ + 500; không trên vách BT (tường HL dày > 200); không lấn tường ngăn căn; mặt căn cách tim HL ½ HL ± 100; đoạn tủ → tim HL không xuyên căn / thang / lõi; đầu cột ranh căn ≥ ½ tủ + 350 | `xaCua`, `doanTrong`, `vachBT` |
+| Trùng chỗ | cùng loại, cách < rộng tủ + 430: giữ chỗ ít trừ DT, rồi ưu tiên trục KT | `them` |
+| Chọn | tham lam theo lợi / ưu tiên (lõi 1 · HKT 1,15 · tường căn 2,2), dàn tủ ≥ 3 m → cận trên; nhánh–cận chính xác, chi phí 100.000 × số hộp + 10.000 × cửa lý tưởng bị chắn + 5.000 × m² DT trừ + 10 × ưu tiên, ngân sách 500.000 nút | `tccToiUu`, `tccChanCua` |
+| Đánh số | TCC-01… theo đoạn hành lang rồi vị trí dọc đoạn | `tuCC0` |
+| Kéo tay (QT-77e) | bám tường HL gần nhất (xa tim > ½ HL + 3 m thì không bám); sát đường bao lõi ≤ 300 là tủ đôi; chỉ tính phủ; nút "Tủ PCCC tự đặt lại" | `tccBam`, `tccDoi` |
+| Kích đúp (QT-77f) | cụm / tủ đôi → tách 2 tủ đơn cách 3 m; tủ đơn → gộp với tủ đơn gần nhất ở điểm giữa | `tccTachGop` |
+
+Lưu ở `ToaDat.tuPCCCTay` = `[x, y]` hoặc `[x, y, "don" | "gop"]`. Đối chiếu app cũ chạy headless trên 33 mẫu gốc, 25 tầng (`scripts/tcc_cu.js` → `web/src/thu/tcc_cu.json`):
+
+- số vị trí 139 / 139 và số hộp bằng nhau ở mọi tòa;
+- 136 / 139 tủ khớp ≤ 0,3 m và cùng loại;
+- lệch duy nhất ở tm-v3 (3 tủ): ứng viên trùng hệt, nhưng cửa ngăn cháy lý tưởng ở tòa V khác app cũ (xem mục 6), nên số cửa bị chắn khác.
+
+Trên mặt bằng, tủ vẽ như app cũ:
+
+- thân tủ màu #f08080, viền #b00000;
+- block CAD `pccc-800x200` / `pccc-500x200` (thân từng hộp, nét chéo, cánh mở ra hành lang), lấy từ thư viện `tu-pccc.dwg` → `pccc.json`;
+- tường xây sau lưng tủ (chữ U / L) màu cam #e07b39;
+- mã "TCC-01 CỤM 2 / ĐÔI / ĐƠN", chữ 300 mm;
+- viền vàng khi tủ đặt tay sát cửa.
+
+Lớp **Vòi CC** vẽ:
+
+- vòng R 18 m màu #1e7a3c, nét đứt 6 4;
+- đường thẳng tới điểm xa nhất, ghi "TCC-01→CH-17: L=17,3 / 18,0 m";
+- điểm thiếu tia khoanh đỏ.
+
+Khối PCCC: "N vị trí · M hộp" (rê chuột xem loại tủ, tia / điểm, Bảng 11, danh sách thiếu), dòng "Căn trừ DT (tường sau tủ)".
 
 ## 5. Cửa ngăn cháy
 
@@ -66,14 +111,7 @@ App mới đo dọc tim hành lang, từ cửa thang N3 và từ giếng thang c
 | Phòng rác | Cửa ngăn cháy tự đóng kín; nhà > 75 m: EI 60 | 4.24; A.2.30.2 |
 | Cửa giếng thang máy vào sảnh (nhà > 75 m) | Kín khói | A.3.1.12 c, A.2.24.3. Chỉ ghi chú, không vẽ. |
 
-App cũ không đánh dấu loại cửa nào: các cửa trên chỉ là vật cản khi đặt cửa hành lang và tủ.
-
-Vị trí trên bản vẽ:
-
-- Cửa thang: tim cửa buồng đệm.
-- Cửa căn: `cuaCan`.
-- Sảnh thang máy chữa cháy: tâm giếng, vì chưa có hình sảnh riêng.
-- Phòng rác: tâm nhãn phòng "P.RÁC" trong `loi/*.json`.
+App cũ không đánh dấu loại cửa nào: các cửa trên chỉ là vật cản khi đặt cửa hành lang và tủ. Từ 30/10/2026 app mới cũng không vẽ (người dùng bỏ lớp này). Bảng trên chỉ còn là yêu cầu cấu tạo, ghi ở luật `qcvn06_cua_ngan_chay`.
 
 ## 6. Chia khoang hành lang (cửa ngăn khói)
 
@@ -88,8 +126,11 @@ Vị trí trên bản vẽ:
 | Bộ giải | Như app cũ, cùng thứ tự: (a) tham lam lá → gốc (tường chung xa nhất) · (b) tinh chỉnh cục bộ (bỏ cửa thừa, dời cửa) · (b2) thêm cửa khi còn vượt · (b3) bớt một / dời một · bỏ cửa giữa lõi / lơ lửng · (c) thay cửa bẩn bằng hai cửa sạch · **quy hoạch động chính xác** trên cây cầu (bảng Pareto số cửa → đoạn hở, bản sạch / bản chồng cánh) rồi tinh chỉnh trong chỗ hợp lệ và sạch · còn xấu thì giải lại **chế độ nới**. |
 | Vật cản | Nét cửa căn trên tường hành lang (sâu ≤ 300 mm) — trường mới `cua_hl` trong `can.json` (`scripts/sinh_phai_sinh_can.py`, biến thể STRETCH dời theo mức kéo) · tim cửa buồng đệm (½ ô 650) · nét `door` của lõi · tủ PCCC (½ rộng tủ). |
 | Đối chiếu app cũ | App cũ chạy headless (`scripts/cnc_cu.js` qua `chay_selftest.js --jsfile`) trên bố cục gốc 33 mẫu tòa, không tính tủ ("cửa lý tưởng"): **số cửa 110 / 110 (≤ 30 m) và 49 / 49 (≤ 60 m)**, ≥ 90 % cửa app cũ có cửa app mới cách ≤ 0,3 m (đa số tòa khớp từng cửa; lệch chủ yếu ở V1–V4 và I1 — cùng số cửa, khoang ≤ giới hạn, vị trí khác vì nét bao căn / nét lõi dựng lại không y hệt), mọi khoang ≤ giới hạn, không khoang < 5 m. Z3 (tm-z3): 3 cửa, khoang 28,5 · 24,9 · 18,3 · 13,6 m (app cũ 28,5 · 25,0 · 18,2 · 13,6). |
-| Khác app cũ | Nét bao căn = hình chữ nhật ô (app cũ `bienCan`, căn V có khung); căn thuộc tuyến = căn có mặt sát mép tuyến (app cũ theo tên trục); chưa có kéo / thêm / xoá cửa tay (QT-101). |
-| Ảnh | Trước (tham lam cũ, 2 cửa): `docs/anh/pccc/z3-cnc-truoc.png` · sau (bộ giải app cũ, 3 cửa, block hai cánh, cam = cánh chồng cửa): `z3-cnc-sau.png`, `z3-cnc-sau-phong-to.png`. Mặt bằng PA thử đã tự chỉnh (thang N2 + N3) nên khác bố cục gốc. |
+| Khác app cũ | Nét bao căn = hình chữ nhật ô (app cũ `bienCan`, căn V có khung); căn thuộc tuyến = căn có mặt sát mép tuyến (app cũ theo tên trục). |
+| Sửa tay (QT-101, 30/10/2026) | Như app cũ: kéo cửa dọc tim hành lang, bước 100 mm. Không kéo được vào lõi (trừ lối xuyên lõi), vào sảnh thang máy, hay chỗ không có vách mà cũng không bù tường được (`cncDatDuoc`, `keoCuaTay`). Bấm đúp cửa để xoá. Bấm đúp lên hành lang để thêm (`themCuaTay`). Lần sửa đầu chép bộ tự đặt vào `ToaDat.cncTay` (tim cửa). Sau đó khoang tính lại trên đồ thị thật (`cuaNganChayTay`); cửa cách hành lang quá ½ HL + 600 thì bỏ. Cửa đặt sai không bị chặn mà hiện lỗi / cờ như cửa tự đặt: khoang vượt, cánh chồng cửa, trong lõi. Nút "Cửa NC tự đặt lại" ở khối PCCC. |
+| Trình bày (như app cũ `cncKhoi`) | Cửa hai cánh mở hai chiều, màu #c0392b, nét 1,4 px không đổi theo zoom. Bù tường 150 khi vách xa hơn ½ cửa. Vùng quét cánh tô nhạt, đậm hơn khi cánh chồng cửa. Mã "CNC-01" chữ 260 mm. Lớp **Đo HL** vẽ tim từng khoang nét đứt màu #1f5fbf (đỏ khi vượt), số từng khúc (340 mm) và "K1 Σ 28,5 / 30 m" (420 mm). Khối PCCC thêm dòng "Cánh cửa NC HL che cửa" (luật `mdi_cnc_quet`) và danh sách khoang trong tooltip. |
+| Xuất `.dxf` | Các lớp `MDI-PCCC-TCC` / `-TCC-CT` / `-TUONG` / `-CNC` như app cũ. Tủ ra INSERT block `PCCC-800X200` / `PCCC-500X200`; app cũ nổ thành nét rời. Cửa ra nét + nhãn. Chỉ xuất lớp đang bật, ở bố cục chung. |
+| Ảnh | Cũ / mới đặt cạnh nhau (`cu-moi-<tòa>.png` vừa khung đủ 4 lớp, `-mac-dinh` = Tủ + Cửa, `-zoom` = 1 : 100), cho Z3, T1, V1, L1 với 25 tầng. Dự án thử local `ha0wovcr` (mặt bằng đã tự chỉnh N2 + N3). Số tủ / cửa bằng app cũ: Z3 4 / 3, T1 5 / 4, V1 4 / 3, L1 4 / 3. Ảnh cũ hơn: `z3-cnc-*.png`. |
 
 ## 7. Thoát nạn (đã có từ trước)
 
@@ -97,7 +138,7 @@ Bảng G.1 (cụt 25 m, hai thang 40 m), hoặc A.3.1.7 dẫn A.2.19 (15 / 20 m)
 
 ## 8. Chờ chủ nhiệm chốt
 
-Đã chốt 29/10/2026: (1) đo thẳng; (2) giữ min(căn / 70, người / 200) + 2.4.1; (6) chép đủ bộ giải app cũ. Còn mở: 3, 4, 5, 7.
+Đã chốt 29/10/2026: (1) đo thẳng; (2) giữ min(căn / 70, người / 200) + 2.4.1; (6) chép đủ bộ giải app cũ. 30/10/2026: tủ và cửa hành lang làm như app cũ; bỏ lớp cửa ngăn cháy EI và thang máy chữa cháy khỏi mặt bằng. Còn mở: 3, 4, 5, 7.
 
 
 1. ~~Bán kính 60 / 45 m đo thẳng hay theo đường đi?~~ Đã chốt: đo thẳng.
