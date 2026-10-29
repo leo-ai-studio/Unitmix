@@ -13,7 +13,28 @@ import { chieuCaoPCCC, cuaTrenMat, dungDoThi, gioiHanThoatNan, thoatNan, tuPCCC,
 import { KHONG_KIEM_TN, type DuLieuMB, type ToaMB } from './loiThang';
 import { cuaBienThe } from './toiUu';
 import { banKinhTMCC, canTMCC, chonThangChuaChay, giengThangMay, kiemThangMay, type GiengThang, type KiemThangMay, type LoiGieng } from './thangMay';
-import { chiaHanhLang, doKhoang, gioiHanKhoangHL, type CuaHL } from './chiaHanhLang';
+import { cncGioiHan, cuaHlCan, gioiHanKhoangHL, cuaNganChay, dauVaoCNC, netCuaCan, sanhCuaLoi, type LoiCNC } from './cuaNganChay';
+import type { CanMau } from './kieu';
+
+/** Cửa chia khoang hành lang (bộ giải cuaNganChay): `sach` = cánh không chồng cửa (R4b), `tuong` = ở tường chung hai căn,
+ * `bu` = bù tường 150 hai bên (chế độ nới), `xuyen` = lối xuyên lõi. */
+export type CuaHLTang = { p: Diem; huong: Diem; w: number; sach: boolean; tuong: boolean; bu: number[] | null; xuyen: boolean };
+
+const nhoMa = new WeakMap<ThuVien, Map<string, CanMau>>();
+/** Mẫu căn theo ma_goc (phần tử căn của `matDaDon` mang ma_goc của căn đang dùng, kể cả biến thể STRETCH). */
+function canTheoMaGoc(tv: ThuVien) {
+  let m = nhoMa.get(tv);
+  if (!m) { m = new Map([...tv.can.values()].map((c) => [c.ma_goc, c])); nhoMa.set(tv, m); }
+  return m;
+}
+/** Tim hành lang khi mẫu chưa có đồ thị app cũ (`hanh_lang`): mỗi trục một đoạn. */
+function trucTuToa(toa: ToaPCCC) {
+  return toa.truc.map((t) => {
+    const r = rad(t.goc_deg), u: Diem = [Math.cos(r), Math.sin(r)], n: Diem = [-u[1], u[0]];
+    const pt = (a: number): Diem => [u[0] * a + n[0] * t.b_mm, u[1] * a + n[1] * t.b_mm];
+    return { ten: t.ten, noi: false, p0: pt(t.a_dau), p1: pt(t.a_cuoi) };
+  });
+}
 
 export type LoaiCuaNC = 'thang' | 'can' | 'tmcc' | 'rac' | 'hanhLang';
 /** Cửa ngăn cháy cần đánh dấu: vị trí (mm), hướng mặt / hành lang, loại, nhãn giới hạn chịu lửa, căn cứ. */
@@ -50,7 +71,7 @@ export type KetQuaPCCCTang = {
   tmcc: { batBuoc: boolean; r: number; canCu: string; chon: GiengThang[]; ngoai: Diem[]; xaNhat: number | null; muc: MucPC };
   hongCho: { apDung: boolean; nguong: number; xaNhat: number | null; vuot: number[]; nguon: Diem[]; muc: MucPC };
   tu: KetQuaTu & { r: number; muc: MucPC };
-  hanhLang: { gioiHan: number; canCu: string; cua: CuaHL[]; khoang: number[]; tong: number; muc: MucPC; hutKhoi: boolean; rong: number; doan: { p0: Diem; p1: Diem; huong: Diem }[] };
+  hanhLang: { gioiHan: number; canCu: string; cua: CuaHLTang[]; khoang: number[]; tong: number; muc: MucPC; hutKhoi: boolean; rong: number; doan: { p0: Diem; p1: Diem; huong: Diem }[] };
   cuaNC: CuaNganChay[];
   /** điểm phải phủ (góc trong căn + cửa căn) — dùng cho lớp bán kính */
   diemPhu: Diem[];
@@ -168,13 +189,24 @@ function phanTich0(v: DauVaoPCCCTang): KetQuaPCCCTang {
   const tuMuc: MucPC = !tu.viTri.length || tu.thieu.length ? 'vuot' : 'ok';
   if (tuMuc !== 'ok') canhBao.push({ id: 'tu_pccc', muc: 'vuot', khoa: 'pc.cb.tu', so: { n: tu.thieu.length } });
 
-  // ---- chia khoang hành lang (3.3.5 / A.2.14) ----
+  // ---- chia khoang hành lang (3.3.5 / A.2.14): bộ giải app cũ cuaNganChay (QT-95 / 98 / 100–105) ----
   const ghHL = gioiHanKhoangHL(H);
-  const tranh = [...can.map((c) => c.p), ...thangBo.map((t) => t.p), ...tu.viTri];
-  const cuaHL = chiaHanhLang(G.canh, G.nut.length, ghHL.m * 1000, tranh);
-  const khoang = doKhoang(G.canh, G.nut.length, cuaHL).map((x) => x / 1000);
+  const canTheoMa = canTheoMaGoc(tv);
+  const trucHL = mau.hanh_lang?.length ? mau.hanh_lang : trucTuToa(toa);
+  const vao = dauVaoCNC({
+    mat, truc: trucHL, hanhLangMm: hlMm, corr: hlMm, loi: (b) => dl?.loi.get(b) as LoiCNC | undefined, sanh: (b) => sanhCuaLoi(b, mau.id),
+    cuaCan: cuaTrenMat({ ...toa, mat }, cuaCan).can.map((c) => c.p), cuaThang: thangBo.map((t) => t.p),
+    tu: tu.viTri.map((p) => ({ p, ban: tu.rongTu / 2 })),
+    cuaCanNet: netCuaCan(mat, (ma) => { const c = canTheoMa.get(ma); return c ? [{ cat: 'door', pts: cuaHlCan(c, tv) ?? [] }] : undefined; }),
+  });
+  const kqHL = cuaNganChay(vao, cncGioiHan(H));
+  const cuaHL: CuaHLTang[] = kqHL.flatMap((m) => m.cua).map((c) => ({ p: c.p, huong: c.u, w: c.w, sach: c.sach, tuong: c.tuong, bu: c.bu, xuyen: c.xuyen }));
+  const khoang = kqHL.flatMap((m) => m.doan).map((x) => x / 1000).sort((a, b) => b - a);
   const hlMuc: MucPC = khoang.some((x) => x > ghHL.m + 0.01) ? 'vuot' : 'ok';
+  const soQuet = cuaHL.filter((c) => !c.sach).length;
   if (cuaHL.length) canhBao.push({ id: 'chia_hl', muc: 'canh_bao', khoa: 'pc.cb.chiaHL', so: { n: cuaHL.length, m: ghHL.m } });
+  if (soQuet) canhBao.push({ id: 'cnc_quet', muc: 'canh_bao', khoa: 'pc.cb.cncQuet', so: { n: soQuet } });
+  if (hlMuc === 'vuot') canhBao.push({ id: 'khoang_vuot', muc: 'vuot', khoa: 'pc.cb.khoangVuot', so: { d: r1(khoang[0]), m: ghHL.m } });
 
   // ---- cửa ngăn cháy ----
   const cuaNC: CuaNganChay[] = [

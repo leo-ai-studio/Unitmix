@@ -11,7 +11,7 @@ import { boCucTang } from './matBang';
 import { chieuCaoPCCC } from './pccc';
 import { phanTichPCCCTang } from './pcccTang';
 import { banKinhTMCC, canTMCC, chonThangChuaChay, giengThangMay, kiemThangMay, soGiengTheoTen, thangMayCan } from './thangMay';
-import { chiaHanhLang, doKhoang, gioiHanKhoangHL, type CanhHL } from './chiaHanhLang';
+import { gioiHanKhoangHL } from './cuaNganChay';
 
 describe('số thang máy — QCVN 04:2021 2.4.1 · 2.4.2 (app cũ QT-94: lấy cách cho ít thang hơn)', () => {
   it('2.4.1: dưới 5 tầng 0, từ 5 tầng 1, từ 10 tầng 2', () => {
@@ -78,41 +78,9 @@ describe('thang máy chữa cháy — QCVN 06:2022 6.13 / A.2.12, QCVN 04 2.4.3'
 });
 
 describe('chia khoang hành lang — QCVN 06 3.3.5 (≤ 60 m) / A.3.1.7 → A.2.14 (H > 75 m: ≤ 30 m)', () => {
-  const thang = (L: number): CanhHL[] => [{ i: 0, j: 1, L, p0: [0, 0], p1: [L, 0], huong: [1, 0] }];
-  it('ngưỡng theo chiều cao PCCC', () => {
+  it('ngưỡng theo chiều cao PCCC (ca đặt cửa: cuaNganChay.test.ts)', () => {
     expect(gioiHanKhoangHL(75).m).toBe(60);
     expect(gioiHanKhoangHL(76).m).toBe(30);
-  });
-  it('hành lang thẳng 50 m: ≤ 60 không cửa; > 30 m (nhà > 75 m) một cửa, hai khoang ≤ 30', () => {
-    expect(chiaHanhLang(thang(50000), 2, 60000)).toHaveLength(0);
-    const c = chiaHanhLang(thang(50000), 2, 30000);
-    expect(c).toHaveLength(1);
-    expect(Math.max(...doKhoang(thang(50000), 2, c))).toBeLessThanOrEqual(30000);
-  });
-  it('hành lang thẳng 130 m, giới hạn 60 m: hai cửa, mọi khoang ≤ 60 m, tổng giữ nguyên', () => {
-    const c = chiaHanhLang(thang(130000), 2, 60000);
-    expect(c).toHaveLength(2);
-    const k = doKhoang(thang(130000), 2, c);
-    expect(Math.max(...k)).toBeLessThanOrEqual(60000);
-    expect(k.reduce((a, b) => a + b, 0)).toBeCloseTo(130000);
-  });
-  it('chữ T ba nhánh 25 m: tổng 75 m > 60 → cắt một nhánh sát nút, khoang còn lại 50 + 25', () => {
-    const T: CanhHL[] = [
-      { i: 0, j: 1, L: 25000, p0: [0, 0], p1: [-25000, 0], huong: [-1, 0] },
-      { i: 0, j: 2, L: 25000, p0: [0, 0], p1: [25000, 0], huong: [1, 0] },
-      { i: 0, j: 3, L: 25000, p0: [0, 0], p1: [0, 25000], huong: [0, 1] },
-    ];
-    const c = chiaHanhLang(T, 4, 60000);
-    expect(c).toHaveLength(1);
-    const k = doKhoang(T, 4, c);
-    expect(k).toHaveLength(2);
-    expect(Math.max(...k)).toBeLessThanOrEqual(60000);
-  });
-  it('dời cửa tránh cửa căn trong phạm vi 1,5 m', () => {
-    const c0 = chiaHanhLang(thang(50000), 2, 30000)[0];
-    const c1 = chiaHanhLang(thang(50000), 2, 30000, [c0.p])[0];
-    expect(Math.abs(c1.p[0] - c0.p[0])).toBeGreaterThanOrEqual(1200);
-    expect(Math.max(...doKhoang(thang(50000), 2, [c1]))).toBeLessThanOrEqual(30000);
   });
 });
 

@@ -1348,7 +1348,7 @@
     "QT-104c"
    ],
    "thay_the_boi": null,
-   "ham": "chiaHanhLang.ts · chiaHanhLang / doKhoang (pcccTang.ts)",
+   "ham": "cuaNganChay.ts · cuaNganChay (bộ giải app cũ chép đủ: tham lam + tinh chỉnh + quy hoạch động trên cây cầu, chế độ nới; sảnh TM theo khối lõi tinh/sanhHL.json; đối chiếu 33 tòa thu/cnc_cu.json)",
    "yaml": {
     "tep": "rules/04_qcvn06.yaml",
     "nhom": "qcvn06",
@@ -1385,7 +1385,7 @@
     "QT-98"
    ],
    "thay_the_boi": null,
-   "ham": "chiaHanhLang.ts · chiaHanhLang (tự đặt cửa) · pccc.ts kiemTraPCCC",
+   "ham": "cuaNganChay.ts · cuaNganChay (bộ giải app cũ chép đủ: tham lam + tinh chỉnh + quy hoạch động trên cây cầu, chế độ nới; sảnh TM theo khối lõi tinh/sanhHL.json; đối chiếu 33 tòa thu/cnc_cu.json)",
    "yaml": {
     "tep": "rules/04_qcvn06.yaml",
     "nhom": "qcvn06",
@@ -1546,7 +1546,7 @@
     }
    ],
    "ma_kiem": "ban_kinh_tmcc",
-   "cach_tinh": "từ tâm giếng thang chữa cháy tới cửa căn + 4 góc trong căn, ĐO THẲNG (6.13 không ghi theo đường đi — cách đo chờ chủ nhiệm chốt); điểm ngoài bán kính báo cảnh báo",
+   "cach_tinh": "từ tâm giếng thang chữa cháy tới cửa căn + 4 góc trong căn, ĐO THẲNG (6.13 không ghi theo đường đi — chủ nhiệm chốt đo thẳng 29/10/2026); điểm ngoài bán kính báo cảnh báo",
    "ham": "thangMay.ts · chonThangChuaChay",
    "ap_dung": "ca_hai",
    "thay_the_boi": null,
@@ -1813,7 +1813,7 @@
     "QT-99"
    ],
    "thay_the_boi": null,
-   "ham": null,
+   "ham": "cuaNganChay.ts · sachQuet (cờ sach) · khối PCCC panel phải",
    "yaml": {
     "tep": "rules/05_mdi.yaml",
     "nhom": "mdi",
@@ -2240,7 +2240,7 @@
    ],
    "ap_dung": "ca_hai",
    "ma_kiem": "so_thang_may",
-   "cach_tinh": "tổng thang = khách + chữa cháy + hàng (= số giếng lõi, đếm theo hình vẽ QT-64) ≥ số cần; số cần lấy cách cho ÍT thang hơn",
+   "cach_tinh": "tổng thang = khách + chữa cháy + hàng (= số giếng lõi, đếm theo hình vẽ QT-64) ≥ số cần; số cần lấy cách cho ÍT thang hơn (chủ nhiệm chốt lại 29/10/2026, cộng tối thiểu theo số tầng QCVN 04 2.4.1)",
    "ma_cu": [
     "mdi_lift_provided",
     "QT-76",

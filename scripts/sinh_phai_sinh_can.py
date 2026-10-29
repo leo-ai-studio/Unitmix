@@ -75,6 +75,12 @@ def chay(kiem: bool) -> int:
         if c.get("cua_x") != cua:
             lech.append(f"can.json {c['id']}: cua_x {c.get('cua_x')} -> {cua}")
             c["cua_x"] = cua
+        # 1c · nét cửa căn NẰM TRÊN tường hành lang (sâu ≤ 300 mm) — vật cản cánh cửa ngăn cháy hành lang (app cũ cncVatCan)
+        hl = sorted({(round(q[0], 4), round(q[1], 4)) for n in ve if n.get("cat") == "door" for q in (n.get("pts") or []) if q[1] * c["sau_mm"] <= 300})
+        hl = [list(q) for q in hl]
+        if c.get("cua_hl") != hl:
+            lech.append(f"can.json {c['id']}: cua_hl {len(hl)} điểm")
+            c["cua_hl"] = hl
         kh = next((n["pts"] for n in ve if n.get("cat") == "khung" and len(n.get("pts") or []) >= 3), None)
         if c.get("khung") != kh:
             lech.append(f"can.json {c['id']}: khung {'thêm' if kh else 'bỏ'}")

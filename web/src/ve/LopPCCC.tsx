@@ -145,12 +145,27 @@ export function LopPCCC({ kq, chiXem, datTuTay }: { kq: KetQuaPCCCTang | null; c
     <g ref={g} class="lop-pccc">
       {/* hành lang: cửa chia khoang (3.3.5 / A.2.14) — vạch ngang hành lang */}
       {c.hanhLang && kq.hanhLang.cua.map((x, i) => {
-        const n: Diem = [-x.huong[1], x.huong[0]], a: Diem = [x.p[0] - n[0] * hl / 2, x.p[1] - n[1] * hl / 2], b: Diem = [x.p[0] + n[0] * hl / 2, x.p[1] + n[1] * hl / 2];
-        const co = mm(480, 11);
+        // block cửa hai cánh mở hai chiều như app cũ (cncKhoi, QT-99): mỗi tường một bản lề, cánh = ½ bề rộng; bù tường 150 (QT-104c)
+        const u = x.huong, n: Diem = [-u[1], u[0]], r = x.w / 2, K = 60, net: Diem[][] = [];
+        const P = (a: Diem, ...v: [Diem, number][]): Diem => v.reduce<Diem>((s, [e, k]) => [s[0] + e[0] * k, s[1] + e[1] * k], a);
+        for (const s of [1, -1]) {
+          const C = P(x.p, [n, s * r]), D: Diem = [-n[0] * s, -n[1] * s];
+          net.push([P(C, [u, -r]), P(C, [u, -K]), P(C, [u, -K], [D, K]), P(C, [u, K], [D, K]), P(C, [u, K]), P(C, [u, r])]);
+          net.push(Array.from({ length: 17 }, (_, k) => { const a = (Math.PI * k) / 16; return P(C, [u, -r * Math.cos(a)], [D, r * Math.sin(a)]); }));
+        }
+        const bu = (x.bu ?? []).map((dd, k) => {
+          const s = k === 0 ? 1 : -1;
+          if (!(dd > r + 20) || !isFinite(dd)) return null;
+          const a = P(x.p, [n, s * r]), b = P(x.p, [n, s * dd]);
+          return [P(a, [u, -75]), P(b, [u, -75]), P(b, [u, 75]), P(a, [u, 75])];
+        }).filter((z): z is Diem[] => !!z);
+        const co = mm(480, 11), nhan = P(x.p, [u, r + co * 1.2]);
         return (
-          <g key={`hl${i}`} class="pc-cnc">
-            <path d={d([a, b])} stroke-width={r0(mm(260, 4))} />
-            <Chu p={[b[0] + n[0] * co * 1.3, b[1] + n[1] * co * 1.3 - co * 0.35]} s={`CNC-${String(i + 1).padStart(2, '0')}`} cls="pc-chu pc-chu-cnc" co={co} />
+          <g key={`hl${i}`} class={`pc-cnc${x.sach ? '' : ' quet'}`}>
+            <path d={d([P(x.p, [n, -hl / 2]), P(x.p, [n, hl / 2])])} class="pc-cnc-vach" stroke-width={r0(mm(120, 2))} />
+            {net.map((pl, k) => <path key={k} d={d(pl)} class="pc-cnc-net" vector-effect="non-scaling-stroke" />)}
+            {bu.map((pl, k) => <path key={`b${k}`} d={d(pl) + 'Z'} class="pc-cnc-bu" vector-effect="non-scaling-stroke" />)}
+            <Chu p={[nhan[0], nhan[1] - co * 0.35]} s={`CNC-${String(i + 1).padStart(2, '0')}`} cls="pc-chu pc-chu-cnc" co={co} />
           </g>
         );
       })}
