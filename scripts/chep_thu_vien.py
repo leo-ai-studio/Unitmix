@@ -136,6 +136,9 @@ def chep(nguon: Path, bang_ten: bool) -> None:
         })
 
     _ghi(LIB / "pccc.json", d["tu_pccc.json"], gon=False)
+    # thư viện block tủ PCCC (QT-77g, data/dwg/tu-pccc.dwg) — bản trong src để bộ đặt tủ / lớp vẽ / worker import thẳng (Vite không cho
+    # import tệp trong public/)
+    _ghi(Path(__file__).resolve().parents[1] / "web" / "src" / "tinh" / "khoiTuPCCC.json", d["tu_pccc.json"], gon=False)
     # giữ dữ liệu phòng đã bóc từ CAD (repo nguồn không có) — bóc lại bằng scripts/boc_cad/boc_phong.py
     cu = LIB / "can.json"
     phong = {x["id"]: x["phong"] for x in _doc(cu) if x.get("phong")} if cu.exists() else {}

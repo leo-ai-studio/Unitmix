@@ -17,7 +17,7 @@
  * Toạ độ mm thế giới như toa.json. Dữ liệu mẫu căn: `can.json` trường `tcc` (scripts/sinh_phai_sinh_can.py).
  */
 import type { CanMau, Diem, ThuVien } from './kieu';
-import KHOI_TU from '../../public/lib/pccc.json';
+import KHOI_TU from './khoiTuPCCC.json';
 
 // ---------- hằng số app cũ ----------
 export const TCC_BAN = 18000;

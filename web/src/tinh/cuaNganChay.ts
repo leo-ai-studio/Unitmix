@@ -682,6 +682,24 @@ export function themCuaTay(dt: DoThiCNC, p: Diem): Diem | null {
   const tu = dt.tuyen[dt.canh[h.ci].ti], q = cong(tu.o, nhan(tu.u, h.t));
   return [Math.round(q[0]), Math.round(q[1])];
 }
+/** BLOCK cửa ngăn cháy hành lang (cncKhoi): hai cánh mở hai chiều, mỗi tường một bản lề, nửa vòng tròn; bù tường 150 khi hẹp hơn HL. */
+export function khoiCNC(c: { p: Diem; huong: Diem; w: number; bu: number[] | null }) {
+  const u = c.huong, n: Diem = [-u[1], u[0]], r = c.w / 2, K = 60, net: Diem[][] = [];
+  const Q = (a: Diem, ...v: [Diem, number][]): Diem => v.reduce<Diem>((s, [e, k]) => cong(s, nhan(e, k)), a);
+  for (const s of [1, -1]) {
+    const C = Q(c.p, [n, s * r]), D: Diem = [-n[0] * s, -n[1] * s];
+    net.push([Q(C, [u, -r]), Q(C, [u, -K]), Q(C, [u, -K], [D, K]), Q(C, [u, K], [D, K]), Q(C, [u, K]), Q(C, [u, r])]);
+    net.push(Array.from({ length: 17 }, (_, k) => { const a = (Math.PI * k) / 16; return Q(C, [u, -r * Math.cos(a)], [D, r * Math.sin(a)]); }));
+  }
+  (c.bu ?? []).forEach((d, i) => {
+    const s = i === 0 ? 1 : -1;
+    if (!(d > r + 20) || !isFinite(d)) return;
+    const a = Q(c.p, [n, s * r]), b = Q(c.p, [n, s * d]);
+    net.push([Q(a, [u, -75]), Q(b, [u, -75]), Q(b, [u, 75]), Q(a, [u, 75]), Q(a, [u, -75])]);
+  });
+  return { net, nhan: Q(c.p, [u, r + 450]), vung: [Q(c.p, [u, -r], [n, -r]), Q(c.p, [u, r], [n, -r]), Q(c.p, [u, r], [n, r]), Q(c.p, [u, -r], [n, r])] };
+}
+
 /**
  * NÉT ĐO HÀNH LANG (cncDoHL, QT-98): mỗi khoang = các khúc tim hành lang giữa cửa / đầu trục / nút giao, cùng số dùng tính khoang.
  * Trả khoang dài trước: {L, K, vuot, khuc: [{a, b, L, u}]}.

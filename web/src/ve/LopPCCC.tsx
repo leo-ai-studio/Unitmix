@@ -9,7 +9,7 @@ import type { BoCuc } from '../tinh/matBang';
 import { chieuCaoPCCC } from '../tinh/pccc';
 import { soLieuToaPCCC, type CuaHLTang, type KetQuaPCCCTang } from '../tinh/pcccTang';
 import { nenPCCC } from '../tinh/pcccNen';
-import { cncTaoTay, hlDoThi, keoCuaTay, themCuaTay, cncBam, type DoThiCNC } from '../tinh/cuaNganChay';
+import { cncTaoTay, hlDoThi, keoCuaTay, khoiCNC, themCuaTay, cncBam, type DoThiCNC } from '../tinh/cuaNganChay';
 import { datTuPCCC, doiTuTay, hinhTu, khoiTu, nhanTu, tachGopTu, TCC_LOAI, tuTayTuKq, type KetQuaTCC, type TuTay } from '../tinh/tuHongNuoc';
 import type { NutHienThi } from '../ui/ThanhHienThi';
 import { fmtSo } from '../ui/so';
@@ -89,26 +89,9 @@ const Chu = ({ p, s, mau, co, vien, u, tip }: { p: Diem; s: string; mau: string;
   <text x="0" y="0" class="pc-chu" fill={mau} font-size={co} stroke-width={vien} text-anchor="middle" dominant-baseline="middle"
     transform={`translate(${r0(p[0])} ${r0(p[1])}) scale(1 -1)${u ? ` rotate(${gocChu(u).toFixed(1)})` : ''}`}>{tip && <title>{tip}</title>}{s}</text>
 );
-/** BLOCK cửa ngăn cháy hành lang (cncKhoi): hai cánh mở hai chiều, mỗi tường một bản lề, nửa vòng tròn; bù tường 150 khi hẹp hơn HL. */
-export function khoiCNC(c: Pick<CuaHLTang, 'p' | 'huong' | 'w' | 'bu'>) {
-  const u = c.huong, n: Diem = [-u[1], u[0]], r = c.w / 2, K = 60, net: Diem[][] = [];
-  const Q = (a: Diem, ...v: [Diem, number][]): Diem => v.reduce<Diem>((s, [e, k]) => cong(s, nhan(e, k)), a);
-  for (const s of [1, -1]) {
-    const C = Q(c.p, [n, s * r]), D: Diem = [-n[0] * s, -n[1] * s];
-    net.push([Q(C, [u, -r]), Q(C, [u, -K]), Q(C, [u, -K], [D, K]), Q(C, [u, K], [D, K]), Q(C, [u, K]), Q(C, [u, r])]);
-    net.push(Array.from({ length: 17 }, (_, k) => { const a = (Math.PI * k) / 16; return Q(C, [u, -r * Math.cos(a)], [D, r * Math.sin(a)]); }));
-  }
-  (c.bu ?? []).forEach((d, i) => {
-    const s = i === 0 ? 1 : -1;
-    if (!(d > r + 20) || !isFinite(d)) return;
-    const a = Q(c.p, [n, s * r]), b = Q(c.p, [n, s * d]);
-    net.push([Q(a, [u, -75]), Q(b, [u, -75]), Q(b, [u, 75]), Q(a, [u, 75]), Q(a, [u, -75])]);
-  });
-  return { net, nhan: Q(c.p, [u, r + 450]), vung: [Q(c.p, [u, -r], [n, -r]), Q(c.p, [u, r], [n, -r]), Q(c.p, [u, r], [n, r]), Q(c.p, [u, -r], [n, r])] };
-}
-
-type KeoTu = { ci: number; ds: TuTay[] | null; kq: KetQuaTCC | null; moved: boolean };
-type KeoCua = { i: number; ds: Diem[]; moved: boolean };
+/** Đang kéo (hoặc đã thả, `xong`: giữ hình nháp tới khi kết quả nền mới về — không nháy về chỗ cũ). */
+type KeoTu = { ci: number; ds: TuTay[] | null; kq: KetQuaTCC | null; moved: boolean; xong?: object };
+type KeoCua = { i: number; ds: Diem[]; moved: boolean; xong?: object };
 const dtNho = new WeakMap<object, DoThiCNC>();
 const doThi = (kq: KetQuaPCCCTang) => { let d = dtNho.get(kq.hanhLang.vao); if (!d) { d = hlDoThi(kq.hanhLang.vao); dtNho.set(kq.hanhLang.vao, d); } return d; };
 
@@ -121,6 +104,11 @@ export function LopPCCC({ kq, chiXem, toa, datTuTay, datCncTay }: {
   const [keoTu, setKeoTu] = useState<KeoTu | null>(null);
   const [keoCua, setKeoCua] = useState<KeoCua | null>(null);
   const bamCuoi = useRef<{ loai: 'tu' | 'cua'; i: number; t: number; x: number; y: number } | null>(null);
+  // kết quả nền mới (khác bản lúc thả) thì bỏ hình nháp
+  useEffect(() => {
+    if (keoTu?.xong && keoTu.xong !== kq) setKeoTu(null);
+    if (keoCua?.xong && keoCua.xong !== kq) setKeoCua(null);
+  }, [kq]);
   if (!kq || !batLopPCCC()) return null;
   const tc = keoTu?.kq ?? kq.tu, hl = kq.hanhLang;
 
@@ -157,16 +145,24 @@ export function LopPCCC({ kq, chiXem, toa, datTuTay, datCncTay }: {
       } else datBaoStretch({ loai: 'loi', chu: t(`pc.bao.${r.loi}`).replace('{so}', kq.tu.tu[ci]?.so ?? '') });
       return;
     }
-    let cur: KeoTu = { ci, ds: null, kq: null, moved: false };
-    theo((ev) => {
-      const p = veMm(ev);
+    let cur: KeoTu = { ci, ds: null, kq: null, moved: false }, cho: Diem | null = null, hen = 0;
+    // phủ tính lại 15–35 ms / lần (mẫu lớn): gộp các lần rê trong một khung hình
+    const tinh = () => {
+      hen = 0;
+      const p = cho;
+      cho = null;
       if (!p) return;
       const ds = doiTuTay(kq.vaoTu, kq.tu, toa.tuPCCCTay, ci, p);
       if (!ds) return; // xa hành lang: tủ đứng yên
       cur = { ci, ds, kq: datTuPCCC({ ...kq.vaoTu, tay: ds }), moved: true };
       setKeoTu(cur);
+    };
+    theo((ev) => {
+      cho = veMm(ev);
+      if (cho && !hen) hen = requestAnimationFrame(tinh);
     }, () => {
-      setKeoTu(null);
+      if (hen) { cancelAnimationFrame(hen); tinh(); }
+      setKeoTu(cur.moved && cur.ds ? { ...cur, xong: kq } : null);
       if (cur.moved && cur.ds) {
         datTuTay(cur.ds);
         const k = cur.kq!, x = k.tu.find((y) => y.iTay === (kq.tu.tay ? kq.tu.tu[ci]?.iTay : ci));
@@ -201,7 +197,7 @@ export function LopPCCC({ kq, chiXem, toa, datTuTay, datCncTay }: {
       ds[i] = q;
       cur = { i, ds, moved: true };
       setKeoCua(cur);
-    }, () => { setKeoCua(null); if (cur.moved) datCncTay(cur.ds); });
+    }, () => { setKeoCua(cur.moved ? { ...cur, xong: kq } : null); if (cur.moved) datCncTay(cur.ds); });
   };
   const themCua = (e: MouseEvent) => {
     if (chiXem) return;
