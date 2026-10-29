@@ -7,7 +7,16 @@
   <title>Unitmix</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon_32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="/brand/favicon_64.png">
-  <link rel="apple-touch-icon" href="/brand/leo_ai_app_icon.png">
+  <!-- App cài lên màn hình chính (PWA / iOS web app): manifest, icon nền đặc 180 px, thanh trạng thái thường (nội dung không chui dưới tai thỏ) -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/brand/pwa_180.png">
+  <meta name="theme-color" content="#174F52">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="LEO Unitmix">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="application-name" content="LEO Unitmix">
+  <meta name="format-detection" content="telephone=no">
 </head>
 <body>
   <div id="app"></div>

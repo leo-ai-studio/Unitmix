@@ -466,3 +466,43 @@ Còn lại:
 - tm-t2 xoá căn còn một long task 68–81 ms. Theo profile CDP đây là lượt Preact vẽ lại mặt bằng 42 căn ở chế độ dev (có `preact/debug`; `MatBangTang` + diff vdom ~80 ms). Nó không thuộc tự chỉnh. Bản build chưa đo.
 - `postMessage` của một phép tốn ~10 ms, do chép tòa (và thư viện, ở lượt đầu của mỗi worker).
 - Kết quả tới chậm hơn trước 0–150 ms, vì phải dựng / gửi worker. Riêng thêm thang nhanh hơn, vì gợi ý giữ số căn không còn chặn.
+
+## 14. Đã làm 2026-10-29 (agent, nhánh `worktree-agent-a03bf22bd402f109a`): iPhone · app mở từ màn hình chính (PWA) + khởi động nhẹ
+
+**Bối cảnh:** người dùng iPhone (iOS Safari, 5G): mở trong Safari thì mượt, nhưng "Thêm vào MH chính" (biểu tượng "LEO-Unitmix") rồi mở từ biểu tượng thì giật, chậm. Trước đợt này: không manifest, không meta `apple-mobile-web-app-*`, không service worker; mọi tệp (kể cả `/assets/*` có mã băm) trả `Cache-Control: public, max-age=0, must-revalidate`.
+
+**Khác nhau giữa Safari và biểu tượng màn hình chính (iOS "web app"):** chạy tiến trình + kho riêng (localStorage, cache HTTP không chung với Safari), bị iOS đóng khi chuyển app nên mỗi lần bấm biểu tượng là tải lại từ đầu; khung cao hết màn (844 thay vì ~664 pt) nên canvas 3D @3x lớn hơn ~27 %. Safari giữ tab "ấm" nên không lộ các chi phí này.
+
+**Đã làm**
+- PWA: `web/public/manifest.webmanifest` (LEO Unitmix, standalone, `theme_color` #174F52, `background_color` #F1F0EA), icon `brand/pwa_180|192|512|512_maskable.png` sinh bằng `scripts/sinh_icon_pwa.py` (chỉ đổ nền góc trong suốt bằng đúng màu nền icon gốc + thu nhỏ `leo_ai_app_icon.png`; iOS tô góc trong suốt thành đen), meta `apple-mobile-web-app-capable` / `-title` / `-status-bar-style=default`, `theme-color` (`web/index.html`).
+- Service worker viết tay `web/pwa/sw.js` (khuôn) + plugin `web/pwa/plugin.ts` sinh `dist/sw.js` lúc build: phiên bản = băm nội dung cả `dist`; tải trước `/assets/*` + `/`, thư viện khởi động (`toa`, `can`, `quy_tac`, `pccc`, `nguon`) + ảnh thương hiệu; `/assets/*` cache-first (tìm cả kho bản trước), `/lib/*`, `/brand/*` cache-first trong kho của đúng bản; trang network-first (quá 4 s / mất mạng → bản cất); `/api/*` không chạm. Bản mới: `skipWaiting` + `clients.claim`, giữ kho bản trước để trang cũ còn mở vẫn nạp lười được chunk cũ; không tự tải lại trang. Đăng ký sau `load` + 1,5 s (`web/src/pwa/dangKySW.ts`), chỉ bản build.
+- `web/public/_headers` (Workers Static Assets): `/assets/*` một năm `immutable`; `sw.js` `no-cache` + `application/javascript`; manifest `application/manifest+json`. Đã kiểm bằng `wrangler dev` (`/_headers` không lộ ra ngoài — trả trang SPA).
+- Khởi động: `TabTruot` (`ui/ThanhTren.tsx`) đọc `offsetLeft` trong `useLayoutEffect` không có deps → ép tính bố cục cả trang sau mỗi lần vẽ lại thanh trên (hồ sơ CPU iPhone giả lập 4×: 327 ms một lượt ép lúc mở dự án). Nay lần đầu để ResizeObserver đo, sau đó chỉ đo khi đổi tab / ngôn ngữ. `fmtSo` dùng lại `Intl.NumberFormat` theo (ngôn ngữ, số lẻ) thay vì tạo mới mỗi lần gọi (82 ms lúc mở, 53 ms lúc vào Tầng ở 4×; JSC trên iOS tạo Intl còn đắt hơn).
+- 3D trên máy cảm ứng (`pointer: coarse`): `pixelRatio ≤ 1,5` (trước ≤ 2), bản đồ bóng 2048 (trước 4096 = 64 MB), bỏ `preserveDrawingBuffer` cho mọi máy (xuất ảnh đã vẽ lại + đọc trong cùng lượt).
+- CSS `styles/man-hinh-chinh.css`: standalone chặn kéo dãn cả trang, tắt menu giữ-lâu trên bản vẽ; `(hover: none)` bỏ `filter` hover dính sau khi chạm của nút.
+
+**Số đo** — `node scripts/do_dien_thoai.mjs --url http://127.0.0.1:8811 --du-an <mã> --ma-sua <mã>` (Edge headless, 390×844 / 390×664 @3x, UA iPhone, CPU 4×, mạng 150 ms RTT · 1,6 Mb/s; PA mẫu 2 tòa 24 tầng, 1.584 căn; trước = `f141a50`, sau = nhánh này; cùng script).
+
+| Đo (chế độ standalone, khung 390×844) | Trước | Sau |
+|---|---|---|
+| Lần đầu: LCP / TBT / JS qua mạng | 1.784 ms / 506 ms / 251 KB | 1.820 ms / 421 ms / 252 KB |
+| Mở lại (bấm biểu tượng lần sau): tới khi vẽ xong TMB | 1.116 ms | 558 ms |
+| Mở lại: LCP / TBT | 528 ms / 134 ms | 116 ms / 28 ms |
+| Mở lại: request phải hỏi máy chủ (trừ 3 API) | 11 (304) | 0 (10 từ SW) |
+| Ngồi yên 5 s: rAF / ResizeObserver / resize / layout | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+| Kéo TMB / chụm TMB: tác vụ dài | 0 / 0 | 0 / 0 |
+| Mở Tầng: thời gian task / TBT / tải qua mạng | 1.034 ms / 657 ms / 62 KB | 732 ms / 441 ms / 0 KB |
+| Mở 3D: thời gian task / TBT / tải qua mạng | 986 ms / 402 ms / 179 KB | 780 ms / 264 ms / 0 KB |
+| Canvas 3D (điểm ảnh) | 780×1480 | 585×1110 (−44 %) |
+| 3D ngồi yên 3 s: rAF | 0 | 0 |
+
+Chế độ Safari (390×664) cùng xu hướng: mở lại 1.126 → 522 ms, TBT 143 → 16 ms; mở Tầng TBT 643 → 459 ms; mở 3D TBT 860 → 589 ms. Lần đầu không đổi đáng kể (bundle như cũ: chunk chính 747 KB / 257 KB gz). Số lẻ dao động ±10 % giữa các lần chạy.
+
+**Không tái hiện được trên máy:** headless Edge không giả lập được `display-mode: standalone` (`Emulation.setEmulatedMedia` nhận nhưng `matchMedia` vẫn false) và không có WebKit / iOS — các bộ đếm "ngồi yên" bằng 0 ở cả hai chế độ, tức là KHÔNG thấy vòng resize / ResizeObserver / rAF chạy nền trong Chromium. Nguyên nhân giật trên iPhone thật vì vậy là suy luận: tải lại nguội mỗi lần mở biểu tượng (không SW, mọi tệp phải hỏi lại máy chủ) + GPU 3D nặng ở @3x khung cao hơn + ép bố cục khi mở. Cần người dùng thử lại trên máy thật.
+
+**Còn lại (đề xuất)**
+1. Chunk chính 747 KB: tách `clipper-lib` (100 KB) và các màn chỉ dùng sau khi mở (Tầng, Xếp tòa) ra chunk lười — LCP lần đầu trên 4G chậm đang ~1,8 s chủ yếu do tải + phân tích JS.
+2. Mở Tầng còn 3–4 tác vụ dài ~330 ms (4×): `vongNoiTiep` / `kcDoan` / `trong` (hình học phòng) chạy trên luồng chính — đưa vào worker hoặc nhớ kết quả theo mẫu căn.
+3. Bố cục trang ~300 ms (4×) lúc mở dự án: soát số nút DOM ở panel trái / phải (danh sách dài) — ảo hoá hoặc `content-visibility: auto`.
+4. Nút "Có bản mới — tải lại" khi SW mới kích hoạt (hiện chỉ áp dụng ở lần mở sau).
+5. Kiểm trên iPhone thật bằng Safari Web Inspector (Mac) với app mở từ màn hình chính: Timeline "Layout & Rendering" + "JavaScript & Events" để xác nhận / loại bỏ nghi vấn còn lại.
