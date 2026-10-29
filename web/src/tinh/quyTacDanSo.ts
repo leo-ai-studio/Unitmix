@@ -6,6 +6,8 @@
  * Đối chiếu bản gốc (29/10/2026): QĐ 32/2025 TP.HCM theo kho `E:\OneDrive\_QCVN-TCVN\32_2025_QĐ-UBND.pdf`; QĐ 34/2024 +
  * 39/2026 Hà Nội, QĐ 83/2026 TP.HCM, QĐ 11/2024 Hải Dương, QĐ 05/2025 Phú Yên, QĐ 09/2025 Đồng Nai theo toàn văn trên
  * CSDL quốc gia về pháp luật (vbpl.vn) → `daDoiChieu: true`, `dieu` ghi tận Điều / khoản / điểm.
+ * Tỉnh MỚI sau sáp nhập (NQ 202/2025/QH15) chỉ thêm khi đã rà QĐ: An Giang (gồm Kiên Giang cũ, Phú Quốc), Hưng Yên (gồm Thái
+ * Bình cũ) — rà 29/10/2026 chưa có QĐ dân số chung cư → mặc định quốc gia (`qd: null`, `daDoiChieu: true` = đã rà).
  *
  * Loại hình (NOTM / NOXH / TĐC): QĐ tỉnh chỉ quy định cho loại hình ghi ở `loaiHinh` (thiếu = QĐ không phân biệt loại
  * hình → áp mọi loại hình). Loại hình QĐ không quy định → mặc định quốc gia `FALLBACK_QG_LH` (P = S / 32): QCVN 01:2021/BXD
@@ -19,27 +21,32 @@
  * mốc quốc gia (fallback) và gắn cờ "giá trị tạm, chờ chủ nhiệm chốt".
  */
 
-import type { GiaiDoan, LoaiCan, LoaiHinh } from './kieu';
+import type { GiaiDoan, KhuVuc, LoaiCan, LoaiHinh } from './kieu';
 
-export type { GiaiDoan, LoaiHinh };
+export type { GiaiDoan, KhuVuc, LoaiHinh };
 export const LOAI_HINH: LoaiHinh[] = ['notm', 'noxh', 'tdc'];
 /** Kiểu QĐ tỉnh (tài liệu nguồn §2): A tách 3 nhóm · B gộp NOXH + TĐC · C TĐC theo NOTM · D một bảng chung · E công thức S / S_tb. */
 export type KieuQD = 'A' | 'B' | 'C' | 'D' | 'E';
 
 /** Một mốc: căn có DT ≤ `den` (hoặc < `den` khi `nho`) và trên mốc trước → `nguoi` người. Mốc cuối `den` = Infinity. */
 export type MocDT = { den: number; nguoi: number; nho?: boolean };
-export type BangDanSo = { moc: MocDT[]; dtMin: number; dieu: string };
+/** `tuTren` = mốc dưới không lấy (lời văn "từ trên `dtMin`"): DT đúng bằng `dtMin` coi là ngoài thang này. */
+export type BangDanSo = { moc: MocDT[]; dtMin: number; dieu: string; tuTren?: boolean };
 
 export type PhuongPhap =
   /** Tra bảng theo loại hình: `bang[loaiHinh] ?? bang.chung ?? bang.notm`. */
   | { kieu: 'bang'; bang: Partial<Record<LoaiHinh | 'chung', BangDanSo>> }
-  /** P = S / S_tb (S = DT sử dụng căn). `tam` = trị số S_tb chưa có trong nguồn. */
-  | { kieu: 'sTb'; sTb: number; dieu: string; tam?: boolean }
+  /**
+   * P = S / S_tb (S = DT sử dụng căn). `tam` = trị số S_tb chưa có trong nguồn. `nongThon` = S_tb riêng cho khu vực nông thôn
+   * khi QĐ ghi hai trị số (`sTb` là trị số đô thị); chọn theo `KhaiDanSo.khuVuc`.
+   */
+  | { kieu: 'sTb'; sTb: number; dieu: string; tam?: boolean; nongThon?: { sTb: number; dieu: string } }
   /** QĐ 83/2026 TP.HCM: ≤ 45 m² → 1 · NOTM / TĐC > 45–160 → S ÷ 32 · > 160 → 5 · NOXH > 45 → S ÷ 32. */
   | { kieu: 'qd83'; sTb: number; dieu: string }
   /**
    * Bảng theo SỐ PHÒNG Ở + DT (Đồng Nai QĐ 09/2025): mỗi cột số phòng một thang DT, cùng dải DT khác số người theo số phòng.
-   * Số phòng lấy theo loại căn (`SO_PHONG_O`); DT ngoài thang cột đó → dòng gần nhất + cờ ngoài bảng.
+   * Số phòng lấy theo loại căn (`SO_PHONG_O`); DT ngoài thang cột đó → cột số phòng gần nhất có thang chứa DT (Đồng Nai
+   * khoản 4: "theo chỉ tiêu diện tích sử dụng căn hộ"); không cột nào chứa → dòng gần nhất + cờ ngoài bảng.
    */
   | { kieu: 'bangPhong'; phong: Record<SoPhongO, BangDanSo>; dieu: string };
 
@@ -63,6 +70,8 @@ export type QuyTacTinh = {
   bqCan?: { so: number; dieu: string; tam?: boolean; giaiDoan?: GiaiDoan; loaiHinh?: LoaiHinh[] };
   /** Tỉnh cũ đã sáp nhập và QĐ cũ hết hiệu lực → áp quy tắc của tỉnh này. */
   theo?: string;
+  /** Tỉnh trọng điểm (người dùng chọn, 29/10/2026): đứng đầu danh sách chọn tỉnh. */
+  trongDiem?: boolean;
   ghiChu?: string;
 };
 
@@ -127,19 +136,26 @@ const HD_QH: PhuongPhap = { kieu: 'sTb', sTb: 35.5, dieu: 'QĐ 11/2024/QĐ-UBND 
 /* ---------- Đồng Nai (cũ) · QĐ 09/2025/QĐ-UBND (ban hành 17/02/2025, hiệu lực 01/3/2025) · bảng số phòng ở + DT ---------- */
 const DN_DIEU = 'QĐ 09/2025/QĐ-UBND Đồng Nai, Quy định kèm theo Điều 4 khoản 3';
 /**
- * Điều 4 khoản 3 điểm a–d. Lời văn ghi "từ trên 100 m2 đến 125 m2" và "từ 125 m2 trở lên" (trùng mốc 125), bảng tóm tắt lại
- * ghi "100 đến < 125" và "> 125" — app lấy 125 đúng mốc ở dòng trên, như bảng Hà Nội.
+ * Điều 4 khoản 3 điểm a–d (đọc lại toàn văn vbpl.vn ItemID 175142, 29/10/2026). Mốc biên: lời văn điểm a–d là quy phạm, bảng
+ * tóm tắt sau điểm đ không đánh số. Lời văn mọi dải ghi "từ trên A đến B" (lấy B, không lấy A), riêng dòng cuối "từ 125 m2 trở
+ * lên" trùng mốc 125 với dải trên; bảng tóm tắt ghi "100 đến < 125" và "> 125" nên bỏ trống đúng 125 — không dùng được. App theo
+ * quy ước nhất quán của lời văn: mốc trên lấy, mốc dưới "từ trên" không lấy → 125 đúng mốc ở dải 100–125 (cùng cách đọc bảng Hà
+ * Nội QĐ 34/2024 có câu chữ y hệt); 45 / 70 / 100 đúng mốc ở dải dưới (`tuTren`), cột số phòng không có dải đó → khoản 4.
  */
 const DN_CP: PhuongPhap = {
   kieu: 'bangPhong', dieu: `${DN_DIEU} điểm a–d`,
   phong: {
     1: { dtMin: 25, dieu: `${DN_DIEU} điểm a (01 phòng ở)`, moc: [{ den: 45, nguoi: 1.5 }, { den: 70, nguoi: 2 }] },
-    2: { dtMin: 45, dieu: `${DN_DIEU} điểm b (02 phòng ở)`, moc: [{ den: 70, nguoi: 2.5 }, { den: 100, nguoi: 3 }, { den: 125, nguoi: 3.5 }, { den: VO_CUC, nguoi: 4.5 }] },
-    3: { dtMin: 70, dieu: `${DN_DIEU} điểm c (03 phòng ở)`, moc: [{ den: 100, nguoi: 3.5 }, { den: 125, nguoi: 4 }, { den: VO_CUC, nguoi: 5 }] },
-    4: { dtMin: 100, dieu: `${DN_DIEU} điểm d (04 phòng ở trở lên)`, moc: [{ den: 125, nguoi: 4.5 }, { den: VO_CUC, nguoi: 5.5 }] },
+    2: { dtMin: 45, tuTren: true, dieu: `${DN_DIEU} điểm b (02 phòng ở)`, moc: [{ den: 70, nguoi: 2.5 }, { den: 100, nguoi: 3 }, { den: 125, nguoi: 3.5 }, { den: VO_CUC, nguoi: 4.5 }] },
+    3: { dtMin: 70, tuTren: true, dieu: `${DN_DIEU} điểm c (03 phòng ở)`, moc: [{ den: 100, nguoi: 3.5 }, { den: 125, nguoi: 4 }, { den: VO_CUC, nguoi: 5 }] },
+    4: { dtMin: 100, tuTren: true, dieu: `${DN_DIEU} điểm d (04 phòng ở trở lên)`, moc: [{ den: 125, nguoi: 4.5 }, { den: VO_CUC, nguoi: 5.5 }] },
   },
 };
-const DN_QH: PhuongPhap = { kieu: 'sTb', sTb: 31, dieu: 'QĐ 09/2025/QĐ-UBND Đồng Nai, Quy định kèm theo Điều 4 khoản 1 — 31,0 m² sàn/người (khu vực đô thị)' };
+/** Điều 4 khoản 1: "31,0 m2 sàn/người tại khu vực đô thị và 28,5 m2 sàn/người tại khu vực nông thôn" — chọn theo `khuVuc`. */
+const DN_QH: PhuongPhap = {
+  kieu: 'sTb', sTb: 31, dieu: 'QĐ 09/2025/QĐ-UBND Đồng Nai, Quy định kèm theo Điều 4 khoản 1 — 31,0 m² sàn/người (khu vực đô thị)',
+  nongThon: { sTb: 28.5, dieu: 'QĐ 09/2025/QĐ-UBND Đồng Nai, Quy định kèm theo Điều 4 khoản 1 — 28,5 m² sàn/người (khu vực nông thôn)' },
+};
 
 /* ---------- Phú Yên (cũ) · QĐ 05/2025/QĐ-UBND (ban hành 16/01/2025, hiệu lực 30/01/2025) · kiểu E ---------- */
 const PY_STB: PhuongPhap = {
@@ -149,21 +165,31 @@ const PY_STB: PhuongPhap = {
 
 export const QUY_TAC_DAN_SO: QuyTacTinh[] = [
   {
-    id: 'hn', ten: 'Hà Nội', qd: 'QĐ 34/2024/QĐ-UBND (sửa bởi QĐ 39/2026/QĐ-UBND)', kieu: 'C', hieuLuc: '15/4/2026 (QĐ 39/2026)', daDoiChieu: true,
+    id: 'hn', ten: 'Hà Nội', qd: 'QĐ 34/2024/QĐ-UBND (sửa bởi QĐ 39/2026/QĐ-UBND)', kieu: 'C', hieuLuc: '15/4/2026 (QĐ 39/2026)', daDoiChieu: true, trongDiem: true,
     phuongPhap: { qh: HN_BANG, cp: HN_BANG }, loaiHinh: ['notm', 'noxh'],
     bqCan: { so: 3.6, dieu: 'QĐ 34/2024/QĐ-UBND Hà Nội, Điều 4 khoản 1 — hoặc 3,6 người/căn hộ (chỉ nhà ở thương mại)', loaiHinh: ['notm'] },
-    ghiChu: 'Điều 4 khoản 1, 2 áp cho giai đoạn lập QHCT, QH tổng mặt bằng, phương án kiến trúc: app dùng cùng bảng cho cả hai giai đoạn. QĐ 39/2026 chỉ sửa tên QĐ, Điều 5 khoản 3, 6, Điều 6 — không sửa Điều 4. QĐ không quy định căn TĐC → TĐC tính theo mặc định quốc gia 32 m²/người.',
+    ghiChu: 'Điều 4 khoản 1, 2 áp cho giai đoạn lập QHCT, QH tổng mặt bằng, phương án kiến trúc: app dùng cùng bảng cho cả hai giai đoạn. QĐ 39/2026 chỉ sửa tên QĐ, Điều 5 khoản 3, 6, Điều 6 — không sửa Điều 4. Rà lại vbpl.vn 29/10/2026: QĐ 34/2024 "hết hiệu lực một phần", văn bản tác động duy nhất là QĐ 39/2026, chưa có văn bản mới hơn. QĐ không quy định căn TĐC → TĐC tính theo mặc định quốc gia 32 m²/người — đã chốt (chủ nhiệm, 29/10/2026).',
   },
   {
-    id: 'hcm', ten: 'TP. Hồ Chí Minh — QĐ 32/2025', qd: 'QĐ 32/2025/QĐ-UBND', kieu: 'B', hieuLuc: '09/01/2026', daDoiChieu: true,
+    id: 'hcm', ten: 'TP. Hồ Chí Minh — QĐ 32/2025', qd: 'QĐ 32/2025/QĐ-UBND', kieu: 'B', hieuLuc: '09/01/2026', daDoiChieu: true, trongDiem: true,
     phuongPhap: { qh: HCM_QH, cp: { kieu: 'bang', bang: { notm: HCM_NOTM, noxh: HCM_NOXH_TDC, tdc: HCM_NOXH_TDC } } },
     bqCan: { so: 3.5, dieu: 'QĐ 32/2025/QĐ-UBND, Quy định kèm theo Điều 4 khoản 2 — 3,5 người/căn hộ', giaiDoan: 'cp' },
   },
   {
-    id: 'hcm83', ten: 'TP. Hồ Chí Minh — QĐ 83/2026', qd: 'QĐ 83/2026/QĐ-UBND (sửa Điều 4 Quy định kèm QĐ 32/2025)', kieu: 'B', hieuLuc: '30/10/2026', daDoiChieu: true,
+    id: 'hcm83', ten: 'TP. Hồ Chí Minh — QĐ 83/2026', qd: 'QĐ 83/2026/QĐ-UBND (sửa Điều 4 Quy định kèm QĐ 32/2025)', kieu: 'B', hieuLuc: '30/10/2026', daDoiChieu: true, trongDiem: true,
     phuongPhap: { qh: HCM_QH, cp: { kieu: 'qd83', sTb: S_TB_QUOC_GIA, dieu: 'QĐ 83/2026/QĐ-UBND Điều 1 — Điều 4 khoản 2 điểm a (TM, TĐC), điểm b (NOXH) sửa đổi' } },
     bqCan: { so: 3.5, dieu: 'QĐ 83/2026/QĐ-UBND Điều 1 — Điều 4 khoản 2 sửa đổi: 3,5 người/căn hộ', giaiDoan: 'cp' },
-    ghiChu: 'Hồ sơ nộp trước 30/10/2026 tiếp tục theo QĐ 32/2025 (Điều 3 chuyển tiếp). Điểm a gộp căn thương mại, căn TĐC và căn hộ lưu trú; điểm b riêng NOXH. S ÷ 32 giữ số thực, không làm tròn từng căn — văn bản không quy định, giá trị tạm, chờ chủ nhiệm chốt. Khoản 4 (≥ 5 phòng ở → 1 người/phòng) không xảy ra với loại căn của app (tối đa 3PN).',
+    ghiChu: 'Hồ sơ nộp trước 30/10/2026 tiếp tục theo QĐ 32/2025 (Điều 3 chuyển tiếp). Điểm a gộp căn thương mại, căn TĐC và căn hộ lưu trú; điểm b riêng NOXH. S ÷ 32 giữ số thực, không làm tròn từng căn — văn bản không quy định, giá trị tạm, chờ chủ nhiệm chốt. Khoản 4 (≥ 5 phòng ở → 1 người/phòng) không xảy ra với loại căn của app (tối đa 3PN). Rà lại vbpl.vn 29/10/2026: QĐ 32/2025 còn hiệu lực, văn bản sửa duy nhất là QĐ 83/2026, chưa có văn bản mới hơn.',
+  },
+  {
+    // An Giang mới (NQ 202/2025/QH15: An Giang + Kiên Giang; Phú Quốc thành đặc khu thuộc An Giang)
+    id: 'ag', ten: 'An Giang (gồm Kiên Giang cũ, Phú Quốc)', qd: null, kieu: null, daDoiChieu: true, phuongPhap: null, trongDiem: true,
+    ghiChu: 'Rà 29/10/2026 trên CSDL quốc gia về pháp luật (vbpl.vn — danh sách QĐ "phương pháp xác định dân số" mọi địa phương: Hà Nội, TP.HCM, BR-VT, Hải Dương, Tiền Giang, Quảng Ninh, Đà Nẵng, Đồng Nai, Phú Yên, Bình Thuận, Huế) và tìm web: An Giang (cũ và mới), Kiên Giang cũ, đặc khu Phú Quốc chưa có QĐ riêng về dân số nhà chung cư cho NOTM, NOXH hay TĐC → mọi loại hình theo mặc định quốc gia P = S / 32 m²/người (QĐ 2161/QĐ-TTg). QCVN 04:2021/BXD mục 4.2 giao UBND tỉnh quy định; khi An Giang ban hành thì thay mục này.',
+  },
+  {
+    // Hưng Yên mới (NQ 202/2025/QH15: Hưng Yên + Thái Bình)
+    id: 'hy', ten: 'Hưng Yên (mới, gồm Thái Bình cũ)', qd: null, kieu: null, daDoiChieu: true, phuongPhap: null, trongDiem: true,
+    ghiChu: 'Rà 29/10/2026: vbpl.vn; Công báo tỉnh Hưng Yên (congbao.hungyen.gov.vn, từ 2025), Công báo Hưng Yên cũ và Thái Bình cũ (tìm trích yếu "dân số", "chung cư"): không có QĐ về phương pháp xác định dân số nhà chung cư — chỉ có văn bản ngành y tế – dân số. Hưng Yên mới, Hưng Yên cũ, Thái Bình cũ đều chưa có quy tắc riêng cho NOTM, NOXH, TĐC → mặc định quốc gia P = S / 32 m²/người (QĐ 2161/QĐ-TTg).',
   },
   {
     id: 'brvt', ten: 'Bà Rịa – Vũng Tàu (cũ)', qd: 'QĐ 43/2023/QĐ-UBND — hết hiệu lực từ 09/01/2026', kieu: 'D', daDoiChieu: true, phuongPhap: null, theo: 'hcm',
@@ -184,7 +210,7 @@ export const QUY_TAC_DAN_SO: QuyTacTinh[] = [
     id: 'dnai', ten: 'Đồng Nai (cũ)', qd: 'QĐ 09/2025/QĐ-UBND', kieu: 'D', hieuLuc: '01/3/2025', daDoiChieu: true,
     phuongPhap: { qh: DN_QH, cp: DN_CP },
     bqCan: { so: 3.53, dieu: 'QĐ 09/2025/QĐ-UBND Đồng Nai, Quy định kèm theo Điều 4 khoản 1 — 3,53 người/căn hộ (giai đoạn lập quy hoạch)', giaiDoan: 'qh' },
-    ghiChu: 'QĐ không phân biệt loại hình (điểm đ chỉ giới hạn căn < 45 m² ≤ 25% ở dự án thương mại). Khoản 1: 3,53 người/căn hoặc 31,0 m²/người đô thị, 28,5 m²/người nông thôn — app dùng mốc đô thị. Khoản 3 tra theo số phòng ở + DT: Studio, 1PN → 1 phòng ở; 2PN, 2PN+ → 2; 3PN → 3 (2PN+ coi là 2 phòng ở — chờ chủ nhiệm chốt). Khoản 4: DT và số phòng không thống nhất → theo DT; app tra cột số phòng, DT ngoài thang cột đó lấy dòng gần nhất và gắn cờ ngoài bảng.',
+    ghiChu: 'QĐ không phân biệt loại hình (điểm đ chỉ giới hạn căn < 45 m² ≤ 25% ở dự án thương mại). Khoản 1: 3,53 người/căn hoặc 31,0 m²/người đô thị, 28,5 m²/người nông thôn — theo ô "Khu vực" khai ở lô (mặc định đô thị). Khoản 3 tra theo số phòng ở + DT. QĐ không định nghĩa "phòng ở" → theo QCVN 04:2021/BXD 1.4.21 ("Phòng ở là phòng ngủ và phòng sinh hoạt khác"): Studio, 1PN → 1; 2PN → 2; 2PN+ → 3 (phòng đa năng là phòng sinh hoạt khác); 3PN → 3. Không gian khách – bếp chung không đếm: các dải DT của chính khoản 3 (01 phòng ở tới 70 m², 02 phòng ở từ trên 45 m²) chỉ khớp khi đếm phòng ngủ + phòng riêng. Khoản 4: DT và số phòng không thống nhất → theo DT: app lấy cột số phòng gần nhất có dải chứa DT đó. Mốc biên theo lời văn điểm a–d (mốc trên lấy): 125 m² đúng mốc ở dải 100–125.',
   },
   {
     id: 'khac', ten: 'Tỉnh / thành khác (chưa có QĐ riêng)', qd: null, kieu: null, daDoiChieu: false, phuongPhap: null,
@@ -195,7 +221,28 @@ export const QUY_TAC_DAN_SO: QuyTacTinh[] = [
 /** Fallback quốc gia (tài liệu nguồn §3.1): P = S / S_tb, S_tb = 32 m²/người. */
 export const FALLBACK_QG: PhuongPhap = { kieu: 'sTb', sTb: S_TB_QUOC_GIA, dieu: DIEU_QG };
 
-/** Số phòng ở theo loại căn của app (tra `bangPhong`): Studio, 1PN → 1 · 2PN, 2PN+ → 2 (phòng đa năng không tính) · 3PN → 3. */
-export const SO_PHONG_O: Record<LoaiCan, SoPhongO> = { stu: 1, '1pn': 1, '2pn': 2, '2pnp': 2, '3pn': 3 };
+/**
+ * Số phòng ở theo loại căn của app (tra `bangPhong`). QĐ tỉnh không định nghĩa thì theo QCVN 04:2021/BXD 1.4.21: "Phòng ở là
+ * phòng ngủ và phòng sinh hoạt khác" → Studio, 1PN → 1 · 2PN → 2 · 2PN+ → 3 (phòng đa năng = phòng sinh hoạt khác) · 3PN → 3.
+ * Không gian khách – bếp chung của căn không đếm (xem ghi chú Đồng Nai). Cách đếm là diễn giải, chờ chủ nhiệm xác nhận.
+ */
+export const SO_PHONG_O: Record<LoaiCan, SoPhongO> = { stu: 1, '1pn': 1, '2pn': 2, '2pnp': 3, '3pn': 3 };
+export const DIEU_PHONG_O = 'QCVN 04:2021/BXD 1.4.21: phòng ở = phòng ngủ và phòng sinh hoạt khác (2PN+ = 3 phòng ở)';
 
 export const timQuyTac =(id: string | undefined): QuyTacTinh | undefined => QUY_TAC_DAN_SO.find((q) => q.id === id);
+
+/** Danh sách chọn tỉnh: tỉnh trọng điểm trước (giữ thứ tự khai), rồi các tỉnh còn lại; "Tỉnh / thành khác" cuối. */
+export const dsTinhChon = (): { trongDiem: QuyTacTinh[]; khac: QuyTacTinh[] } => ({
+  trongDiem: QUY_TAC_DAN_SO.filter((q) => q.trongDiem),
+  khac: QUY_TAC_DAN_SO.filter((q) => !q.trongDiem),
+});
+
+/** Phương pháp có trị số khác nhau giữa đô thị và nông thôn (để hiện ô "Khu vực"). */
+export const coPhanBietKhuVuc = (pp: PhuongPhap | null | undefined): boolean =>
+  !!pp && pp.kieu === 'sTb' && !!pp.nongThon && pp.nongThon.sTb !== pp.sTb;
+
+/** Phương pháp thực áp theo khu vực: `sTb` có trị số nông thôn và khai nông thôn → S_tb nông thôn; còn lại giữ nguyên. */
+export function theoKhuVuc(pp: PhuongPhap, kv: KhuVuc): PhuongPhap {
+  if (pp.kieu !== 'sTb' || !pp.nongThon || kv !== 'nongThon') return pp;
+  return { kieu: 'sTb', sTb: pp.nongThon.sTb, dieu: pp.nongThon.dieu, ...(pp.tam ? { tam: true } : {}) };
+}

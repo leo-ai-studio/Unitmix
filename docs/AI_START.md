@@ -54,7 +54,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 |---|---|
 | Kiểu PA, thư viện | `web/src/tinh/kieu.ts`, mặc định + chuẩn hoá PA cũ `tinh/macDinh.ts` (`chuanHoaPA`) |
 | Chỉ tiêu, DT sàn HSSDĐ (QCVN 01 1.4.21) | `tinh/chiTieu.ts` (`dtSanChiTiet`) |
-| Dân số từng căn theo QĐ tỉnh (`TemDat.danSo`) | `tinh/quyTacDanSo.ts` (dữ liệu tỉnh), `tinh/danSo.ts`, `ui/KhaiDanSo.tsx`, `ui/DashDanSo.tsx` |
+| Dân số từng căn theo QĐ tỉnh (`TemDat.danSo`, ô Khu vực `khuVuc` khi QĐ phân biệt đô thị / nông thôn, tỉnh trọng điểm `trongDiem`) | `tinh/quyTacDanSo.ts` (dữ liệu tỉnh), `tinh/danSo.ts`, `ui/KhaiDanSo.tsx`, `ui/DashDanSo.tsx`; vbpl.vn mới đọc qua Browser pane `/van-ban/chi-tiet/a--<ItemID>` (curl bị chặn) |
 | KPI lãnh đạo (TMB + màn Tầng: dân, căn, DT sàn, DTSD, DTXD 1 sàn, hiệu suất = DTSD / DTXD, unit mix) | `tinh/kpi.ts`, `ui/KpiTmb.tsx`, `ui/KpiTang.tsx`, `ui/TheSo.tsx`, `ui/kpi.css` |
 | Bố cục tầng, công năng ô, nhiều tầng | `tinh/matBang.ts`, `tinh/congNang.ts`, `tinh/doiCan.ts`, `man/ManTang.tsx`, `ve/MatBangTang.tsx` |
 | Luật | `web/public/lib/quy_tac.json` (sinh bởi `scripts/chep_quy_tac.py`), `tinh/quyTac.ts`, `tinh/qcvn04.ts`, `tinh/pccc.ts` |

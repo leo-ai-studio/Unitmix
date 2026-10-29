@@ -34,7 +34,7 @@ function VongDanSo({ k }: { k: KetQuaDanSo }) {
   );
 }
 
-/** Dòng mô tả cách tính đang dùng + căn cứ (tooltip) + cờ tạm / chưa đối chiếu. */
+/** Dòng mô tả cách tính đang dùng + căn cứ (tooltip) + khu vực đô thị / nông thôn đang áp (khi QĐ phân biệt) + cờ tạm / chưa đối chiếu. */
 function CachTinh({ k, lo }: { k: KetQuaDanSo; lo: Lo }) {
   if (!k.coKhai) return <p class="ds-ghi canh-bao" role="note">{t('ds.heSoChung').replace('{n}', fmtSo(lo.temDat.chiTieu.nguoiMoiCan, { thapPhan: 2 }))}</p>;
   const q = k.quyTac!;
@@ -42,6 +42,11 @@ function CachTinh({ k, lo }: { k: KetQuaDanSo; lo: Lo }) {
     <p class="ds-ghi" title={[...k.canCu, q.ap?.ghiChu ?? ''].filter(Boolean).join('\n')}>
       <b>{t(`ds.tinh.${q.khai?.id ?? 'khac'}`)}</b> · {t(`ds.pp.${k.phuongPhap}`)}
       {q.ap?.qd ? ` · ${q.ap.qd}` : ` · ${t('ds.fallback')}`}
+      {q.khuVuc.phanBiet && q.khuVuc.sTb !== null && (
+        <span title={t('gt.ds.khai.khuVuc')}>
+          {' · '}{t('ds.kvAp').replace('{kv}', t(`ds.kv.${q.khuVuc.ap}`)).replace('{n}', fmtSo(q.khuVuc.sTb, so1))}
+        </span>
+      )}
       {q.ap && q.ap.qd && !q.ap.daDoiChieu && <span class="muted"> · {t('ds.chuaDoiChieu')}</span>}
       {q.tam && <b class="canh-bao"> · {t('ds.tam')}</b>}
     </p>
