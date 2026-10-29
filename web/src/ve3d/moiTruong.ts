@@ -5,6 +5,7 @@
  */
 import type * as THREE from 'three';
 import type { T3 } from './dungCan';
+import { vaShader } from './dichShader';
 
 /** Màu bầu trời (tuyến tính hoá khi dựng): thiên đỉnh xanh nhạt, chân trời ngà brand, đất be `--secondary`. */
 const TROI = { dinh: 0x9fc0dc, chanTroi: 0xf3eee3, dat: 0xb8b0a3, mt: 0xfff3dd };
@@ -36,10 +37,11 @@ export function bauTroi(T: T3, gio = 14): THREE.Scene {
 
 /**
  * Tường sơn / đá ốp (tường, đế, tum): biến thiên ±2,5 % theo ô ~3 m × tầng (vữa sơn không đều tuyệt đối) và tối dần 0–3,5 m sát đất
- * (ánh sáng bị che ở chân công trình). Một chương trình shader riêng (`customProgramCacheKey`).
+ * (ánh sáng bị che ở chân công trình). Bản vá shader `son` (dichShader.vaShader) — mọi vật liệu sơn chung một chương trình.
  */
-export function tuongSon(m: THREE.MeshStandardMaterial, khoa: string): THREE.MeshStandardMaterial {
-  m.onBeforeCompile = (sh) => {
+export function tuongSon(m: THREE.MeshStandardMaterial, _khoa?: string): THREE.MeshStandardMaterial {
+  // một khoá cho mọi vật liệu sơn (tường / đế / tum): cùng mã shader → một chương trình (trước: ba khoá → ba chương trình giống hệt)
+  return vaShader(m, 'son', (sh) => {
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vViTriTG;')
       .replace('#include <project_vertex>', `#include <project_vertex>
@@ -57,7 +59,5 @@ vViTriTG = ( modelMatrix * vtTG ).xyz;`);
   diffuseColor.rgb *= 0.975 + 0.05 * n;
   diffuseColor.rgb *= mix( 0.7, 1.0, smoothstep( 0.0, 3.5, vViTriTG.y ) );
 }`);
-  };
-  m.customProgramCacheKey = () => 'unitmix-' + khoa;
-  return m;
+  });
 }

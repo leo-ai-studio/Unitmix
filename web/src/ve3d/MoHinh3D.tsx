@@ -8,8 +8,8 @@ import { idTepCan } from '../tinh/stretch';
 import { idLoi, tai, type HinhLoi } from '../ve/hinhHocThuVien';
 import type { ToaVe } from '../ve/MatBangTang';
 import { dungCan, type Khoi3d } from './dungCan';
-import { dungToa, ranhTumCo, type LoiHinh } from './dungToa';
-import { dungDuAn } from './dungDuAn';
+import { dungToaTung, ranhTumCo, type LoiHinh } from './dungToa';
+import { dungDuAnTung, dungHamDuAn, dungTumDuAn } from './dungDuAn';
 import { docLopAn, dungTrucThang, luuLopAn, type Lop3D } from './lop3d';
 import { coMat } from '../tinh/matBang';
 import { mauToa } from '../tinh/canThem';
@@ -21,7 +21,7 @@ import { chonTiaToa, doiTuongDangChonToa, hinhNhanToa, type DangChon3D, type Doi
 import { dtVung, khoiDe } from '../tinh/hinhHoc';
 import { tenTang } from '../ui/ChonTang';
 import { fmtSo } from '../ui/so';
-import { Khung3D, type PhanTich3D } from './Khung3D';
+import { Khung3D, type NguCanh, type PhanTich3D } from './Khung3D';
 import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { CAO_TANG_DE_MM } from './dungToa';
 import { dungHinhView, oDuAn, type OView } from './lopView3d';
@@ -172,8 +172,8 @@ export function MoHinhToa({ toa, mau, mauTang, tv, pa, dauThanh, chon3d, ...luu 
       lop={nutLop(['thang'], lopAn, doiLop)} lopAn={lopAn}
       tieuDe={`${mau.ten_vi.split(' · ')[0]} · ${toa.soTangDe ? toa.soTangDe + ' + ' : ''}${toa.soTangDH} ${t('m3d.tang')}`}
       chon={c} onChon={chon3d?.onChonToa} onMo={chon3d?.onMoToa} chuThich={chu}
-      dung={({ T, goc, M, G, P }) => {
-        const r = dungToa(T, goc, M, G, P, { mau, toa, tv, khoi3d: nap.khoi3d, loi: nap.loi, idLoi, mauTang });
+      dung={function* ({ T, goc, M, G, P }) {
+        const r = yield* dungToaTung(T, goc, M, G, P, { mau, toa, tv, khoi3d: nap.khoi3d, loi: nap.loi, idLoi, mauTang });
         // lớp Trục thang bộ / lõi: khối xuyên tòa từ đất tới mái tum (mm mặt tòa → m)
         dungTrucThang(T, goc, ranhTumCo(mau, nap.loi, idLoi).map((x) => ({ pts: x.pts.map(([a, b]) => [a / 1000, b / 1000] as Diem), thang: x.thang, y0: 0, y1: r.canh.cao })));
         const bd = r.chon, hc = (P.tang - P.san) / 1000;
@@ -271,13 +271,19 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
     },
     chuGiai: kq ? <ChuGiai3D kq={kq} soO={kq.can.reduce((s, d) => s + (d.bang?.tong.length ?? 0), 0)} phamVi={t('m3d.duAn')} /> : null,
   };
+  // hầm (kết quả rải nền về từng lô) và tầng tum + trục thang (hình lõi nạp lười) là PHẦN riêng của khung: đổi thì chỉ dựng lại phần đó
+  // (vài ms) — trước đây mỗi lần đổi dựng lại cả dự án (60–450 ms / lần, 3–7 lần ngay khi mở 3D)
+  const phan = [
+    { khoa: 'ham|' + JSON.stringify(pa.ham) + '|' + vHam, dung: ({ T, goc, kieu }: NguCanh) => dungHamDuAn(T, goc, kieu, pa, tv) },
+    { khoa: 'tum|' + napLoi.xong + '|' + loiDA.join(), dung: ({ T, goc, M }: NguCanh) => dungTumDuAn(T, goc, M, pa, tv, tumToa) },
+  ];
   // tòa đang xem không vào khoá: đổi tòa (kể cả bấm chọn trong 3D) chỉ dựng lại nhẹ, giữ góc nhìn (góc "Cận tòa chọn" theo tòa mới)
   const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';')].join('|');
   return (<>
-    <Khung3D khoa={khoa} moRong={moRong} khoaNhe={JSON.stringify(pa.ham) + '|' + vHam + '|' + (toa?.id ?? '') + '|' + napLoi.xong + '|' + loiDA.join()} toaNguyen dauThanh={nut} nutPhanTich={<>{nutHam}<NutPhanTich /><NutNangGio /></>} gioNgoai {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
+    <Khung3D khoa={khoa} moRong={moRong} khoaNhe={toa?.id ?? ''} phan={phan} toaNguyen dauThanh={nut} nutPhanTich={<>{nutHam}<NutPhanTich /><NutNangGio /></>} gioNgoai {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
       lop={[...nutLop(['tum', 'ham', 'thang', 'gio', 'cay', 'duong', 'ranh'], lopAn, doiLop), ...nutNG3D]} lopAn={lopAn}
-      gocBac={vtDA.gocBac} viDo={vtDA.lat} dung={({ T, goc, M, kieu, capDo }) => dungDuAn(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa })} />
+      gocBac={vtDA.gocBac} viDo={vtDA.lat} dung={({ T, goc, M, kieu, capDo }) => dungDuAnTung(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa, tach: true })} />
     <HopNangGioCho pa={pa} tv={tv} sua={sua} chiXem={chiXem} la3D />
   </>);
 }

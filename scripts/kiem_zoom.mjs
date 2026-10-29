@@ -158,7 +158,15 @@ async function main() {
         else { await lan(x, y, 6, -1); await keoChuot(x, y, 160, 40, 'right'); await keoChuot(x, y, 120, -30); await datKhung(1100, 800); await cho(300); await datKhung(k.w, k.h); }
       };
       await chay('3D Toàn dự án', thao3d, true);
-      if (await bamChu('/^(Công trình|Building)$/')) {
+      // chưa chọn tòa (nút Công trình khoá — thanh 3D gọn không tự chọn tòa đầu): chọn tòa đầu bằng _chamThu như bấm chuột
+      const dToa = await js(`(() => { const v = document.querySelector('.vung-3d'), d = v?._chieuDoiTuong?.().find((q) => q.loai === 'toa'); if (!d) return null;
+        const r = v.querySelector('canvas').getBoundingClientRect(); return [r.left + d.x, r.top + d.y]; })()`);
+      if (dToa && (await js(`!!document.querySelector('.chon-che button:nth-child(2)')?.disabled`))) {
+        if (k.mobile) { for (const type of ['touchStart', 'touchEnd']) await gui('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: dToa[0], y: dToa[1] }] }); }
+        else for (const type of ['mousePressed', 'mouseReleased']) await gui('Input.dispatchMouseEvent', { type, x: dToa[0], y: dToa[1], button: 'left', clickCount: 1 });
+        await cho(1500);
+      }
+      if (await bamChu('/^(Công trình|Building)/')) { // nút có hai nhãn (dài / ngắn) trong cùng textContent
         await doiCo(`!!document.querySelector('.vung-3d.da-dung')`, 60000); await cho(1500);
         await chay('3D Công trình', thao3d, true);
       }
