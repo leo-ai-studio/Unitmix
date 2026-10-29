@@ -27,6 +27,7 @@ import { mauToa } from '../tinh/canThem';
 import { canhGan } from '../tinh/thaoTacToa';
 import { HopCanhLo, NhanCanhLo, datCanhChon } from './loGioiCanh';
 import { HopHangLoat, LopHangLoat } from './xepHangLoat';
+import { ChuGiaiView, KpiView, LopViewTmb, TheViewToa, gocBacPA, nutLopView, useLopView } from './lopView';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -161,6 +162,7 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
             <NutBieuTuong k="xoa" ghiChu={t('gt.xep.xoa')} tat={tat} onClick={() => { sua((p) => ({ ...p, toa: p.toa.filter((x) => x.id !== toa.id) })); chonToa(null); }} />
             </div>
           </div>
+          <TheViewToa pa={pa} tv={tv} toaId={toa.id} />
         </MucGap>
       )}
     </>
@@ -207,6 +209,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   const dsNhieu = useChonNhieu();
   const tc = useTuyChon();
   const luat = useLuatTMB();
+  useLopView(); // nút Lớp › Điểm view vẽ lại khi bật / tắt
   const lo = loDangXep(pa, loId);
   const sel = luaChon(pa, dsNhieu, toaId);
   const toaChon = pa.toa.filter((x) => sel.includes(x.id));
@@ -463,7 +466,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
 
   return (
     <>
-      <BanVe khung={khung} nhan={t('xep.banVe')} onDieuKhien={setDk} onBamNen={bamNen}
+      <BanVe khung={khung} nhan={t('xep.banVe')} onDieuKhien={setDk} onBamNen={bamNen} gocBac={-gocBacPA(pa)}
         chonKhung={tc.do ? undefined : {
           bat: tc.khung,
           onXong: (a, b, them) => { const ids = toaTrongKhung(hinh, a, b); chon(them ? [...new Set([...sel, ...ids])] : ids); },
@@ -569,6 +572,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         {/* đo khoảng cách */}
         {diemDo.map((p, i) => <circle key={`do${i}`} cx={p[0]} cy={-p[1]} r={buocM * 0.015} fill="var(--green)" style={{ pointerEvents: 'none' }} />)}
         {diemDo.length === 2 && nhanDoan(diemDo[0], diemDo[1], m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1])), 'var(--green)', 'do')}
+        <LopViewTmb pa={pa} tv={tv} coChu={coChu} />
         <LopGoiY loId={lo?.id ?? null} tv={tv} />
         <LopHangLoat tv={tv} />
         {pa.lo.map((l) => {
@@ -594,9 +598,10 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         <HopHangLoat pa={pa} tv={tv} sua={sua} chiXem={chiXem} luat={luat} />
         {tc.do && <p class="tmb-goi-y">{diemDo.length === 2 ? `${t('tmb.do.ketQua')} ${m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1]))} · Δx ${m1(Math.abs(diemDo[1][0] - diemDo[0][0]))} · Δy ${m1(Math.abs(diemDo[1][1] - diemDo[0][1]))}` : t('tmb.do.huongDan')}</p>}
         {hien?.chan && <p class="tmb-goi-y canh">{t('tmb.chanCG')}</p>}
+        <ChuGiaiView pa={pa} />
       </div>
       <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null}
-        chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
+        lop={[nutLopView()]} chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
       {menuToa && (() => {
         const dong = () => setMenuToa(null);
         const muc = (k: string, nhan: string, tat: boolean, lam: () => void) => (
@@ -754,6 +759,7 @@ export function TmbPhai(p: Chung & { kq: KetQuaChiTieu | null }) {
   return (
     <>
       <KpiTmb pa={p.pa} tv={p.tv} lo={lo} kq={p.kq} />
+      <KpiView pa={p.pa} tv={p.tv} lo={lo} sua={p.sua} chiXem={p.chiXem} />
       <XepPhai {...p} />
       <SucChuaLo lo={lo} />
     </>

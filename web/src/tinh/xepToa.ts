@@ -9,7 +9,10 @@
  * hình lớn nhất ≤ trần QH mà `tinhChiTieu` không vượt (MĐXD, HSSDĐ gồm hầm, tầng cao, số căn, dân số — CT-01…04), như
  * `tangToiDa` (QT-68). Sau đó trộn mẫu: lấp chỗ trống của phương án tốt nhất bằng mẫu khác.
  * Xếp hạng (`khoaHangPA` app cũ): đạt QH → ít căn vượt thoát nạn (PCCC, pccc.ts) → điểm (sát số căn chỉ tiêu, ít lệch cơ cấu,
- * tận dụng HSSDĐ, % hướng tốt MT-06).
+ * tận dụng HSSDĐ, % hướng tốt MT-06, điểm VIEW căn hộ — tinh/huongView.ts, trọng số `trongSoView` 0–100 %, mặc định 20 %).
+ * View trong lúc xếp: (1) chọn góc đặt — ứng viên cùng khoảng tới neo thì ưu tiên góc xoay có hướng + nắng tốt hơn (cache theo mẫu × góc);
+ * (2) điểm phương án — điểm view TB các căn (tòa của phương án + tòa lô bên cạnh làm vật cản), bộ đếm tăng dần theo số tòa, ước ở
+ * số tầng trần; phương án trả về tính lại đúng số tầng.
  */
 import { tinhChiTieu } from './chiTieu';
 import { diemLechCoCau } from './coCau';
@@ -18,6 +21,7 @@ import { taoToaTrenLo, vungDat } from './hopLo';
 import type { Diem, Lo, LoaiCan, ThuVien, ToaDat, ToaMau, TrangThaiPA } from './kieu';
 import { coMat, viTriCan, type ToaCoMat } from './matBang';
 import { chieuCaoPCCC, thoatNan, type ToaPCCC } from './pccc';
+import { BoDemView, boiCanhView, caiDatView, datMatCan, tongHopView, viewXoayMau, type BoiCanhView, type ToaView } from './huongView';
 import type { Luat } from './quyTac';
 import { sucChua } from './sucChua';
 
@@ -101,6 +105,16 @@ export function kcDaGiac(P: Diem[], Q: Diem[]): number {
   for (const q of Q) for (let i = 0; i < P.length; i++) m = Math.min(m, kcDoan(q, P[i], P[(i + 1) % P.length]));
   return m;
 }
+/**
+ * `kcDaGiac(P, Q) >= k` (k > 0) nhưng thoát sớm: đỉnh nào cách cạnh kia < k là trả false ngay (cặp sát nhau — phần lớn ứng viên bị loại khi
+ * xếp tham lam), chỉ cặp đủ xa mới phải dò cắt nhau / chứa nhau. Cùng kết quả với `kcDaGiac`.
+ */
+export function duXaDaGiac(P: Diem[], Q: Diem[], k: number): boolean {
+  for (const p of P) for (let j = 0; j < Q.length; j++) if (kcDoan(p, Q[j], Q[(j + 1) % Q.length]) < k) return false;
+  for (const q of Q) for (let i = 0; i < P.length; i++) if (kcDoan(q, P[i], P[(i + 1) % P.length]) < k) return false;
+  for (let i = 0; i < P.length; i++) for (let j = 0; j < Q.length; j++) if (cat(P[i], P[(i + 1) % P.length], Q[j], Q[(j + 1) % Q.length])) return false;
+  return !(trong(P[0], Q) || trong(Q[0], P));
+}
 const namTrongNhanh = (F: Diem[], V: Diem[]) =>
   F.every((p) => trong(p, V)) && !F.some((p, i) => V.some((q, j) => cat(p, F[(i + 1) % F.length], q, V[(j + 1) % V.length])));
 /** Khoảng cách nhỏ nhất từ đa giác F tới đoạn ab (cạnh lô). */
@@ -129,7 +143,11 @@ export type DauVaoXep = {
   buoc?: number;
   /** Số phương án trả về. */
   soGoiY?: number;
+  /** Trọng số điểm view khi xếp hạng (0–100 %); thiếu = `pa.huongView.trongSoXep` hoặc 20. 0 = không xét view khi xếp (vẫn báo điểm). */
+  trongSoView?: number;
 };
+/** Trọng số view mặc định khi xếp hạng gợi ý (%) — nhẹ: chỉ tách các phương án gần bằng nhau. Giá trị tạm, chờ chủ nhiệm chốt. */
+export const TRONG_SO_VIEW_XEP = 20;
 export type GoiYXep = {
   khoa: string;
   /** Tòa đặt trên lô (id tạm `goiy-…`; áp dụng thì đổi id mới). */
@@ -153,6 +171,10 @@ export type GoiYXep = {
   /** Cặp tòa giữa mức đầu hồi và cạnh dài §2.6.1 (cảnh báo). */
   canhBao: string[];
   diem: number;
+  /** Điểm view TB các căn (0–100, tinh/huongView.ts); null = mẫu không có mặt bằng căn. */
+  view: number | null;
+  /** % căn view Tốt. */
+  viewTot: number | null;
 };
 
 // ---------- MT-06: % căn hướng tốt (app cũ `huongThat` + nhóm mặc định TỐT = Đ · ĐN · N) ----------
@@ -173,7 +195,16 @@ function phanTramHuongTot(mau: ToaCoMat, tv: ThuVien, gocDo: number): number {
 const CAO_DE = 4.5, CAO_DH = 3.3; // như taoToaTrenLo
 const XET_LO_BEN_M = 60; // §2.6.1 với tòa lô bên cạnh: chỉ xét cặp cách < 60 m (cach_tinh LO-02)
 
-type Dat = { mauId: string; x: number; y: number; goc: number; F: Diem[]; r: number };
+type Dat = { mauId: string; x: number; y: number; goc: number; F: Diem[]; r: number; bb?: [number, number, number, number] };
+const khungDat = (d: Dat) => {
+  if (!d.bb) { const xs = d.F.map((p) => p[0]), ys = d.F.map((p) => p[1]); d.bb = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; }
+  return d.bb;
+};
+/** Khoảng cách hai khung bao (cận dưới của khoảng cách hai đa giác). */
+const kcKhung = (a: Dat, b: Dat) => {
+  const A = khungDat(a), B = khungDat(b);
+  return Math.hypot(Math.max(0, A[0] - B[2], B[0] - A[2]), Math.max(0, A[1] - B[3], B[1] - A[3]));
+};
 
 /**
  * Bộ sinh phương án: nhả lượt (yield) sau mỗi mẫu tòa để giao diện không treo; kết quả cuối là danh sách gợi ý đã xếp hạng.
@@ -191,9 +222,13 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
   const Hmax = soTangDe * CAO_DE + nMax * CAO_DH;
   const lui = luiTungCanh(luat.lo01, lo, Hmax, rongDuong); // LO-01 theo lộ giới từng cạnh
   const kc = kcToa261(luat.lo02, Hmax);
+  // điểm view: cài đặt dự án, bối cảnh (lô cây xanh / mặt nước / đường lớn), trọng số xếp hạng
+  const caiV = caiDatView(pa.huongView);
+  const wView = Math.max(0, Math.min(100, v.trongSoView ?? pa.huongView?.trongSoXep ?? TRONG_SO_VIEW_XEP));
+  const bcView = boiCanhView(pa, caiV);
 
   // tòa đã đặt ở lô khác (LO-02 · lô bên cạnh)
-  const ngoai = pa.toa.filter((t) => t.loId !== lo.id && tv.toa.has(t.mauId)).map((t) => ({ F: chanToa(tv.toa.get(t.mauId)!, t), H: t.soTangDe * t.caoDe + t.soTangDH * t.caoDH }));
+  const ngoai = pa.toa.filter((t) => t.loId !== lo.id && tv.toa.has(t.mauId)).map((t) => ({ id: t.id, loId: t.loId, F: chanToa(tv.toa.get(t.mauId)!, t), H: t.soTangDe * t.caoDe + t.soTangDH * t.caoDH }));
 
   // góc thử: theo cạnh dài nhất của ranh lô (+ 90 / 180 / 270), như app cũ
   let dai = 0, gocL = 0, iL = 0;
@@ -216,19 +251,59 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
     }
     return kq;
   };
-  // xếp tham lam từ neo: mỗi lần lấy ứng viên gần neo nhất còn đủ khoảng cách cạnh dài với các tòa đã có; dừng khi chạm MĐXD
-  const xepThamLam = (uv: Dat[], nNeo: Diem, daCo: Dat[], dtChan: number) => {
-    const ds = uv.slice().sort((a, b) => Math.hypot(a.x - nNeo[0], a.y - nNeo[1]) - Math.hypot(b.x - nNeo[0], b.y - nNeo[1]));
+  // điểm hướng + nắng (chưa che) theo mẫu × góc xoay — cache trong huongView
+  const nhoXoay = new Map<string, ReturnType<typeof viewXoayMau>>();
+  const xoayMau = (d: Pick<Dat, 'mauId' | 'goc'>) => {
+    const k = d.mauId + '|' + d.goc;
+    let r = nhoXoay.get(k);
+    if (!r) { r = viewXoayMau(tv.toa.get(d.mauId) as ToaCoMat, tv, d.goc, caiV); nhoXoay.set(k, r); }
+    return r;
+  };
+  const huongXoay = (d: Dat) => xoayMau(d).huong;
+  // §2.6.1 cạnh dài: cận dưới tròn bao → khung bao → đa giác (thoát sớm); cùng kết quả với kcDaGiac ≥ kc.dai
+  const xaDu = (u: Dat, d: Dat) => Math.hypot(u.x - d.x, u.y - d.y) - u.r - d.r >= kc.dai || kcKhung(u, d) >= kc.dai || duXaDaGiac(u.F, d.F, kc.dai);
+  const LECH_VIEW = 2 * buoc; // m: biến thể "ưu tiên view" — ứng viên xa neo hơn tối đa chừng này vẫn đứng trước nếu góc xoay hướng tốt hơn hẳn
+  // xếp tham lam từ neo: mỗi lần lấy ứng viên gần neo nhất còn đủ khoảng cách cạnh dài với các tòa đã có; dừng khi chạm MĐXD.
+  // `uuTienView`: cùng khoảng tới neo thì góc xoay có điểm hướng + nắng tốt hơn đứng trước.
+  const xepThamLam = (uv: Dat[], nNeo: Diem, daCo: Dat[], dtChan: number, uuTienView = false) => {
+    const khoaSx = new Map(uv.map((a) => [a, Math.hypot(a.x - nNeo[0], a.y - nNeo[1]) - (uuTienView ? (LECH_VIEW * huongXoay(a)) / 100 : 0)]));
+    const ds = uv.slice().sort((a, b) => khoaSx.get(a)! - khoaSx.get(b)!);
     const dat = daCo.slice();
     let foot = daCo.reduce((s, d) => s + dienTich(d.F), 0);
+    // ứng viên đã hỏng với các tòa đang có thì còn hỏng khi có thêm tòa → dò tiếp từ sau ứng viên vừa chọn (cùng kết quả với dò lại từ đầu)
+    let i = 0;
     while (dat.length < 40) {
       if (((foot + dtChan) / dtLo) * 100 > ct.matDoMax + 1e-6) break;
-      const ch = ds.find((u) => dat.every((d) => Math.hypot(u.x - d.x, u.y - d.y) - u.r - d.r >= kc.dai || kcDaGiac(u.F, d.F) >= kc.dai));
+      let ch: Dat | null = null;
+      for (; i < ds.length && !ch; i++) {
+        const u = ds[i];
+        if (dat.every((d) => xaDu(u, d))) ch = u;
+      }
       if (!ch) break;
       dat.push(ch);
       foot += dtChan;
     }
     return dat;
+  };
+  /**
+   * View · chọn góc: giữ số tòa, xoay từng tòa sang góc (trong 4 góc thử) có điểm hướng + nắng tốt hơn — ứng viên tĩnh hợp lệ ở cùng điểm
+   * lưới hoặc lệch tới `BUOC_XOAY` bước lưới — nếu vẫn đủ §2.6.1 với mọi tòa khác; không bao giờ đổi số tòa / số căn lấy view.
+   * Cache điểm theo mẫu × góc. Cùng điểm thì ưu tiên ít dời.
+   */
+  const BUOC_XOAY = 5; // dò ± 5 bước lưới (± 15 m với lưới 3 m)
+  const oLuoi = (x: number, y: number) => `${Math.round(x * 1000)}|${Math.round(y * 1000)}`;
+  const xoayHuongTot = (dat: Dat[], uvTheoDiem: Map<string, Dat[]>) => {
+    const kq = dat.slice();
+    for (let i = 0; i < kq.length; i++) {
+      const d = kq[i];
+      const gan: Dat[] = [];
+      for (let ix = -BUOC_XOAY; ix <= BUOC_XOAY; ix++) for (let iy = -BUOC_XOAY; iy <= BUOC_XOAY; iy++) gan.push(...(uvTheoDiem.get(oLuoi(d.x + ix * buoc, d.y + iy * buoc)) ?? []));
+      const thay = gan.filter((u) => u !== d && huongXoay(u) > huongXoay(d) + 1e-9)
+        .sort((a, b) => huongXoay(b) - huongXoay(a) || Math.hypot(a.x - d.x, a.y - d.y) - Math.hypot(b.x - d.x, b.y - d.y));
+      const ok = thay.find((u) => kq.every((o, j) => j === i || xaDu(u, o)));
+      if (ok) kq[i] = ok;
+    }
+    return kq;
   };
 
   // số tầng lớn nhất ≤ nMax mà không vượt chỉ tiêu (đơn điệu theo số tầng → tìm nhị phân)
@@ -249,7 +324,23 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
     }
     return pccc.get(k)!;
   };
-  const cham = (dat: Dat[], khoa: string): GoiYXep | null => {
+  // bộ đếm view: tòa lô bên cạnh là vật cản; tòa của phương án thêm dần (ước ở số tầng trần Hmax)
+  const toaView = (d: Dat, i: number, H: number): ToaView => ({
+    id: `goiy-${i}`, loId: lo.id, F: d.F, H, eye: Math.max(3, soTangDe * CAO_DE + (H - soTangDe * CAO_DE) / 2), so: 1, kc: kcToa261(luat.lo02, H).dai,
+    can: datMatCan(xoayMau(d).cuc, { x: d.x, y: d.y, gocDo: d.goc }),
+  });
+  const boViewMoi = (bc: BoiCanhView = bcView) => {
+    const bo = new BoDemView(caiV, bc);
+    for (const o of ngoai) bo.them({ id: o.id, loId: o.loId, F: o.F, H: o.H, can: [], eye: 0, so: 1, kc: 0 });
+    return bo;
+  };
+  const viewDung = (dat: Dat[], n: number) => {
+    const bo = boViewMoi(), H = soTangDe * CAO_DE + n * CAO_DH;
+    dat.forEach((d, i) => bo.them(toaView(d, i, H)));
+    const th = tongHopView(bo.diem());
+    return { tb: th.tb, tot: th.soCan ? th.pctTot : null };
+  };
+  const cham = (dat: Dat[], khoa: string, bo?: BoDemView | null): GoiYXep | null => {
     if (!dat.length) return null;
     let lo_ = 1, hi = nMax, tot: ReturnType<typeof thuPA> | null = null, nTot = 0;
     while (lo_ <= hi) {
@@ -272,12 +363,14 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
     const lech = diemLechCoCau(kq.coCauPct, lo.temDat.coCauMucTieu as Record<LoaiCan, number>);
     const tran = ct.hssddMax * dtLo, tyLeSan = tran > 0 ? kq.dtSanTinhHSSDD / tran : 0;
     const tyLeCan = muc ? Math.min(1, kq.soCan / muc) : 0;
+    const view = wView > 0 ? (bo ? bo.tb() : viewDung(dat, nMax).tb) : null; // ước ở số tầng trần; phương án trả về tính lại đúng tầng
     return {
       khoa, toa: tot.toa, mau: [...dem], soTangDH: nTot, soCan: kq.soCan, soCanMuc: muc, lech, tyLeSan,
       matDo: kq.dong.find((d) => d.khoa === 'matDo')?.dat ?? 0, danSo: kq.soCan * ct.nguoiMoiCan, loiQH: tot.loi,
-      pcccVuot, huongTot, canhBao,
+      pcccVuot, huongTot, canhBao, view, viewTot: null,
       // điểm: sát số căn chỉ tiêu (≤ 100) − ½ lệch cơ cấu (như diemPA "cân bằng") + tận dụng HSSDĐ + % hướng tốt (nhẹ)
-      diem: 100 * tyLeCan - 0.5 * lech + 20 * Math.min(1, tyLeSan) + 0.05 * huongTot - 2 * canhBao.length,
+      // + điểm view × trọng số (20 % → tối đa ~10 điểm, 100 % → ~50 điểm ≈ nửa thang số căn)
+      diem: 100 * tyLeCan - 0.5 * lech + 20 * Math.min(1, tyLeSan) + 0.05 * huongTot - 2 * canhBao.length + (view !== null ? (wView / 100) * 0.5 * view : 0),
     };
   };
 
@@ -289,10 +382,26 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
     const uv = ungVienTinh(mau);
     uvTheoMau.set(mau.id, uv);
     const dtChan = uv[0] ? dienTich(uv[0].F) : 0;
-    // hai cách neo, giữ cách đặt được nhiều tòa hơn (bằng nhau: "tâm")
-    const cach = (['tam', 'goc'] as const).map((n) => xepThamLam(uv, neo[n], [], dtChan)).sort((a, b) => b.length - a.length)[0] ?? [];
+    // hai cách neo, giữ cách đặt được nhiều tòa hơn (bằng nhau: "tâm"). Có xét view: thêm biến thể ưu tiên góc hướng tốt — chỉ thắng khi
+    // đặt được BẰNG số tòa mà hướng + nắng TB tốt hơn (không đổi số tòa lấy view); rồi xoay từng tòa sang góc tốt hơn nếu còn chỗ
+    const [tam, goc] = (['tam', 'goc'] as const).map((n) => xepThamLam(uv, neo[n], [], dtChan));
+    const neoThang = goc.length > tam.length ? 'goc' : 'tam';
+    let cach = neoThang === 'goc' ? goc : tam;
+    if (wView > 0 && cach.length) {
+      // biến thể ưu tiên view chỉ chạy cho cách neo đã thắng (một lượt tham lam thêm)
+      const dX = (c: Dat[]) => c.reduce((s, d) => s + huongXoay(d), 0) / c.length;
+      const v = xepThamLam(uv, neo[neoThang], [], dtChan, true);
+      if (v.length === cach.length && dX(v) > dX(cach) + 1e-9) cach = v;
+    }
+    if (wView > 0 && cach.length) {
+      const theoDiem = new Map<string, Dat[]>();
+      for (const u of uv) { const k = oLuoi(u.x, u.y); const a = theoDiem.get(k); if (a) a.push(u); else theoDiem.set(k, [u]); }
+      cach = xoayHuongTot(cach, theoDiem);
+    }
+    const bo = wView > 0 && cach.length ? boViewMoi() : null; // tăng dần: n tòa = n − 1 tòa + một tòa
     for (let n = 1; n <= cach.length; n++) {
-      const g = cham(cach.slice(0, n), `${mau.id}×${n}`);
+      bo?.them(toaView(cach[n - 1], n - 1, Hmax));
+      const g = cham(cach.slice(0, n), `${mau.id}×${n}`, bo);
       if (g) { ketQua.push(g); tot1.push({ dat: cach.slice(0, n), diem: g.diem }); }
     }
     yield { xong: k + 1, tong: mauDs.length + 1 };
@@ -321,6 +430,12 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
     daCo.add(k);
     top.push(g);
     if (top.length >= (v.soGoiY ?? 5)) break;
+  }
+  // điểm view đúng số tầng của từng phương án trả về (xếp hạng dùng ước ở số tầng trần)
+  for (const g of top) {
+    const dat = g.toa.map((x) => ({ mauId: x.mauId, x: x.x, y: x.y, goc: x.gocDo, F: chanToa(tv.toa.get(x.mauId)!, x), r: 0 }));
+    const vd = viewDung(dat, g.soTangDH);
+    g.view = vd.tb; g.viewTot = vd.tot;
   }
   return top;
 }

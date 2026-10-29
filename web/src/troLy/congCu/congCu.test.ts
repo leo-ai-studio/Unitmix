@@ -130,6 +130,20 @@ describe('công cụ đọc', () => {
     expect(j.toa[0].thang_bo.dat).toBe(true);
     expect(j.tmb).toBeTruthy();
   });
+  thu('get_view_scores', async () => {
+    const j = (await chay('get_view_scores', {})).json;
+    expect(j.du_an.so_can).toBeGreaterThan(0);
+    expect(j.du_an.tb).toBeGreaterThanOrEqual(0);
+    expect(j.du_an.tb).toBeLessThanOrEqual(100);
+    expect(j.toa[0].id).toBe('t1');
+    expect(j.cai_dat.trong_so).toEqual({ huong: 40, thoang: 30, canh: 20, nang: 10 });
+    const t = (await chay('get_view_scores', { lot_id: 'A', tower_id: 't1', floor: 2, limit: 5 })).json;
+    expect(t.du_an).toBeUndefined();
+    expect(t.can.ds.length).toBe(5);
+    expect(t.can.ds[0].ch).toMatch(/^CH-\d{2}$/);
+    expect(t.can.ds[0].diem).toBeGreaterThanOrEqual(t.can.ds[4].diem);
+    await loi('get_view_scores', { tower_id: 't1', floor: 999 }, /không hợp lệ/);
+  });
   thu('get_cost', async () => { expect((await chay('get_cost', {})).json.du_toan.tong_muc).toBeGreaterThan(0); });
   thu('get_population', async () => { expect((await chay('get_population', {})).json.tinh.length).toBeGreaterThan(3); });
   thu('get_basement', async () => { expect((await chay('get_basement', { lot_id: 'A' })).json.lo).toBe('A'); });

@@ -1,0 +1,46 @@
+/* Điểm view căn hộ (man/lopView.tsx, ve/LopViewTang.tsx, gợi ý xếp tòa): màu Tốt / Khá / Kém = --ok / --canh-bao / --vuot.
+   Mọi thứ trên khung giữa là lớp phủ trong .noi-tren — không đổi kích thước khung giữa. */
+
+/* chú giải lớp view (TMB) */
+.chu-giai-view {
+  margin: 6px 8px 0; align-self: flex-start; max-width: calc(100% - 96px);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 3px 4px 3px 10px; font-size: 12px; color: var(--muted-text);
+  background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 1px 4px rgb(0 0 0 / 0.08);
+}
+.chu-giai-view b { color: var(--green); font-weight: 600; }
+.chu-giai-view i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-right: 5px; vertical-align: 3px; }
+.chu-giai-view .nut-dong-view { border: 0; background: none; color: var(--muted-text); font-size: 15px; line-height: 1; padding: 2px 6px; cursor: pointer; border-radius: 6px; }
+.chu-giai-view .nut-dong-view:hover { background: var(--hover); color: var(--ink); }
+
+/* khối số (panel phải + thông số tòa) */
+.khoi-view { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.khoi-view .dong { padding: 1px 0; }
+.khoi-view b small { font-weight: 400; color: var(--muted-text); }
+.khoi-view .canh-bao { color: var(--canh-bao); }
+.thanh-view { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--line); margin: 3px 0 1px; }
+.thanh-view i { display: block; height: 100%; }
+.view-pb, .view-tp { flex-wrap: wrap; gap: 0 10px; justify-content: flex-start; font-size: 11px; }
+.the-view-toa { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
+.kpi-view-dau { align-items: center; }
+.bang-view { display: flex; flex-direction: column; margin-top: 6px; font-size: 11px; font-variant-numeric: tabular-nums; }
+.bang-view .dong { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 4px; padding: 2px 0; border-bottom: 1px solid var(--line); }
+.bang-view .dong > :not(:first-child) { text-align: right; }
+.bang-view .dau { color: var(--muted-text); }
+.ghi-heuristic { font-size: 11px; margin: 0 0 4px; }
+.nhom-huong { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 6px; }
+.nhom-huong button { min-height: 28px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--muted-text); font: inherit; font-size: 11px; cursor: pointer; }
+.nhom-huong button.tot { border-color: var(--ok); color: var(--ok); font-weight: 600; }
+.nhom-huong button.kem { border-color: var(--vuot); color: var(--vuot); }
+.nhom-huong button:disabled { cursor: default; opacity: 0.7; }
+
+/* gợi ý xếp tòa: thanh trọng số view + điểm từng phương án */
+.goi-y-trong-so { display: flex; align-items: center; gap: 8px; padding: 2px 12px 4px; font-size: 12px; color: var(--muted-text); }
+.goi-y-trong-so input[type='range'] { flex: 1; min-width: 80px; accent-color: var(--green); }
+.goi-y-trong-so b { min-width: 38px; text-align: right; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.goi-y-so .goi-y-view { grid-column: 1 / -1; color: var(--green); }
+
+@media (max-width: 1024px) {
+  .chu-giai-view { max-width: calc(100% - 72px); }
+  .goi-y-trong-so input[type='range'] { min-height: 40px; }
+  .nhom-huong button { min-height: 40px; }
+}
