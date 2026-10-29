@@ -3,8 +3,7 @@ import { api } from '../api';
 import type { TrangThaiPA } from '../tinh/kieu';
 import type { CheDo, TrangThaiLuu } from '../ui/ThanhTren';
 import { taoBoLuu } from './luu';
-
-const GIOI_HAN_HOAN_TAC = 100;
+import { taoKhoLoi } from './khoLoi';
 
 type Mo = {
   ma: string; paId: string; tenPA: string; maSua: string | null; duocSua: boolean; ban: TrangThaiPA;
@@ -19,8 +18,6 @@ export function useKho({ ma, paId, tenPA, maSua, duocSua, ban, tomTat }: Mo) {
   const [pa, setPA] = useState<TrangThaiPA>(ban);
   const [cheDo, setCheDo] = useState<CheDo>(duocSua ? 'tu_dong' : 'chi_xem');
   const [trangThaiLuu, setLuu] = useState<TrangThaiLuu>('da_luu');
-  const truoc = useRef<TrangThaiPA[]>([]);
-  const sau = useRef<TrangThaiPA[]>([]);
 
   const boLuu = useMemo(
     () =>
@@ -37,10 +34,15 @@ export function useKho({ ma, paId, tenPA, maSua, duocSua, ban, tomTat }: Mo) {
   // Bản nháp còn lại từ lần mở trước: chỉ đọc một lần lúc mở PA, không đọc lại khi đang sửa.
   const [nhapCu] = useState(() => boLuu.layNhap());
 
-  const ap = (moi: TrangThaiPA) => {
+  const boLuuRef = useRef(boLuu);
+  boLuuRef.current = boLuu;
+  // Lõi thuần (kho/khoLoi.ts): luôn sửa trên bản mới nhất, cùng ngăn hoàn tác cho giao diện lẫn trợ lý Leo AI.
+  const [loi] = useState(() => taoKhoLoi(ban, (moi) => {
     setPA(moi);
-    boLuu.thayDoi(moi, tinhTomTat.current?.(moi) ?? {});
-  };
+    boLuuRef.current.thayDoi(moi, tinhTomTat.current?.(moi) ?? {});
+  }));
+  const cheDoRef = useRef(cheDo);
+  cheDoRef.current = cheDo;
 
   return {
     pa,
@@ -48,28 +50,20 @@ export function useKho({ ma, paId, tenPA, maSua, duocSua, ban, tomTat }: Mo) {
     datCheDo: (c: CheDo) => setCheDo(duocSua ? c : 'chi_xem'),
     trangThaiLuu: duocSua ? trangThaiLuu : undefined,
     sua(fn: (p: TrangThaiPA) => TrangThaiPA) {
-      if (cheDo === 'chi_xem') return;
-      const moi = fn(pa);
-      // Phép sửa không đổi gì (vd đổi căn bị chặn vì không vừa ô) thì không ghi bước hoàn tác rỗng.
-      if (moi === pa || JSON.stringify(moi) === JSON.stringify(pa)) return;
-      truoc.current = [...truoc.current.slice(-GIOI_HAN_HOAN_TAC + 1), pa];
-      sau.current = [];
-      ap(moi);
+      if (cheDoRef.current === 'chi_xem') return;
+      loi.sua(fn);
     },
     hoanTac() {
-      if (cheDo === 'chi_xem') return;
-      const p = truoc.current.pop();
-      if (!p) return;
-      sau.current.push(pa);
-      ap(p);
+      if (cheDoRef.current === 'chi_xem') return;
+      loi.hoanTac();
     },
     lamLai() {
-      if (cheDo === 'chi_xem') return;
-      const p = sau.current.pop();
-      if (!p) return;
-      truoc.current.push(pa);
-      ap(p);
+      if (cheDoRef.current === 'chi_xem') return;
+      loi.lamLai();
     },
+    /** Cho trợ lý Leo AI: bản PA mới nhất, sửa có trả kết quả, số bước hoàn tác, chế độ hiện tại. */
+    loi,
+    layCheDo: () => cheDoRef.current,
     /** Ctrl+S: ghi ngay, không chờ debounce. */
     luuNgay: () => void boLuu.luuNgay(),
     conChuaLuu: () => boLuu.conChuaLuu(),

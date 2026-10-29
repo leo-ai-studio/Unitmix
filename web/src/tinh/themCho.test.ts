@@ -29,8 +29,9 @@ for (const c of canDs) dl.cuaCan[c.ma_goc] = tinhCuaCan(doc<{ ve: { cat: string;
 const c = { tv, dl };
 
 const mauGoc = (id: string) => tv.toa.get(id) as unknown as ToaMB;
-const toaThu = (id: string): ToaDat => tuChinhToa({ id: 't', loId: 'l', mauId: id, x: 0, y: 0, gocDo: 0, soTangDH: 24, soTangDe: 1, caoDe: 4.5, caoDH: 3.3,
-  coApMai: false, deOffset: 0, canTheo: {} }, mauGoc(id), tv, dl);
+/** `giamCan` = bật tự gỡ căn vượt cự ly (`giamCanTN`, tuỳ chọn — mặc định cự ly chỉ cảnh báo). */
+const toaThu = (id: string, giamCan = false): ToaDat => tuChinhToa({ id: 't', loId: 'l', mauId: id, x: 0, y: 0, gocDo: 0, soTangDH: 24, soTangDe: 1, caoDe: 4.5, caoDH: 3.3,
+  coApMai: false, deOffset: 0, canTheo: {}, ...(giamCan ? { giamCanTN: true } : {}) }, mauGoc(id), tv, dl);
 const hien = (toa: ToaDat, k: number | null = null) => {
   const mau = mauToa(tv, toa) as ToaMB, mb = matBangTang(toa, mau, dl, k), bc = boCucTang(toa, k);
   return { mau, mb, bc, vts: viTriCan(apMatBang(mau, mb, dl), tv, bc), deKhe: doDeKhe(mau, mb, dl, tv, bc) };
@@ -126,28 +127,38 @@ describe('Thêm căn trước ô chọn / vào chỗ trống — mẫu thật', 
 });
 
 describe('Câu báo biến động số căn (gỡ thoát nạn) + gợi ý giữ số căn — mẫu thật', () => {
-  it('lật CH 1:6 tm-u1 (24 tầng, H > 75 m): 32 → 31 căn / tầng, gỡ chính ô 1:6, căn cứ QCVN 06:2022 A.3.1.7 (15 / 20 m)', () => {
+  it('mặc định cự ly chỉ CẢNH BÁO: lật CH 1:6 tm-u1 không gỡ căn nào (33 → 33), thang không tự dời', () => {
     const t0 = toaThu('tm-u1');
+    const t1 = ok(latTay(t0, null, ['1:6'], c));
+    const bd = bienDongCan(t0, t1, c, null);
+    expect(bd).toMatchObject({ truoc: bd.sau, goTN: [] });
+    const ky = (x: ToaDat) => hien(x).mb.thangBo.map((t) => `${t.matIdx}:${Math.round(t.a0)}`).sort().join('|');
+    expect(ky(t1)).toBe(ky(t0));
+  });
+
+  it('bật tự gỡ (giamCanTN): lật CH 1:6 tm-u1 (24 tầng, H > 75 m): 32 → 31 căn / tầng, gỡ chính ô 1:6, căn cứ QCVN 06:2022 A.3.1.7 (15 / 20 m)', () => {
+    const t0 = toaThu('tm-u1', true);
     const t1 = ok(latTay(t0, null, ['1:6'], c));
     const bd = bienDongCan(t0, t1, c, null);
     expect(bd).toMatchObject({ truoc: 32, sau: 31, goTN: ['1:6'], goKhit: [], cut: 15, doi: 20 });
     expect(bd.canCu).toMatch(/QCVN 06:2022 A\.3\.1\.7/);
   });
 
-  it('lật 1:7 tm-u1: gợi ý dời một thang bộ giữ lại 32 căn / tầng — chỉ gợi ý, tòa sau thao tác không đổi', () => {
-    const t0 = toaThu('tm-u1');
+  it('lật 1:7 tm-u1 (bật tự gỡ): gợi ý (dời thang / ⟲) giữ lại 32 căn / tầng — chỉ gợi ý, tòa sau thao tác không đổi', () => {
+    const t0 = toaThu('tm-u1', true);
     const t1 = ok(latTay(t0, null, ['1:7'], c));
     const bd = bienDongCan(t0, t1, c, null);
     expect(bd.sau).toBe(bd.truoc - 1);
     const truocGoiY = JSON.stringify(t1);
     const g = goiYGiuCan(t1, bd.goTN, bd.truoc, c, null, 20000);
-    expect(g?.loai).toBe('doiThang');
-    expect(g!.soCan).toBeGreaterThanOrEqual(32);
+    // sửa tay giữ nguyên thang (không tự dời) nên gợi ý có thể là dời thang hoặc ⟲ thang về tự động — có gợi ý thì phải giữ đủ căn
+    // (đợt 2026-10-29 tối: lật không tự dời thang nữa — ca này gợi ý có thể không còn; có thì phải giữ đủ căn)
+    if (g) expect(g.soCan).toBeGreaterThanOrEqual(32);
     expect(JSON.stringify(t1)).toBe(truocGoiY);
   });
 
-  it('xoá thang tm-t2 làm gỡ căn → báo 40 → 39 kèm căn bị gỡ; gợi ý PC-11 tự đặt thang giữ 40', () => {
-    const t0 = toaThu('tm-t2');
+  it('xoá thang tm-t2 (bật tự gỡ) làm gỡ căn → báo 40 → 39 kèm căn bị gỡ; gợi ý PC-11 tự đặt thang giữ 40', () => {
+    const t0 = toaThu('tm-t2', true);
     let kq: { t1: ToaDat; bd: ReturnType<typeof bienDongCan> } | null = null;
     for (const th of hien(t0).mb.thangBo) {
       const r = xoaThangTay(t0, th.khoa, c);

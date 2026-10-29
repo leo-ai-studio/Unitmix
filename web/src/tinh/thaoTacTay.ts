@@ -10,7 +10,7 @@
 import { chiSoCanThem, moRong, khoaCanThem, mauToa, rutCanThem } from './canThem';
 import { doiCanTaiViTri, doiCanTheoTang, doiChoO, doiCongNang, latO } from './doiCan';
 import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type ToaDat } from './kieu';
-import { chupThangTay, deKhung, doDeKhe, ganLoaiThang, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
+import { chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
 
 export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'khong_vua' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan';
@@ -27,8 +27,11 @@ function doTang(toa: ToaDat, tang: number | null, { tv, dl }: Ctx) {
 }
 
 /** Chạy tự chỉnh sau phép sửa tay `sau` rồi kiểm không đè / khe mới trên các tầng `ks`. */
-function chotSua(truoc: ToaDat, sau: ToaDat, ks: (number | null)[], c: Ctx): KetQuaTay {
-  const mau = mauToa(c.tv, sau) as ToaMB | undefined;
+function chotSua(truoc: ToaDat, sau0: ToaDat, ks: (number | null)[], c: Ctx, thangTuDat = false): KetQuaTay {
+  const mau = mauToa(c.tv, sau0) as ToaMB | undefined;
+  // sửa tay KHÔNG tự dời / thêm / bớt thang (app cũ: thang là một ô trong dãy, chỉ người dùng dời): chưa có thang tay thì chụp tập
+  // thang đang có → PC-11 chạy `coDinh`. Thang về tự động chỉ khi người dùng bấm ⟲ (thangTuDongLai bỏ `thangTay`).
+  const sau = sau0.thangTay || !mau || thangTuDat ? sau0 : { ...sau0, thangTay: thangTayCua(truoc, c) };
   const r = tuChinhSauSua(truoc, sau, mau, c.tv, c.dl);
   for (const k of ks) {
     const a = doTang(truoc, k, c), b = doTang(r.toa, k, c);
@@ -241,7 +244,9 @@ export function doiThangTay(toa: ToaDat, khoa: string, mat: number, sau: string,
   const r = chotSua(toa, { ...toa, thangTay: tt }, [null], c);
   if (!r.ok) return r;
   const sauT = matBangCua(r.toa, mauToa(c.tv, r.toa) as ToaMB, c.dl).thangBo.find((t) => t.khoa === khoa);
-  if (!sauT || (truoc && Math.abs(sauT.a0 - truoc.a0) < 1 && sauT.matIdx === truoc.matIdx)) return { ok: false, lyDo: 'khong_dat_thang' };
+  if (!sauT) return { ok: false, lyDo: 'khong_dat_thang' };
+  // thả ngay chỗ cũ (sau đúng ô đứng trước nó): không có gì đổi — không báo "không đặt được"
+  if (truoc && Math.abs(sauT.a0 - truoc.a0) < 1 && sauT.matIdx === truoc.matIdx) return { ok: false, lyDo: 'khong_doi' };
   return r;
 }
 
@@ -249,5 +254,30 @@ export function doiThangTay(toa: ToaDat, khoa: string, mat: number, sau: string,
 export const thangTuDongLai = (toa: ToaDat, c: Ctx): KetQuaTay => {
   if (!toa.thangTay) return { ok: false, lyDo: 'khong_doi' };
   const tangRieng = toa.tangRieng && Object.fromEntries(Object.entries(toa.tangRieng).map(([k, g]) => { const { matBang: _b, ...con } = g; void _b; return [k, con]; }));
-  return chotSua(toa, { ...toa, thangTay: undefined, matBang: undefined, ...(tangRieng ? { tangRieng } : {}) }, [null], c);
+  return chotSua(toa, { ...toa, thangTay: undefined, matBang: undefined, ...(tangRieng ? { tangRieng } : {}) }, [null], c, true);
 };
+
+// ---------------- đầu hành lang (app cũ p14 · QT-38 · QT-55: co kéo đầu hành lang) ----------------
+
+/** Bắt dời đầu hành lang: bước 100 mm, hít về vị trí tự động (0) trong 400 mm (app cũ: bước 50 mm, nam châm 400 mm). */
+export const batHanhLang = (d: number): number => (Math.abs(d) < HL_TAY.namCham ? 0 : Math.round(d / HL_TAY.buoc) * HL_TAY.buoc);
+
+/**
+ * Kéo đầu `dau` (0 = p0, 1 = p1) của đoạn hành lang `i` dài ra (d > 0) / ngắn lại (d < 0) so với vị trí tự động. Nét bao + DTXD + cự
+ * ly thoát nạn tính lại; giới hạn như app cũ (không ngắn quá cửa căn xa nhất + 500 mm, đoạn ≥ 3 m, dài thêm ≤ 20 m). Căn không xê
+ * dịch (app cũ: chỉ hành lang và nét bao đổi). d = 0 ở cả hai đầu → hành lang đoạn đó về tự động.
+ */
+export function keoHanhLangTay(toa: ToaDat, i: number, dau: 0 | 1, d: number, c: Ctx): KetQuaTay {
+  const cu = toa.hanhLangTay?.[String(i)] ?? [0, 0];
+  const moi: [number, number] = dau ? [cu[0], batHanhLang(d)] : [batHanhLang(d), cu[1]];
+  if (moi[0] === cu[0] && moi[1] === cu[1]) return { ok: false, lyDo: 'khong_doi' };
+  const tay = { ...(toa.hanhLangTay ?? {}) };
+  if (moi[0] || moi[1]) tay[String(i)] = moi; else delete tay[String(i)];
+  return chotSua(toa, { ...toa, hanhLangTay: Object.keys(tay).length ? tay : undefined }, [null], c);
+}
+
+/** Bỏ mọi đầu hành lang kéo tay (app cũ "↺ Hành lang tự động"). */
+export function hanhLangTuDong(toa: ToaDat, c: Ctx): KetQuaTay {
+  if (!toa.hanhLangTay) return { ok: false, lyDo: 'khong_doi' };
+  return chotSua(toa, { ...toa, hanhLangTay: undefined }, [null], c);
+}

@@ -101,8 +101,9 @@ export type ToaDat = {
   /** false = tắt tự chỉnh mặt bằng tầng; thiếu = bật (như app cũ). */
   tuChinhMB?: boolean;
   /**
-   * false = KHÔNG tự gỡ căn vượt cự ly thoát nạn (giữ nguyên căn, chỉ báo "vượt"); thiếu = bật như app cũ: xếp lại dãy căn
-   * (giữ cơ cấu) rồi giamCanThoatNan (bỏ căn giữa gần mép / đổi ô thành phòng kỹ thuật).
+   * true = tự gỡ căn vượt cự ly thoát nạn: xếp lại dãy căn (giữ cơ cấu) rồi giamCanThoatNan (bỏ căn giữa gần mép / đổi ô thành
+   * phòng kỹ thuật). Thiếu / false = KHÔNG gỡ — cự ly chỉ CẢNH BÁO (nhãn cự ly, căn vượt tô đỏ), như sửa tay ở app cũ (chủ nhiệm
+   * 29/10/2026: "chỉ cảnh báo, không được chặn thay đổi").
    */
   giamCanTN?: boolean;
   /** Thang bộ liền suốt chiều cao khi có tầng riêng: 'hop' (mặc định) = hợp thang mọi tầng; 'chung' = ép theo tầng chung. */
@@ -122,6 +123,12 @@ export type ToaDat = {
    */
   thangTay?: ThangTay;
   /**
+   * Co kéo đầu hành lang bằng tay (app cũ p14 `S.axAdj` · QT-38 · QT-55): chỉ số đoạn hành lang (`MatBangSua.hanhLang`) → [dời đầu p0,
+   * dời đầu p1] mm so với vị trí tự động (dương = dài ra, âm = ngắn lại), áp sau XC-07. Nét bao + DTXD theo; hành lang không ngắn quá
+   * cửa căn xa nhất + 500 mm, không ngắn dưới 3 m, dài thêm tối đa 20 m. Thiếu = hành lang tự động.
+   */
+  hanhLangTay?: Record<string, [number, number]>;
+  /**
    * Loại thang bộ chọn tay (QT-63: khoá thang → 'x_tb_n2' | 'x_tb_n3'). Quy tắc mọi tòa: luôn có ít nhất một N2 và một N3 — thang chưa
    * chọn do ganLoaiThang (tinh/loiThang.ts) gán. Áp mọi tầng.
    */
@@ -130,6 +137,8 @@ export type ToaDat = {
   latO?: Record<string, boolean>;
   /** Căn thêm tay (công cụ "Thêm căn" · QT-69): chèn ngay sau ô `sau` trên mặt `mat`, dãy dài ra ở đầu tự do. Mọi tầng. */
   canThem?: CanThem[];
+  /** Vị trí tủ họng nước chữa cháy đặt tay trên tầng điển hình (mm, hệ toạ độ mẫu tòa; QT-77 app cũ `S.tccTay`). Thiếu = tự đặt. */
+  tuPCCCTay?: Diem[];
 };
 /**
  * Thang bộ thêm tay: chèn ô 3.000 mm ngay sau vật thể `sau` (khoá căn / thang) — hoặc ngay trước vật thể `truoc` (thang đầu dãy) —
@@ -212,6 +221,8 @@ export type MatBangSua = {
   thangBo: ThangBoMB[];
   /** Độ dời dọc mặt (mm) của căn theo khoá vị trí do thêm / bớt / dời thang. */
   dich?: Record<string, number>;
+  /** Đầu neo của đoạn căn (khoá căn đầu đoạn) khi dồn khít qua thang bộ (donQuaThang): 'dau' / 'cuoi' — donKhit dồn về đầu đó. */
+  neo?: Record<string, 'dau' | 'cuoi'>;
   /** Mép đầu / cuối mặt sau khi dài ra, ngắn đi (mm, hệ mặt) theo chỉ số mặt. */
   mep?: Record<number, [number, number]>;
   /** Nét bao sàn sau khi mặt dài ra / ngắn đi; thiếu = nét bao mẫu. */
@@ -279,6 +290,28 @@ export type ThongSoHam = {
   garaCoKhi?: boolean;
   ram?: RamHam;
   xeDien?: KhuXeDien;
+  /* Bố trí hầm đợt 2 (tinh/hamPhong.ts, tinh/hamBoTri.ts). PA cũ thiếu thì chuanHoaHam điền mặc định. */
+  /** Tự lập chương trình phòng kỹ thuật theo dự án (tắt = dải kỹ thuật theo `tyLeKyThuat` như cũ). */
+  tuDongPhong?: boolean;
+  /** Chỉnh từng loại phòng (khoá = LoaiPhong): DT m² (null = tự tính) hoặc bỏ. */
+  phong?: Record<string, { dt?: number | null; bo?: boolean }>;
+  /** Nước sinh hoạt L/người/ngày đêm (QCVN 01:2021 2.10.2: ≥ 80); số ngày dự trữ bể; kVA mỗi căn (tạm). */
+  qSinhHoat?: number;
+  ngayDuTru?: number;
+  kvaMoiCan?: number;
+  /** DT tối đa một khoang cháy mỗi tầng hầm, m² (QCVN 13:2018 Bảng 4: bậc I, S0 ≤ 3 000). */
+  dtKhoangMax?: number;
+  /** Cự ly tối đa tới lối ra thoát nạn trong hầm, m (QCVN 13:2018 Bảng 3: ngầm 40 m giữa hai lối ra). */
+  cuLyThoat?: number;
+  /** Buồng thang thoát nạn đặt thêm: rộng × dài, m (tạm). */
+  thangRong?: number;
+  thangDai?: number;
+  /** Số chỗ xe lăn tự tính theo QCVN 10:2024/BXD Bảng 1 trên tổng chỗ (tắt = `choXeLan` mỗi tầng). */
+  xeLanTuDong?: boolean;
+  /** Chỗ xe máy: rộng × dài, lối đi, m (QCVN 07-11:2025 dự thảo 2.4.2.2: ≥ 0,75 × 2,0; lối một chiều ≥ 1,5). */
+  xeMayRong?: number;
+  xeMayDai?: number;
+  xeMayLan?: number;
 };
 
 /** Loại ram theo QCVN 13:2018 2.2.1.28 a): thẳng có mái che, cong, hở (không mái che). */
@@ -294,6 +327,13 @@ export type RamHam = {
   docNgang: number; // %
   coNguoiDi: boolean;
   viaHe: number; // m
+  /** Đoạn chuyển dốc (nửa dốc) ở mỗi đầu, m — tính trong `dai` (QCVN 07-11:2025 dự thảo 2.4.3.8.3: đổi dốc ≤ 12,5% / 15%). */
+  doanChuyen?: number;
+  /** Đoạn thẳng bằng sau chân ram trong hầm / trước đỉnh ram (tầng 1 và tầng có ram xuống tiếp), m (tạm). */
+  doanThangDuoi?: number;
+  doanThangTren?: number;
+  /** Bán kính ram cong (tim làn trong), m (QCVN 07-11:2025 dự thảo 2.4.7.4.3: ngầm ≥ 6 m). */
+  banKinh?: number;
 };
 /** Khu xe điện / sạc / đổi pin theo DỰ THẢO Sửa đổi 01:2026 QCVN 04:2021/BXD (chưa có số, chưa hiệu lực): chỉ cảnh báo. */
 export type KhuXeDien = {
@@ -307,6 +347,8 @@ export type KhuXeDien = {
   khoangCach: number; // m, giữa các khu / phân vùng
   tuongNgan: boolean; // có tường / vách ngăn không cháy cao ≥ 2 m
   tuDoiPinTang: number | null; // tầng hầm đặt tủ đổi pin; null = không có
+  /** % chỗ ô tô có sạc khi `choOto` = 0 (QCVN 07-11:2025 dự thảo 2.3.5 phương án 3: ≥ 10%). */
+  tyLeOto?: number;
 };
 
 /** Góc nhìn 3D đã lưu (m, toạ độ three: X = x, Y = cao, Z = −y). `che` = cảnh toàn dự án hay một công trình. */

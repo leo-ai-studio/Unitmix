@@ -7,7 +7,9 @@ import { themBienThe } from './stretch';
 
 /*
  * Đối chiếu rải hầm trước / sau tối ưu (lưới chỉ mục vật cản, gộp tầng giống nhau): cùng số chỗ, cùng toạ độ đến từng bit.
- * `__mau__/hamDoiChieu.json` sinh bằng mã CŨ (commit 808abb3) trên PA thật trong DB local: PA gọn (lô + tòa thuộc lô) + chữ ký.
+ * `__mau__/hamDoiChieu.json`: PA thật trong DB local (PA gọn: lô + tòa thuộc lô) + chữ ký. Chữ ký sinh lại bằng mã bố trí hầm
+ * đợt 2 (2026-10-29: phòng kỹ thuật, khoang cháy, thang thoát nạn, làn không cụt — kết quả đổi có chủ đích); trước đó: commit 808abb3.
+ * Tối ưu tốc độ sau này phải giữ đúng chữ ký này.
  */
 type Mau = { ten: string; msTruoc: number; pa: TrangThaiPA; loId: string; ky: ChuKyHam };
 const lib = (f: string) => JSON.parse(readFileSync(new URL(`../../public/lib/${f}`, import.meta.url), 'utf-8'));

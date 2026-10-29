@@ -2,6 +2,115 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-29 (tối) · xếp căn như app cũ: cự ly thoát nạn chỉ cảnh báo · thang trượt theo căn · hốc logia đi theo căn · co kéo đầu hành lang · agent Opus
+
+Người dùng (M7 PA1 CT-1, tòa Z3 xh-z3, 19 căn/tầng, ảnh có 4 ô "KỸ THUẬT", khe trắng, nét bao không bo căn): "app cũ rất mượt… đảo qua lại thoải mái, di chuyển thang thoải mái, cự ly thoát nạn chỉ CẢNH BÁO không được chặn, đầu hành lang chưa co kéo được".
+- **Nguyên nhân chính** (tái hiện bằng kịch bản Edge trên bản trước, ảnh `docs/anh/xep-can/truoc-12-z3-*.png`): dời một thang bộ → tự chỉnh gỡ căn vượt cự ly (`giamCanThoatNan`, bật mặc định) → 23 → 15 căn, ô thành "KỸ THUẬT" / bỏ, dãy đứt, nét bao trôi; thang là MỐC dồn khít nên dãy kẹp giữa lõi và thang đổi mẫu căn / chặn `khong_vua`; hốc logia của nét bao CAD nằm cố định khi căn dời.
+- **Đã làm** (commit ad8e184, 0627b6c, 5926576, fd0afc4 + gộp `nang-cap/architechtures` f5ecda7):
+  - Cự ly thoát nạn CHỈ cảnh báo: `ToaDat.giamCanTN` thành tuỳ chọn (true = gỡ căn như cũ; mặc định không gỡ) — `tuChinhToaKq`, ô ở panel phải màn Tầng. Câu báo sau mỗi phép tay thêm "⚠ N căn vượt cự ly … chỉ cảnh báo, không chặn" (`cc.canhBaoTN`); lớp PCCC · Thoát nạn (của agent PCCC) bật thì căn vượt tô viền `--warn` (`MatBangTang` prop `canVuot`). Không còn phép nào bị chặn / trả về vì thoát nạn.
+  - Sửa tay không tự dời thang (app cũ: thang là một ô trong dãy): `chotSua` chụp tập thang hiện có (`thangTay`) → PC-11 `coDinh`; ⟲ vẫn tự đặt lại (`thangTuDongLai` không chụp).
+  - Thang không là mốc (app cũ `donKhitMat` + QT-48): `loiThang.donQuaThang` — dãy có thang mà căn CHỌN TAY đổi bề ngang thì cả dãy (căn + thang) dồn lại từ đầu neo (lõi / đầu không tự do), đầu tự do dài ra / ngắn lại (`gianMat`), ghi `MatBangSua.neo` cho donKhit; bỏ qua dãy kẹp, đầu hở sân trong (QT-69 xử lý), tầng riêng / thang ép (thang liền). Khít đoạn kẹp không đụng đoạn đã dồn (`refTheoNeo`). Xoá căn: thang giữa căn bỏ và đầu tự do trượt theo (`boCanTren`).
+  - Nét bao bo căn: hốc logia theo căn như app cũ QT-59b `hocDay` (`hocLogia`: ghép cặp trọn 1.250, đứng lẻ chừa 150 mm, cạnh thang 85 mm) — `netBao.suaHocLogia` lấp hốc cũ / chỗ ô lọt ra ngoài, khoét hốc mới, mọi đa giác cùng chiều (hợp NonZero hai đa giác ngược chiều từng tạo hốc giả), mở / đóng 100 mm bỏ gai, khe nứt; `netBaoTheoO` không khoét vào sàn chung không thuộc ô (sảnh hub Y / T).
+  - Co kéo đầu hành lang (app cũ p14 `startAxDrag` / `apDungAxAdj` / `baoTheoTay`, QT-38 · QT-39 · QT-55): `ToaDat.hanhLangTay` {chỉ số đoạn: [dời p0, dời p1]} so với tự động, áp sau XC-07 (`apHanhLangTay`), giới hạn cửa căn xa nhất + 500 mm / đoạn ≥ 3 m / dài thêm ≤ 20 m, chỉ đầu NGOÀI (`dauHanhLangNgoai`: không đoạn khác chạm, 1 m ra ngoài là ngoài nét bao); nét bao dựng lại theo dải hành lang. Tay nắm `ve/TayHanhLang.tsx` (bước 100 mm, hít về tự động trong 400 mm, bóng + số "± m" bám tay, bấm đúp về tự động), phép nền `keoHanhLangTay` / `hanhLangTuDong` trong `BANG_TAY`. Căn không xê dịch khi kéo hành lang (như app cũ).
+  - Thả thang đúng chỗ cũ báo "Không có gì thay đổi" thay vì "không đặt được".
+- **Phá hoại**: `phaHoaiChay` thêm phép kéo đầu hành lang; `moTaPhaHoai(hạt, bước, { mau, diVe })`; tệp mới `phaHoaiXepCan.test.ts` hạt 404 × 30 bước trên Z / V / T / L (gồm tm-z3, xh-z3) — mỗi lần đổi chỗ được nhận thì đổi VỀ ngay, phải trả đúng mặt bằng trước. Góc ô đo theo hình logia thật, đỉnh nét bao trên nét CAD gốc / chỗ gập hành lang không tính. Kết quả đủ mẫu (không lấy mẫu): hạt 0 / 101 / 202 / 303 × 33 mẫu + 404 × 21 mẫu Z/V/T/L = **153 / 153 ca, 0 vi phạm**.
+- **Trên app** (vite 5481 bản mới, 5482 bản trước dựng từ `git archive 59ee54d`, API 8787, dự án thử `2mlg1a2l` PA `pa-z3-truoc` / `pa-z3-sau` tòa xh-z3, 1440×900, Edge headless + CDP, kịch bản `scratchpad/xc/kb.mjs`): bản trước dời thang → 23 → 15 căn + 2 ô KỸ THUẬT, nét bao trôi; bản mới dời thang 2 lần, đổi chỗ đi / về, đổi chỗ khác mặt, xoá căn, kéo đầu hành lang +8,4 m — số căn 23 → 23 (xoá: 22), cảnh báo cự ly ở câu báo, không ô KỸ THUẬT, không khe. Long task luồng chính trong mỗi phép (PerformanceObserver): bản trước 0 ms, bản mới 0–74 ms (lượt vẽ lại SVG, như trước). Ảnh `docs/anh/xep-can/{truoc,sau}-12-z3-*.png`.
+- Test sửa theo luật mới: giamCanThangLien / khitLoiKep / themCho bật `giamCanTN` khi thử chính tính năng gỡ căn; DTXD trừ hốc logia khi căn đổi (quetThangLien QT-69, loiThang STRETCH); xoá thang tm-t2 không thêm đè.
+- Còn dở: tm-t2 (2 căn) / tm-u1 (1 căn) mặc định giờ còn căn vượt cự ly (chỉ cảnh báo; bật `giamCanTN` thì gỡ như cũ) và tm-t2 còn XC-05 lệch lõi 215 mm khi không gỡ; gợi ý giữ số căn (`goiYGiuCan`) chỉ chạy khi bật gỡ căn; kéo đầu hành lang không dồn lại căn (app cũ cũng không); hốc logia lẻ app cũ trừ thêm tường căn bên cạnh khi căn bên cạnh không có hốc — đã làm, nhưng căn góc V (`khung`) không có hốc; nhãn câu báo hành lang ghi độ dời yêu cầu (đã kẹp theo giới hạn thì số thật có thể nhỏ hơn).
+## 2026-10-29 · Hầm đợt 2: phòng kỹ thuật theo dự án, khoang cháy + thang thoát nạn, làn không cụt, ram có đoạn thẳng, xe lăn QCVN 10, xe máy / sạc, hộp gió, mặt bằng tầng 1 · agent Opus
+
+**Yêu cầu:** cải tiến bộ rải hầm và màn Hầm, tham khảo các hồ sơ bản vẽ đã có. Gồm:
+- chương trình phòng kỹ thuật theo dự án;
+- thứ tự đỗ: ô tô → xe máy → sạc → xe lăn;
+- làn xe không cụt;
+- ram thẳng có đoạn thẳng ở hai đầu;
+- khoang cháy và thang thoát nạn dùng chung;
+- hộp gió và louver;
+- mặt bằng tầng 1.
+
+Vẫn chạy trong Web Worker. 3D, chi phí và Leo AI phải chạy theo.
+
+**Tham khảo và căn cứ:** xem `docs/ham_tham_khao.md`.
+- Hồ sơ đã đọc: M1 Đan Phượng, Đông Quan B2/B3, KDAS Dream City, chuẩn đỗ xe Vinhomes, M&E Đại An.
+- Quy chuẩn: QCVN 13:2018, 06:2022 + SĐ1:2023, 04:2021, 10:2024, 01:2021. Dự thảo (chỉ cảnh báo): QCVN 07-11:2025, SĐ 01:2026 QCVN 04.
+- Không có trong kho: QCVN 13:2023, QCVN 10:2014, bề rộng làn theo góc đỗ, TCVN 2622 / 7336 / 9206 / 5687. Các số thiếu căn cứ để **tạm**.
+
+**Mã:**
+- `tinh/hamHinh.ts` (mới): hình học Clipper chung, hệ trục u/v. Tách ra từ `ham.ts`.
+- `tinh/hamPhong.ts` (mới): `chuongTrinhPhong`.
+  - Nước: bể SH = dân số × q × ngày ÷ 2,7 m (≥ 80 L/người/ngày đêm, QCVN 01 2.10.2). Bể PCCC = ngoài nhà max(Bảng 8 F1.3, Bảng 9 F5 hạng C) × 3 h + Bảng 11 × 2,5 L/s × 3 h + sprinkler (tạm). Bơm, XLNT + phòng vận hành.
+  - Điện: TBA khô + máy phát ở B1 (QCVN 13 2.2.2 b, QCVN 06 A.2.10).
+  - Phòng khác: bảo vệ, trực PCCC, điện nhẹ, kho; quạt hút / cấp mỗi khoang mỗi tầng; rác cạnh lõi ở B1 (QCVN 04 2.7.3).
+  - Chỉnh sửa: `ThongSoHam.phong[loai] = { dt, bo }` ghi đè DT hoặc bỏ phòng.
+- `tinh/hamBoTri.ts` (mới):
+  - `chiaKhoang`: các ô gần vuông ≤ `dtKhoangMax` 3 000 m² (QCVN 13 Bảng 4). Đường cắt v bắt vào lưng hai dãy chỗ.
+  - `datThang`: thang lõi tòa + thang thêm. Mỗi khoang ≥ 2 lối ra, cự ly ≤ 40 m đo Manhattan (QCVN 13 2.2.1.14, Bảng 3). Thang trên tường ngăn cháy (TB*) dùng cho hai khoang. Phạt vị trí dưới tháp (QCVN 06 3.2.2 a).
+  - `timChoSatTuong`: cụm quạt + hộp gió, không nằm dưới tháp. `timChoCanhLoi`.
+  - `demCutDuong`, `soXeLanQCVN10`, `chonXeLan` (gần lõi), `chonSac` (gần TBA).
+  - Hình học nhanh `dtTrongHcn` / `hcnTrong`: lô 400 × 400 từ 2,1 s xuống 0,25–0,4 s.
+- `tinh/raiCho.ts`:
+  - `yeuCauLan`: chỗ chỉ nhận khi ô làn trước mặt hợp lệ. Trước đây có chỗ xe không vào được.
+  - `vatCanCho`: tường ngăn cháy và cột tòa chỉ chặn chỗ, không chặn làn.
+  - `phatLan`: điểm phạt đầu cụt khi chọn lưới. `lanTai` / `lechV`: một lưới dãy chung mọi tầng, có một làn sát mép ram.
+- `tinh/ham.ts` `raiHamTinh` viết lại:
+  - Ram: chọn góc hầm gần đường. Ram thẳng gồm đoạn thẳng dưới + dốc (`doanChuyen` 3,6 m, đổi dốc ≤ 12,5% theo dự thảo 07-11) + đoạn thẳng trên.
+  - Dải lớn trên tầng: phòng → xe máy → kho. Xe máy đủ số theo chỉ tiêu và ≥ 6 m²/căn, khu riêng.
+  - Khu ô tô: đường ngang ở hai đầu, dải chỗ quay đầu hầm. Đầu cụt (lõi, thang chắn) mở đoạn nối sang làn kề.
+  - Rèm ngăn cháy ở chỗ làn cắt tường.
+  - Xe lăn theo QCVN 10:2024 Bảng 1, gần lõi, ưu tiên B1. Sạc 10% (dự thảo) gần TBA.
+  - Thông gió: 9 lần/h × thể tích khoang (QCVN 04 2.6.5), ống riêng từng tầng. Vận tốc gió là số tạm.
+  - Tầng 1 `t1`: tháp / đế, miệng ram + đoạn thẳng + đường vào, louver, thang ra, cảnh quan.
+  - Kiểm mới: cutDuong, ramNoi, khoangDt / LoiRa / CuLy, gioKhoang, soLanRam (QCVN 13 2.2.1.11), rongLan, ramDoiDoc, ramBanKinh, soXeMay, xeLan (QCVN 10), qSinhHoat, sacOto.
+- `kieu.ts`, `macDinh.ts`:
+  - Trường mới: `tuDongPhong`, `phong`, `qSinhHoat`, `ngayDuTru`, `kvaMoiCan`, `dtKhoangMax`, `cuLyThoat`, `thangRong/Dai`, `xeLanTuDong`, `xeMayRong/Dai/Lan`; ram `doanChuyen` / `doanThangDuoi` / `doanThangTren` / `banKinh`; `xeDien.tyLeOto`.
+  - Ram mặc định 24 × 6,5 m. Xe điện bật cho PA mới; PA cũ giữ giá trị đã lưu.
+- Màn Hầm (`man/ManHam.tsx`, `ve/MatBangHam.tsx`, `styles/ham.css`):
+  - Nút **T1** (mặt bằng tầng 1, lớp phủ, khung giữa không đổi) cạnh B1 / B2.
+  - Bản vẽ thêm: phòng (tên ngắn + DT), tường / rèm ngăn cháy, thang TB / TB*, hộp gió GT / GC, đầu cụt ⊗, ô xe máy.
+  - Panel phải thêm: "Đỗ xe: có / yêu cầu", "Phòng kỹ thuật" (sửa DT / bỏ), "Khoang cháy, thoát nạn, thông gió", "Tầng 1".
+  - Panel trái thêm: khoang, phòng tự động, xe máy, ram, tỷ lệ sạc.
+  - i18n VI / EN.
+- Leo AI:
+  - `get_basement` trả thêm chỗ có / yêu cầu, phòng, khoang, thang, thông gió, tầng 1.
+  - `update_basement` nhận trường mới, `rooms`, `auto_rooms`, `auto_accessible`, `ev`, và các trường ram mới.
+- Phần khác:
+  - 3D: thang thêm và hộp gió nhô lên cốt 0.
+  - Dự toán: số xe máy lấy từ số đã rải.
+  - Chữ ký đối chiếu `__mau__/hamDoiChieu.json` sinh lại (kết quả đổi có chủ đích).
+
+**Số đo trước → sau** (mã `59ee54d` → nhánh này; ô tô theo tầng):
+
+| Lô | Ô tô | Xe lăn | Xe máy | Đầu cụt | Khoang | Thời gian rải |
+|---|---|---|---|---|---|---|
+| Dự án thử `2mlg1a2l` pa-2 (NO-01, 2 tầng) | 713 → 503 | 4 → 9 / 9 | 5 879 m² → 2 249 chỗ / 2 016 (6 078 m²) | ≈ 78 → 0 | 6 (≤ 2 452 m², ≥ 3 lối, ≤ 38,6 m) | 71 → 183 ms |
+| 200 × 120 (1 tòa) | 1 680 → 1 275 | — | — | ≈ 112 → 0 | — | — |
+| 400 × 400 (2 tầng) | 13 173 → 11 506 | 4 → 120 | — | ≈ 268 → 0 | 63 | 0,10 → 0,28 s |
+| 311 × 293 (222 đỉnh) | — | — | — | 9 (đã báo trên bản vẽ) | — | — |
+
+- Ô tô giảm là có chủ đích:
+  - chỗ không có làn trước mặt (trước được tính) bị bỏ;
+  - thêm đường ngang hai đầu, đoạn nối quanh lõi;
+  - thêm thang thoát nạn (pa-2: 9 thang thêm), cụm quạt + hộp gió từng khoang;
+  - chuyển 9 chỗ thành chỗ xe lăn (gộp hai chỗ thành một);
+  - dải xe máy đủ 6 m²/căn.
+- Mở màn Hầm: longtask luồng chính = 0 (PerformanceObserver). Rải xong sau khoảng 0,2–0,45 s (worker).
+- Khung giữa 1440 × 900: `270,52,870,848`; điện thoại 390 × 844: `0,48,390,740`. Không đổi khi chuyển T1 / B1 / B2.
+
+**Kiểm:**
+- Test mới `tinh/hamBoTri.test.ts` (11 ca tính tay).
+- `ham.test.ts`: cập nhật ram có đoạn chuyển, xe lăn QCVN 10.
+- `congCu.test.ts`: update / get_basement.
+- `node scripts/kiem.mjs` ĐẠT.
+- Ảnh trước / sau trong `docs/anh/ham/`: `truoc-ham-*`, `sau-ham-*`, `sau-b2-*`, `sau-tang1-*`, `sau-phong-desktop`, `sau-khoang-desktop`. Chụp bằng vite 5473 + API 8787, PA thử `pa-ham2` (bản sao pa-2 bật xe điện, đã xoá sau khi chụp).
+
+**Còn dở / chờ chủ nhiệm chốt:**
+- Thang trên tường ngăn cháy phục vụ hai khoang. QCVN 06 3.2.4 không tính lối ra sang khoang F5 kề, nhưng buồng thang không thuộc khoang (H.6.2). Cần chốt có được tính cho cả hai khoang.
+- Cột tòa chỉ chặn chỗ, không chặn làn. Đây là giả định lưới cột hầm đi theo dãy đỗ hoặc chuyển tại sàn đế.
+- Vận tốc gió, sprinkler, kVA/căn, DT phòng rác / TBA / máy phát, đoạn thẳng ram 6 m, ngày dự trữ bể đều là số tạm.
+- Đọc chung "> 200: 5 + 1 cho mỗi 100 xe thêm" là lấy tròn lên (201 → 6).
+- Thang thêm vẫn có thể rơi dưới đế khi hết chỗ. Panel Tầng 1 có đếm "thang dưới tháp / đế".
+- Lô ranh nhiều đỉnh (311 × 293) còn 9 đầu cụt.
+
 ## 2026-10-29 · Dân số: ô Khu vực đô thị / nông thôn · Đồng Nai phòng ở + mốc biên · tỉnh trọng điểm sau sáp nhập · agent Opus
 
 **Chủ nhiệm đã chốt:** Hà Nội TĐC = mặc định quốc gia 32 m²/người; Đồng Nai thêm ô "Khu vực"; phòng ở theo QĐ địa phương, không có thì QCVN; Phú Yên bỏ qua; tỉnh trọng điểm HN, TP.HCM, An Giang (Kiên Giang, Phú Quốc), Hưng Yên.
@@ -519,3 +628,37 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 **Kiểm:** `node scripts/kiem.mjs` ĐẠT (tsc, web 737, worker 9, pytest 15, build); test mới `kho/chiaSe.test.ts`, `man/locDuAn.test.ts`; `kiem_man_hep.mjs` 390 ĐẠT (trang-du-an, tao-du-an, so-sanh). Trên app (Edge headless): link sửa chép ra `…/du-an/2mlg1a2l?sua=…`, dự án chia sẻ chỉ có "Chép link xem", bỏ khỏi danh sách + Hoàn tác trả đúng chỗ. Ảnh trước / sau: `docs/anh/du-an/`.
 
 **Chưa làm:** không có API xoá cả dự án trên server (chỉ xoá PA) — dự án của mình cũng chỉ "bỏ khỏi danh sách"; chưa có ảnh thu nhỏ mặt bằng trên thẻ (Architechtures có).
+## 2026-10-29 · Leo AI — trợ lý Claude điều khiển app · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** thêm trợ lý AI ("Leo AI", thương hiệu LEO) trong app, dùng Claude, thao tác THẬT mọi tính năng như người dùng (xếp tòa, sửa tầng, hầm, chi phí, PA…); khoá riêng hoặc khoá chung máy chủ; giao diện như Claude (chảy chữ, Markdown, bước công cụ, dừng, lịch sử, sửa / thử lại, đính kèm), giọng nói, chọn mô hình (mặc định Sonnet 5.5 · Cân bằng) + gợi ý mô hình 0 token khi gõ, chạy tốt trên điện thoại.
+
+**Mã:** chi tiết ở `docs/tro_ly_ai.md`.
+- `kho/khoLoi.ts` — lõi thuần của `useKho` (sửa luôn trên bản mới nhất, trả có / không đổi); `useKho` dùng lõi này, trả thêm `loi`, `layCheDo`.
+- `troLy/congCu/*` — 45 công cụ (đọc, điều hướng, TMB, tầng, hầm, chi phí, PA, xuất, hoàn tác, UI dự phòng) gọi đúng hàm các màn; `troLy/vongLap.ts` vòng tác tử (stop_reason, gom tool_result, Dừng, gọn lịch sử); `troLy/khachThat.ts` SDK `@anthropic-ai/sdk` 1.3 (khoá riêng thẳng Anthropic / khoá chung qua Worker); `troLy/LeoAI.tsx` + `styles/leo-ai.css`; `troLy/giongNoi.ts`, `uiDom.ts`, `markdown.ts`, `hoiThoai.ts`, `goiYMoHinh.ts`, `moHinh.ts`, `heThong.ts`, `nguCanhSoan.ts`.
+- Nối vào trình soạn: nút Leo AI trên `ThanhTren` (máy tính) / dock dưới `KhungSoan` (màn hẹp), khung là `lopPhu` cố định — không đụng `DuAn.tsx`, phần `ThuongHieu`. `man/ManTang.tsx` thêm `tangDangXem`; `man/tuChinhTang.ts` thêm `choDuLieuMB`.
+- Worker: `worker/src/ai.ts` (`GET /api/ai/trang-thai`, `POST /api/ai/v1/messages`), migration `0002_ai_luot.sql`.
+- `scripts/leo_ai_e2e.mjs` (E2E mô hình giả, ảnh `docs/anh/tro-ly/`), `scripts/kiem_man_hep.mjs` thêm hộp `leo-ai`.
+
+**Kiểm:** web vitest (công cụ 50 ca + vòng 11 + gợi ý 6 + markdown 3 + kho 2), worker 14/14 (5 mới), `tsc` 0; E2E Leo AI ĐẠT (1440×900 + 390×844); `kiem_man_hep.mjs` 390 / 768 / 844 / 1440 ĐẠT; `node scripts/kiem.mjs` ĐẠT (tsc, web 799, worker 14, pytest 15, build); `kiem_man_hep.mjs` đủ 7 khung ĐẠT (hộp leo-ai đạt mọi khung).
+
+**Chủ app phải làm:** `npx wrangler secret put ANTHROPIC_API_KEY` và `npx wrangler d1 migrations apply unitmix --remote` (bảng `ai_luot`). Không đặt thì người dùng dán khoá riêng.
+
+**Còn dở / chưa chắc:** chưa chạy với Claude thật; vài thao tác chỉ có trên bản vẽ (vẽ ranh hầm, kéo tự do) đi qua `ui_*`; giá Haiku 5.5 theo bảng chủ nhiệm đưa, cần đối chiếu trang giá Anthropic.
+
+**Đề xuất:** (1) nút "Leo AI giải thích" ở các cảnh báo LO-01/02/05 và chỉ tiêu vượt — mở khung với câu hỏi sẵn; (2) công cụ vẽ / sửa ranh hầm và nhập chỉ tiêu từ ảnh chụp bảng QH (Claude đọc ảnh → `update_lot`); (3) đo `usage.cache_read_input_tokens` hiện ở Cài đặt (chi phí thật mỗi cuộc); (4) học Forma: "Leo AI so sánh 3 phương án xếp tòa" chạy `suggest_arrangements` rồi `compare_pas` trên PA nhân bản; (5) nhật ký thao tác Leo AI theo PA (ai sửa gì) để chủ nhiệm duyệt.
+
+## 2026-10-29 · PCCC + thang máy trên mặt bằng tầng · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** hiện số thang máy (70 căn / 200 người mỗi thang, tra đúng điều), xác định cửa ngăn cháy và thang máy chữa cháy, kiểm bán kính 60 m, cách đặt tủ PCCC, cửa chia khoang hành lang (ngăn khói) theo chiều cao PCCC; học app cũ trước, thiếu thì lấy quy chuẩn.
+
+**Căn cứ (kho `E:\OneDrive\_QCVN-TCVN`, PyMuPDF):** QCVN 04:2021 2.4.1 (≥ 5 tầng 1 thang, ≥ 10 tầng 2), 2.4.2 (1 thang / 200 người hoặc / 70 căn — app cũ ghi nhầm là "bảng chuẩn Viện"), 2.4.3 + QCVN 06 6.13 (TMCC khi H > 50 m với F1.3; bán kính ≤ 60 m; A.2.12 nhà > 75 m ≤ 45 m), QCVN 04 2.5.3 (họng chờ → cửa căn xa nhất ≤ 45 m theo đường đi), QCVN 06 3.3.5 (hành lang > 60 m phải chia) / A.3.1.7 → A.2.14 (khối căn hộ ≤ 30 m, nhà > 75 m), 3.2.11 (cửa buồng thang loại 1), 3.3.5 (cửa mở ra hành lang EI ≥ vách), Bảng 2 / Bảng 3, 4.24, A.3.1.12, A.2.30.2, D.2 a (hút khói hành lang > 28 m). TT 31/2026 không sửa 2.4 / 2.5.3. Không có TCVN 4451 / 7628 / 6396-72/73 trong kho.
+
+**App cũ:** QT-94 min(căn/70, dân/200), QT-76 tính cả TMCC + thang hàng, QT-64 đếm giếng theo hình; TMCC chỉ là ô số (không chỉ định giếng, không kiểm bán kính); không đánh dấu cửa ngăn cháy; tủ QT-77 (R 18 m chủ nhiệm chốt); cửa hành lang QT-95/98/100–105 (30 / 60 m, DP chính xác). Không có kiểm 60 m nào ngoài chiều dài hành lang.
+
+**Mã:** `tinh/thangMay.ts` (giếng từ `loi/*.json` `vi_tri_gieng`, số cần, chọn TMCC phủ tham lam, hoà → gần N3), `tinh/chiaHanhLang.ts` (đặt cửa từ lá về gốc, `doKhoang`), `tinh/pcccTang.ts` (`phanTichPCCCTang` gom mọi lớp, nhớ theo mặt bằng hiệu dụng; `soLieuToaPCCC`, `thangMayToa`), `ve/LopPCCC.tsx` (5 lớp trong nút Lớp, chú giải, chữ giữ cỡ tối thiểu theo px/mm, tủ kéo bám tường → `ToaDat.tuPCCCTay`), `ui/KpiPCCC.tsx` (khối panel phải + cảnh báo), `ui/ThangMayLo.tsx` (TMB), Leo AI `check_rules` thêm `pccc` từng tòa. `ManTang.tsx` chỉ thêm vài dòng gắn lớp / khối. Luật: `chep_quy_tac.py` sửa nguồn CT-05/06/07, PC-07, hàm PC-05/06/08 + 5 luật bổ sung (`qcvn04_241_thang_toi_thieu`, `qcvn06_613_ban_kinh_tmcc`, `qcvn04_253_hong_cho_45`, `qcvn06_cua_ngan_chay`, `qcvn06_D2_hut_khoi_hl`).
+
+**Kiểm:** `tinh/pcccTang.test.ts` 17 ca (2.4.1 / 2.4.2 tay, ngưỡng 50 m, R 60/45, chọn giếng, giếng xoay / lật, chia 50 / 130 m / chữ T, dời cửa, tòa thật tm-z3 24 và 12 tầng, tủ đặt tay). Ảnh Z3 24 tầng (H 81,8 m) `docs/anh/pccc/` (Edge headless, vite 5393 + API 8787, dự án 2mlg1a2l — đã đặt thêm một tòa Z3 vào lô NO-01 của PA thử). Z3: thang máy 5 / 9 (thiếu), TMCC 1 giếng 42,6 / 45 m, họng chờ 32,1 / 45 m, 5 tủ, 2 cửa CNC khoang 28,5 / 30 m, 5 căn vượt thoát nạn.
+
+**Chờ chủ nhiệm chốt:** `docs/pccc_tang.md` mục 8 (đo bán kính TMCC thẳng hay theo đường đi; giữ min hay max hai cách tính thang máy; giếng thứ 5 lõi z3_tm_06; cửa phòng KT nhà ≤ 75 m; N2 có làm nguồn họng chờ; cửa hành lang theo đủ R1–R7 app cũ; bổ sung TCVN 4451 / 7628 / 6396).
+
+**Đề xuất:** (1) chép DP cửa hành lang của app cũ (cộng sảnh thang máy, R4 không quét cửa) thay bản tham lam; (2) giếng thang tách loại (khách / chữa cháy / hàng / băng ca) bằng dữ liệu lõi để đếm và gán TMCC chắc hơn — học Forma "core schedule"; (3) gợi ý đổi lõi khác cùng hình khi thiếu thang máy (lõi tm_09, tm_13); (4) lớp PCCC trên 3D (khoang hành lang tô màu) và xuất CAD layer `MDI-PCCC-*` như app cũ; (5) nút "Leo AI giải thích" cho từng cảnh báo PCCC.

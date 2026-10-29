@@ -47,3 +47,12 @@
 /* phép tay đang chạy nền (tinh/tayNen.ts): vòng O cạnh thanh công cụ */
 .thanh-cc-tang .cc-dang-chay { display: inline-flex; align-items: center; padding: 0 4px; }
 .thanh-cc-tang .cc-dang-chay img { width: 16px; height: 16px; }
+
+/* Tay nắm co kéo đầu hành lang (ve/TayHanhLang.tsx — app cũ p14 axHandle): vòng nền bản vẽ viền xanh; đã kéo thì tô đặc */
+.tay-hl-nut { fill: var(--panel); stroke: var(--green); stroke-width: 2; cursor: grab; }
+.tay-hl-nut.da-keo { fill: var(--green); }
+.tay-hl-nut:hover { stroke-width: 3; }
+.tay-hl-bong { stroke: var(--green); stroke-opacity: 0.25; pointer-events: none; }
+.tay-hl-so { fill: var(--green); font-weight: 700; pointer-events: none; }
+/* căn vượt cự ly thoát nạn khi bật lớp Thoát nạn — chỉ cảnh báo */
+.can-vuot-tn { fill: var(--warn); fill-opacity: 0.12; stroke: var(--warn); stroke-width: 2.5; stroke-dasharray: 7 4; pointer-events: none; }

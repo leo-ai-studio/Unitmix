@@ -27,9 +27,12 @@ import { mauCuaToa, suaTuChinh, useDuLieuMB } from './tuChinhTang';
 import { matBangRiengTang, type ChanSua } from '../tinh/loiThang';
 import { ST_BUOC, stretchTay, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
-import { ThanhCongCuTang, useKeoTay, useToaTam, type ChoSang, type PropsCongCu } from './CongCuTang';
+import { ThanhCongCuTang, useKeoHanhLang, useKeoTay, useToaTam, type ChoSang, type PropsCongCu } from './CongCuTang';
+import { TayHanhLang } from '../ve/TayHanhLang';
 import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
+import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, useCaiPCCC, usePCCCTang } from '../ve/LopPCCC';
+import { KhoiPCCC } from '../ui/KpiPCCC';
 
 export type ChungTang = {
   pa: TrangThaiPA;
@@ -85,6 +88,9 @@ export function useChonO(toa: ToaDat | null): ChonO {
 const datChonToa = (toa: ToaDat, p: Partial<ChonO>) => datChonO({ ...(chonO.toaId === toa.id ? {} : { tangs: null, ds: [], menu: null, thang: null }), toaId: toa.id, ...p });
 /** Chọn tầng điển hình đang xem của tòa từ ngoài màn Tầng (3D Công trình bấm căn / tầng): null = bố cục chung. Dùng được cả khi ô ChonTang chưa gắn. */
 export const chonTangToa = (toa: ToaDat, tangs: number[] | null) => datChonToa(toa, { tangs, ds: [], menu: null });
+
+/** Tầng điển hình đang xem của tòa (null = bố cục chung) — trợ lý Leo AI đọc. */
+export const tangDangXem = (toaId: string | null): number[] | null => (toaId && chonO.toaId === toaId ? chonO.tangs : null);
 
 /** Các ô đang chọn: ô chính (canKhoa) + ô chọn thêm. */
 const oDangChon = (canKhoa: string | null, ds: string[]) => [...new Set([...(canKhoa ? [canKhoa] : []), ...ds])];
@@ -229,6 +235,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   const k0 = tangXem(co.tangs);
   const bc: BoCuc = useMemo(() => boCucTang(toa, k0), [toa, k0]);
   const sl = useMemo(() => soLieuTang(mau, bc, tv), [mau, bc, tv]);
+  const pccc = usePCCCTang(pa, tv, toa, mau, bc); // lớp PCCC (ve/LopPCCC.tsx), cùng mặt bằng KPI dùng
   // phép tay đang chạy nền: vẽ mặt bằng tạm (phần hình học nhanh, chưa tự chỉnh); công cụ tay vẫn dựa trên tòa trong PA
   const tam = useToaTam(toa);
   const mauVe = useMemo(() => (tam ? mauCuaToa(tam, mauToa(tv, tam) as ToaVe, k0) : mau), [tam, mau, tv, k0]);
@@ -265,6 +272,10 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
     keoBat, datKeoBat: setKeoBat, hienHL, datHienHL: setHienHL, datChoSang: setChoSang,
   };
   const keoTay = useKeoTay(ccProps);
+  const keoHL = useKeoHanhLang(ccProps);
+  // lớp Thoát nạn bật: tô căn vượt cự ly (chỉ cảnh báo)
+  const caiPC = useCaiPCCC();
+  const canVuot = useMemo(() => (caiPC.thoatNan && pccc ? pccc.thoatNan.can.filter((x) => x.vuot).map((x) => x.khoa) : undefined), [caiPC.thoatNan, pccc]);
   const onMenu = (loai: 'o' | 'loi', khoa: string, x: number, y: number) => {
     if (loai === 'o' && !dsO.includes(khoa)) { chonCan(khoa); datChonToa(toa, { ds: [] }); }
     datChonToa(toa, { menu: { loai, khoa, x, y } });
@@ -322,7 +333,9 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
             deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2}
-            thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} dichLoi={keoTay.dichLoi} oKeo={keoTay.oKeo} hienHanhLang={hienHL} choSang={choSang} />
+            thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} dichLoi={keoTay.dichLoi} oKeo={keoTay.oKeo} hienHanhLang={hienHL} choSang={choSang} canVuot={canVuot} />
+          <g transform="scale(0.001 -0.001)"><LopPCCC kq={pccc} chiXem={chiXem} datTuTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, tuPCCCTay: ds ?? undefined })))} /></g>
+          {!chiXem && !tam && <g transform="scale(0.001 -0.001)"><TayHanhLang mau={mauVe} hanhLangTay={toa.hanhLangTay} onKeo={keoHL} /></g>}
         </BanVe>
       </div>
       <ThanhCongCuTang {...ccProps} />
@@ -352,7 +365,8 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         { khoa: 'noi', nhan: t('tang.noiThat'), bat: cai.noiThat, onClick: () => datCaiTang({ noiThat: !cai.noiThat }) },
         { khoa: 'cham', nhan: t('tang.chamMau'), bat: cai.chamMau, onClick: () => datCaiTang({ chamMau: !cai.chamMau }) },
         ...nutLopPhong(pa.nguong),
-      ]} />
+        ...nutLopPCCC(),
+      ]} chuGiai={batLopPCCC() ? <ChuGiaiPCCC kq={pccc} /> : undefined} />
     </>
   );
 }
@@ -366,7 +380,7 @@ function KhoiGiamCan({ bcTc, toa, coRieng, chiXem, datToa, tenO, tenCan }: {
   tenO: (khoa: string) => string; tenCan: (id: string) => string;
 }) {
   const g = bcTc?.giamCan, l = bcTc?.thangLien, kk = bcTc?.khitKep;
-  const bat = toa.giamCanTN !== false;
+  const bat = toa.giamCanTN === true;
   const coCau = g ? LOAI_CAN.filter((k) => g.coCauTruoc[k] || g.coCauSau[k]).map((k) => `${NHAN_LOAI[k]} ${g.coCauTruoc[k]}→${g.coCauSau[k]}`).join(' · ') : '';
   return (
     <div class="khoi-giam-can">
@@ -381,7 +395,7 @@ function KhoiGiamCan({ bcTc, toa, coRieng, chiXem, datToa, tenO, tenCan }: {
       ) : <p class="dong vuot" role="status" style={{ margin: 0 }}>{t('tc.giam.tat').replace('{v}', String(g.vuotSau))}</p>)}
       <label class="o-tg" title={t('tc.giam.gt')}>
         <input type="checkbox" id="giam-can-tn" disabled={chiXem} checked={bat}
-          onChange={(e) => { const on = e.currentTarget.checked; datToa((x) => ({ ...x, giamCanTN: on ? undefined : false })); }} />
+          onChange={(e) => { const on = e.currentTarget.checked; datToa((x) => ({ ...x, giamCanTN: on ? true : undefined })); }} />
         <span>{t('tc.giam.nut')}</span>
       </label>
       {l && (
@@ -504,6 +518,7 @@ export function TangPhai(p: ChungTang) {
   return (
     <>
       <KpiTang pa={pa} tv={tv} toa={toa} lo={lo} tang={k0} can={sl.can} mucTieu={muc} nguongLech={pa.nguong.coCauDiem} tenTang={phamVi} />
+      <KhoiPCCC pa={pa} tv={tv} toa={toa} mau={mau} bc={bc} chiXem={chiXem} datToa={(fn) => sua((q) => doiToa(q, toa.id, fn))} />
       <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}${k0 !== null ? ' · ' + tenTang(toa.soTangDe, k0) : ''}`} giaiThich={t('gt.tang.canTrongToa')}>
         <div class="bang-co-cau" role="table">
           <div class="dong bang-cc dau" style={{ gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr' }} role="row"><span /><span>{t('tang.canTang')}</span><span>{t('xep.tyLe')}</span><span>{t('xep.mucTieu')}</span><span>{t('xep.lech')}</span></div>
