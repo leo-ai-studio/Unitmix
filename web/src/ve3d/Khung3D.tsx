@@ -5,7 +5,8 @@ import { t, useLang } from '../i18n/i18n';
 import { chayRaf, easeInOut, giamChuyenDong, tron } from '../ui/chuyenDong';
 import type { GocNhin } from '../tinh/kieu';
 import { GocBanVe } from '../ui/GocBanVe';
-import { dangChon, doiTuongTrung, khoaDoiTuong, laBam, laBamDup, type DangChon3D, type DiemBam, type DoiTuong3D } from './chon3d';
+import { coDaGiac } from '../tinh/matBang';
+import { dangChon, doiTuongTrung, khoaDoiTuong, laBam, laBamDup, trungRo, type DangChon3D, type DiemBam, type DoiTuong3D } from './chon3d';
 import { DS_KIEU_3D, nhomMoi, taoVatLieu, THAM_SO_MAC, type KieuVe3D, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
 
 type V3 = [number, number, number];
@@ -17,7 +18,7 @@ export type CanhDung = {
   /** Chọn bằng tia (cảnh đã gộp hình, không gắn `userData.chon` từng phần — 3D Công trình): gốc, hướng tia, cao độ mặt cắt ngang (m). */
   chonTia?: (goc: V3, huong: V3, catY: number) => DoiTuong3D | null;
   /** Hình tô nhấn (lớp phủ bán trong suốt + viền) của đối tượng chọn bằng tia: chân (m, toạ độ bản vẽ) + cao độ đáy / đỉnh. */
-  hinhNhan?: (d: DoiTuong3D) => { chan: [number, number][]; y0: number; y1: number; /** Viền vẽ xuyên vật che (căn / tầng nằm trong khối). */ xuyen?: boolean } | null;
+  hinhNhan?: (d: DoiTuong3D) => { chan: [number, number][]; y0: number; y1: number; /** Khối thể tích (căn / tầng / đế nằm trong khối gộp): tô mặt nhìn thấy bên trong khối, theo chiều sâu. */ theTich?: boolean } | null;
   /** Đối tượng chọn bằng tia ứng với state chọn hiện tại (để tô nhấn khi chọn từ 2D / dải cấp). */
   doiTuongChon?: (c: DangChon3D) => DoiTuong3D | null;
 };
@@ -112,7 +113,8 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
         if (huy || !cv.current || !hop.current) return;
         let R: import('three').WebGLRenderer;
-        try { R = new T.WebGLRenderer({ canvas: cv.current, antialias: true, preserveDrawingBuffer: true }); } catch { setLoi(t('m3d.khongWebGL')); setDang(false); return; }
+        // stencil: tô nhấn khối căn / tầng / đế chỉ trên mặt nhìn thấy (veNhan); three r163+ mặc định không có bộ đệm stencil
+        try { R = new T.WebGLRenderer({ canvas: cv.current, antialias: true, preserveDrawingBuffer: true, stencil: true }); } catch { setLoi(t('m3d.khongWebGL')); setDang(false); return; }
         const kieuVe = tr.current.kieu, N = NEN[kieuVe];
         R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         R.shadowMap.enabled = true; R.shadowMap.type = T.PCFSoftShadowMap; R.localClippingEnabled = true;
@@ -169,28 +171,50 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
         // lớp phủ tô nhấn cho cảnh chọn bằng tia (căn / tầng trong khối đã gộp): khối bán trong suốt + viền --green, cắt theo mặt cắt ngang
         const lopNhan = new T.Group();
         scene.add(lopNhan);
-        // xuyên (căn / tầng nằm trong khối gộp): vẽ không theo chiều sâu, nhạt hơn — thấy cả căn bị mặt khác che, kiểu tia X của phần mềm BIM
-        const vlPhu = (dam: boolean, xuyen: boolean) => new T.MeshBasicMaterial({ color: XANH, transparent: true, opacity: (dam ? 0.36 : 0.18) * (xuyen ? 0.8 : 1), depthWrite: false, depthTest: !xuyen, side: T.DoubleSide, clippingPlanes: [mp], polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
-        const vlPhuNet = (dam: boolean, xuyen: boolean) => new T.LineBasicMaterial({ color: XANH, transparent: !dam, opacity: dam ? 1 : 0.7, clippingPlanes: [mp], depthTest: !xuyen });
-        const VL_PHU = { chon: [vlPhu(true, false), vlPhu(true, true), vlPhuNet(true, false), vlPhuNet(true, true)], ro: [vlPhu(false, false), vlPhu(false, true), vlPhuNet(false, false), vlPhuNet(false, true)] } as const;
+        const vlPhu = (dam: boolean) => new T.MeshBasicMaterial({ color: XANH, transparent: true, opacity: dam ? 0.36 : 0.18, depthWrite: false, side: T.DoubleSide, clippingPlanes: [mp], polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+        const vlPhuNet = (dam: boolean) => new T.LineBasicMaterial({ color: XANH, transparent: !dam, opacity: dam ? 1 : 0.7, clippingPlanes: [mp] });
+        /**
+         * Khối thể tích (căn / tầng / đế nằm trong khối đã gộp hình): tô đúng các mặt NHÌN THẤY nằm trong khối, theo chiều sâu — không
+         * xuyên vật che (trước đây vẽ tắt depthTest nên căn bị tòa / cánh khác che vẫn hiện, kiểu tia X). Đếm stencil như bóng khối
+         * (shadow volume): lượt 1 mặt sau của khối nằm SAU mặt cảnh → +1; lượt 2 mặt trước nằm sau mặt cảnh → −1; còn ≠ 0 = mặt cảnh ở
+         * trong khối (khối lõm chữ L / V vẫn đúng vì đếm chẵn lẻ). Lượt 3 tô màu chỗ stencil ≠ 0 rồi xoá về 0. Mặt cắt ngang cắt cả khối
+         * nên nhìn từ trên xuống thấy sàn / tường trong căn đã cắt. Ba lượt vẽ (+ viền) mỗi đối tượng tô, chỉ khi có chọn / rê.
+         */
+        const vlKhoi = (dam: boolean) => {
+          const chung = { transparent: true, depthWrite: false, clippingPlanes: [mp], stencilWrite: true };
+          const dem = (side: import('three').Side, op: import('three').StencilOp) => new T.MeshBasicMaterial({
+            ...chung, colorWrite: false, side, depthFunc: T.GreaterEqualDepth, stencilFunc: T.AlwaysStencilFunc, stencilZPass: op, stencilZFail: T.KeepStencilOp, stencilFail: T.KeepStencilOp,
+          });
+          const to = new T.MeshBasicMaterial({
+            ...chung, color: XANH, opacity: dam ? 0.55 : 0.28, side: T.BackSide, depthTest: false,
+            stencilFunc: T.NotEqualStencilFunc, stencilRef: 0, stencilZPass: T.ZeroStencilOp, stencilFail: T.KeepStencilOp, stencilZFail: T.ZeroStencilOp,
+          });
+          return [dem(T.BackSide, T.IncrementWrapStencilOp), dem(T.FrontSide, T.DecrementWrapStencilOp), to] as const;
+        };
+        const VL_PHU = { chon: { phu: vlPhu(true), net: vlPhuNet(true), khoi: vlKhoi(true) }, ro: { phu: vlPhu(false), net: vlPhuNet(false), khoi: vlKhoi(false) } } as const;
+        // khối nở ra ngoài 0,25 m (tường ngoài nhô khỏi khung căn tới ~0,2 m) và hạ 3 cm (gồm mặt sàn của tầng, bỏ mặt sàn tầng trên)
+        const NO_KHOI = 0.25, HA_KHOI = 0.03;
         const veNhan = (d: DoiTuong3D | null, kieuNhan: 'chon' | 'ro') => {
           const h = d && canh?.hinhNhan?.(d);
           if (!h || h.chan.length < 3 || h.y1 <= h.y0) return;
+          const chan = h.theTich ? coDaGiac(h.chan, -NO_KHOI) : h.chan, y0 = h.theTich ? h.y0 - HA_KHOI : h.y0, y1 = h.theTich ? h.y1 - HA_KHOI : h.y1;
           const sh = new T.Shape();
-          h.chan.forEach((p, i) => (i ? sh.lineTo(p[0], p[1]) : sh.moveTo(p[0], p[1])));
-          const g = new T.ExtrudeGeometry(sh, { depth: h.y1 - h.y0, bevelEnabled: false });
+          chan.forEach((p, i) => (i ? sh.lineTo(p[0], p[1]) : sh.moveTo(p[0], p[1])));
+          const g = new T.ExtrudeGeometry(sh, { depth: y1 - y0, bevelEnabled: false });
           g.rotateX(-Math.PI / 2);
-          const [vm, vmX, vn, vnX] = VL_PHU[kieuNhan];
-          const me = new T.Mesh(g, h.xuyen ? vmX : vm), l = new T.LineSegments(new T.EdgesGeometry(g, 25), h.xuyen ? vnX : vn);
-          me.position.y = l.position.y = h.y0; me.renderOrder = l.renderOrder = 5;
-          lopNhan.add(me, l);
+          const vl = VL_PHU[kieuNhan], goc0 = kieuNhan === 'chon' ? 10 : 20; // vẽ sau cảnh (kể cả kính trong suốt); chọn trước rê
+          const l = new T.LineSegments(new T.EdgesGeometry(g, 25), vl.net);
+          l.position.y = y0; l.renderOrder = goc0 + 3;
+          if (h.theTich) vl.khoi.forEach((m, i) => { const me = new T.Mesh(g, m); me.position.y = y0; me.renderOrder = goc0 + i; lopNhan.add(me); });
+          else { const me = new T.Mesh(g, vl.phu); me.position.y = y0; me.renderOrder = goc0; lopNhan.add(me); }
+          lopNhan.add(l);
         };
         const apNhan = () => {
           const c = chonRef.current.chon ?? { toaId: null, loId: null };
           for (const o of dsChon) {
             const d = o.userData.chon as DoiTuong3D, me = o as import('three').Mesh;
             const goc0 = (o.userData.vlGoc ??= me.material) as VL;
-            const laChon = dangChon(d, c), laRo = !laChon && !!ro && ro.loai === d.loai && ro.id === d.id;
+            const laChon = dangChon(d, c), laRo = !laChon && trungRo(d, ro);
             me.material = laChon ? nhan(goc0, true) : laRo ? nhan(goc0, false) : goc0;
           }
           lopNhan.children.forEach((o) => (o as import('three').Mesh).geometry.dispose());
@@ -407,7 +431,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, chinhThamSo, toaNguye
           huyBay(); cancelAnimationFrame(vong); cancelAnimationFrame(choRo); ob.disconnect(); cancelAnimationFrame(cho);
           cv0.removeEventListener('pointerdown', onDown); cv0.removeEventListener('pointerup', onUp); cv0.removeEventListener('pointermove', onMove);
           cv0.removeEventListener('pointerleave', onLeave); cv0.removeEventListener('pointercancel', onCancel);
-          ctl.dispose(); xoa(); lopNhan.children.forEach((o) => (o as import('three').Mesh).geometry.dispose()); Object.values(VL_PHU).flat().forEach((m) => m.dispose()); vlNhan.forEach((m) => m.dispose()); vlRo.forEach((m) => m.dispose()); scene.environment?.dispose(); R.dispose(); he.current = null;
+          ctl.dispose(); xoa(); lopNhan.children.forEach((o) => (o as import('three').Mesh).geometry.dispose()); Object.values(VL_PHU).flatMap((v) => [v.phu, v.net, ...v.khoi]).forEach((m) => m.dispose()); vlNhan.forEach((m) => m.dispose()); vlRo.forEach((m) => m.dispose()); scene.environment?.dispose(); R.dispose(); he.current = null;
         };
       } catch (e) {
         if (!huy) { setLoi(t('m3d.khongNap') + ' ' + String((e as Error).message ?? e)); setDang(false); }

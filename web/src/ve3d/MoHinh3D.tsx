@@ -11,6 +11,7 @@ import { dungCan, type Khoi3d } from './dungCan';
 import { dungToa, type LoiHinh } from './dungToa';
 import { dungDuAn } from './dungDuAn';
 import { chonTiaToa, doiTuongDangChonToa, hinhNhanToa, type DangChon3D, type DoiTuong3D } from './chon3d';
+import { dtVung, khoiDe } from '../tinh/hinhHoc';
 import { tenTang } from '../ui/ChonTang';
 import { fmtSo } from '../ui/so';
 import { Khung3D } from './Khung3D';
@@ -40,10 +41,15 @@ type PropsToa = { toa: ToaDat; mau: ToaVe; mauTang?: (tang: number | null) => To
 
 
 /**
- * Thông tin căn / tầng đang chọn ở 3D Công trình: CH-xx (đánh số chu vi như bản vẽ tầng), loại, DT thông thủy, tầng.
- * Theo mặt bằng + bố cục của chính tầng đó (tầng null = bố cục chung).
+ * Thông tin căn / tầng / khối đế đang chọn ở 3D Công trình: CH-xx (đánh số chu vi như bản vẽ tầng), loại, DT thông thủy, tầng;
+ * khối đế: số tầng đế + DT một sàn đế (chân tháp nới `deOffset`, như chỉ tiêu lô). Theo mặt bằng + bố cục của chính tầng đó.
  */
-export function thongTinChonToa(toa: ToaDat, mau: ToaVe, mauTang: ((tang: number | null) => ToaVe) | undefined, tv: ThuVien, c: { tang: number | null; canKhoa: string | null }): string | null {
+export function thongTinChonToa(toa: ToaDat, mau: ToaVe, mauTang: ((tang: number | null) => ToaVe) | undefined, tv: ThuVien, c: { tang: number | null; canKhoa: string | null; de?: boolean }): string | null {
+  if (c.de) {
+    if (!toa.soTangDe) return null;
+    const de = khoiDe([mau.duong_bao.map(([x, y]): [number, number] => [x / 1000, y / 1000])], [toa.deOffset ?? 0]);
+    return t('m3d.chonDe').replace('{n}', String(toa.soTangDe)).replace('{dt}', fmtSo(de.length ? dtVung(de) : null, { thapPhan: 1 }));
+  }
   const tang = c.tang && c.tang <= toa.soTangDH ? c.tang : null;
   const nhanTang = tang ? tenTang(toa.soTangDe, tang) : t('tang.dienHinh');
   if (!c.canKhoa) return tang ? t('m3d.chonTang').replace('{tang}', nhanTang) : null;
@@ -65,7 +71,7 @@ export function MoHinhToa({ toa, mau, mauTang, tv, dauThanh, chon3d, ...luu }: P
   if (!nap.xong) return <div class="giua-man"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" /><span>{t('m3d.dangDung')}</span></div>;
   const khoa = ['toa', mau.id, toa.soTangDe, toa.soTangDH, canIds.join(), JSON.stringify([toa.canTheo, toa.canViTri, toa.congNang, toa.tangRieng]), chuKyMatBang(toa)].join('|');
   const c = chon3d?.chon, tang = c?.tang ?? null, canKhoa = c?.canKhoa ?? null;
-  const chu = chon3d ? thongTinChonToa(toa, mau, mauTang, tv, { tang, canKhoa }) ?? t('m3d.goiYChonToa') : null;
+  const chu = chon3d ? thongTinChonToa(toa, mau, mauTang, tv, { tang, canKhoa, de: c?.de }) ?? t('m3d.goiYChonToa') : null;
   return (
     <Khung3D khoa={khoa} gocBac={toa.gocDo} chinhThamSo toaNguyen dauThanh={dauThanh} {...luu} tenAnh={`Unitmix-${mau.id}`}
       tieuDe={`${mau.ten_vi.split(' · ')[0]} · ${toa.soTangDe ? toa.soTangDe + ' + ' : ''}${toa.soTangDH} ${t('m3d.tang')}`}
