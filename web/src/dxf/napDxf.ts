@@ -4,7 +4,7 @@ import type { ChucNang, Diem, Lo } from '../tinh/kieu';
 import { taoLo } from '../tinh/macDinh';
 
 type Thuc = {
-  type: string; layer: string; vertices?: { x: number; y: number }[]; shape?: boolean; text?: string;
+  type: string; layer: string; vertices?: { x: number; y: number; bulge?: number }[]; shape?: boolean; text?: string;
   startPoint?: { x: number; y: number }; position?: { x: number; y: number };
   center?: { x: number; y: number }; radius?: number; startAngle?: number; endAngle?: number; // ARC, góc theo radian
 };
@@ -30,8 +30,40 @@ const DON_VI_MM = new Set([4]); // $INSUNITS: 4 = mm, 6 = m
 
 type Hatch = { lop: string; vong: { x: number; y: number }[][] };
 
+type DinhPhinh = { x: number; y: number; bulge?: number };
+/** Bước chia cung: ≤ 5° mỗi đoạn — ranh lô cong bán kính lớn vẫn mượt. */
+const BUOC_CUNG = Math.PI / 36;
+
+/** Đa tuyến có độ phình (mã 42, bulge = tan(θ/4), dương = ngược chiều kim đồng hồ) → các điểm, đoạn cong chia nhỏ theo cung tròn;
+ *  `kin` thì xét cả đoạn cuối → đầu. Trước đây độ phình bị bỏ qua nên ranh lô / đường cong bị kéo thẳng. */
+export function moPhinh(ds: DinhPhinh[], kin: boolean): { x: number; y: number }[] {
+  const kq: { x: number; y: number }[] = [];
+  const n = ds.length;
+  for (let i = 0; i < n; i++) {
+    const a = ds[i];
+    kq.push({ x: a.x, y: a.y });
+    const b = a.bulge ?? 0;
+    if (!b || (!kin && i === n - 1)) continue;
+    const c = ds[(i + 1) % n];
+    const dx = c.x - a.x, dy = c.y - a.y, day = Math.hypot(dx, dy);
+    if (day < 1e-9) continue;
+    const theta = 4 * Math.atan(b); // góc ở tâm có dấu
+    const r = day / (2 * Math.sin(Math.abs(theta) / 2));
+    // tâm cách trung điểm dây một đoạn r·cos(θ/2) theo pháp tuyến trái của dây (b > 0), đổi dấu khi cung lớn hơn nửa vòng
+    const h = (day / 2) / Math.tan(theta / 2);
+    const cx = (a.x + c.x) / 2 - (dy / day) * h, cy = (a.y + c.y) / 2 + (dx / day) * h;
+    const g0 = Math.atan2(a.y - cy, a.x - cx);
+    const so = Math.max(2, Math.ceil(Math.abs(theta) / BUOC_CUNG));
+    for (let k = 1; k < so; k++) {
+      const g = g0 + (theta * k) / so;
+      kq.push({ x: cx + r * Math.cos(g), y: cy + r * Math.sin(g) });
+    }
+  }
+  return kq;
+}
+
 /** dxf-parser bỏ qua HATCH nên đọc thẳng các cặp mã nhóm trong mục ENTITIES.
- *  Cạnh thẳng, cung tròn, đa tuyến (bỏ qua độ phình), ellip và spline (lấy điểm điều khiển) đều thành đa giác. */
+ *  Cạnh thẳng, cung tròn, đa tuyến (kể cả độ phình — đoạn cong), ellip và spline (lấy điểm điều khiển) đều thành đa giác. */
 function docHatch(text: string): Hatch[] {
   const dong = text.split(/\r?\n/);
   const cap: [number, string][] = [];
@@ -59,10 +91,13 @@ function docHatch(text: string): Hatch[] {
         const phinh = so(72);
         so(73);
         const n = so(93);
+        const dinh: DinhPhinh[] = [];
         for (let p = 0; p < n; p++) {
-          pts.push({ x: so(10), y: so(20) });
-          if (phinh && h[k]?.[0] === 42) k++;
+          const d: DinhPhinh = { x: so(10), y: so(20) };
+          if (phinh && h[k]?.[0] === 42) d.bulge = Number(h[k++][1]);
+          dinh.push(d);
         }
+        pts.push(...moPhinh(dinh, true));
       } else {
         const n = so(93);
         for (let e = 0; e < n; e++) {
@@ -124,6 +159,8 @@ export function napDxf(text: string): BanDxf {
     const trung = v.length > 3 && Math.hypot(v[0].x - v.at(-1)!.x, v[0].y - v.at(-1)!.y) < 1e-6;
     return v.length >= 3 && (!!e.shape || trung);
   };
+  /** Đỉnh đa tuyến đã mở độ phình (đoạn cong → cung chia nhỏ). */
+  const dinhDuong = (e: Thuc) => moPhinh(e.vertices!, kin(e));
   const boTrungCuoi = (pts: Diem[]) => (pts.length > 3 && pts[0][0] === pts.at(-1)![0] && pts[0][1] === pts.at(-1)![1] ? pts.slice(0, -1) : pts);
   const hatches = docHatch(text);
   const lopHatch = [...new Set(hatches.map((h) => h.lop))].sort();
@@ -139,10 +176,11 @@ export function napDxf(text: string): BanDxf {
           const vong = h.vong.map((v) => boTrungCuoi(v.map(diem)));
           return vong.filter((v, i) => !vong.some((w, j) => j !== i && dienTich(w) > dienTich(v) && trongDaGiac(trongTam(v), w)));
         }),
-    polyKin: (lop) => theoLop(lop).filter((e) => laDuong(e) && kin(e)).map((e) => boTrungCuoi(e.vertices!.map(diem))),
+    polyKin: (lop) => theoLop(lop).filter((e) => laDuong(e) && kin(e)).map((e) => boTrungCuoi(dinhDuong(e).map(diem))),
     duong: (lop) =>
       theoLop(lop).flatMap((e): Diem[][] => {
-        if (laDuong(e) || (e.type === 'LINE' && e.vertices?.length === 2)) return [e.vertices!.map(diem)];
+        if (laDuong(e)) return [dinhDuong(e).map(diem)];
+        if (e.type === 'LINE' && e.vertices?.length === 2) return [e.vertices.map(diem)];
         if (e.type === 'ARC' && e.center && e.radius) {
           const a0 = e.startAngle ?? 0;
           const a1 = (e.endAngle ?? 0) > a0 ? e.endAngle! : e.endAngle! + 2 * Math.PI;
