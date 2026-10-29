@@ -58,6 +58,21 @@ export const BIEU_TUONG = {
   chepLink: '⎘', // chép đường dẫn (link xem / link sửa)
   boDs: '⊘', // bỏ khỏi danh sách trên máy này (không xoá dự án)
   tim: '⌕', // tìm dự án
+  // Leo AI (troLy/LeoAI.tsx)
+  leoGui: '➤',
+  leoDung: '◼',
+  leoMic: '◖',
+  leoKem: '⌇',
+  leoLoa: '♫',
+  leoMoi: '✚',
+  leoCaiDat: '⚙',
+  leoSaoChep: '⎗',
+  leoThuLai: '↻',
+  leoSua: '✐',
+  leoXuong: '⤓',
+  leoDong: '×',
+  leoLichSu: '≔',
+  leoGiong: '◉',
   // xuất
   xuatCad: '◫',
   xuatXls: '▥',

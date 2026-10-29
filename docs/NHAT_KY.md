@@ -519,3 +519,21 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 **Kiểm:** `node scripts/kiem.mjs` ĐẠT (tsc, web 737, worker 9, pytest 15, build); test mới `kho/chiaSe.test.ts`, `man/locDuAn.test.ts`; `kiem_man_hep.mjs` 390 ĐẠT (trang-du-an, tao-du-an, so-sanh). Trên app (Edge headless): link sửa chép ra `…/du-an/2mlg1a2l?sua=…`, dự án chia sẻ chỉ có "Chép link xem", bỏ khỏi danh sách + Hoàn tác trả đúng chỗ. Ảnh trước / sau: `docs/anh/du-an/`.
 
 **Chưa làm:** không có API xoá cả dự án trên server (chỉ xoá PA) — dự án của mình cũng chỉ "bỏ khỏi danh sách"; chưa có ảnh thu nhỏ mặt bằng trên thẻ (Architechtures có).
+## 2026-10-29 · Leo AI — trợ lý Claude điều khiển app · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** thêm trợ lý AI ("Leo AI", thương hiệu LEO) trong app, dùng Claude, thao tác THẬT mọi tính năng như người dùng (xếp tòa, sửa tầng, hầm, chi phí, PA…); khoá riêng hoặc khoá chung máy chủ; giao diện như Claude (chảy chữ, Markdown, bước công cụ, dừng, lịch sử, sửa / thử lại, đính kèm), giọng nói, chọn mô hình (mặc định Sonnet 5.5 · Cân bằng) + gợi ý mô hình 0 token khi gõ, chạy tốt trên điện thoại.
+
+**Mã:** chi tiết ở `docs/tro_ly_ai.md`.
+- `kho/khoLoi.ts` — lõi thuần của `useKho` (sửa luôn trên bản mới nhất, trả có / không đổi); `useKho` dùng lõi này, trả thêm `loi`, `layCheDo`.
+- `troLy/congCu/*` — 45 công cụ (đọc, điều hướng, TMB, tầng, hầm, chi phí, PA, xuất, hoàn tác, UI dự phòng) gọi đúng hàm các màn; `troLy/vongLap.ts` vòng tác tử (stop_reason, gom tool_result, Dừng, gọn lịch sử); `troLy/khachThat.ts` SDK `@anthropic-ai/sdk` 1.3 (khoá riêng thẳng Anthropic / khoá chung qua Worker); `troLy/LeoAI.tsx` + `styles/leo-ai.css`; `troLy/giongNoi.ts`, `uiDom.ts`, `markdown.ts`, `hoiThoai.ts`, `goiYMoHinh.ts`, `moHinh.ts`, `heThong.ts`, `nguCanhSoan.ts`.
+- Nối vào trình soạn: nút Leo AI trên `ThanhTren` (máy tính) / dock dưới `KhungSoan` (màn hẹp), khung là `lopPhu` cố định — không đụng `DuAn.tsx`, phần `ThuongHieu`. `man/ManTang.tsx` thêm `tangDangXem`; `man/tuChinhTang.ts` thêm `choDuLieuMB`.
+- Worker: `worker/src/ai.ts` (`GET /api/ai/trang-thai`, `POST /api/ai/v1/messages`), migration `0002_ai_luot.sql`.
+- `scripts/leo_ai_e2e.mjs` (E2E mô hình giả, ảnh `docs/anh/tro-ly/`), `scripts/kiem_man_hep.mjs` thêm hộp `leo-ai`.
+
+**Kiểm:** web vitest (công cụ 50 ca + vòng 11 + gợi ý 6 + markdown 3 + kho 2), worker 14/14 (5 mới), `tsc` 0; E2E Leo AI ĐẠT (1440×900 + 390×844); `kiem_man_hep.mjs` 390 / 768 / 844 / 1440 ĐẠT; `node scripts/kiem.mjs` ĐẠT (tsc, web 799, worker 14, pytest 15, build); `kiem_man_hep.mjs` đủ 7 khung ĐẠT (hộp leo-ai đạt mọi khung).
+
+**Chủ app phải làm:** `npx wrangler secret put ANTHROPIC_API_KEY` và `npx wrangler d1 migrations apply unitmix --remote` (bảng `ai_luot`). Không đặt thì người dùng dán khoá riêng.
+
+**Còn dở / chưa chắc:** chưa chạy với Claude thật; vài thao tác chỉ có trên bản vẽ (vẽ ranh hầm, kéo tự do) đi qua `ui_*`; giá Haiku 5.5 theo bảng chủ nhiệm đưa, cần đối chiếu trang giá Anthropic.
+
+**Đề xuất:** (1) nút "Leo AI giải thích" ở các cảnh báo LO-01/02/05 và chỉ tiêu vượt — mở khung với câu hỏi sẵn; (2) công cụ vẽ / sửa ranh hầm và nhập chỉ tiêu từ ảnh chụp bảng QH (Claude đọc ảnh → `update_lot`); (3) đo `usage.cache_read_input_tokens` hiện ở Cài đặt (chi phí thật mỗi cuộc); (4) học Forma: "Leo AI so sánh 3 phương án xếp tòa" chạy `suggest_arrangements` rồi `compare_pas` trên PA nhân bản; (5) nhật ký thao tác Leo AI theo PA (ai sửa gì) để chủ nhiệm duyệt.

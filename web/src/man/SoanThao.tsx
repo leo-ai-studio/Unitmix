@@ -1,5 +1,5 @@
 import { chonTangNgoai, nhanPhamVi, tenTang } from '../ui/ChonTang';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, LoiApi, type DuAnApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
 import { useKho } from '../kho/kho';
@@ -26,6 +26,7 @@ import { xuatBaoCaoPA } from '../xuat/xuatXls';
 import { luoi } from '../ui/Luoi';
 import { chonTangToa, TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
+import { taoNguCanhSoan, type PhuSoan } from '../troLy/nguCanhSoan';
 
 // Màn nặng ít dùng: chunk riêng, tải khi mở (vòng O giữ chỗ) — de_xuat_hieu_nang P5.
 const napHam = () => import('./ManHam');
@@ -36,6 +37,8 @@ const napChiPhi = () => import('./ManChiPhi');
 const ChiPhiGiua = luoi(() => napChiPhi().then((m) => m.ChiPhiGiua), 'giua');
 const ChiPhiPhai = luoi(() => napChiPhi().then((m) => m.ChiPhiPhai));
 const HopXuatCad = luoi(() => import('./HopXuatCad').then((m) => m.HopXuatCad), 'hop');
+// Trợ lý Leo AI (troLy/): chunk riêng, tải khi mở khung lần đầu.
+const LeoAI = luoi(() => import('../troLy/LeoAI').then((m) => m.LeoAI), 'hop');
 
 type DaTai = { da: DuAnApi; paId: string; tenPA: string; ban: TrangThaiPA; maSua: string | null; duocSua: boolean };
 
@@ -168,6 +171,19 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const loDangChon = buoc !== 'tang' ? loDangXep(kho.pa, loId) : xemTang?.lo;
   const toaDangChon = buoc === 'tmb' ? kho.pa.toa.find((x) => x.id === toaId) : xemTang?.toa;
   const chonO = useChonO(buoc === 'tang' ? toaDangChon ?? null : null);
+  // Leo AI: công cụ đọc / sửa qua đúng kho + state chọn của trình soạn (troLy/nguCanhSoan.ts); ref cập nhật mỗi lần vẽ.
+  const [moLeo, setMoLeo] = useState(false);
+  const [leoDang, setLeoDang] = useState(false);
+  const xacNhanLeo = useRef<(c: string) => Promise<boolean>>(async () => false);
+  const phuLeo = useRef<PhuSoan>(null as unknown as PhuSoan);
+  phuLeo.current = {
+    ma, da, paId, tenPA, maSua, loi: kho.loi, layCheDo: kho.layCheDo, tv,
+    ui: { buoc, xem: xemGiua, loId, toaId, canKhoa, tangs: null, tangHam },
+    datBuoc: setBuoc, datXem: setXemGiua, datLo: setLoId, datToa: setToaId, datCan: setCanKhoa, datTangHam: setTangHam,
+    xuatXls: tv && kq ? () => xuatBaoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)) : undefined,
+    moCad: xemXuat && tv ? () => setMoXuat(true) : undefined,
+  };
+  const ngLeo = useMemo(() => taoNguCanhSoan(phuLeo, xacNhanLeo), []);
   const thongBao = (
     <>
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}
@@ -200,6 +216,8 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onXuatXls={tv && kq ? () => xuatBaoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)) : undefined}
       xem={xemGiua}
       onXem={setXemGiua}
+      leoAi={{ mo: moLeo, dang: leoDang, bat: () => setMoLeo((m) => !m) }}
+      lopPhu={moLeo && <LeoAI ng={ngLeo} maDuAn={ma} maSua={maSua} dong={() => setMoLeo(false)} datXacNhan={(f) => { xacNhanLeo.current = f; }} khiChay={setLeoDang} />}
       moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} chon3d={chon3d} />}
       chiPhi={<ChiPhiGiua pa={kho.pa} tv={tv} kq={kq} sua={kho.sua} chiXem={chiXem} />}
       chiPhiPhai={<ChiPhiPhai pa={kho.pa} tv={tv} kq={kq} />}
