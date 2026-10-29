@@ -163,12 +163,12 @@ export const CONG_CU_DOC: CongCu[] = [
           // PCCC + thang máy tầng điển hình (tinh/pcccTang.ts): mọi mục chỉ cảnh báo
           const sl = soLieuToaPCCC(pa, tv, x);
           const p = phanTichPCCCTang({ mau: dt.mau, bc: dt.bc, tv, dl, H: chieuCaoPCCC(x.soTangDe, x.caoDe, x.soTangDH, x.caoDH), soTangDH: x.soTangDH,
-            soTangNoi: x.soTangDe + x.soTangDH, soCanToa: sl.soCan, danToa: sl.dan, tuTay: x.tuPCCCTay ?? null });
+            soTangNoi: x.soTangDe + x.soTangDH, soCanToa: sl.soCan, danToa: sl.dan, tuTay: x.tuPCCCTay ?? null, cncTay: x.cncTay ?? null });
           pccc = [
             { id: 'thang_may_QCVN04_2.4.1_2.4.2', muc: p.thangMay.muc, co: p.thangMay.co, can: p.thangMay.can, theo_can: p.thangMay.theoCan, theo_dan: p.thangMay.theoDan },
             { id: `thang_chua_chay_${p.tmcc.canCu.replace('QCVN 06:2022 ', 'QCVN06_')}`, muc: p.tmcc.muc, ban_kinh_m: p.tmcc.r, so_chon: p.tmcc.chon.length, xa_nhat_m: tron(p.tmcc.xaNhat ?? 0), diem_ngoai: p.tmcc.ngoai.length },
             { id: 'hong_cho_45m_QCVN04_2.5.3', muc: p.hongCho.muc, xa_nhat_m: tron(p.hongCho.xaNhat ?? 0), can_vuot: p.hongCho.vuot },
-            { id: 'tu_hong_nuoc_R18_QT77', muc: p.tu.muc, so_tu: p.tu.viTri.length, can_chua_phu: p.tu.thieu },
+            { id: 'tu_hong_nuoc_R18_QT77', muc: p.tu.muc, so_vi_tri: p.tu.tu.length, so_hop: p.tu.hop, can_chua_phu: p.tu.thieu, dt_tru_m2: tron(p.tu.truDT.reduce((a, z) => a + z.m2, 0)) },
             { id: `chia_hanh_lang_${p.hanhLang.gioiHan}m`, muc: p.hanhLang.muc, can_cu: p.hanhLang.canCu, so_cua: p.hanhLang.cua.length, khoang_max_m: tron(Math.max(0, ...p.hanhLang.khoang)) },
             { id: 'thoat_nan', muc: p.thoatNan.soVuot ? 'canh_bao' : 'ok', can_vuot: p.thoatNan.soVuot, cut_m: p.thoatNan.cut, doi_m: p.thoatNan.doi },
           ].filter((r) => !loi || (r.muc !== 'ok' && r.muc !== 'khong_ap'));

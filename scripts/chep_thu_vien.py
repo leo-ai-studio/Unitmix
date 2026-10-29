@@ -44,6 +44,11 @@ def ghi_can(ds: list, f: Path) -> None:
             key = f"@@KHUNG_{c['id']}@@"
             the[json.dumps(key)] = json.dumps(c2["khung"], ensure_ascii=False, separators=(",", ":"))
             c2["khung"] = key
+        for tr in ("tcc", "cua_hl"):  # nét phái sinh (sinh_phai_sinh_can.py) — một dòng mỗi trường
+            if c2.get(tr):
+                key = f"@@{tr.upper()}_{c['id']}@@"
+                the[json.dumps(key)] = json.dumps(c2[tr], ensure_ascii=False, separators=(",", ":"))
+                c2[tr] = key
         if c2.get("phong"):
             ph = []
             for i, p in enumerate(c2["phong"]):
