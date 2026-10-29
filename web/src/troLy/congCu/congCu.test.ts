@@ -132,6 +132,20 @@ describe('công cụ đọc', () => {
   });
   thu('get_cost', async () => { expect((await chay('get_cost', {})).json.du_toan.tong_muc).toBeGreaterThan(0); });
   thu('get_population', async () => { expect((await chay('get_population', {})).json.tinh.length).toBeGreaterThan(3); });
+  thu('recommend_tower_shapes', async () => {
+    const truoc = kho.lay(), b0 = kho.soBuoc().truoc;
+    const j = (await chay('recommend_tower_shapes', { shape: 'l', group: 'tm', efficiency_min: 73, mix_target: { '2pn': 55 }, request: 'nhiều căn góc', top: 3 })).json;
+    expect(j.xep_hang).toHaveLength(3);
+    expect(j.xep_hang[0].hang).toBe(1);
+    expect(j.xep_hang.every((r: { template_id: string }) => /^tm-l[123]$/.test(r.template_id))).toBe(true);
+    expect(j.xep_hang[0].diem).toBeGreaterThanOrEqual(j.xep_hang[1].diem);
+    expect(j.hieu_suat_min_pct).toBe(73);
+    expect(j.muc_tieu_co_cau_pct['2pn']).toBe(55);
+    expect(j.trong_so.canGoc).toBe(4);
+    expect(kho.lay()).toBe(truoc); // không sửa PA
+    expect(kho.soBuoc().truoc).toBe(b0);
+    expect((await chay('recommend_tower_shapes', { template_ids: ['zz'] })).noiDung).toMatch(/Không có mẫu tòa zz/);
+  });
   thu('get_basement', async () => { expect((await chay('get_basement', { lot_id: 'A' })).json.lo).toBe('A'); });
   thu('compare_pas', async () => { expect((await chay('compare_pas', {})).json[0].so_can).toBeGreaterThan(0); });
   thu('navigate', async () => {
@@ -213,6 +227,9 @@ describe('công cụ TMB', () => {
     expect(l.chiTieu.matDoMax).toBe(35);
     expect(l.coCauMucTieu['2pn']).toBe(55);
     expect(l.danSo).toMatchObject({ tinh: 'hn', giaiDoan: 'cp' });
+    await motBuoc('update_lot', { lot_id: 'A', population: { province: 'hn', round_area: { enabled: true, tolerance_m2: 0.3 } } });
+    expect(kho.lay().lo[0].temDat.danSo?.lamTron).toEqual({ bat: true, dungSai: 0.3 });
+    expect((await chay('get_population', {})).json.theo_lo.A.sat_moc).toMatchObject({ lam_tron_bat: true, dung_sai_m2: 0.3 });
     await loi('update_lot', { lot_id: 'A', indicators: { khong: 1 } }, /không có/);
     await loi('update_lot', { lot_id: 'A', indicators: { matDoMax: null } }, /trống/);
     await loi('update_lot', { lot_id: 'A', population: { province: 'zz' } }, /tỉnh/);

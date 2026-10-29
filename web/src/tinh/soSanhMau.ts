@@ -212,6 +212,14 @@ export function soSanhMau(v: DauVaoSoSanh, tv: ThuVien, dl: DuLieuMB | null, tie
   return kq;
 }
 
+/** Khoá ô (bố cục chung) đầu tiên của tòa đang dùng mẫu căn `canId` — để chọn căn khi mở màn Tầng; không có thì null. */
+export function oDungCan(tv: ThuVien, toa: ToaDat, canId: string): string | null {
+  const m = mauToa(tv, toa);
+  if (!m || !coMat(m)) return null;
+  const bc = boCucTang(toa, null);
+  return viTriCan(m, tv).find((vt) => (bc.congNang?.[vt.khoa] ?? 'can') === 'can' && (bc.canViTri?.[vt.khoa] ?? bc.canTheo[vt.canGocId] ?? vt.canGocId) === canId)?.khoa ?? null;
+}
+
 /** Họ mẫu theo dạng hình (i, l, t, u, v, y, z) trong một nhóm — VD họ L TM: tm-l1, tm-l2, tm-l3. */
 export function hoMau(tv: ThuVien, nhom: 'tm' | 'xh', hinh?: string | null): string[] {
   return [...tv.toa.values()].filter((m) => m.nhom === nhom && (!hinh || m.hinh === hinh) && coMat(m)).sort((a, b) => a.hinh.localeCompare(b.hinh) || a.so - b.so).map((m) => m.id);

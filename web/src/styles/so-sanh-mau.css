@@ -1,0 +1,72 @@
+/* So sánh mẫu tòa + gợi ý dạng tòa (ui/SoSanhMau.tsx): lớp phủ .hop-thoai, khung giữa không đổi. Màu chỉ lấy biến :root. */
+.ss-mau { gap: 12px; }
+.ss-mau .ssm-dau { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ss-mau .ssm-dau h2 { flex: 1; display: flex; align-items: center; gap: 8px; }
+.ss-mau .ssm-dau h2 .bt-svg { color: var(--green); }
+.ss-mau .ssm-ghi { margin: 0; font-size: 12px; line-height: 1.45; }
+.ss-mau .ssm-ghi .spin-o { width: 16px; height: 16px; vertical-align: -3px; margin-right: 6px; }
+.ss-mau section { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.ss-mau .ssm-hang { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; }
+.ss-mau .ssm-ho { display: flex; gap: 6px; flex-wrap: wrap; }
+.ss-mau .ssm-chip { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 3px 11px; font-size: 12px; color: var(--ink); cursor: pointer; }
+.ss-mau .ssm-chip[aria-pressed='true'] { border-color: var(--green); background: color-mix(in srgb, var(--green) 10%, var(--panel)); color: var(--green); font-weight: 600; }
+.ss-mau .ssm-mau { display: flex; flex-wrap: wrap; gap: 6px; }
+.ss-mau .ssm-mau-o { flex-direction: row; align-items: center; gap: 5px; padding: 3px 9px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; cursor: pointer; }
+.ss-mau .ssm-mau-o.bat { border-color: var(--green); background: color-mix(in srgb, var(--green) 6%, var(--panel)); }
+.ss-mau .ssm-mau-o input { width: auto; padding: 0; margin: 0; accent-color: var(--green); }
+.ss-mau .o-tg { padding: 0; }
+.ss-mau .o-so { flex-direction: row; align-items: center; gap: 6px; font-size: 12px; }
+.ss-mau .o-so-nhap { display: inline-flex; align-items: center; gap: 4px; }
+.ss-mau .o-so input { width: 58px; padding: 4px 6px; }
+.ss-mau .ssm-muc { font-size: 12px; }
+.ss-mau .ssm-yc-o { gap: 6px; }
+.ss-mau .ssm-yc-o > span { display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--green); font-size: 13px; }
+.ss-mau .ssm-yc-o .bt-svg { width: 18px; height: 18px; }
+.ss-mau .ssm-yc-o textarea { font: inherit; font-size: 13px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); }
+.ss-mau .ssm-nhan { display: flex; flex-wrap: wrap; gap: 5px; }
+.ss-mau .ssm-nhan-o { font-size: 11.5px; padding: 2px 8px; border-radius: 10px; background: color-mix(in srgb, var(--green) 10%, var(--panel)); color: var(--green); }
+.ss-mau .ssm-ts summary { cursor: pointer; font-size: 12px; color: var(--green); }
+.ss-mau .ssm-ts-luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 12px; margin: 8px 0; }
+.ss-mau .ssm-ts-luoi .o-so { justify-content: space-between; }
+
+.ss-mau .ssm-top { flex-direction: row; flex-wrap: wrap; gap: 10px; border: 0; padding: 0; }
+.ss-mau .ssm-the { flex: 1 1 240px; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--panel); }
+.ss-mau .ssm-the.nhat { border-color: var(--green); box-shadow: inset 0 3px 0 var(--green); }
+.ss-mau .ssm-the-dau { display: flex; gap: 10px; align-items: center; }
+.ss-mau .ssm-diem { font-size: 22px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ss-mau .ssm-diem small { font-size: 11px; font-weight: 400; color: var(--muted-text); margin-left: 2px; }
+.ss-mau .ssm-uu, .ss-mau .ssm-nhuoc { margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.45; }
+.ss-mau .ssm-uu li::before { content: '✓ '; color: var(--green); font-weight: 700; }
+.ss-mau .ssm-nhuoc li::before { content: '✕ '; color: var(--warn); font-weight: 700; }
+.ss-mau .ssm-the .nut-phu { align-self: flex-start; }
+.ss-mau .ssm-hinh { flex: none; display: block; background: color-mix(in srgb, var(--line) 30%, var(--panel)); border-radius: 6px; }
+.ss-mau .ssm-loi { fill: var(--muted); fill-opacity: .55; }
+.ss-mau .ssm-thang { fill: var(--warn); fill-opacity: .45; }
+
+.ss-mau .ssm-bang-cuon { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.ss-mau .ssm-bang { border-collapse: collapse; width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ss-mau .ssm-bang th, .ss-mau .ssm-bang td { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: right; white-space: nowrap; }
+.ss-mau .ssm-bang thead th { background: color-mix(in srgb, var(--green) 8%, var(--panel)); position: sticky; top: 0; }
+.ss-mau .ssm-bang tr.top td:first-child { color: var(--green); font-weight: 700; }
+.ss-mau .ssm-sap { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.ss-mau .ssm-ten { text-align: left; }
+.ss-mau td.ssm-ten { display: flex; align-items: center; gap: 6px; }
+.ss-mau .ssm-ten span { display: flex; flex-direction: column; text-align: left; }
+.ss-mau .ssm-thanh { display: inline-flex; width: 70px; height: 8px; border-radius: 4px; overflow: hidden; background: var(--line); vertical-align: middle; margin-right: 4px; }
+.ss-mau .ssm-thanh i { display: block; height: 100%; }
+.ss-mau td.vuot { color: var(--warn); font-weight: 700; }
+.ss-mau td.canh-bao { color: var(--canh-bao); }
+.ss-mau td.ok { color: var(--green); }
+.ss-mau .ssm-dat-nho { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.ss-mau .ssm-dat-nho .bt-svg { width: 18px; height: 18px; }
+.ss-mau .ssm-dat { border-color: var(--green); background: color-mix(in srgb, var(--green) 5%, var(--panel)); }
+.ss-mau .o-chon { flex-direction: row; align-items: center; gap: 8px; }
+
+@media (max-width: 1024px) {
+  .ss-mau .ssm-chip, .ss-mau .ssm-mau-o { min-height: 40px; display: inline-flex; align-items: center; }
+  .ss-mau .o-so input, .ss-mau textarea, .ss-mau select { font-size: 16px; }
+  .ss-mau .o-so input { width: 68px; min-height: 40px; }
+  .ss-mau .ssm-dat-nho, .ss-mau .ssm-sap { min-width: 40px; min-height: 40px; }
+  .ss-mau .ssm-the { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .ss-mau * { transition: none !important; } }

@@ -10,7 +10,7 @@ import { nguongRun } from '../ve/camUng';
 import { HopNoi } from '../ve/MenuO';
 import { MucGap } from '../ui/MucGap';
 import { GocBanVe } from '../ui/GocBanVe';
-import { NutBieuTuong } from '../ui/NutBieuTuong';
+import { BieuTuong, NutBieuTuong } from '../ui/NutBieuTuong';
 import { fmtSo } from '../ui/so';
 import { SoDong } from '../ui/SoDong';
 import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
@@ -27,6 +27,7 @@ import { mauToa } from '../tinh/canThem';
 import { canhGan } from '../tinh/thaoTacToa';
 import { HopCanhLo, NhanCanhLo, datCanhChon } from './loGioiCanh';
 import { HopHangLoat, LopHangLoat } from './xepHangLoat';
+import { moSoSanhMau } from '../ui/SoSanhMau';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -39,6 +40,8 @@ type Chung = {
   chonToa: (id: string | null) => void;
   /** Mở mặt bằng tầng của tòa để làm tiếp (bấm đúp tòa trên TMB / nút ở Thông số tòa). */
   moTang?: (id: string) => void;
+  /** Mở màn Tầng tòa `toaId`, chọn ô đang dùng mẫu căn `canId` (danh sách căn sát mốc ở dân số). */
+  moCan?: (toaId: string, canId: string) => void;
 };
 
 const xayO = laCaoTang;
@@ -102,6 +105,10 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
                 <button type="button" title={t('gt.xep.nhom')} aria-pressed={nhomXem === k} onClick={() => setNhom(k)}>{t(k === 'tm' ? 'xep.nhomTm' : 'xep.nhomXh')}</button>
               ))}
             </div>
+            <button type="button" class="nut-phu nut-so-sanh-mau" title={t('gt.ssm.moNut')} disabled={!tv}
+              onClick={() => moSoSanhMau({ tv, nhom: nhomXem, hinh: (toa && tv?.toa.get(toa.mauId)?.nhom === nhomXem ? tv.toa.get(toa.mauId)?.hinh : null) ?? 'l' })}>
+              <BieuTuong k="soSanhMau" /> {t('ssm.moNut')}
+            </button>
           </div>
           {!tv && <p class="dong muted">{t('lo.dangTaiThuVien')}</p>}
           {dsMau.map(({ m, hop }) => (
@@ -640,7 +647,7 @@ function VongCoCau({ pct }: { pct: Record<string, number> }) {
 const coCauRongNull = (): Record<LoaiCan, number | null> => ({ stu: null, '1pn': null, '2pn': null, '2pnp': null, '3pn': null });
 
 /** Panel phải màn Xếp tòa: chỉ tiêu lô, diện tích hai cột, cơ cấu căn theo tòa so với mục tiêu. */
-export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQuaChiTieu | null }) {
+export function XepPhai({ pa, loId, tv, toaId, chonToa, kq, sua, chiXem, moCan }: Chung & { kq: KetQuaChiTieu | null }) {
   const lo = loDangXep(pa, loId);
   if (!lo) return null;
   const r = kq?.theoLo[lo.id];
@@ -655,7 +662,7 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq }: Chung & { kq: KetQ
   return (
     <>
       <BangChiTieuLo dong={r?.dong ?? []} mo={false} />
-      <DashDanSo pa={pa} tv={tv} lo={lo} />
+      <DashDanSo pa={pa} tv={tv} lo={lo} sua={sua} chiXem={chiXem} moCan={moCan} />
       <MucGap tieuDe={`${t('xep.dtLo')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.xep.dtLo')}>
         <div class="dong bang-ct dau"><span /><span>{t('xep.xayDung')}</span><span>{t('xep.tinhHSSDD')}</span></div>
         <div class="dong bang-ct"><span>{t('sc.dtLo')}</span><span>{fmtSo(dtLo, m2)}</span><span>{fmtSo(dtLo, m2)}</span></div>

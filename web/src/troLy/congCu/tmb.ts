@@ -288,12 +288,12 @@ export const CONG_CU_TMB: CongCu[] = [
   },
   {
     ten: 'update_lot', nhom: 'tmb', sua: true,
-    moTa: 'Sửa lô (một bước hoàn tác) như panel chỉ tiêu: code (ký hiệu), use (tm thương mại / xh NOXH / khac), indicators (chỉ tiêu QH: matDoMax %, matDoThapMax, hssddMax lần, tangCaoMax, tangDe, tangCanHo, tangHam, danSoMax, soCanMax, nguoiMoiCan, choDoOtoMoiCan, choXeMayMoiCan, cayXanhMin %; trường có thể null: matDoThapMax, tangDe, tangCanHo, tangHam, soCanMax), mix_target (cơ cấu mục tiêu %, nên cộng 100), population (khai dân số theo QĐ tỉnh: province = mã tỉnh từ get_population, stage qh|cp, type notm|noxh|tdc, area doThi|nongThon, method bang|bq; population = null để bỏ khai). apply_population_to_all_lots = true áp khai dân số cho mọi lô cao tầng.',
+    moTa: 'Sửa lô (một bước hoàn tác) như panel chỉ tiêu: code (ký hiệu), use (tm thương mại / xh NOXH / khac), indicators (chỉ tiêu QH: matDoMax %, matDoThapMax, hssddMax lần, tangCaoMax, tangDe, tangCanHo, tangHam, danSoMax, soCanMax, nguoiMoiCan, choDoOtoMoiCan, choXeMayMoiCan, cayXanhMin %; trường có thể null: matDoThapMax, tangDe, tangCanHo, tangHam, soCanMax), mix_target (cơ cấu mục tiêu %, nên cộng 100), population (khai dân số theo QĐ tỉnh: province = mã tỉnh từ get_population, stage qh|cp, type notm|noxh|tdc, area doThi|nongThon, method bang|bq, round_area = { enabled, tolerance_m2 } làm tròn DT căn khi tính dân: căn trên mốc dải bảng QĐ không quá tolerance m² đếm ở đúng mốc dải dưới; population = null để bỏ khai). apply_population_to_all_lots = true áp khai dân số cho mọi lô cao tầng.',
     schema: S.doiTuong({
       lot_id: S.chu(), code: S.chu(), use: S.chon(['tm', 'xh', 'khac']),
       indicators: { type: 'object', additionalProperties: { type: 'number', minimum: 0, nullable: true }, description: 'khoá ChiTieuQH → số' },
       mix_target: LOAI_CAN_SCHEMA('cơ cấu mục tiêu %'),
-      population: { ...S.doiTuong({ province: S.chu(), stage: S.chon(['qh', 'cp']), type: { ...S.chon(['notm', 'noxh', 'tdc']), nullable: true }, area: S.chon(['doThi', 'nongThon']), method: S.chon(['bang', 'bq']) }, ['province']), nullable: true },
+      population: { ...S.doiTuong({ province: S.chu(), stage: S.chon(['qh', 'cp']), type: { ...S.chon(['notm', 'noxh', 'tdc']), nullable: true }, area: S.chon(['doThi', 'nongThon']), method: S.chon(['bang', 'bq']), round_area: S.doiTuong({ enabled: S.bool(), tolerance_m2: S.so(undefined, 0, 5) }, ['enabled']) }, ['province']), nullable: true },
       apply_population_to_all_lots: S.bool(),
     }, ['lot_id']),
     chay: async (v, ng) => {
@@ -307,13 +307,14 @@ export const CONG_CU_TMB: CongCu[] = [
       let khai: KhaiDanSo | undefined | null = null; // null = không đụng
       if (v.population === null) khai = undefined;
       else if (v.population) {
-        const d = v.population as { province: string; stage?: 'qh' | 'cp'; type?: KhaiDanSo['loaiHinh'] | null; area?: KhaiDanSo['khuVuc']; method?: KhaiDanSo['cach'] };
+        const d = v.population as { province: string; stage?: 'qh' | 'cp'; type?: KhaiDanSo['loaiHinh'] | null; area?: KhaiDanSo['khuVuc']; method?: KhaiDanSo['cach']; round_area?: { enabled: boolean; tolerance_m2?: number } };
         if (!timQuyTac(d.province)) throw new LoiCongCu(`Mã tỉnh "${d.province}" không có (xem get_population).`);
         const cu = lo.temDat.danSo;
         khai = { ...(cu ?? {}), tinh: d.province, giaiDoan: d.stage ?? cu?.giaiDoan ?? 'cp' };
         if (d.type !== undefined) { if (d.type === null) delete khai.loaiHinh; else khai.loaiHinh = d.type; }
         if (d.area) khai.khuVuc = d.area;
         if (d.method) khai.cach = d.method;
+        if (d.round_area) khai.lamTron = { bat: d.round_area.enabled, dungSai: d.round_area.tolerance_m2 ?? khai.lamTron?.dungSai ?? 0.5 };
       }
       const mix = v.mix_target as Record<string, number> | undefined;
       suaPA(ng, (p) => {

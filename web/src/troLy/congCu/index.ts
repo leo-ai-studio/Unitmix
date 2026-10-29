@@ -6,11 +6,12 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { CONG_CU_DOC } from './doc';
 import { kiemDauVao, schemaApi, type CongCu } from './dinhNghia';
 import { CONG_CU_KHAC } from './khac';
+import { CONG_CU_MAU } from './mau';
 import { LoiCongCu, type NguCanh } from './nguCanh';
 import { CONG_CU_TANG } from './tang';
 import { CONG_CU_TMB } from './tmb';
 
-export const BO_CONG_CU: CongCu[] = [...CONG_CU_DOC, ...CONG_CU_TMB, ...CONG_CU_TANG, ...CONG_CU_KHAC];
+export const BO_CONG_CU: CongCu[] = [...CONG_CU_DOC, ...CONG_CU_TMB, ...CONG_CU_MAU, ...CONG_CU_TANG, ...CONG_CU_KHAC];
 export const congCuTheoTen = new Map(BO_CONG_CU.map((c) => [c.ten, c]));
 
 /** Định nghĩa gửi Claude: eager_input_streaming (đầu vào chảy ngay khi sinh) — vì vậy luôn tự kiểm đầu vào trước khi chạy. */

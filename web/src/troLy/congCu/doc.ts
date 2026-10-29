@@ -187,14 +187,14 @@ export const CONG_CU_DOC: CongCu[] = [
   },
   {
     ten: 'get_population', nhom: 'doc',
-    moTa: 'Dân số từng lô theo QĐ tỉnh đã khai (hoặc hệ số người/căn): tổng người, số căn, phương pháp, căn cứ, theo loại căn và loại hình (NOTM/NOXH/TĐC). Kèm danh sách mã tỉnh khai được.',
+    moTa: 'Dân số từng lô theo QĐ tỉnh đã khai (hoặc hệ số người/căn): tổng người, số căn, phương pháp, căn cứ, theo loại căn và loại hình (NOTM/NOXH/TĐC), căn sát mốc dải (sat_moc: DT hiện → DT gợi ý, người giảm; bật làm tròn qua update_lot population.round_area). Kèm danh sách mã tỉnh khai được.',
     schema: S.doiTuong({}),
     chay: (_v, ng) => {
       const pa = ng.kho.lay(), tv = canTV(ng);
       const d = danSoDuAn(pa, tv);
       return {
         tong: tron(d.tong, 0), so_can: d.soCan,
-        theo_lo: Object.fromEntries(Object.entries(d.theoLo).map(([id, r]) => [id, { tong: tron(r.tong, 0), so_can: r.soCan, khai: pa.lo.find((l) => l.id === id)?.temDat.danSo ?? null, phuong_phap: r.phuongPhap, can_cu: r.canCu, theo_loai: Object.fromEntries(LOAI_CAN.map((k) => [k, { so: r.theoLoai[k].so, nguoi: tron(r.theoLoai[k].nguoi, 1) }])) }])),
+        theo_lo: Object.fromEntries(Object.entries(d.theoLo).map(([id, r]) => [id, { tong: tron(r.tong, 0), so_can: r.soCan, khai: pa.lo.find((l) => l.id === id)?.temDat.danSo ?? null, phuong_phap: r.phuongPhap, can_cu: r.canCu, sat_moc: { lam_tron_bat: r.satMoc.bat, dung_sai_m2: r.satMoc.dungSai, giam_nguoi: tron(r.satMoc.giam, 2), can: r.satMoc.dong.map((d) => ({ unit_id: d.canId, dt: d.dt, dt_goi_y: d.satMoc!.dtGoiY, nguoi_can: d.satMoc!.nguoiHien, nguoi_can_goi_y: d.satMoc!.nguoiGoiY, so_can: d.so })) }, theo_loai: Object.fromEntries(LOAI_CAN.map((k) => [k, { so: r.theoLoai[k].so, nguoi: tron(r.theoLoai[k].nguoi, 1) }])) }])),
         tinh: QUY_TAC_DAN_SO.map((q) => ({ id: q.id, ten: q.ten, qd: q.qd })),
       };
     },
