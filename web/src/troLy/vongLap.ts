@@ -133,8 +133,9 @@ export function gonLichSu(ls: TinNhan[], nguong = 60_000, giu = 6): TinNhan[] {
   ls.forEach((m, i) => {
     if (m.role === 'system' || typeof m.content === 'string' || !m.content) { ra.push(m); return; }
     if (m.role === 'assistant') {
+      // giữ đủ số tin (thời điểm tin `luc` cùng chỉ số); lượt chỉ có thinking thành '…'
       const c = m.content.filter((b) => b.type !== 'thinking' && b.type !== 'redacted_thinking');
-      if (c.length) ra.push({ ...m, content: c });
+      ra.push({ ...m, content: c.length ? c : [{ type: 'text', text: '…' }] });
       return;
     }
     if (i >= cat) { ra.push(m); return; }

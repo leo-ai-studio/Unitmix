@@ -86,6 +86,9 @@ const datChonToa = (toa: ToaDat, p: Partial<ChonO>) => datChonO({ ...(chonO.toaI
 /** Chọn tầng điển hình đang xem của tòa từ ngoài màn Tầng (3D Công trình bấm căn / tầng): null = bố cục chung. Dùng được cả khi ô ChonTang chưa gắn. */
 export const chonTangToa = (toa: ToaDat, tangs: number[] | null) => datChonToa(toa, { tangs, ds: [], menu: null });
 
+/** Tầng điển hình đang xem của tòa (null = bố cục chung) — trợ lý Leo AI đọc. */
+export const tangDangXem = (toaId: string | null): number[] | null => (toaId && chonO.toaId === toaId ? chonO.tangs : null);
+
 /** Các ô đang chọn: ô chính (canKhoa) + ô chọn thêm. */
 const oDangChon = (canKhoa: string | null, ds: string[]) => [...new Set([...(canKhoa ? [canKhoa] : []), ...ds])];
 

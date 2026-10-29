@@ -32,6 +32,8 @@ type Props = {
   onXuatXls?: () => void | Promise<void>;
   /** Các bước làm việc chính (tab cố định trên thanh trên). */
   buoc?: { ds: [string, string][]; chon: string; onChon: (k: string) => void };
+  /** Nút mở trợ lý Leo AI (troLy/LeoAI.tsx): mo = đang hiện khung, dang = Leo AI đang chạy (vòng O quay). */
+  leoAi?: { mo: boolean; dang: boolean; bat: () => void };
 };
 
 export function ThuongHieu({ dangXuLy = false }: { dangXuLy?: boolean }) {
@@ -304,6 +306,12 @@ export function ThanhTren(p: Props) {
       {p.capDo && <DaiCap c={p.capDo} />}
       <span class="gian" />
       {chuLuu(true)}
+      {p.leoAi && (
+        <button type="button" class={`nut-leo-ai${p.leoAi.mo ? ' mo' : ''}`} aria-pressed={p.leoAi.mo} aria-label={t('leo.mo')} title={t('leo.mo')} onClick={p.leoAi.bat}>
+          <span class="mark" aria-hidden="true"><img src="/brand/leo_ai_mark_base.png" alt="" /><img class={`brand-o${p.leoAi.dang ? ' spinning' : ''}`} src="/brand/leo_ai_o.png" alt="" /></span>
+          <span class="nhan-dai">{t('leo.ten')}</span>
+        </button>
+      )}
       <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatXls || dangXls} aria-busy={dangXls} onClick={xuatXls}>
         {dangXls && <img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '14px', height: '14px', verticalAlign: '-2px', marginRight: '6px' }} />}{t('xuat.xls')}
       </button>

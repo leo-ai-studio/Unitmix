@@ -30,6 +30,9 @@ type Props = {
   /** Chế độ xem giữa do nơi gọi giữ (vd. bấm đúp tòa trong 3D → về 2D mặt bằng tầng); thiếu thì khung tự giữ. */
   xem?: CheDoXem;
   onXem?: (x: CheDoXem) => void;
+  /** Nút + khung trợ lý Leo AI: khung là lớp phủ cố định (position: fixed), không đổi kích thước khung giữa. */
+  leoAi?: { mo: boolean; dang: boolean; bat: () => void };
+  lopPhu?: ComponentChildren;
 };
 
 type Ngan = '' | 'trai' | 'phai';
@@ -71,7 +74,7 @@ export function KhungSoan(p: Props) {
     <div class={`khung khung-soan${hep ? ' hep' : ''}${mo ? ' co-ngan' : ''}`}>
       <ThanhTren capDo={p.capDo} cheDoXem={xem} onCheDoXem={setXem} cheDo={p.cheDo} onCheDo={p.onCheDo}
         trangThaiLuu={p.trangThaiLuu} dangXuLy={p.dangXuLy} duocSua={p.duocSua}
-        onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} onXuatCad={p.onXuatCad} onXuatXls={p.onXuatXls} buoc={p.buoc} />
+        onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} onXuatCad={p.onXuatCad} onXuatXls={p.onXuatXls} buoc={p.buoc} leoAi={p.leoAi} />
       <div class="khung-than">
         {panel('trai', t('panel.nhap'), p.trai)}
         <main class="panel-giua" aria-label={t('panel.banVe')}>
@@ -91,6 +94,7 @@ export function KhungSoan(p: Props) {
           <NutBieuTuong k="nganPhai" bat={mo === 'phai'} onClick={() => bat('phai')}><span>{t('dock.soLieu')}</span></NutBieuTuong>
         </nav>
       )}
+      {p.lopPhu}
     </div>
   );
 }

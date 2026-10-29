@@ -21,6 +21,7 @@ import './styles/cap-do.css';
 import './styles/tai-luoi.css';
 import './styles/dien-thoai.css';
 import './styles/man-hinh-chinh.css';
+import './styles/leo-ai.css';
 import { langHienTai } from './i18n/i18n';
 import { dangKySW } from './pwa/dangKySW';
 import { DuAn } from './man/DuAn';

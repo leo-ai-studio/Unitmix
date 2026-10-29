@@ -1,0 +1,160 @@
+/* Leo AI (troLy/LeoAI.tsx): lớp phủ CỐ ĐỊNH — máy tính: ngăn phải nổi đè lên panel Số liệu; màn hẹp: tấm từ đáy; ≤ 600 px: toàn màn.
+   Không đổi kích thước khung giữa (TMB / MB / 3D) — quy tắc 1 AI_START. Màu theo token LEO (leo-ui.css). */
+
+/* Nút mở trên thanh trên */
+.nut-leo-ai { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px 0 6px; border: 1px solid var(--line); border-radius: 17px; background: var(--panel); color: var(--green); font-weight: 600; font-size: 13px; }
+.nut-leo-ai:hover { background: var(--soft); }
+.nut-leo-ai.mo { background: var(--selected); border-color: var(--green); }
+.nut-leo-ai .mark, .leo-mark { position: relative; display: inline-block; height: 22px; flex: none; }
+.nut-leo-ai .mark img, .leo-mark img { height: 22px; width: auto; display: block; }
+.nut-leo-ai .mark .brand-o, .leo-mark .brand-o { position: absolute; left: 52.93%; top: .88%; width: 46.11%; height: auto; }
+
+.leo-ai {
+  position: fixed; z-index: 75; top: 53px; right: 0; bottom: 0; width: min(440px, 100vw);
+  display: flex; flex-direction: column; background: var(--panel); color: var(--ink);
+  border-left: 1px solid var(--line); box-shadow: -10px 0 28px rgb(2 43 30 / .10);
+  font-size: 14px; animation: leo-vao .18s ease-out;
+}
+@keyframes leo-vao { from { transform: translateX(16px); opacity: 0; } }
+.leo-ai .gian { flex: 1; }
+.leo-ai .muted { color: var(--muted); }
+
+.leo-dau { display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.leo-dau > .leo-mark, .leo-dau > .leo-mark img { height: 28px; }
+.leo-ten { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.leo-ten strong { color: var(--logo-ink); font-size: 15px; letter-spacing: .02em; }
+.leo-ten small { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.leo-nut-nho { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 34px; height: 34px; padding: 0 6px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); }
+.leo-nut-nho:hover { background: var(--hover); }
+.leo-nut-nho[aria-pressed="true"] { background: var(--selected); color: var(--green); }
+.leo-nut-nho .bt-svg { width: 18px; height: 18px; }
+.leo-nut-nho span { font-size: 11px; }
+.leo-nut-chu { border: 0; background: transparent; color: var(--green); font-weight: 600; font-size: 12px; padding: 4px 6px; border-radius: 6px; }
+.leo-nut-chu:hover { background: var(--soft); }
+
+.leo-than { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 14px 14px 8px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+.leo-chao { margin: auto 0; text-align: center; padding: 18px 6px; }
+.leo-chao .leo-mark, .leo-chao .leo-mark img { height: 46px; }
+.leo-chao h2 { font-size: 20px; font-weight: 500; margin: 12px 0 4px; color: var(--logo-ink); }
+.leo-chao p { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.leo-goi-y-mo { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.leo-goi-y-mo button { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--green); padding: 8px 10px; font-size: 12.5px; text-align: left; max-width: 100%; }
+.leo-goi-y-mo button:hover { background: var(--soft); }
+
+.leo-tin { display: flex; gap: 8px; align-items: flex-start; }
+.leo-tin.nguoi { flex-direction: column; align-items: flex-end; }
+.leo-bong { max-width: 88%; background: var(--soft); border: 1px solid var(--line); border-radius: 14px 14px 4px 14px; padding: 8px 12px; }
+.leo-chu-nguoi { white-space: pre-wrap; overflow-wrap: anywhere; }
+.leo-tin.may > .leo-mark, .leo-tin.may > .leo-mark img { height: 22px; margin-top: 2px; }
+.leo-noi-dung { flex: 1; min-width: 0; }
+.leo-hanh-dong { display: flex; gap: 2px; opacity: .55; transition: opacity .15s; }
+.leo-tin:hover .leo-hanh-dong, .leo-hanh-dong:focus-within { opacity: 1; }
+@media (hover: none) { .leo-hanh-dong { opacity: .8; } }
+
+.leo-md { line-height: 1.6; overflow-wrap: anywhere; }
+.leo-md p { margin: 0 0 8px; }
+.leo-md h3 { font-size: 15px; margin: 10px 0 6px; color: var(--logo-ink); }
+.leo-md h4 { font-size: 14px; margin: 8px 0 4px; }
+.leo-md ul, .leo-md ol { margin: 0 0 8px; padding-left: 20px; }
+.leo-md code { background: var(--band); border-radius: 4px; padding: 0 4px; font-size: 12.5px; }
+.leo-md blockquote { margin: 0 0 8px; padding-left: 10px; border-left: 3px solid var(--secondary); color: var(--muted); }
+.leo-md a { color: var(--green); }
+.leo-bang { overflow-x: auto; margin: 0 0 8px; }
+.leo-bang table { border-collapse: collapse; font-size: 12.5px; }
+.leo-bang th, .leo-bang td { border: 1px solid var(--line); padding: 3px 8px; text-align: left; }
+.leo-bang th { background: var(--band); }
+.leo-ma { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 8px; overflow: hidden; }
+.leo-ma-dau { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 0 10px; background: var(--band); font-size: 11px; color: var(--muted); }
+.leo-ma pre { margin: 0; padding: 8px 10px; overflow-x: auto; font-size: 12px; background: #fbfbf7; }
+
+.leo-nghi { margin: 0 0 6px; font-size: 12.5px; color: var(--muted); }
+.leo-nghi summary { cursor: pointer; font-size: 12px; }
+.leo-nghi .leo-md { padding-left: 10px; border-left: 2px solid var(--line); }
+
+.leo-buoc { margin: 0 0 6px; border: 1px solid var(--line); border-radius: 8px; background: #fbfbf7; font-size: 12.5px; }
+.leo-buoc summary { display: flex; align-items: center; gap: 6px; padding: 5px 8px; cursor: pointer; list-style: none; min-height: 30px; }
+.leo-buoc summary::-webkit-details-marker { display: none; }
+.leo-buoc summary .bt-svg, .leo-buoc summary .spin-o { width: 15px; height: 15px; flex: none; color: var(--green); }
+.leo-buoc summary b { font-weight: 600; white-space: nowrap; }
+.leo-buoc-tom { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.leo-buoc.loi { border-color: #e2c9a3; background: #fbf6ee; }
+.leo-buoc.loi summary b { color: var(--warn); }
+.leo-json { margin: 0; padding: 6px 8px; border-top: 1px solid var(--line); max-height: 220px; overflow: auto; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.leo-dang-nghi { display: flex; align-items: center; gap: 8px; margin: 0; }
+.leo-dang-nghi .spin-o { width: 18px; height: 18px; }
+
+.leo-hoi, .leo-loi { border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.leo-hoi { border: 1px solid var(--green); background: var(--soft); }
+.leo-loi { border: 1px solid #e2c9a3; background: #fbf6ee; color: var(--warn); }
+.leo-hoi p, .leo-loi p { margin: 0 0 8px; }
+.leo-hang { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.leo-hang input { flex: 1; min-width: 0; }
+
+.leo-xuong { position: absolute; right: 16px; bottom: 150px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); box-shadow: 0 2px 8px rgb(0 0 0 / .12); display: grid; place-items: center; }
+.leo-xuong .bt-svg { width: 18px; height: 18px; }
+
+.leo-soan { border-top: 1px solid var(--line); padding: 8px 10px calc(6px + env(safe-area-inset-bottom, 0px)); background: var(--panel); }
+.leo-soan textarea { width: 100%; box-sizing: border-box; border: 1px solid #cad6cd; border-radius: 10px; background: #fcfcf7; padding: 9px 10px; resize: none; min-height: 42px; max-height: 180px; line-height: 1.45; font-size: 14px; }
+.leo-soan textarea:focus { outline: 2px solid var(--green); outline-offset: -1px; }
+.leo-soan-duoi { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+.leo-chon-mh { max-width: 150px; height: 32px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); padding: 0 8px; font-size: 12px; color: var(--ink); }
+.leo-the { font-size: 11px; color: var(--green); border: 1px solid var(--green); border-radius: 10px; padding: 1px 6px; }
+.leo-mic, .leo-gui { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; background: var(--panel); color: var(--green); }
+.leo-mic.dang { background: var(--green); color: #fff; animation: leo-breathe 1.4s ease-in-out infinite; }
+.leo-gui { background: var(--green); color: #fff; border-color: var(--green); }
+.leo-gui:disabled { background: var(--band); color: var(--muted); border-color: var(--line); opacity: 1; cursor: default; }
+.leo-gui.dung { background: var(--logo-ink); }
+.leo-mic .bt-svg, .leo-gui .bt-svg { width: 19px; height: 19px; }
+.leo-goi-y-mh { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: 6px; padding: 5px 8px; border-radius: 8px; background: var(--band); font-size: 12px; color: var(--ink); }
+.leo-goi-y-mh small { color: var(--muted); }
+.leo-kem { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.leo-kem-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 8px; padding: 2px 6px; font-size: 11.5px; background: var(--panel); max-width: 100%; }
+.leo-kem-chip img { width: 28px; height: 28px; object-fit: cover; border-radius: 4px; }
+.leo-kem-chip button { border: 0; background: transparent; font-size: 15px; line-height: 1; padding: 0 2px; color: var(--muted); }
+.leo-bong .leo-kem-chip { margin: 0 4px 4px 0; }
+.leo-chan { margin: 4px 0 0; font-size: 10.5px; color: var(--muted); text-align: center; }
+
+.leo-trang { flex: 1; overflow-y: auto; padding: 12px 14px; }
+.leo-trang h3 { margin: 0 0 10px; font-size: 15px; }
+.leo-muc { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.leo-muc > b { display: block; margin-bottom: 4px; }
+.leo-muc p { font-size: 12px; margin: 4px 0; }
+.leo-chon { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; cursor: pointer; }
+.leo-chon span { display: flex; flex-direction: column; }
+.leo-chon small { color: var(--muted); font-size: 11.5px; }
+.leo-ds-cuoc { list-style: none; margin: 0; padding: 0; }
+.leo-ds-cuoc li { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+.leo-ds-cuoc li.chon { background: var(--selected); }
+.leo-cuoc { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; padding: 7px 8px; display: flex; flex-direction: column; border-radius: 8px; }
+.leo-cuoc:hover { background: var(--hover); }
+.leo-cuoc b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.leo-cuoc small { color: var(--muted); font-size: 11px; }
+.leo-o-ten { flex: 1; min-width: 0; }
+
+/* Màn hẹp (≤ 1024 px, cùng mốc ui/manHep.ts): tấm từ đáy, cao theo phần màn hình nhìn thấy (bàn phím ảo — --vv-h). */
+@media (max-width: 1024px) {
+  .nut-leo-ai { height: 40px; min-width: 44px; padding: 0 8px; border-radius: 20px; }
+  .leo-ai {
+    top: auto; left: 0; right: 0; width: auto; height: min(86dvh, var(--vv-h, 100dvh));
+    border-left: 0; border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgb(2 43 30 / .16);
+    animation-name: leo-len;
+  }
+  @keyframes leo-len { from { transform: translateY(24px); opacity: 0; } }
+  .leo-dau { padding-left: calc(12px + env(safe-area-inset-left, 0px)); padding-right: calc(8px + env(safe-area-inset-right, 0px)); }
+  .leo-soan { padding-left: calc(10px + env(safe-area-inset-left, 0px)); padding-right: calc(10px + env(safe-area-inset-right, 0px)); }
+  .leo-nut-nho, .leo-mic, .leo-gui { min-width: 44px; min-height: 44px; }
+  .leo-mic, .leo-gui { width: 44px; height: 44px; }
+  .leo-chon-mh { height: 40px; max-width: 128px; }
+  .leo-soan textarea { font-size: 16px; } /* iOS: < 16 px thì Safari tự phóng to khi gõ */
+  .leo-xuong { bottom: 170px; }
+}
+@media (max-width: 600px) {
+  .nut-leo-ai .nhan-dai { display: none; }
+  .leo-ai { top: 0; height: var(--vv-h, 100dvh); border-radius: 0; border-top: 0; padding-top: env(safe-area-inset-top, 0px); }
+  .leo-chan { display: none; }
+}
+/* Bàn phím ảo mở (ui/manHep.ts gắn html.ban-phim + --vv-y): tấm bám đúng phần nhìn thấy, ô nhập + mic + gửi ngay trên bàn phím. */
+html.ban-phim .leo-ai { top: var(--vv-y, 0px); bottom: auto; height: var(--vv-h, 100dvh); }
+html.ban-phim .leo-soan { padding-bottom: 6px; }
+@media (prefers-reduced-motion: reduce) { .leo-ai { animation: none; } .leo-than { scroll-behavior: auto; } }

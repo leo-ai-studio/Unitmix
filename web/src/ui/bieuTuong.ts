@@ -51,6 +51,21 @@ export const BIEU_TUONG = {
   nganPhai: '◨', // mở ngăn Số liệu (panel phải)
   dongNgan: '⌄', // đóng ngăn kéo
   menuToa: '⋯', // menu tòa (nhấn giữ)
+  // Leo AI (troLy/LeoAI.tsx)
+  leoGui: '➤',
+  leoDung: '◼',
+  leoMic: '◖',
+  leoKem: '⌇',
+  leoLoa: '♫',
+  leoMoi: '✚',
+  leoCaiDat: '⚙',
+  leoSaoChep: '⎗',
+  leoThuLai: '↻',
+  leoSua: '✐',
+  leoXuong: '⤓',
+  leoDong: '×',
+  leoLichSu: '≔',
+  leoGiong: '◉',
   // xuất
   xuatCad: '◫',
   xuatXls: '▥',
