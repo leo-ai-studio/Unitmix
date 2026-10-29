@@ -7,6 +7,7 @@ import type { GocNhin } from '../tinh/kieu';
 import { GocBanVe } from '../ui/GocBanVe';
 import { coDaGiac } from '../tinh/matBang';
 import { dangChon, doiTuongTrung, khoaDoiTuong, laBam, laBamDup, trungRo, type DangChon3D, type DiemBam, type DoiTuong3D } from './chon3d';
+import type { GanMoRong, MoRong3D } from './moRong3D';
 import { capDo3D, coBoDem, huongMatTroi, THONG_SO_CAP, type CapDo3D } from './khungVe';
 import { bauTroi } from './moiTruong';
 import type { NutHienThi } from '../ui/ThanhHienThi';
@@ -77,6 +78,8 @@ type Props = {
   onMo?: (d: DoiTuong3D) => void;
   /** Lớp phủ chữ trong khung 3D (vd. thông tin căn / tầng đang chọn), không chiếm chỗ khung. */
   chuThich?: ComponentChildren;
+  /** Gói mở rộng cảnh (ve3d/moRong3D.ts) — vd. ảnh nền, đường mặt trời, lớp phân tích nắng / gió. Đọc lúc tạo khung. */
+  moRong?: MoRong3D;
   /**
    * Lớp hiển thị (menu "Lớp" ở góc như bản vẽ 2D). Đối tượng dựng gắn `userData.lop = khoá` thì ẩn / hiện theo `lopAn` tức thì, không dựng
    * lại; `userData.vlTheoLop = { lop, vl, vlThuong }` đổi vật liệu theo lớp (vd. lô bán trong suốt khi bật Hầm).
@@ -113,7 +116,7 @@ export function gocMacDinh(c: Pick<CanhDung, 'tam' | 'coCanh' | 'cao'>): GocDeXu
 }
 
 /** Khung WebGL: xoay / di / phóng, mặt trời theo giờ, cắt ngang, kiểu Brand / mô hình trắng, góc đề xuất, lưu góc, xuất ảnh. Three.js nạp lười. */
-export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich, lop, lopAn, phanTich }: Props) {
+export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhThamSo, toaNguyen, tieuDe, dauThanh, gocLuu, onLuuGoc, onXoaGoc, tenAnh = 'Unitmix-3D', chon, onChon, onMo, chuThich, lop, lopAn, phanTich, moRong }: Props) {
   useLang();
   const hop = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -131,6 +134,8 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
   tr.current = { ts, hien, gio, cat, gocBac, kieu, lopAn, viDo };
   const dungRef = useRef(dung);
   dungRef.current = dung;
+  const moRongRef = useRef(moRong);
+  moRongRef.current = moRong;
   const ptRef = useRef(phanTich);
   ptRef.current = phanTich;
   /** Ô đang rê / chạm của lớp phân tích (toạ độ px trong khung) và hình lớp hiện tại. */
@@ -195,7 +200,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
         // Cảm ứng: một ngón xoay, hai ngón chụm phóng + dời (canvas touch-action: none nên trang không phóng theo).
         ctl.touches = { ONE: T.TOUCH.ROTATE, TWO: T.TOUCH.DOLLY_PAN };
         ctl.enablePan = true; ctl.screenSpacePanning = true;
-        let canh: CanhDung | null = null, G = nhomMoi(), cho = 0;
+        let canh: CanhDung | null = null, G = nhomMoi(), cho = 0, mr: GanMoRong | null = null;
         // --- chọn trong 3D: mesh / nét có userData.chon; tô nhấn bằng cách đổi vật liệu (nhớ vật liệu gốc), không dựng lại ---
         type VL = import('three').Material;
         let dsChon: import('three').Object3D[] = [], ro: DoiTuong3D | null = null;
@@ -218,6 +223,9 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
         const lopNhan = new T.Group();
         scene.add(lopNhan);
         // --- lớp phân tích view: nhóm riêng trong scene (không thuộc `goc`, dựng lại cảnh không gỡ), một vật liệu màu đỉnh ---
+        // nhóm của gói mở rộng (ảnh nền mặt đất…): làm nhạt khi phân tích view, ẩn / hiện theo Lớp như `goc`, không bị gỡ khi dựng lại
+        const phu = new T.Group(); phu.name = 'mo-rong';
+        scene.add(phu);
         const lopView = new T.Group();
         lopView.visible = false;
         scene.add(lopView);
@@ -228,7 +236,9 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
         const XAM_NHAT = new T.Color(0xe7e6e0), mauGoc = new WeakMap<import('three').Material, import('three').Color>();
         /** Làm nhạt cảnh (m = 0 → màu gốc, 1 → gần xám ngà): pha màu mọi vật liệu của cảnh, nhớ màu gốc. */
         const lamNhat = (m: number) => {
-          goc.traverse((o) => {
+          for (const g0 of [goc, phu]) g0.traverse((o) => {
+            // vật thể tự làm nhạt theo cách riêng (vd. ảnh vệ tinh nền: giảm độ đậm — đổi màu nhân texture không đủ nhạt)
+            if (typeof o.userData.lamNhat === 'function') { (o.userData.lamNhat as (m: number) => void)(m); return; }
             const mt = (o as import('three').Mesh).material as import('three').Material | import('three').Material[] | undefined;
             if (!mt) return;
             for (const x of Array.isArray(mt) ? mt : [mt]) {
@@ -372,7 +382,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
         const datNang = () => {
           if (!canh) return;
           const h = new Date(); // giờ Việt Nam (UTC+7) của ngày hôm nay
-          const { gocCao, phuongVi } = viTriMatTroi(tr.current.viDo, 105.85, new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate(), 0, 0, 0) + (tr.current.gio - 7) * 3600e3));
+          const { gocCao, phuongVi } = mr?.nang?.(tr.current.gio) ?? viTriMatTroi(tr.current.viDo, 105.85, new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate(), 0, 0, 0) + (tr.current.gio - 7) * 3600e3));
           const [hx, hy, hz] = huongMatTroi(gocCao, phuongVi, tr.current.gocBac); // Bắc = +Y bản vẽ = −Z three khi gocBac = 0
           const c = canh.coCanh, [tx, ty, tz] = canh.tam;
           sun.position.set(tx + c * 1.6 * hx, ty + c * 1.6 * hy, tz + c * 1.6 * hz);
@@ -475,7 +485,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
           // đang phân tích view (lớp màu ô hiện rõ): ẩn cây (che mặt đứng tầng thấp, màu từng cây không làm nhạt được) và trục thang
           // (vẽ xuyên mặt che, đè lên ô màu); tắt phân tích thì về theo menu Lớp
           if (mucView > 0.5) { an.add('cay'); an.add('thang'); }
-          goc.traverse((o) => {
+          for (const g0 of [goc, phu]) g0.traverse((o) => {
             const l = o.userData.lop as string | undefined;
             if (l) o.visible = !an.has(l);
             const d = o.userData.vlTheoLop as { lop: string; vl: VL; vlThuong: VL } | undefined;
@@ -516,6 +526,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
             setDeXuat(ds);
             if (!giuGoc) { ctl.target.set(x, y, z); datGoc(ds[0]); }
             apHien(); datNang();
+            mr?.canhMoi?.(canh);
           }
           apLop();
           if (mucView > 0) lamNhat(mucView); // cảnh mới khi đang phân tích: làm nhạt luôn
@@ -525,6 +536,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
         const ob = new ResizeObserver(kichCo);
         ob.observe(hop.current);
         kichCo();
+        try { mr = moRongRef.current?.gan({ T, R, scene, phu, cam, sun, ve, apLop: () => apLop(), capNang: () => datNang(), datGio: (g) => setGio(g), dom: R.domElement }) ?? null; } catch { mr = null; }
         dungLai(false);
         apView();
         he.current = { ve: () => { dungLai(true); }, datGoc, layGoc, anh };
@@ -601,6 +613,7 @@ export function Khung3D({ khoa, khoaNhe, dung, gocBac = 0, viDo = 21.03, chinhTh
           return kq;
         };
         don = () => {
+          mr?.huy(); mr = null;
           huyBay(); cancelAnimationFrame(vong); cancelAnimationFrame(choRo); ob.disconnect(); cancelAnimationFrame(cho);
           cv0.removeEventListener('pointerdown', onDown); cv0.removeEventListener('pointerup', onUp); cv0.removeEventListener('pointermove', onMove);
           cv0.removeEventListener('pointerleave', onLeave); cv0.removeEventListener('pointercancel', onCancel);
