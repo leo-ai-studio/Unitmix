@@ -1473,13 +1473,35 @@ export function trucQuaSanh(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | un
 }
 
 // ---------- XC-07: hành lang liền, vuông góc, tới cửa xa nhất ----------
+const dsCuaMB = (x: ToaMB, cuaCan: Record<string, number>) => { const { can, thang } = cuaTrenMat(x as unknown as ToaPCCC, cuaCan); return [...can.map((c) => ({ p: c.p, h: c.huong })), ...thang.map((t) => ({ p: t.p, h: t.huong }))]; };
+/** Cửa căn / thang của mặt bằng mặc định — cố định theo (mẫu, dl, bảng tim cửa): PC-11 đo hàng trăm phương án, không dựng lại mỗi lần. */
+const nhoCuaGoc = new WeakMap<ToaMB, Map<DuLieuMB | null, WeakMap<Record<string, number>, { ds: { p: Diem; h: Diem }[]; trung: (p: Diem) => boolean }>>>();
+function cuaGoc(mau: ToaMB, dl: DuLieuMB | null | undefined, cuaCan: Record<string, number>) {
+  let a = nhoCuaGoc.get(mau);
+  if (!a) nhoCuaGoc.set(mau, (a = new Map()));
+  let b = a.get(dl ?? null);
+  if (!b) a.set(dl ?? null, (b = new WeakMap()));
+  let g = b.get(cuaCan);
+  if (!g) {
+    const ds = dsCuaMB(dung(mau, matBangMacDinh(mau, dl), dl), cuaCan), luoi = new Map<string, Diem[]>();
+    for (const c of ds) { const k = `${Math.floor(c.p[0])},${Math.floor(c.p[1])}`; (luoi.get(k) ?? luoi.set(k, []).get(k)!).push(c.p); }
+    // cửa trùng cửa mẫu (cách < 1 mm): dò lưới ô 1 mm (3 × 3 ô quanh điểm) thay vì quét cả danh sách — cùng kết quả kc < 1
+    g = { ds, trung: (p: Diem) => {
+      const x = Math.floor(p[0]), y = Math.floor(p[1]);
+      for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const q of luoi.get(`${x + i},${y + j}`) ?? []) if (kc(q, p) < 1) return true;
+      return false;
+    } };
+    b.set(cuaCan, g);
+  }
+  return g;
+}
 function hanhLangToiCua(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, cuaCan: Record<string, number>): number {
-  const hd = dung(mau, mb, dl);
   if (!mb.hanhLang.length) return 0;
-  const dsCua = (x: ToaMB) => { const { can, thang } = cuaTrenMat(x as unknown as ToaPCCC, cuaCan); return [...can.map((c) => ({ p: c.p, h: c.huong })), ...thang.map((t) => ({ p: t.p, h: t.huong }))]; };
+  const hd = dung(mau, mb, dl);
+  const dsCua = (x: ToaMB) => dsCuaMB(x, cuaCan);
   // chỉ cửa ĐÃ DỜI so với mẫu (thêm / dời thang, dãy dài ra): đồ thị app cũ của bản vẽ gốc giữ nguyên như CAD (QT-54)
-  const goc = dsCua(dung(mau, matBangMacDinh(mau, dl), dl));
-  const cua = dsCua(hd).filter((c) => !goc.some((g) => kc(g.p, c.p) < 1));
+  const goc = cuaGoc(mau, dl, cuaCan);
+  const cua = dsCua(hd).filter((c) => !goc.trung(c.p));
   const nuaHL = (mau.hanh_lang_mm || 1800) / 2;
   let sua = 0;
   for (const c of cua) {
