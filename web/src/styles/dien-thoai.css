@@ -28,10 +28,16 @@
   .khung-soan .thuong-hieu .ten-ban { display: none; }
   .khung-soan .thuong-hieu .mark, .khung-soan .thuong-hieu .mark img { height: 26px; }
   .khung-soan .tab-buoc { padding: 2px; }
-  .khung-soan .tab-buoc button { min-height: 40px; padding: 0 10px; }
+  .khung-soan .tab-buoc button { min-height: 40px; padding: 0 8px; }
+  .khung-soan .thanh-tren > .menu-them { margin-left: auto; }
+  .khung-soan .thanh-tren > .gian { display: none; }
   .khung-soan .tab-buoc .nhan-dai { display: none; }
   .khung-soan .tab-buoc .nhan-ngan { display: inline; }
-  .khung-soan .tab-xem button { min-height: 40px; padding: 0 10px; }
+  .khung-soan .tab-xem button { min-height: 40px; min-width: 40px; padding: 0 7px; }
+  .panel-giua .nhom-nut button, .panel-giua .nut-nho, .panel-giua .nut-phu, .panel-giua .nut-chinh { min-height: 40px; min-width: 40px; }
+  .panel-giua .noi-tren button:not(.nut-bt) { min-height: 40px; min-width: 40px; }
+  .ngan-keo .nut-nho:last-child { flex-basis: 44px; }
+  .ngan-keo .bang-cc { min-height: 36px; align-items: center; }
   .thanh-tren .menu-them { display: inline-flex; flex-shrink: 0; }
   .thanh-tren .nut-them { min-width: 44px; min-height: 44px; font-size: 20px; line-height: 1; border-radius: 8px; }
   .thanh-tren .nut-them[aria-expanded="true"] { background: var(--selected); }
@@ -138,7 +144,7 @@
 
 /* Điện thoại nằm ngang (thấp): thanh trên 44 px, dock thành cột bên phải để bản vẽ giữ chiều cao. */
 @media (max-width: 1024px) and (max-height: 520px) {
-  :root { --tren-cao: 44px; --dock-cao: 0px; --dock-rong: 64px; }
+  :root { --tren-cao: 48px; --dock-cao: 0px; --dock-rong: 64px; }
   .khung-soan.hep .khung-than { margin: 0 var(--dock-rong) 0 0; padding-right: 0; }
   .dock-duoi {
     top: calc(var(--tren-cao) + var(--an-t)); left: auto; right: 0; bottom: 0; width: calc(var(--dock-rong) + var(--an-r)); height: auto;
@@ -152,7 +158,6 @@
   .dock-duoi .nut-bt > span:not([aria-hidden]) { font-size: 10px; }
   .khung-soan .ngan-keo { bottom: 0; right: calc(var(--dock-rong) + var(--an-r)); width: min(460px, calc(100vw - var(--dock-rong) - var(--an-l) - var(--an-r))); max-height: calc(100dvh - var(--tren-cao) - var(--an-t) - 8px); }
   .khung-soan .panel-phai.ngan-keo { left: auto; }
-  .khung-soan .tab-buoc button, .khung-soan .tab-xem button { min-height: 36px; }
 }
 
 /* Máy tính bảng (rộng ≥ 600 px): ngăn không trải hết bề ngang — Nhập bám trái, Số liệu bám phải. */
