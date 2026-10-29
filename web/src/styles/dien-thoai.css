@@ -100,7 +100,7 @@
   /* ---- lớp phủ trên bản vẽ: không che nhau ---- */
   .nut-bt { min-width: 44px; height: 44px; }
   .nut-bt .bt-svg { width: 22px; height: 22px; }
-  .hoa-gio { right: 8px; top: 8px; width: 48px; height: 48px; }
+  .hoa-gio { right: 8px; top: 14px; width: 48px; height: 48px; overflow: visible; }
   .thuoc-ty-le { left: 112px; bottom: 16px; }
   .goc-bv { bottom: 8px; }
   .goc-bv.trai { left: 8px; } .goc-bv.phai { right: 8px; }
@@ -114,7 +114,7 @@
   .tmb-toa-do input { font-size: 16px; }
   /* màn Tầng: nhãn tầng một dòng bên trái, thanh công cụ tay xuống hàng dưới (cùng mép phải) — không đè nhau, không đè hoa gió */
   .the-tang { top: 8px; left: 8px; max-width: calc(100% - 76px); box-sizing: border-box; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; }
-  .thanh-cc-tang { top: 48px; right: 8px; left: auto; max-width: calc(100% - 16px); flex-wrap: wrap; justify-content: flex-end; }
+  .thanh-cc-tang { top: 68px; right: 8px; left: auto; max-width: calc(100% - 16px); flex-wrap: wrap; justify-content: flex-end; }
   .thanh-cc-tang .cc-mau select { font-size: 16px; }
   .thanh-o-chon { top: auto; bottom: 64px; max-width: calc(100% - 120px); overflow-x: auto; scrollbar-width: none; }
   .thanh-o-chon .nut-phu { min-height: 40px; }
