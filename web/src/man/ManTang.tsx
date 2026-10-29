@@ -33,7 +33,7 @@ import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
 import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, useCaiPCCC, usePCCCTang } from '../ve/LopPCCC';
 import { KhoiPCCC } from '../ui/KpiPCCC';
-import { LopViewTang } from '../ve/LopViewTang';
+import { ChuGiaiViewTang, LopViewTang } from '../ve/LopViewTang';
 import { gocBacPA, nutLopView } from './lopView';
 
 export type ChungTang = {
@@ -342,6 +342,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         </BanVe>
       </div>
       <ThanhCongCuTang {...ccProps} />
+      <ChuGiaiViewTang pa={pa} />
       {keoTay.bongKeo}
       {baoSt && (
         <div key={baoSt.id} class={`lop-st-bao ${baoSt.loai}`} role={baoSt.loai === 'loi' ? 'alert' : 'status'}>

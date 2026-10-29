@@ -580,7 +580,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         {/* đo khoảng cách */}
         {diemDo.map((p, i) => <circle key={`do${i}`} cx={p[0]} cy={-p[1]} r={buocM * 0.015} fill="var(--green)" style={{ pointerEvents: 'none' }} />)}
         {diemDo.length === 2 && nhanDoan(diemDo[0], diemDo[1], m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1])), 'var(--green)', 'do')}
-        {!hien && <LopViewTmb pa={pa} tv={tv} coChu={coChu} />}
+        {!hien && <LopViewTmb pa={pa} tv={tv} coChu={coChu} toaId={toaId} />}
         <LopGoiY loId={lo?.id ?? null} tv={tv} />
         <LopHangLoat tv={tv} />
         {pa.lo.map((l) => {
@@ -606,7 +606,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         <HopHangLoat pa={pa} tv={tv} sua={sua} chiXem={chiXem} luat={luat} />
         {tc.do && <p class="tmb-goi-y">{diemDo.length === 2 ? `${t('tmb.do.ketQua')} ${m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1]))} · Δx ${m1(Math.abs(diemDo[1][0] - diemDo[0][0]))} · Δy ${m1(Math.abs(diemDo[1][1] - diemDo[0][1]))}` : t('tmb.do.huongDan')}</p>}
         {hien?.chan && <p class="tmb-goi-y canh">{t('tmb.chanCG')}</p>}
-        <ChuGiaiView pa={pa} />
+        <ChuGiaiView pa={pa} tv={tv} />
       </div>
       <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null}
         lop={[nutLopView()]} chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
@@ -767,7 +767,7 @@ export function TmbPhai(p: Chung & { kq: KetQuaChiTieu | null }) {
   return (
     <>
       <KpiTmb pa={p.pa} tv={p.tv} lo={lo} kq={p.kq} />
-      <KpiView pa={p.pa} tv={p.tv} lo={lo} sua={p.sua} chiXem={p.chiXem} />
+      <KpiView pa={p.pa} tv={p.tv} lo={lo} sua={p.sua} chiXem={p.chiXem} toaId={p.toaId} chonToa={p.chonToa} />
       <XepPhai {...p} />
       <ThangMayLo pa={p.pa} tv={p.tv} lo={lo} chonToa={p.chonToa} toaId={p.toaId} />
       <SucChuaLo lo={lo} />

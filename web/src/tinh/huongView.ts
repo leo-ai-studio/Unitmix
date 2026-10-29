@@ -259,7 +259,17 @@ export type DiemViewCan = {
   /** Mặt ngoài (m, hệ lô) — để tô trên TMB. */
   A: Diem;
   B: Diem;
+  /** Gốc tia + pháp tuyến (m, hệ lô) và độ dài 5 tia thoáng −30…+30° (m, tới vật cản cao hơn mắt, tối đa 150) — vẽ "tia view". */
+  O: Diem;
+  n: Diem;
+  tiaL: number[];
+  /** Điểm theo dải tầng (chỉ khi đánh giá `nhieuTang`): cùng chỉ số với `DaiTang` của tòa. */
+  bang?: BangView;
 };
+/** Dải tầng điển hình của một tòa: tầng từ `tu` tới `den` (1..soTangDH), mắt ở `mat` (m). */
+export type DaiTang = { tu: number[]; den: number[]; mat: number[] };
+/** Điểm một căn theo từng dải tầng. Hướng không đổi theo tầng. */
+export type BangView = { tong: number[]; thoang: number[]; canh: number[]; nang: number[]; gioNang: number[]; kcCan: (number | null)[] };
 export type TongHopView = {
   /** Số căn (đã nhân số tầng). */
   soCan: number;
@@ -304,10 +314,13 @@ const TIA = [-30, -15, 0, 15, 30];
 const TW = [1, 2, 3, 2, 1];
 const DAI_TIA = 150, XA_CANH = 120, BUOC_CANH = 5, TU_CHE_M = 4, DAI_TIA_NANG = 300;
 
-type Tia = { dv: Diem; L: number; toa: boolean; sX: number | null; loaiX: LoaiCanhQuan | null; tD: number | null };
+/** `hit` (chỉ khi nhiều tầng): cặp phẳng [t, H, t, H…] — chỗ cắt gần nhất với từng vật cản trong 150 m và chiều cao vật cản. */
+type Tia = { dv: Diem; L: number; toa: boolean; sX: number | null; loaiX: LoaiCanhQuan | null; tD: number | null; hit?: number[] };
+/** `eMax` (chỉ khi nhiều tầng): mắt thấp hơn mức này thì giờ nắng bị che (max H − t·tan qua các vật cản trong 300 m). */
 type CanDem = {
   toaId: string; loId: string; m: MatCan; so: number; eye: number; kc: number; h8: number;
-  tia: Tia[]; nang: { dv: Diem; tan: number; che: boolean }[];
+  tia: Tia[]; nang: { dv: Diem; tan: number; che: boolean; eMax: number }[];
+  mat?: number[];
 };
 type VatCan = { id: string; P: Diem[]; H: number; bb: Hop };
 export type ToaView = {
@@ -325,6 +338,8 @@ export type ToaView = {
   so: number;
   /** Khoảng cách cạnh dài §2.6.1 (m) để quy đổi thoáng. */
   kc: number;
+  /** Cao độ mắt (m) từng dải tầng — chỉ dùng khi bộ đếm bật `nhieuTang`. */
+  mat?: number[];
 };
 
 /**
@@ -334,8 +349,11 @@ export class BoDemView {
   private vc: VatCan[] = [];
   private can: CanDem[] = [];
   private nangGoc: Nang;
-  constructor(private cai: CaiDatView, private bc: BoiCanhView) {
+  /** Nhiều tầng: giữ mọi chỗ cắt (kể cả vật cản thấp hơn mắt giữa) để chấm lại theo từng dải tầng — `diem()` trả thêm `bang`. */
+  private nhieuTang: boolean;
+  constructor(private cai: CaiDatView, private bc: BoiCanhView, opt: { nhieuTang?: boolean } = {}) {
     this.nangGoc = duongNang(cai.viDo, cai.gocBac);
+    this.nhieuTang = !!opt.nhieuTang;
   }
 
   /** Số căn (ô, chưa nhân tầng) đang theo dõi. */
@@ -368,15 +386,41 @@ export class BoDemView {
       }
       let tD: number | null = null;
       for (const e of this.bc.duong) { const tt = tiaDoan(m.O, dv, e.a, e.b); if (tt !== null && tt <= XA_CANH && (tD === null || tt < tD)) tD = tt; }
-      return { dv, L: DAI_TIA, toa: false, sX, loaiX, tD };
+      return this.nhieuTang && t.mat?.length ? { dv, L: DAI_TIA, toa: false, sX, loaiX, tD, hit: [] } : { dv, L: DAI_TIA, toa: false, sX, loaiX, tD };
     });
     const ra = [m.n[0], m.n[1]];
-    const nang = this.nangGoc.filter((x) => ra[0] * x.dv[0] + ra[1] * x.dv[1] > 0.17).map((x) => ({ dv: x.dv, tan: x.tan, che: false }));
-    return { toaId: t.id, loId: t.loId, m, so: t.so, eye: t.eye, kc: t.kc, h8: huong8(m.n, this.cai.gocBac), tia, nang };
+    const nang = this.nangGoc.filter((x) => ra[0] * x.dv[0] + ra[1] * x.dv[1] > 0.17).map((x) => ({ dv: x.dv, tan: x.tan, che: false, eMax: -Infinity }));
+    const mat = this.nhieuTang && t.mat?.length ? t.mat : undefined;
+    return { toaId: t.id, loId: t.loId, m, so: t.so, eye: t.eye, kc: t.kc, h8: huong8(m.n, this.cai.gocBac), tia, nang, mat };
+  }
+
+  /** Nhiều tầng: ghi mọi chỗ cắt với vật cản (mọi chiều cao), đồng thời cập nhật tia / nắng của mắt giữa như `doVatCan`. */
+  private doVatCanNhieu(c: CanDem, o: VatCan, mat: number[]) {
+    const tMin = o.id === c.toaId ? TU_CHE_M : 0;
+    let eThap = c.eye;
+    for (const e of mat) if (e < eThap) eThap = e;
+    if (o.H <= eThap) return; // thấp hơn mắt thấp nhất: không che dải nào
+    for (const r of c.tia) {
+      if (ngoaiKhung(c.m.O, r.dv, DAI_TIA, o.bb)) continue;
+      const t = tiaDaGiac(c.m.O, r.dv, o.P, tMin);
+      if (t === null || t >= DAI_TIA) continue;
+      r.hit!.push(t, o.H);
+      if (o.H > c.eye && t < r.L) { r.L = t; r.toa = true; }
+    }
+    for (const s of c.nang) {
+      const tMax = Math.min(DAI_TIA_NANG, (o.H - eThap) / Math.max(s.tan, 1e-6));
+      if (ngoaiKhung(c.m.O, s.dv, tMax, o.bb)) continue;
+      const t = tiaDaGiac(c.m.O, s.dv, o.P, tMin);
+      if (t === null || t >= tMax) continue;
+      const e = o.H - t * s.tan;
+      if (e > s.eMax) s.eMax = e;
+      if (e > c.eye) s.che = true;
+    }
   }
 
   /** Dò một vật cản cho một căn: rút ngắn tia thoáng, đánh dấu giờ nắng bị che. */
   private doVatCan(c: CanDem, o: VatCan) {
+    if (c.mat) { this.doVatCanNhieu(c, o, c.mat); return; }
     if (o.H <= c.eye) return; // vật cản thấp hơn mắt: nhìn vượt qua
     const tMin = o.id === c.toaId ? TU_CHE_M : 0;
     for (const r of c.tia) {
@@ -394,28 +438,65 @@ export class BoDemView {
     }
   }
 
+  /** Thoáng + cảnh quan từ độ dài / cờ chạm tòa của 5 tia. */
+  private thoangCanh(c: CanDem, L: number[], toa: boolean[]): [number, number] {
+    const gan = this.cai.nguongGan;
+    let sT = 0, sC = 0, sw = 0;
+    c.tia.forEach((r, j) => {
+      const Lj = L[j], tj = toa[j];
+      sT += TW[j] * quyDoiThoang(Lj, c.kc);
+      let cq = 45;
+      if (tj && Lj <= gan) cq = 0; else if (tj && Lj <= XA_CANH) cq = 15;
+      const lim = Math.min(Lj, XA_CANH);
+      let tot: number | null = null;
+      if (r.sX !== null && r.sX <= lim) tot = (r.loaiX === 'quang_truong' ? 85 : 100) - 0.3 * r.sX;
+      else if (r.tD !== null && r.tD <= lim) tot = 62;
+      if (tot !== null) cq = Math.max(cq, tot);
+      sC += TW[j] * cq; sw += TW[j];
+    });
+    return [sT / sw, sC / sw];
+  }
+  private tongDiem(huong: number, thoang: number, canh: number, nang: number): number {
+    const w = this.cai.trongSo, tw = w.huong + w.thoang + w.canh + w.nang || 1;
+    return Math.max(0, Math.min(100, (w.huong * huong + w.thoang * thoang + w.canh * canh + w.nang * nang) / tw));
+  }
+  private diemNang(h8: number, gio: number): number {
+    const tay = h8 === 6 ? 15 : h8 === 5 || h8 === 7 ? 8 : 0;
+    return Math.max(0, Math.min(100, (gio / 6) * 100) - tay);
+  }
+  /** Điểm theo từng dải tầng (mắt `c.mat`). */
+  private bang(c: CanDem, huong: number): BangView {
+    const mat = c.mat!, n = mat.length;
+    const kq: BangView = { tong: new Array(n), thoang: new Array(n), canh: new Array(n), nang: new Array(n), gioNang: new Array(n), kcCan: new Array(n) };
+    const L = [0, 0, 0, 0, 0], toa = [false, false, false, false, false];
+    for (let i = 0; i < n; i++) {
+      const e = mat[i];
+      c.tia.forEach((r, j) => {
+        let m = DAI_TIA, cham = false;
+        const h = r.hit!;
+        for (let k = 0; k < h.length; k += 2) if (h[k + 1] > e && h[k] < m) { m = h[k]; cham = true; }
+        L[j] = m; toa[j] = cham;
+      });
+      const [thoang, canh] = this.thoangCanh(c, L, toa);
+      let gio = 0;
+      for (const s of c.nang) if (!(s.eMax > e)) gio++;
+      const nang = this.diemNang(c.h8, gio);
+      kq.tong[i] = this.tongDiem(huong, thoang, canh, nang);
+      kq.thoang[i] = thoang; kq.canh[i] = canh; kq.nang[i] = nang; kq.gioNang[i] = gio;
+      kq.kcCan[i] = toa[2] ? L[2] : null;
+    }
+    return kq;
+  }
+
   /** Điểm mọi căn đã thêm. */
   diem(): DiemViewCan[] {
-    const w = this.cai.trongSo, tw = w.huong + w.thoang + w.canh + w.nang || 1, gan = this.cai.nguongGan;
+    const gan = this.cai.nguongGan;
     return this.can.map((c) => {
-      let sT = 0, sC = 0, sw = 0;
-      c.tia.forEach((r, j) => {
-        sT += TW[j] * quyDoiThoang(r.L, c.kc);
-        let cq = 45;
-        if (r.toa && r.L <= gan) cq = 0; else if (r.toa && r.L <= XA_CANH) cq = 15;
-        const lim = Math.min(r.L, XA_CANH);
-        let tot: number | null = null;
-        if (r.sX !== null && r.sX <= lim) tot = (r.loaiX === 'quang_truong' ? 85 : 100) - 0.3 * r.sX;
-        else if (r.tD !== null && r.tD <= lim) tot = 62;
-        if (tot !== null) cq = Math.max(cq, tot);
-        sC += TW[j] * cq; sw += TW[j];
-      });
-      const thoang = sT / sw, canh = sC / sw;
+      const [thoang, canh] = this.thoangCanh(c, c.tia.map((r) => r.L), c.tia.map((r) => r.toa));
       const huong = diemHuong(c.h8, this.cai.nhomHuong, c.m.goc);
       const gio = c.nang.filter((s) => !s.che).length;
-      const tay = c.h8 === 6 ? 15 : c.h8 === 5 || c.h8 === 7 ? 8 : 0;
-      const nang = Math.max(0, Math.min(100, (gio / 6) * 100) - tay);
-      const tong = Math.max(0, Math.min(100, (w.huong * huong + w.thoang * thoang + w.canh * canh + w.nang * nang) / tw));
+      const nang = this.diemNang(c.h8, gio);
+      const tong = this.tongDiem(huong, thoang, canh, nang);
       const giua = c.tia[2];
       const kcCan = giua.toa ? giua.L : null;
       const nhin: DiemViewCan['nhin'] = giua.sX !== null && giua.sX <= Math.min(giua.L, XA_CANH) ? giua.loaiX
@@ -423,7 +504,8 @@ export class BoDemView {
       return {
         toaId: c.toaId, loId: c.loId, khoa: c.m.khoa, canId: c.m.canId, loai: c.m.loai, so: c.so,
         tong, huong, thoang, canh, nang, h8: c.h8, kcCan, doiDien: kcCan !== null && kcCan < gan, gioNang: gio, nhin,
-        xep: xepLoai(tong, this.cai), A: c.m.A, B: c.m.B,
+        xep: xepLoai(tong, this.cai), A: c.m.A, B: c.m.B, O: c.m.O, n: c.m.n, tiaL: c.tia.map((r) => r.L),
+        ...(c.mat ? { bang: this.bang(c, huong) } : {}),
       };
     });
   }
@@ -442,7 +524,25 @@ export const matGiua = (x: Pick<ToaDat, 'soTangDe' | 'caoDe' | 'soTangDH' | 'cao
 /** Mắt ở tầng điển hình thứ `k` (1..soTangDH): sàn tầng + 1,5 m. */
 export const matTang = (x: Pick<ToaDat, 'soTangDe' | 'caoDe' | 'caoDH'>, k: number) => x.soTangDe * x.caoDe + (k - 1) * x.caoDH + 1.5;
 
-export type KetQuaViewPA = { can: DiemViewCan[]; theoToa: Map<string, TongHopView>; theoLo: Map<string, TongHopView>; tong: TongHopView; cai: CaiDatView };
+export type KetQuaViewPA = {
+  can: DiemViewCan[]; theoToa: Map<string, TongHopView>; theoLo: Map<string, TongHopView>; tong: TongHopView; cai: CaiDatView;
+  /** Dải tầng từng tòa (chỉ khi `nhieuTang`). */
+  daiTang?: Map<string, DaiTang>;
+};
+
+/**
+ * Chia tầng điển hình 1..soTangDH của tòa thành ≤ `toiDa` dải đều (mỗi dải `buoc` tầng); mắt ở giữa dải (sàn + 1,5 m).
+ * Tòa ≤ `toiDa` tầng thì mỗi tầng một dải.
+ */
+export function chiaDaiTang(x: Pick<ToaDat, 'soTangDe' | 'caoDe' | 'caoDH' | 'soTangDH'>, toiDa = 40): DaiTang {
+  const n = Math.max(1, x.soTangDH), buoc = Math.max(1, Math.ceil(n / Math.max(1, toiDa)));
+  const kq: DaiTang = { tu: [], den: [], mat: [] };
+  for (let tu = 1; tu <= n; tu += buoc) {
+    const den = Math.min(n, tu + buoc - 1);
+    kq.tu.push(tu); kq.den.push(den); kq.mat.push(matTang(x, (tu + den) / 2));
+  }
+  return kq;
+}
 
 /** Khoảng cách cạnh dài §2.6.1 theo chiều cao (từ luật LO-02); thiếu luật thì dùng `nguongGan`. */
 export type KcTheoH = (H: number) => number;
@@ -451,19 +551,25 @@ export type KcTheoH = (H: number) => number;
  * Đánh giá view mọi căn của PA: mọi tòa có mẫu là vật cản; căn của tòa ở bố cục chung (tầng điển hình giữa). `chiToa` = chỉ chấm căn
  * của các tòa này (tòa khác vẫn là vật cản).
  */
-export function danhGiaViewPA(pa: TrangThaiPA, tv: ThuVien, opt: { cai?: CaiDatView; kc?: KcTheoH; chiToa?: Set<string> } = {}): KetQuaViewPA {
+export function danhGiaViewPA(pa: TrangThaiPA, tv: ThuVien, opt: { cai?: CaiDatView; kc?: KcTheoH; chiToa?: Set<string>; /** Chấm thêm theo dải tầng, tối đa n dải / tòa (0 / thiếu = chỉ tầng giữa). */ nhieuTang?: number } = {}): KetQuaViewPA {
   const cai = opt.cai ?? caiDatView(pa.huongView);
   const kc = opt.kc ?? (() => cai.nguongGan);
-  const bo = new BoDemView(cai, boiCanhView(pa, cai));
+  const nt = (opt.nhieuTang ?? 0) > 0;
+  const bo = new BoDemView(cai, boiCanhView(pa, cai), { nhieuTang: nt });
+  const daiTang = nt ? new Map<string, DaiTang>() : undefined;
   for (const x of pa.toa) {
     const m = mauToa(tv, x);
     if (!m) continue;
     const H = caoToaView(x);
     const cham = coMat(m) && (!opt.chiToa || opt.chiToa.has(x.id));
     const can = cham ? datMatCan(matCanCucBo(m, tv, boCucTang(x, null)), x) : [];
-    bo.them({ id: x.id, loId: x.loId, F: chanToa(m, x), H, can, eye: matGiua(x), so: Math.max(1, x.soTangDH), kc: kc(H) });
+    const dt = nt && cham ? chiaDaiTang(x, opt.nhieuTang) : undefined;
+    if (dt) daiTang!.set(x.id, dt);
+    bo.them({ id: x.id, loId: x.loId, F: chanToa(m, x), H, can, eye: matGiua(x), so: Math.max(1, x.soTangDH), kc: kc(H), mat: dt?.mat });
   }
-  return gom(bo.diem(), cai);
+  const kq = gom(bo.diem(), cai);
+  if (daiTang) kq.daiTang = daiTang;
+  return kq;
 }
 
 function gom(ds: DiemViewCan[], cai: CaiDatView): KetQuaViewPA {
