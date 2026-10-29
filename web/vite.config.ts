@@ -23,7 +23,7 @@ export default defineConfig({
     __COMMIT__: JSON.stringify(commit + sua),
     __NGAY_BUILD__: JSON.stringify(new Date().toLocaleDateString('sv-SE')), // YYYY-MM-DD theo giờ máy, không theo UTC
   },
-  // Chạy thử trên máy: API do `wrangler dev` (cổng 8787) phục vụ; agent chạy API riêng thì đặt UNITMIX_API=http://127.0.0.1:<cổng>.
+  // Chạy thử trên máy: API do `wrangler dev` (cổng 8787) phục vụ; agent chạy API riêng thì đặt UNITMIX_API (vd. http://127.0.0.1:8797).
   server: { port: 5180, proxy: { '/api': process.env.UNITMIX_API ?? 'http://127.0.0.1:8787' } },
   // Vài test quét tệp XREF / thư viện trên đĩa, chậm khi máy bận: nới giới hạn mặc định 5 s.
   test: { environment: 'node', testTimeout: 30_000 },

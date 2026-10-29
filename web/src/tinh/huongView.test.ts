@@ -169,7 +169,7 @@ describe('tổng hợp', () => {
   it('đếm theo số tầng, % Tốt / Khá / Kém, hướng Tây', () => {
     const d = (tong: number, h8: number, so: number): DiemViewCan => ({
       toaId: 't', loId: 'l', khoa: String(tong), canId: 'c', loai: null, so, tong, huong: tong, thoang: tong, canh: tong, nang: tong, h8,
-      kcCan: null, doiDien: false, gioNang: 0, nhin: null, xep: tong >= 80 ? 'tot' : tong >= 60 ? 'kha' : 'kem', A: [0, 0], B: [0, 0],
+      kcCan: null, doiDien: false, gioNang: 0, nhin: null, xep: tong >= 80 ? 'tot' : tong >= 60 ? 'kha' : 'kem', A: [0, 0], B: [0, 0], O: [0, 0], n: [0, 1], tiaL: [150, 150, 150, 150, 150],
     });
     const th = tongHopView([d(90, 4, 10), d(70, 0, 10), d(40, 6, 20)]);
     expect(th.soCan).toBe(40);
