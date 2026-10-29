@@ -146,7 +146,7 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
       )}
 
       {toa && (
-        <MucGap tieuDe={`${t('xep.thongSo')} · ${tenNgan(tv?.toa.get(toa.mauId))}`} giaiThich={t('gt.xep.thongSo')} mo>
+        <MucGap tieuDe={`${t('xep.thongSo')} · ${nhanToa(pa, tv, toa.id)}`} giaiThich={t('gt.xep.thongSo')} mo>
           <div class="luoi-o">
           <O nhan={t('xep.soTangDH')} tip={t('gt.xep.soTangDH')} gt={toa.soTangDH} tat={tat} onDoi={(v) => v >= 1 && datTs('soTangDH')(Math.round(v))} />
           <O nhan={t('xep.soTangDe')} tip={t('gt.xep.soTangDe')} gt={toa.soTangDe} tat={tat} onDoi={(v) => datTs('soTangDe')(Math.round(v))} />

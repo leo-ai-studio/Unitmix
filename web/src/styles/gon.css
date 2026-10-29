@@ -117,5 +117,13 @@ label.nut-nho { display: inline-flex; flex-direction: row; align-items: center; 
 /* hàng "nhãn … số" chung (.dong): số cuối hàng không bẻ "2,70 / m" */
 .dong > span:first-child + b:last-child { flex: none; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 
+/* So sánh PA: bảng theo nội dung (trước: 100 % bề ngang hộp → cột "Chỉ số" rộng ~ nửa bảng, số cách nhãn rất xa) */
+.so-sanh .ss-bang { width: auto; min-width: min(100%, 560px); }
+.so-sanh .ss-bang th:first-child { white-space: nowrap; }
+.so-sanh .ss-bang td, .so-sanh .ss-bang thead th:not(:first-child) { min-width: 96px; }
+
+/* Leo AI: ô chọn mô hình đủ chỗ cho "Sonnet 5.5 · Cân bằng" (trước cắt "Cân bằn") */
+@media (min-width: 1025px) { .leo-chon-mh { max-width: 190px; min-width: 0; } }
+
 /* ô số: chừa cột đơn vị để mọi ô thẳng hàng (có / không có "%", "m²") */
 .o-so-nhap { min-width: 96px; justify-content: flex-start; }
