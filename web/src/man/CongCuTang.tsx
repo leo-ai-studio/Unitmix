@@ -49,7 +49,8 @@ export type PropsCongCu = {
 
 const giamDong = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const tenCH = (no: number | undefined) => `CH-${String(no ?? 0).padStart(2, '0')}`;
-const m1 = (mm: number) => (mm / 1000).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+const dd1 = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }); // tạo một lần, không tạo lại mỗi nhãn
+const m1 = (mm: number) => dd1.format(mm / 1000);
 
 /** Tên ô theo số CH ở mặt bằng TRƯỚC thao tác (căn bị gỡ không còn ở mặt bằng sau); không thấy thì khoá ô. */
 const tenOTheo = (can: CanSo[]) => (khoa: string) => { const c = can.find((x) => x.vt.khoa === khoa); return c ? tenCH(c.no) : `${t('cc.o')} ${khoa}`; };
