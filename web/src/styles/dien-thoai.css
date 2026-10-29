@@ -26,7 +26,7 @@
   .khung-soan .thanh-tren > .nut-hoan, .khung-soan .thanh-tren > .che-do, .khung-soan .thanh-tren > .cap-do,
   .khung-soan .thanh-tren > .trang-thai-luu, .khung-soan .thanh-tren > .gian + .cap-do + .gian { display: none; }
   .khung-soan .thuong-hieu .ten-ban { display: none; }
-  .khung-soan .thuong-hieu .mark, .khung-soan .thuong-hieu .mark img { height: 26px; }
+  .khung-soan .thuong-hieu .mark, .khung-soan .thuong-hieu .mark img:not(.brand-o) { height: 26px; }
   .khung-soan .tab-buoc { padding: 2px; }
   .khung-soan .tab-buoc button { min-height: 40px; padding: 0 8px; }
   .khung-soan .thanh-tren > .menu-them { margin-left: auto; }
@@ -233,7 +233,7 @@
 /* Điện thoại hẹp (iPhone SE / mini / X: 375 px): thanh trên khít hơn để nút ⋯ không bị đẩy ra ngoài mép. */
 @media (max-width: 380px) {
   .khung-soan .thanh-tren { gap: 4px; padding-left: calc(6px + var(--an-l)); padding-right: calc(6px + var(--an-r)); }
-  .khung-soan .thuong-hieu .mark, .khung-soan .thuong-hieu .mark img { height: 22px; }
+  .khung-soan .thuong-hieu .mark, .khung-soan .thuong-hieu .mark img:not(.brand-o) { height: 22px; }
   .khung-soan .tab-buoc button { padding: 0 6px; min-width: 40px; }
   .khung-soan .tab-xem button { padding: 0 5px; }
   .thanh-tren .nut-them { min-width: 40px; }
