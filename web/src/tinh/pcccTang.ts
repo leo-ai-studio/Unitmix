@@ -5,9 +5,11 @@
  *
  * Căn cứ từng phần ghi ở chỗ tính; trích dẫn đầy đủ ở docs/pccc_tang.md.
  */
-import type { Diem, ThuVien } from './kieu';
+import type { Diem, ThuVien, ToaDat, TrangThaiPA } from './kieu';
+import { sanToa } from './kpi';
+import { danSoLo } from './danSo';
 import { canDangDung, congNangTai, matDaDon, viTriCan, type BoCuc } from './matBang';
-import { cuaTrenMat, dungDoThi, gioiHanThoatNan, thoatNan, tuPCCC, TIM_CUA_THANG_MM, BAN_KINH_TU_MM, type KetQuaTu, type MatToa, type ToaPCCC } from './pccc';
+import { chieuCaoPCCC, cuaTrenMat, dungDoThi, gioiHanThoatNan, thoatNan, tuPCCC, TIM_CUA_THANG_MM, BAN_KINH_TU_MM, type KetQuaTu, type MatToa, type ToaPCCC } from './pccc';
 import { KHONG_KIEM_TN, type DuLieuMB, type ToaMB } from './loiThang';
 import { cuaBienThe } from './toiUu';
 import { banKinhTMCC, canTMCC, chonThangChuaChay, giengThangMay, kiemThangMay, type GiengThang, type KiemThangMay, type LoiGieng } from './thangMay';
@@ -48,7 +50,7 @@ export type KetQuaPCCCTang = {
   tmcc: { batBuoc: boolean; r: number; canCu: string; chon: GiengThang[]; ngoai: Diem[]; xaNhat: number | null; muc: MucPC };
   hongCho: { apDung: boolean; nguong: number; xaNhat: number | null; vuot: number[]; nguon: Diem[]; muc: MucPC };
   tu: KetQuaTu & { r: number; muc: MucPC };
-  hanhLang: { gioiHan: number; canCu: string; cua: CuaHL[]; khoang: number[]; tong: number; muc: MucPC; hutKhoi: boolean };
+  hanhLang: { gioiHan: number; canCu: string; cua: CuaHL[]; khoang: number[]; tong: number; muc: MucPC; hutKhoi: boolean; rong: number; doan: { p0: Diem; p1: Diem; huong: Diem }[] };
   cuaNC: CuaNganChay[];
   /** điểm phải phủ (góc trong căn + cửa căn) — dùng cho lớp bán kính */
   diemPhu: Diem[];
@@ -191,7 +193,8 @@ function phanTich0(v: DauVaoPCCCTang): KetQuaPCCCTang {
     tmcc: { batBuoc, r: bk.r, canCu: bk.canCu, chon, ngoai, xaNhat: chonTM && chon.length ? chonTM.xaNhat / 1000 : null, muc: tmMuc },
     hongCho: { apDung: hcAp, nguong: 45, xaNhat: hcXa, vuot: hcVuot, nguon: nguonHC, muc: hcMuc },
     tu: { ...tu, r: BAN_KINH_TU_MM / 1000, muc: tuMuc },
-    hanhLang: { gioiHan: ghHL.m, canCu: ghHL.canCu, cua: cuaHL, khoang, tong: G.daiTong / 1000, muc: hlMuc, hutKhoi: H > 28 },
+    hanhLang: { gioiHan: ghHL.m, canCu: ghHL.canCu, cua: cuaHL, khoang, tong: G.daiTong / 1000, muc: hlMuc, hutKhoi: H > 28,
+      rong: hlMm, doan: G.canh.map((e) => ({ p0: e.p0, p1: e.p1, huong: e.huong })) },
     cuaNC,
     diemPhu,
     canhBao,
@@ -215,4 +218,21 @@ export function phanTichPCCCTang(v: DauVaoPCCCTang): KetQuaPCCCTang {
   if (m.size > 16) m.delete(m.keys().next().value!);
   m.set(khoa, kq);
   return kq;
+}
+
+// ---------- số liệu cả tòa cho QCVN 04 2.4.2 + kiểm thang máy dùng ở TMB ----------
+/** Số căn cả tòa + dân cả tòa (cùng cách KPI Tổng mặt bằng: lô đã khai QĐ tỉnh → từng căn; chưa khai → căn × người/căn). */
+export function soLieuToaPCCC(pa: TrangThaiPA, tv: ThuVien, toa: ToaDat): { soCan: number; dan: number | null } {
+  const s = sanToa(tv, toa), lo = pa.lo.find((l) => l.id === toa.loId);
+  if (!lo) return { soCan: s.soCan, dan: null };
+  const ds = danSoLo(pa, lo, tv);
+  return { soCan: s.soCan, dan: ds.coKhai ? (ds.theoToa[toa.id]?.nguoi ?? null) : s.soCan * lo.temDat.chiTieu.nguoiMoiCan };
+}
+
+/** Thang máy một tòa trên TMB: số giếng (mặt bằng hiệu dụng, bố cục chung) so với QCVN 04 2.4.1 · 2.4.2 + yêu cầu thang chữa cháy. */
+export function thangMayToa(pa: TrangThaiPA, tv: ThuVien, toa: ToaDat, mau: ToaMB | null, dl: DuLieuMB | null) {
+  const { soCan, dan } = soLieuToaPCCC(pa, tv, toa);
+  const gm = mau ? giengThangMay(mau.mat, (b) => dl?.loi.get(b) as LoiGieng | undefined) : { so: 0, thieuHinh: true, gieng: [] };
+  const H = chieuCaoPCCC(toa.soTangDe, toa.caoDe, toa.soTangDH, toa.caoDH);
+  return { ...kiemThangMay(gm.so, toa.soTangDe + toa.soTangDH, soCan, dan, gm.thieuHinh), H, tmcc: canTMCC(H), soCan, dan };
 }

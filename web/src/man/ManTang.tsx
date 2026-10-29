@@ -30,6 +30,8 @@ import { goiYVuaO } from '../tinh/goiYVuaO';
 import { ThanhCongCuTang, useKeoTay, useToaTam, type ChoSang, type PropsCongCu } from './CongCuTang';
 import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
+import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, usePCCCTang } from '../ve/LopPCCC';
+import { KhoiPCCC } from '../ui/KpiPCCC';
 
 export type ChungTang = {
   pa: TrangThaiPA;
@@ -232,6 +234,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   const k0 = tangXem(co.tangs);
   const bc: BoCuc = useMemo(() => boCucTang(toa, k0), [toa, k0]);
   const sl = useMemo(() => soLieuTang(mau, bc, tv), [mau, bc, tv]);
+  const pccc = usePCCCTang(pa, tv, toa, mau, bc); // lớp PCCC (ve/LopPCCC.tsx), cùng mặt bằng KPI dùng
   // phép tay đang chạy nền: vẽ mặt bằng tạm (phần hình học nhanh, chưa tự chỉnh); công cụ tay vẫn dựa trên tòa trong PA
   const tam = useToaTam(toa);
   const mauVe = useMemo(() => (tam ? mauCuaToa(tam, mauToa(tv, tam) as ToaVe, k0) : mau), [tam, mau, tv, k0]);
@@ -326,6 +329,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
             deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2}
             thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} dichLoi={keoTay.dichLoi} oKeo={keoTay.oKeo} hienHanhLang={hienHL} choSang={choSang} />
+          <g transform="scale(0.001 -0.001)"><LopPCCC kq={pccc} chiXem={chiXem} datTuTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, tuPCCCTay: ds ?? undefined })))} /></g>
         </BanVe>
       </div>
       <ThanhCongCuTang {...ccProps} />
@@ -355,7 +359,8 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         { khoa: 'noi', nhan: t('tang.noiThat'), bat: cai.noiThat, onClick: () => datCaiTang({ noiThat: !cai.noiThat }) },
         { khoa: 'cham', nhan: t('tang.chamMau'), bat: cai.chamMau, onClick: () => datCaiTang({ chamMau: !cai.chamMau }) },
         ...nutLopPhong(pa.nguong),
-      ]} />
+        ...nutLopPCCC(),
+      ]} chuGiai={batLopPCCC() ? <ChuGiaiPCCC kq={pccc} /> : undefined} />
     </>
   );
 }
@@ -507,6 +512,7 @@ export function TangPhai(p: ChungTang) {
   return (
     <>
       <KpiTang pa={pa} tv={tv} toa={toa} lo={lo} tang={k0} can={sl.can} mucTieu={muc} nguongLech={pa.nguong.coCauDiem} tenTang={phamVi} />
+      <KhoiPCCC pa={pa} tv={tv} toa={toa} mau={mau} bc={bc} chiXem={chiXem} datToa={(fn) => sua((q) => doiToa(q, toa.id, fn))} />
       <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}${k0 !== null ? ' · ' + tenTang(toa.soTangDe, k0) : ''}`} giaiThich={t('gt.tang.canTrongToa')}>
         <div class="bang-co-cau" role="table">
           <div class="dong bang-cc dau" style={{ gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr' }} role="row"><span /><span>{t('tang.canTang')}</span><span>{t('xep.tyLe')}</span><span>{t('xep.mucTieu')}</span><span>{t('xep.lech')}</span></div>
