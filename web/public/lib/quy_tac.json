@@ -1470,7 +1470,7 @@
    ],
    "ap_dung": "ca_hai",
    "ma_kiem": "phu_tu_pccc",
-   "cach_tinh": "điểm phải phủ: cửa căn, 4 góc trong căn (lùi 150 / 150 / 300 mm), hành lang mỗi 3 m; KHÔNG cộng tầm tia (tia đặc 6 m H ≤ 50 m / 8 m H > 50 m chỉ là yêu cầu áp lực); Bảng 11: ≤ 16 tầng HL ≤ 10 m 1 tia, > 10 m 2 tia; 17–25 tầng 2 / 3 tia; > 25 tầng chủ nhiệm chốt 2 tia; ưu tiên tường HL trước phòng KT trong lõi, rồi hộp KT căn, cuối cùng giữa tường căn; không đặt ở cửa buồng thang không nhiễm khói; ít vị trí nhất",
+   "cach_tinh": "điểm phải phủ: cửa căn, 4 góc trong căn (lùi 150 / 150 / 300 mm), hành lang mỗi 3 m; KHÔNG cộng tầm tia (tia đặc 6 m H ≤ 50 m / 8 m H > 50 m chỉ là yêu cầu áp lực); Bảng 11: ≤ 16 tầng HL ≤ 10 m 1 tia, > 10 m 2 tia; 17–25 tầng 2 / 3 tia; > 25 tầng chủ nhiệm chốt 2 tia; ứng viên theo ưu tiên (chép tuCC0 app cũ): (1) tường lõi quay ra HL trước phòng KT / KTĐ / KTN — tủ đôi (cạnh lõi ≥ 1.400, cách tâm phòng ≤ 3 m, mặt tường cách tim HL ½ HL ± 150, cách cửa lõi ≥ 700, cách giếng thang máy ≥ 1,6 m); (2) hộp KT căn giáp HL (ô gạch chéo, sát tường HL ≤ 600) — không trừ DT; (3) sát tường ngăn hai căn (chữ L); (4) giữa tường căn cách ranh ≥ 350 (chữ U), bước 250; mọi ứng viên cách cửa căn / thang ≥ ½ tủ + 600, cách nét cửa CAD ≥ ½ tủ + 500, không trên vách BT (tường HL dày > 200), không lấn tường ngăn căn, đoạn tủ → tim HL không xuyên căn / thang / lõi; chọn ÍT HỘP NHẤT: tham lam (lợi / ưu tiên 1 · 1,15 · 2,2, dàn tủ ≥ 3 m) làm cận trên rồi nhánh–cận chính xác (chi phí 100.000 × hộp + 10.000 × cửa ngăn cháy lý tưởng bị chắn + 5.000 × m² DT trừ + 10 × ưu tiên; ngân sách 500.000 nút); đánh số TCC-xx theo đường hành lang; kéo tay bám tường HL (sát lõi ≤ 300 = tủ đôi), kích đúp tách cụm thành 2 tủ đơn cách 3 m / gộp 2 tủ đơn",
    "ma_cu": [
     "qcvn06_52_hong_nuoc",
     "QT-77",
@@ -1481,7 +1481,7 @@
     "QT-77f"
    ],
    "thay_the_boi": null,
-   "ham": "pccc.ts · tuPCCC (phủ tham lam, chưa ưu tiên lõi / HKT) · lớp kéo tay ve/LopPCCC.tsx",
+   "ham": "tuHongNuoc.ts · datTuPCCC (chép tuCC0 + tccToiUu; 33 mẫu: 139 / 139 vị trí, 136 / 139 khớp ≤ 0,3 m) · kéo / tách / gộp ve/LopPCCC.tsx",
    "yaml": {
     "tep": "rules/04_qcvn06.yaml",
     "nhom": "qcvn06",
@@ -1616,8 +1616,8 @@
     }
    ],
    "ma_kiem": "cua_ngan_chay",
-   "cach_tinh": "đánh dấu trên lớp Cửa ngăn cháy; nhà > 75 m: cửa khoang đệm → buồng thang N, sảnh thang máy, phòng rác loại 2 (A.3.1.12 b), cửa giếng thang máy kín khói (A.3.1.12 c)",
-   "ham": "pcccTang.ts · cuaNC",
+   "cach_tinh": "chỉ là yêu cầu cấu tạo (không vẽ trên mặt bằng — người dùng 30/10/2026 bỏ lớp đánh dấu cửa ngăn cháy / cửa thang máy chữa cháy, app cũ cũng không vẽ); nhà > 75 m: cửa khoang đệm → buồng thang N, sảnh thang máy, phòng rác loại 2 (A.3.1.12 b), cửa giếng thang máy kín khói (A.3.1.12 c)",
+   "ham": null,
    "ap_dung": "ca_hai",
    "thay_the_boi": null,
    "thay_cho": [],
@@ -1785,7 +1785,7 @@
     "QT-104c"
    ],
    "thay_the_boi": null,
-   "ham": null,
+   "ham": "cuaNganChay.ts · cuaNganChay · kéo / thêm / xoá tay (QT-101) cuaNganChayTay · keoCuaTay · themCuaTay",
    "thay_cho": []
   },
   {
@@ -1858,7 +1858,7 @@
     "QT-77g"
    ],
    "thay_the_boi": null,
-   "ham": null,
+   "ham": "tuHongNuoc.ts · truM2 · khoiTu (tường xây sau tủ) · khối PCCC panel phải",
    "thay_cho": []
   },
   {
@@ -3193,7 +3193,7 @@
    "loai_bo": "giao_dien",
    "thay_the_boi": null,
    "luat_moi": null,
-   "ly_do": "kéo tay cửa ngăn cháy (ràng buộc vị trí = mdi_cua_ngan_chay)"
+   "ly_do": "kéo / thêm (bấm đúp hành lang) / xoá (bấm đúp cửa) cửa ngăn cháy tay, bước 100 mm, không vào lõi / sảnh — đã làm: cuaNganChay.ts cuaNganChayTay, ToaDat.cncTay"
   },
   {
    "ma_cu": "QT-102",

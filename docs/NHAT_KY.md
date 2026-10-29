@@ -2,6 +2,40 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-10-30 · Mở 3D không giật: dịch shader nền song song, xem trước → đủ chất lượng, dựng chia mẩu, hầm / tum là phần riêng · agent Opus
+
+Người dùng: web app phải mượt, không giật. Sau đợt 3D Vật liệu v3, MỞ 3D (chưa bật lớp phân tích nào) có tác vụ dài luồng chính: máy bàn 4 tác vụ, dài nhất ~755 ms; điện thoại (CPU 4×) 10 tác vụ, dài nhất ~764 ms. Mục tiêu: máy bàn không tác vụ > 100 ms, điện thoại không tác vụ > 200 ms, frame đầu ra sớm (xem trước rẻ rồi nâng dần).
+
+- **Kịch bản đo mới `scripts/do_mo_3d.mjs`** (không trong cổng): mỗi ca một Edge headless MỚI (hồ sơ trống, `--disable-gpu-shader-disk-cache`) — `du_an` (TMB → tab 3D) và `toa` (đang 3D, bấm Công trình); máy bàn 1440×900 CPU 1× / điện thoại 390×844 @3x CPU 4×. Ghi tác vụ dài (PerformanceObserver), frame đầu (`.vung-3d.da-dung`), đủ chất lượng (`data-chat-luong="du"`), CPU profile (Profiler 200 µs) quy từng đoạn bận về hàm (self + gồm con), số chương trình shader, `--anh` chụp khi yên để so trước / sau. `window.__ve3d` = nhật ký từng lượt vẽ [ms, pha, vật liệu đang dịch, số chương trình].
+  `node scripts/do_mo_3d.mjs --url http://localhost:5735 --du-an 2mlg1a2l --ma-sua <mã> [--pa pa-1] [--chi may|dt] [--ca du_an,toa] [--lan 2] [--chi-tiet] [--anh]`
+- **Nguyên nhân (profile)**:
+  1. Lượt vẽ đầu chặn 600–800 ms trong `WebGLRenderer.render → setProgram → WebGLProgram.getUniforms → onFirstUse` (self `getProgramInfoLog` 629 ms): three dịch + nối ~31 chương trình NỐI TIẾP — mỗi chương trình tạo xong là hỏi trạng thái nối (đồng bộ) ngay. `renderer.compileAsync` không cứu được: r170 `compile()` không đặt trạng thái mặt cắt theo vật liệu → vật liệu có `clippingPlanes` (mọi vật liệu tòa) dịch SAI khoá rồi dịch lại đồng bộ lúc vẽ. Tường / đế / tum sơn ba `customProgramCacheKey` khác nhau cho cùng một mã shader → 3 chương trình giống hệt.
+  2. PMREM bầu trời đồng bộ trong lúc tạo khung: `fromScene` 80 ms (dịch shader làm mờ 50 ms).
+  3. Dựng lại CẢ dự án 3–7 lần ngay khi mở: `khoaNhe` gồm `napLoi.xong` (hình lõi nạp xong → tum) và `vHam` (worker rải hầm trả từng lô). Mỗi lần `dungDuAn` 55–75 ms máy bàn, 450 ms điện thoại (48 tòa); cây sân `diemCayTrong` thử mọi chân tòa cả dự án cho từng điểm (~25 ms). Công trình: `dungToa` một tác vụ 60 ms / ~300 ms điện thoại.
+  4. Đổi tab: `TrinhSoan` tính lại `tinhChiTieu` cả dự án mỗi lượt vẽ (48 tòa, 4×: ~40 ms).
+- **Sửa**:
+  - `ve3d/dichShader.ts` (mới): mặt cắt ngang = bản vá shader `catY` (bỏ điểm Y thế giới > `uCatY`, đồng phục chung của khung) thay `clippingPlanes`; bản vá shader gộp một khoá chương trình theo danh sách bản vá (`vaShader`, `chepVa` cho bản sao tô nhấn) — tường / đế / tum sơn dùng chung một chương trình (`tuongSon` khoá `son`). `dichDan`: tạo chương trình bằng `renderer.compile` trên vật thể giả cùng hình học + vật liệu (cùng biến thể instancing / màu từng bản / nét), mẻ ≤ 8 ms mỗi tác vụ, rồi chờ nối bằng KHR_parallel_shader_compile (hỏi COMPLETION_STATUS mỗi 8 ms, sẵn thì "dùng lần đầu" ngay lúc GPU rảnh); không có phần mở rộng thì ép nối từng chương trình một mỗi tác vụ. `dichBong`: chương trình bóng (MeshDepthMaterial theo mặt × instancing) dịch trước như lượt bóng (đích render target, cảnh không sương, cùng đèn). `locMoiTruong`: PMREM dịch trước ba chương trình (hộp nền, bầu trời, làm mờ — API riêng `_setSize` / `_allocateTargets` / `_blurMaterial` r170, thiếu thì `fromScene` thẳng) rồi mới lọc. `moiTruongGia`: kết cấu cubeUV giả 768 × 1024 để dịch đúng khoá khi PMREM chưa xong. Trạng thái renderer (bóng, đích vẽ, tone mapping, môi trường) chỉ đổi trong MỘT tác vụ đồng bộ — giữ qua `await` thì lượt vẽ chen giữa dịch sai khoá (đã gặp: 152–346 ms).
+  - `Khung3D`: vẽ theo pha — 0 chưa có ảnh; 1 XEM TRƯỚC (một Lambert ngà, không bóng, 2–3 chương trình, `scene.overrideMaterial`); 2 ĐỦ (PBR + môi trường + bóng mềm) chỉ khi mọi chương trình đã nối + PMREM xong. Ở pha 2 vật liệu mới (dựng lại, tô nhấn, lớp, gói mở rộng, lớp view) dịch nền, vật thể dùng chúng ẩn tạm tới khi sẵn — không lượt vẽ nào chờ GPU. Tạo ngữ cảnh WebGL là tác vụ riêng.
+  - Dựng chia mẩu: `ve3d/chiaNho.ts` (`chayHet` / `chayDan`), `dungDuAnTung` (yield sau mỗi lô / tòa / lô trồng cây), `dungToaTung` (bố cục tầng chưa có trong bộ nhớ hình dựng trước, yield sau mỗi căn; `dungDuAn` / `dungToa` đồng bộ giữ cho test). Khung3D `dung` trả generator thì chạy mẩu ~8 ms rồi nhường; lượt mới hơn bỏ lượt cũ.
+  - Khung3D prop `phan` (phần cảnh dựng riêng): Toàn dự án tách hầm (`dungHamDuAn`, khoá `pa.ham` + phiên bản rải nền) và tầng tum + trục thang (`dungTumDuAn`, khoá lõi nạp xong) — đổi khoá chỉ dựng lại phần đó (chia mẩu), `khoaNhe` chỉ còn tòa đang chọn. Cây: lọc vật cản theo khung bao (cùng kết quả). `SoanThao`: `tinhChiTieu` nhớ theo PA (`useMemo`).
+- **Số đo** (bản build `vite build` + `vite preview`, API 8787, dự án `2mlg1a2l` PA `pa-1` 6 lô / 9 tòa và PA tổng hợp 48 tòa `x6dqes0j` / `pa-48` (6 lô × 8 tòa tm-i1, tạo từ `UNITMIX_DO_VIEW_RA` của `tinh/doViewTang.test.ts`, chỉ trong DB local); trước = bản build từ 7f1e79b): tác vụ > 50 ms / dài nhất / frame đầu (đủ chất lượng)
+
+  | ca | trước | sau |
+  |---|---|---|
+  | máy bàn · Toàn dự án | 5 / 757 ms / 992 ms | **0 / 0** / 181–204 ms (395–433) |
+  | máy bàn · Công trình | 2 / 615 ms / 748 ms | **0 / 0** / 133–148 ms (330–350) |
+  | điện thoại 4× · Toàn dự án | 11 / 798 ms / 1 467 ms | 3–6 / **77–87 ms** / 605–613 ms (900–938) |
+  | điện thoại 4× · Công trình | 2 / 730 ms / 1 178 ms | 2 / **99–100 ms** / 463–470 ms (687–731) |
+  | 48 tòa máy bàn · Toàn dự án | 10 / 706 ms / 1 024 ms | **0 / 0** / 274 ms (496) |
+  | 48 tòa máy bàn · Công trình | 2 / 610 ms / 743 ms | **0 / 0** / 146 ms (345) |
+  | 48 tòa điện thoại · Toàn dự án | 16 / 941 ms / 2 039 ms | 5–7 / **117–148 ms** / 936–1 090 ms (1 226–1 414) |
+  | 48 tòa điện thoại · Công trình | 2 / 678 ms / 1 195 ms | 2–3 / **97–101 ms** / 488–492 ms (730–773) |
+
+  Chương trình shader Toàn dự án 31 → 23; draw call giữ nguyên (111 / 17 / 90 / 344 / 284). Ảnh đủ chất lượng trước / sau giống nhau (so điểm ảnh khung 3D: 16 / 613 350 điểm lệch > 15, khử răng cưa); cắt ngang 0,35, rê tô nhấn tòa, Lớp trục thang, kiểu Mô hình trắng: 0 tác vụ dài, ảnh như trước; Phân tích view bản mới hiện màu ngay (bản trước sau 1,5 s còn chưa hiện).
+- **Kiểm**: `node scripts/kiem.mjs` ĐẠT (tsc, web 970 + 3 bỏ, worker 14, pytest 15, build); `kiem_zoom.mjs` 10/10 ĐẠT (0 frame méo, không tác vụ > 50 ms); `kiem_man_hep.mjs` ĐẠT.
+- **Gộp `nang-cap/architechtures` 198711e (rà gọn bố cục)** (commit 29168f4): xung đột `Khung3D` (props: giữ `phan` + `nutPhanTich` / `gioNgoai` / `moRong` gộp của họ) và `MoHinh3D` (import `NguCanh` + `NutBieuTuong`; `khoaNhe` chỉ tòa chọn + `phan`, giữ `dauThanh` / `nutPhanTich` gọn). Vật thể gói mở rộng (ảnh nền, đường mặt trời, giờ nắng, gió) nằm trong nhóm `phu` của scene nên đi đường dịch nền `thieuDich` → `dichDan` (ẩn tới khi sẵn); trong `nangGio/*` không có `clippingPlanes` / `onBeforeCompile` / `R.render` riêng. `kiem_zoom.mjs`: nút Công trình nay có hai nhãn (dài / ngắn) trong `textContent` → bỏ neo `$`; chưa chọn tòa thì bấm tòa đầu trên 3D. Sau gộp: `kiem.mjs` ĐẠT (web 970 + 3 bỏ), `kiem_zoom` 10/10 ĐẠT, `kiem_man_hep` ĐẠT; `do_mo_3d` máy bàn 0 tác vụ > 50 ms cả 4 ca (frame đầu 137–247 ms); điện thoại 2mlg1a2l dài nhất 67 (dự án) / 122 ms (công trình), 48 tòa 140 / 99 ms. Bật ảnh vệ tinh 3D + Phân tích view: 0 tác vụ dài, không lỗi JS (PA thử trong DB 8787 chưa có toạ độ nên ô ảnh không tải — chưa đo nạp texture).
+- **Còn dở**: điện thoại còn vài tác vụ 50–150 ms: lượt vẽ đủ chất lượng đầu tiên (tạo VAO + bản đồ bóng, ~120 ms 4×, 48 tòa), một lần `renderer.compile` một chương trình (~20 ms 4×, không chia nhỏ được), `fromScene` PMREM ~60 ms 4×, lượt vẽ Preact khi đổi tab. Bấm chọn tòa trong 3D Toàn dự án vẫn dựng lại cả dự án (nay chia mẩu, không giật, nhưng ~0,5 s mới đổi góc "Cận tòa chọn"). Đổi Toàn dự án ↔ Công trình tạo ngữ cảnh WebGL mới, dịch lại ~17 chương trình (nền, không chặn). Ảnh vệ tinh nền 3D (tắt mặc định) nạp texture một lượt chưa chia frame. Chưa thử máy thật iOS / Android.
+
 ## 2026-10-30 · gộp nang-cap/architechtures (6221899) vào nhánh Vị trí · Nắng · Gió · agent Opus
 
 - Xung đột: `Khung3D` (giữ `moRong` + `phanTich` + `lop`/`lopAn` + `viDo`; mặt trời `datNang` = `moRong.nang` ?? NOAA theo `viDo`), `MoHinh3D` (giữ tum / phân tích view / Lớp, thêm `moRong`, nút ☀, hộp), `ManXepToa` (`ChuGiaiView tv` + hộp), docs (giữ cả hai).
@@ -810,3 +844,54 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 **Đề xuất:** (1) thu hẹp luật kit LEO tại nguồn (`.form-card label`, `.hop-thoai .o-form label`) sau khi `kiem_man_hep` đã có kiểm ô tích lệch dòng + đo thêm "label có ô nhập mà nhãn trên ô trong panel" → cảnh báo; (2) một thành phần `HangSo` (nhãn · ô · đơn vị) thay ~6 bản `O`/`OSo` rải ở ManLo / ManHam / ManXepToa / lopView để không lặp lỗi; (3) thanh TMB / Tầng dùng chung `MenuNut` cho cụm ít dùng (xoay / lật / khoá) như Forma, chỉ giữ 6–8 nút thường dùng; (4) thẻ mẫu tòa có ảnh nét mặt bằng nhỏ 40 px (Architechtures hiện thumbnail) thay dòng chữ; (5) nhớ trạng thái gập từng mục panel theo máy (localStorage) — người dùng mở mục nào thì lần sau vẫn mở.
 
 **Gộp nang-cap/architechtures (Vị trí · Nắng · Gió) — cùng ngày:** xung đột `main.tsx` (giữ cả `nang-gio.css` và `gon.css`, gon nạp sau cùng), `ManXepToa.tsx` (cả tệp do khác kiểu dòng — `sed -i` của Git Bash đã đổi CRLF → LF ở bản của tôi; gộp bằng `git merge-file` trên bản bỏ `\r`, ghi lại CRLF; giữ móc ảnh nền / nắng gió + đánh số tòa + thư viện gọn), `Khung3D.tsx` / `MoHinh3D.tsx`. Một prop `moRong` duy nhất = gói cảnh `MoRong3D` của nhánh kia (ảnh nền, đường mặt trời, lớp nắng / gió); bỏ prop `moRong` dạng nút của tôi — nút cắm vào nhóm phân tích qua `nutPhanTich`. Nút chữ "☀ Nắng · Gió" thành biểu tượng `nangGio` (mây + mặt trời) cùng kho `nangGio/kho` (không sửa tệp của gói). Một thanh giờ: Toàn dự án dùng thanh giờ + chạy trong hộp Vị trí · Nắng · Gió (đồng bộ `datGio`), menu ☀ của khung chỉ còn Cắt ngang (`Khung3D gioNgoai`); Công trình vẫn có thanh giờ trong menu ☀. Điện thoại: nút Hầm ẩn khỏi thanh (đã có ở menu Lớp, `NutBieuTuong lop="an-dt"`) để thanh 3D vừa 390 px. Hộp Vị trí · Nắng · Gió: hàng Góc Bắc [ô] −1° −0,1° +0,1° +1° một dòng (kit LEO ép ô ≥ 100 px), nút ngày nhanh gọn, "Nguồn ảnh" nhãn trái / ô phải, ô Vĩ độ / Kinh độ không tràn trên điện thoại (`gon.css`). Ảnh: `docs/anh/gon/3d-may-1440.png`, `3d-dien-thoai-390.png` (làm mới), `hop-vi-tri-nang-gio*.png`.
+
+## 2026-10-30 · Tủ PCCC + cửa ngăn cháy hành lang làm lại như app cũ (luật + cách thể hiện) · Claude Code (Opus 5.5, agent)
+
+**Yêu cầu:** "Làm lại phần tủ phòng cháy chữa cháy. Phần sắp xếp cửa ngăn hành lang. Bố trí và cách thể hiện giống như app cũ đi. Lấy các quy tắc sắp đặt vào như app cũ. Làm xấu quá đi." Thêm: "Cả phần cửa phòng cháy chữa cháy, cửa thang máy chữa cháy bỏ đi, quá xấu." · "Tủ phòng cháy chữa cháy có thư viện, hình ảnh giống như app cũ nhé."
+
+**App cũ (shell.src.html):**
+- Tủ: `tuCC0` dòng ~4752 (điểm phủ, 4 loại ứng viên, tham lam), `tccToiUu` ~4677 (nhánh–cận nhiều tia), `tccChanCua` / `tccCuaLyTuong` ~4660 (QT-77f tủ né cửa), `tccTruM2` ~4578 (QT-77g trừ DT), `tccKhoi` / `tccHinh` ~4610 (block tu-pccc.dwg), `tccBam` / `tccDoi` / `tccTachGop` ~4640, 5755–5778 (QT-77e/f kéo, tách / gộp).
+- Vẽ tủ ~7074, Vòi CC ~7160.
+- Cửa: `cncKhoi` ~5734, `cncBam` / `cncTaoTay` / `cncTayKq` / `cncThem` / `cncXoa` ~5470–5751 (QT-101), `cncDoHL` ~5794 (Đo HL); vẽ ~7120–7160.
+- Menu "⚑ PCCC" ~1301: Tủ PCCC / Cửa NC bật, Đo HL / Vòi CC tắt.
+- Xuất CAD lớp MDI-PCCC-* ~16243.
+
+**Mã:**
+- `tinh/tuHongNuoc.ts`: chép đủ `tuCC0` + `tccToiUu` + `tccKhoi` + `tccBam` + `tccTachGop` + `tccTruM2`.
+  - Nét mẫu căn cần cho ứng viên (tường sát HL, ô hộp KT lớp hidd, điểm cửa sâu ≤ 1,5 m) là trường mới `tcc` trong `can.json`, sinh bởi `scripts/sinh_phai_sinh_can.py`. `chep_thu_vien.py` ghi `tcc` / `cua_hl` gọn một dòng.
+  - Thư viện block tủ chép vào `tinh/khoiTuPCCC.json` (Vite không cho import `public/`).
+- `tinh/pcccTang.ts`: thứ tự app cũ, cửa lý tưởng → tủ → cửa thật. Thêm `ToaDat.cncTay`, `tuPCCCTay` có nhãn tách / gộp. Bỏ `cuaNC` và `phongRac`.
+- `tinh/cuaNganChay.ts`: thêm `cncBam` / `cncDatDuoc` / `cncTaoTay` / `cuaNganChayTay` / `keoCuaTay` / `themCuaTay` / `doHanhLang` / `khoiCNC`.
+- `tinh/pcccNen.ts`: phân tích chạy nền, dùng chung `thaoTay.worker.ts` (tên `phanTichPCCC`), không huỷ lượt đang chạy, giữ lượt mới nhất.
+- `ve/LopPCCC.tsx` viết lại theo app cũ:
+  - 5 lớp: Tủ PCCC, Cửa ngăn cháy HL, Đo HL, Vòi CC, Thoát nạn. Khoá lưu mới `unitmix.lopPCCC.v2`.
+  - Màu hex như app cũ, nét non-scaling, chữ mm.
+  - Kéo tủ gộp theo khung hình; kích đúp tách / gộp; kéo / bấm đúp xoá / bấm đúp thêm cửa.
+  - Giữ hình nháp tới khi kết quả nền về.
+- Bỏ khỏi mặt bằng lớp thang máy / TMCC và lớp cửa ngăn cháy EI (KPI giữ dòng thang máy, TMCC, họng chờ).
+- `ui/KpiPCCC.tsx`: dòng tủ "N vị trí · M hộp", "Căn trừ DT (tường sau tủ)", "Cánh cửa NC HL che cửa"; nút "Cửa NC tự đặt lại".
+- `xuat/xuatCad.ts`: `.dxf` thêm lớp MDI-PCCC-*, tủ là INSERT block. i18n vi / en.
+- `pccc.css` theo màu app cũ. Luật quy_tac: PC-08 / PC-12 / PC-14 / QT-101 ghi hàm mới; `qcvn06_cua_ngan_chay` chỉ còn là yêu cầu cấu tạo.
+
+**Kiểm:**
+- `tinh/tuHongNuoc.test.ts`: đối chiếu app cũ headless (`scripts/tcc_cu.js` → `thu/tcc_cu.json`) trên 33 mẫu gốc, 25 tầng.
+  - Kết quả: 139 / 139 vị trí, số hộp bằng nhau, 136 / 139 tủ khớp ≤ 0,3 m cùng loại.
+  - Lệch duy nhất ở tm-v3: ứng viên trùng hệt, khác ở cửa lý tưởng V.
+  - Test thêm: kéo bám tường, tách / gộp, block và DT trừ.
+- `cuaNganChay.test.ts` +6 ca: block cửa, bù tường, kéo / thêm cửa, không vào sảnh, bộ cửa tay, Đo HL.
+- Đo: tự đặt Z3 14 ms, T2 213 ms, U3 186 ms (chạy nền); kéo tủ 16–34 ms một lần, gộp theo khung hình. Mở tầng: 0 tác vụ dài.
+- Ảnh cũ / mới: `docs/anh/pccc/cu-moi-{z3,t1,v1,l1}{,-mac-dinh,-zoom}.png`, chụp bằng `scripts/chup_pccc.mjs`. Ảnh app cũ chụp bằng CDP headless.
+  - Dự án thử local `ha0wovcr` (mã sửa ở localStorage khi chụp) có 4 tòa T1 / V1 / L1 / Z3, 25 tầng.
+  - Số tủ / cửa bằng app cũ: Z3 4 / 3, T1 5 / 4, V1 4 / 3, L1 4 / 3.
+
+**Không khớp được:**
+- tm-v3: 3 tủ, do cửa ngăn cháy lý tưởng ở tòa V khác app cũ (đã biết từ đợt cửa).
+- App cũ nổ block tủ thành nét khi xuất CAD; app mới ghi INSERT block.
+- Chú giải: app cũ không có mục TCC / CNC (chỉ tooltip); app mới giữ chú giải gọn với ký hiệu y như bản vẽ.
+
+**Đề xuất:**
+1. Dựng hộp KT căn từ nét thật cho căn STRETCH (đang dời theo đường cắt).
+2. Tô DT trừ tủ vào nhãn DT thông thủy căn trên tem ("mẫu đặc biệt" như app cũ HĐMB).
+3. Đưa cửa ngăn cháy lý tưởng V về khớp app cũ (nét bao căn V theo khung) để tm-v3 khớp 139 / 139.
+4. Lớp "Vòi CC" theo đường đi (QT-77 cũ, PC07) để so với R 18 m đo thẳng.
+5. Xuất `.scr` / đồng bộ AutoCAD lớp MDI-PCCC-* như app cũ.

@@ -10,7 +10,7 @@ import { napThuVien } from '../thu/thuVienThat';
 import type { Diem } from './kieu';
 import { matDaDon } from './matBang';
 import { cuaTrenMat, type ToaPCCC } from './pccc';
-import { cncDem, cncGioiHan, cuaHlCan, cuaNganChay, dauVaoCNC, hlDoThi, netCuaCan, sanhCuaLoi, type DauVaoCNC, type LoiCNC, type OMat } from './cuaNganChay';
+import { cncDatDuoc, cncDem, cncGioiHan, cuaHlCan, cuaNganChay, cuaNganChayTay, dauVaoCNC, doHanhLang, hlDoThi, keoCuaTay, khoiCNC, netCuaCan, sanhCuaLoi, themCuaTay, type DauVaoCNC, type LoiCNC, type OMat } from './cuaNganChay';
 
 const CU = JSON.parse(readFileSync(new URL('../thu/cnc_cu.json', import.meta.url), 'utf8')) as Record<string, Record<'30' | '60', { cua: { p: Diem; sach: boolean }[]; doan: number[] }>>;
 const { tv, dl } = napThuVien();
@@ -114,5 +114,60 @@ describe('luật đặt cửa (QT-105) trên hành lang dựng tay', () => {
     const c = cuaNganChay(v, 30000).flatMap((m) => m.cua);
     expect(c).toHaveLength(1);
     expect(Math.abs(c[0].p[0] - 12000)).toBeGreaterThanOrEqual(1500 + hw + 1000);
+  });
+});
+
+describe('block cửa (cncKhoi) + cửa kéo tay (QT-101)', () => {
+  it('block hai cánh: mỗi tường một khuôn + nửa vòng 17 điểm bán kính ½ cửa, chạm tim hành lang; nhãn cách tim ½ cửa + 450', () => {
+    const k = khoiCNC({ p: [0, 0], huong: [1, 0], w: 1800, bu: null });
+    expect(k.net).toHaveLength(4);
+    const cung = k.net.filter((x) => x.length === 17);
+    expect(cung).toHaveLength(2);
+    for (const c of cung) {
+      expect(Math.abs(c[8][1])).toBeCloseTo(0, 0); // hai nửa vòng chạm nhau ở tim
+      expect(Math.hypot(c[0][0] - c[16][0], c[0][1] - c[16][1])).toBeCloseTo(1800, 0); // dây cung = 2 × cánh
+    }
+    expect(k.nhan).toEqual([1350, 0]);
+    expect(k.vung.map((p) => p.map(Math.round))).toEqual([[-900, -900], [900, -900], [900, 900], [-900, 900]]);
+  });
+  it('bù tường 150 hai bên khi vách xa hơn ½ cửa (chế độ nới / sảnh rộng)', () => {
+    const k = khoiCNC({ p: [0, 0], huong: [1, 0], w: 1800, bu: [1500, 900] });
+    const bu = k.net.filter((x) => x.length === 5);
+    expect(bu).toHaveLength(1); // bên kia vách đúng ½ cửa: không bù
+    const ys = bu[0].map((p) => p[1]);
+    expect(Math.min(...ys)).toBeCloseTo(900, 0);
+    expect(Math.max(...ys)).toBeCloseTo(1500, 0);
+    expect(Math.max(...bu[0].map((p) => p[0])) - Math.min(...bu[0].map((p) => p[0]))).toBeCloseTo(150, 0);
+  });
+  it('kéo cửa: bám tim hành lang, bước 100 mm; xa hành lang (> ½ HL + 3 m) không bám; thêm chỉ khi bấm trong lòng hành lang', () => {
+    const dt = hlDoThi(hanhLangThang(72000));
+    expect(keoCuaTay(dt, [24130, 600])).toEqual([24100, 0]);
+    expect(keoCuaTay(dt, [24130, 6000])).toBeNull();
+    expect(themCuaTay(dt, [30010, 300])).toEqual([30010, 0]);
+    expect(themCuaTay(dt, [30010, 1500])).toBeNull();
+  });
+  it('kéo cửa: không vào sảnh thang máy (R3) — chỗ đó trả null, cửa giữ nguyên', () => {
+    const v = hanhLangThang(24000);
+    v.truc.push({ ten: 'sảnh', p0: [12000, -hw], p1: [12000, -9000], corr: 3000, link: true, sanhLoi: true, sanhTM: true });
+    const dt = hlDoThi(v);
+    expect(keoCuaTay(dt, [12000, 0])).toBeNull();
+    expect(keoCuaTay(dt, [6000, 0])).not.toBeNull();
+  });
+  it('bộ cửa tay: khoang tính lại trên đồ thị thật, cửa xa hành lang bị bỏ; thiếu cửa thì khoang > K (cảnh báo)', () => {
+    const v = hanhLangThang(72000);
+    const r = cuaNganChayTay(v, 30000, [[24000, 0], [48000, 0], [36000, 9000]]);
+    expect(r.flatMap((m) => m.cua)).toHaveLength(2);
+    expect(r.flatMap((m) => m.doan).sort((a, b) => b - a).map(Math.round)).toEqual([24000, 24000, 24000]);
+    expect(Math.max(...cuaNganChayTay(v, 30000, [[24000, 0]]).flatMap((m) => m.doan))).toBeGreaterThan(30000);
+    expect(cncDatDuoc(hlDoThi(v), 0, 24000)).toBe(true);
+  });
+  it('nét đo hành lang (Đo HL): mỗi khoang một nhóm khúc, tổng = khoang, vượt khi > K', () => {
+    const v = hanhLangThang(72000);
+    const cua = cuaNganChay(v, 30000).flatMap((m) => m.cua);
+    const d = doHanhLang(v, 30000, cua);
+    expect(d).toHaveLength(cua.length + 1);
+    for (const k of d) expect(k.khuc.reduce((a, x) => a + x.L, 0)).toBeCloseTo(k.L, 0);
+    expect(d.every((k) => !k.vuot)).toBe(true);
+    expect(doHanhLang(v, 30000, [])[0].vuot).toBe(true);
   });
 });

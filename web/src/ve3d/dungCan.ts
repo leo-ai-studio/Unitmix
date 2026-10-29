@@ -5,6 +5,7 @@
  */
 import type * as THREE from 'three';
 import { tuongSon } from './moiTruong';
+import { catY, type CatY } from './dichShader';
 
 export type T3 = typeof THREE;
 
@@ -63,14 +64,17 @@ export const BANG_MAU: Record<KieuVe3D, Record<KhoaMau, number>> = {
 };
 
 /** Bảng vật liệu (dùng chung căn / tầng / tòa / dự án); `cat` gắn mặt phẳng cắt ngang chung. */
-export function taoVatLieu(T: T3, cat: THREE.Plane[], kieu: KieuVe3D = 'brand'): VatLieu3D {
+export function taoVatLieu(T: T3, cat: THREE.Plane[] | CatY, kieu: KieuVe3D = 'brand'): VatLieu3D {
   const B = BANG_MAU[kieu], vl = kieu === 'vatlieu';
-  const mt = (c: number, o: THREE.MeshStandardMaterialParameters = {}) => new T.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, clippingPlanes: cat, ...o });
+  // mặt cắt ngang: đồng phục `CatY` (bản vá shader, dịch trước được — Khung3D) hoặc mảng clippingPlanes (test, nơi khác)
+  const mp = Array.isArray(cat) ? cat : [];
+  const cY = <M extends THREE.Material>(m: M): M => (Array.isArray(cat) ? m : catY(m, cat));
+  const mt = (c: number, o: THREE.MeshStandardMaterialParameters = {}) => cY(new T.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, clippingPlanes: mp, ...o }));
   // Vật liệu: tường / đế / tum sơn có biến thiên nhẹ + tối chân công trình (moiTruong.tuongSon); kiểu khác giữ nguyên
   const son = (m: THREE.MeshStandardMaterial, k: string) => (vl ? tuongSon(m, k) : m);
   const tuong = son(mt(B.tuong, { side: T.DoubleSide, roughness: vl ? 0.92 : 0.85 }), 'tuong');
   /** Kính thật: điện môi (metalness 0) có Fresnel — nhìn thẳng sẫm, nhìn xiên phản chiếu trời; PBR vật lý chỉ cho kiểu Vật liệu. */
-  const kinhVL = (c: number, o: THREE.MeshPhysicalMaterialParameters) => new T.MeshPhysicalMaterial({ color: c, roughness: 0.04, metalness: 0, ior: 1.52, specularIntensity: 1, envMapIntensity: 1.6, clippingPlanes: cat, side: T.DoubleSide, ...o });
+  const kinhVL = (c: number, o: THREE.MeshPhysicalMaterialParameters) => cY(new T.MeshPhysicalMaterial({ color: c, roughness: 0.04, metalness: 0, ior: 1.52, specularIntensity: 1, envMapIntensity: 1.6, clippingPlanes: mp, side: T.DoubleSide, ...o }));
   return {
     tuong, dam: tuong,
     san: mt(B.san, { side: T.DoubleSide, roughness: vl ? 0.8 : 0.85 }),
@@ -93,8 +97,8 @@ export function taoVatLieu(T: T3, cat: THREE.Plane[], kieu: KieuVe3D = 'brand'):
     lc: vl ? mt(B.lc, { roughness: 0.35, metalness: 0.8 }) : mt(B.lc, { roughness: 0.5, metalness: 0.3 }),
     lov: mt(B.lov, vl ? { roughness: 0.45, metalness: 0.6 } : { roughness: 0.6, metalness: 0.2 }),
     // viền: Vật liệu nhạt hơn (đỡ "nét CAD", khối đọc bằng ánh sáng + bóng); vẫn đủ để đọc tầng / góc
-    line: new T.LineBasicMaterial({ color: B.line, clippingPlanes: cat, transparent: true, opacity: kieu === 'trang' ? 0.55 : vl ? 0.38 : 0.4 }),
-    mol: new T.LineBasicMaterial({ color: B.mol, clippingPlanes: cat }),
+    line: cY(new T.LineBasicMaterial({ color: B.line, clippingPlanes: mp, transparent: true, opacity: kieu === 'trang' ? 0.55 : vl ? 0.38 : 0.4 })),
+    mol: cY(new T.LineBasicMaterial({ color: B.mol, clippingPlanes: mp })),
   };
 }
 

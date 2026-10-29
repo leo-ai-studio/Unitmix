@@ -53,6 +53,40 @@ def tinh_cua_can(ve: list, rong_mm: float) -> float:
     return (min(w[0] for w in g) + max(w[1] for w in g)) / 2
 
 
+def tinh_tcc(ve: list, sau_mm: float) -> dict:
+    """Nét mẫu căn mà bộ đặt tủ họng nước app cũ (`tuCC0`, QT-77g) đọc từ CAD.u[code], lọc sẵn phần sát hành lang (x chuẩn hoá
+    0..1 CHƯA lật, y chuẩn hoá theo chiều sâu như nét gốc):
+      tuong [xa, ya, xb, yb]   cặp điểm liên tiếp của nét `wall` có y nhỏ hơn 3.000 mm (đứng / ngang phân loại ở app theo mm)
+      hkt   {o: [x0, x1, y0, y1], cheo: [[xa, xb]…]}  ô kín 5 điểm lớp `hidd` sát tường HL (y0 ≤ 600 mm) + nét chéo ứng viên
+      cua   [x, y]   điểm nét `door` sâu ≤ 1.500 mm (cửa vào căn + cánh mở)"""
+    r4 = lambda v: round(v, 4)
+    seg = []
+    for n in ve:
+        if n.get("cat") != "wall":
+            continue
+        P = n.get("pts") or []
+        for i in range(len(P) - 1):
+            (xa, ya), (xb, yb) = P[i], P[i + 1]
+            if min(ya, yb) * sau_mm > 3000:
+                continue
+            seg.append([r4(xa), r4(ya), r4(xb), r4(yb)])
+    hid = [n.get("pts") or [] for n in ve if n.get("cat") == "hidd"]
+    hkt = []
+    for pa in hid:
+        if len(pa) != 5 or pa[0][0] != pa[4][0] or pa[0][1] != pa[4][1]:
+            continue
+        xs = [q[0] for q in pa]
+        ys = [q[1] for q in pa]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        if y0 * sau_mm > 600:
+            continue
+        cheo = [[r4(r[0][0]), r4(r[1][0])] for r in hid if len(r) == 2]
+        hkt.append({"o": [r4(x0), r4(x1), r4(y0), r4(y1)], "cheo": [c for c in cheo if abs(min(c) - x0) < 0.02 and abs(max(c) - x1) < 0.02]})
+    hkt = [h for h in hkt if h["cheo"]]
+    cua = sorted({(r4(q[0]), r4(q[1])) for n in ve if n.get("cat") == "door" for q in (n.get("pts") or []) if q[1] * sau_mm <= 1500})
+    return {"tuong": seg, "hkt": hkt, "cua": [list(q) for q in cua]}
+
+
 def _doc(p: Path):
     return json.loads(p.read_text(encoding="utf-8"))
 
@@ -81,6 +115,11 @@ def chay(kiem: bool) -> int:
         if c.get("cua_hl") != hl:
             lech.append(f"can.json {c['id']}: cua_hl {len(hl)} điểm")
             c["cua_hl"] = hl
+        # 1d · nét cho bộ đặt tủ họng nước (QT-77g `tuCC0` app cũ): tường đứng / ngang sát hành lang, hộp KT (ô gạch chéo lớp hidd)
+        tcc = tinh_tcc(ve, c["sau_mm"])
+        if c.get("tcc") != tcc:
+            lech.append(f"can.json {c['id']}: tcc {len(tcc['hkt'])} hộp KT · {len(tcc['tuong'])} nét tường")
+            c["tcc"] = tcc
         kh = next((n["pts"] for n in ve if n.get("cat") == "khung" and len(n.get("pts") or []) >= 3), None)
         if c.get("khung") != kh:
             lech.append(f"can.json {c['id']}: khung {'thêm' if kh else 'bỏ'}")

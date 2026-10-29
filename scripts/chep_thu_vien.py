@@ -44,6 +44,11 @@ def ghi_can(ds: list, f: Path) -> None:
             key = f"@@KHUNG_{c['id']}@@"
             the[json.dumps(key)] = json.dumps(c2["khung"], ensure_ascii=False, separators=(",", ":"))
             c2["khung"] = key
+        for tr in ("tcc", "cua_hl"):  # nét phái sinh (sinh_phai_sinh_can.py) — một dòng mỗi trường
+            if c2.get(tr):
+                key = f"@@{tr.upper()}_{c['id']}@@"
+                the[json.dumps(key)] = json.dumps(c2[tr], ensure_ascii=False, separators=(",", ":"))
+                c2[tr] = key
         if c2.get("phong"):
             ph = []
             for i, p in enumerate(c2["phong"]):
@@ -131,6 +136,9 @@ def chep(nguon: Path, bang_ten: bool) -> None:
         })
 
     _ghi(LIB / "pccc.json", d["tu_pccc.json"], gon=False)
+    # thư viện block tủ PCCC (QT-77g, data/dwg/tu-pccc.dwg) — bản trong src để bộ đặt tủ / lớp vẽ / worker import thẳng (Vite không cho
+    # import tệp trong public/)
+    _ghi(Path(__file__).resolve().parents[1] / "web" / "src" / "tinh" / "khoiTuPCCC.json", d["tu_pccc.json"], gon=False)
     # giữ dữ liệu phòng đã bóc từ CAD (repo nguồn không có) — bóc lại bằng scripts/boc_cad/boc_phong.py
     cu = LIB / "can.json"
     phong = {x["id"]: x["phong"] for x in _doc(cu) if x.get("phong")} if cu.exists() else {}

@@ -83,11 +83,16 @@ export function cayDocDuong(d: { a: Diem; b: Diem; ra: Diem }[], buoc = 9): Diem
 /** Điểm trồng cây trong đa giác: lưới `buoc` m có xô lệch, cách biên ≥ `le` m, bỏ điểm trong / sát (`cach` m) vật cản; tối đa `toiDa`. */
 export function diemCayTrong(poly: Diem[], buoc: number, toiDa: number, le = 2, can: Diem[][] = [], cach = 3): Diem[] {
   const xs = poly.map((p) => p[0]), ys = poly.map((p) => p[1]), kq: Diem[] = [];
-  for (let x = Math.min(...xs) + buoc / 2; x < Math.max(...xs); x += buoc) {
-    for (let y = Math.min(...ys) + buoc / 2; y < Math.max(...ys); y += buoc) {
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  // vật cản chỉ xét cái có khung bao (nở `cach` m) chạm khung lô, và từng điểm chỉ thử khi nằm trong khung bao nở đó — cùng kết quả,
+  // nhưng 48 tòa không còn thử mọi chân tòa cả dự án cho từng điểm (trước: ~25 ms / lượt dựng)
+  const bao = can.map((c) => { const cx = c.map((p) => p[0]), cy = c.map((p) => p[1]); return { c, a: Math.min(...cx) - cach, b: Math.max(...cx) + cach, d: Math.min(...cy) - cach, e: Math.max(...cy) + cach }; })
+    .filter((q) => q.a <= x1 && q.b >= x0 && q.d <= y1 && q.e >= y0);
+  for (let x = x0 + buoc / 2; x < x1; x += buoc) {
+    for (let y = y0 + buoc / 2; y < y1; y += buoc) {
       const p: Diem = [x + (nhieu(x, y) - 0.5) * buoc * 0.6, y + (nhieu(y, x) - 0.5) * buoc * 0.6];
       if (!trongDG(p, poly) || kcBien(p, poly) < le) continue;
-      if (can.some((c) => trongDG(p, c) || kcBien(p, c) < cach)) continue;
+      if (bao.some((q) => p[0] >= q.a && p[0] <= q.b && p[1] >= q.d && p[1] <= q.e && (trongDG(p, q.c) || kcBien(p, q.c) < cach))) continue;
       kq.push(p);
       if (kq.length >= toiDa) return kq;
     }

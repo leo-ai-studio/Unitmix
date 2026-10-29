@@ -506,3 +506,9 @@ Chế độ Safari (390×664) cùng xu hướng: mở lại 1.126 → 522 ms, TB
 3. Bố cục trang ~300 ms (4×) lúc mở dự án: soát số nút DOM ở panel trái / phải (danh sách dài) — ảo hoá hoặc `content-visibility: auto`.
 4. Nút "Có bản mới — tải lại" khi SW mới kích hoạt (hiện chỉ áp dụng ở lần mở sau).
 5. Kiểm trên iPhone thật bằng Safari Web Inspector (Mac) với app mở từ màn hình chính: Timeline "Layout & Rendering" + "JavaScript & Events" để xác nhận / loại bỏ nghi vấn còn lại.
+
+## 15. Đã làm 2026-10-30 (agent): mở 3D không giật
+
+Chi tiết + bảng số ở `NHAT_KY.md` mục cùng ngày. Tóm tắt: lượt vẽ đầu 3D chặn 600–800 ms vì three dịch + nối ~31 chương trình shader nối tiếp (và `compileAsync` không dùng được vì `clippingPlanes`); PMREM đồng bộ 80 ms; dựng lại cả dự án 3–7 lần ngay khi mở (lõi nạp xong, hầm worker trả từng lô). Sửa: mặt cắt bằng bản vá shader, shader dịch nền song song (KHR_parallel_shader_compile) với xem trước Lambert rồi đủ chất lượng, PMREM dịch trước, dựng chia mẩu generator, hầm / tum là phần riêng. Máy bàn: 0 tác vụ > 50 ms (trước 755 ms); điện thoại 4×: dài nhất 77–148 ms (trước 764–941 ms); frame đầu máy bàn ~200 ms (trước ~1 s). Đo lại: `node scripts/do_mo_3d.mjs --url <vite preview> --du-an 2mlg1a2l --ma-sua <mã>`.
+
+Đề xuất tiếp (chưa làm): (1) giữ MỘT WebGLRenderer cho cả phiên (Toàn dự án ↔ Công trình ↔ căn dùng lại chương trình + PMREM, đổi chế độ gần như tức thì); (2) "Cận tòa chọn" tính riêng góc, bấm chọn tòa không dựng lại cảnh; (3) ảnh vệ tinh 3D: `createImageBitmap` trong worker + nạp texture từng ô qua nhiều frame; (4) dựng hình học tòa (dungCan / gomHinh) trong Web Worker, trả Float32Array chuyển nhượng; (5) lượt vẽ đủ chất lượng đầu tiên trên điện thoại: bật bóng một frame sau (tạo VAO trước, bản đồ bóng sau).

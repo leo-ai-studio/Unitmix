@@ -4,6 +4,7 @@
  * `mau` là mặt bằng ĐÃ TỰ CHỈNH (tinh/loiThang.ts · apMatBang): ô thang mới / đã dời, căn đã dồn, nét bao dài ra (QT-69), hành
  * lang kéo dài; `mauTang` cho tầng có mặt bằng riêng. Dải lõi chiếu lên mặt (`bang`, XC-05) chỉ là mốc, không dựng.
  */
+import { chayHet, type Tung } from './chiaNho';
 import type * as THREE from 'three';
 import type { Diem, ThuVien, ToaDat } from '../tinh/kieu';
 import { boCucTang, canDangDung, congNangTai, khungTaiO, soCanChuVi, tangCoRieng, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from '../tinh/matBang';
@@ -281,6 +282,14 @@ type TangDung = { hinh: HinhGop<KhoaVL>; so: number; can: () => CanChon[]; chan:
  * Trả thêm `chon`: bản đồ chọn tầng / căn (chon3d.ts · chonTiaToa) cho khung 3D Công trình.
  */
 export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: ThamSo3D, du: DuLieuToa) {
+  return chayHet(dungToaTung(T, goc, M, G, P, du));
+}
+
+/**
+ * Như `dungToa`, CHIA NHỎ: các bố cục tầng chưa có trong bộ nhớ hình dựng trước, `yield` sau mỗi căn (Khung3D chạy từng mẩu ~8 ms —
+ * lần mở đầu 3D Công trình trên điện thoại CPU 4× trước đây là một tác vụ ~300 ms).
+ */
+export function* dungToaTung(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: ThamSo3D, du: DuLieuToa): Tung<ReturnType<typeof ketQuaToa>> {
   void G; // tòa gộp hình: không bật / tắt từng nhóm chi tiết
   const { mau, toa, tv } = du;
   const Hc = P.tang - P.san;
@@ -310,7 +319,7 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
 
   // --- tầng điển hình: mỗi bố cục khác nhau (chung + tầng riêng) dựng một lần (mỗi mẫu căn một lần), gộp theo vật liệu, nhớ lại ---
   const tums = ranhTum(mau, du.loi, du.idLoi);
-  const dungMau = (bc: BoCuc, mauT: MauToa3D, vts: ReturnType<typeof viTriCan>): HinhGop<KhoaVL> => {
+  function* dungMauTung(bc: BoCuc, mauT: MauToa3D, vts: ReturnType<typeof viTriCan>): Tung<HinhGop<KhoaVL>> {
     const tmp = new T.Group();
     const footT = mauT.duong_bao;
     khoi(footT, P.san, M.san, -P.san, false, tmp); // sàn dưới; tấm "sàn trên" mờ của tầng cũ luôn ẩn khi gộp nên bỏ
@@ -329,21 +338,35 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
       const ox = ux * off + nx * m.truc_mm, oy = uy * off + ny * m.truc_mm;
       m4.set(ux * s, 0, -nx, ox * K, 0, 1, 0, 0, -uy * s, 0, ny, -oy * K, 0, 0, 0, 1);
       datCan(hinhCan(T, d, P, kP, M, khoaVL), m4, gom);
+      yield;
     }
     return chotGom(T, gom);
-  };
+  }
+  const dungMau = (bc: BoCuc, mauT: MauToa3D, vts: ReturnType<typeof viTriCan>): HinhGop<KhoaVL> => chayHet(dungMauTung(bc, mauT, vts));
   const theoMau = new Map<object, string>();
   const theoKhoa = new Map<string, TangDung>();
   const khoaTv = idDoiTuong(tv), khoaTum = JSON.stringify(tums.length) + kP;
-  const mauCua = (tang: number | null): TangDung => {
+  const khoaTang = (tang: number | null) => {
     const bc = boCucTang(toa, tang), mauT = (du.mauTang?.(tang) ?? mau) as MauToa3D;
     const sm = lay(theoMau, mauT, () => chuoiCua(mauT) + '|' + JSON.stringify(ranhTum(mauT, du.loi, du.idLoi)));
     const vts = viTriCan(mauT, tv, bc); // dồn khít theo bề ngang căn đang dùng (XC-04), trên mặt đã tự chỉnh
     const ck = vts.map((vt) => { const cn = congNangTai(vt.khoa, bc), id = canDangDung(vt, bc); return `${cn}:${id}#${cn === 'can' ? idDoiTuong(du.khoi3d.get(id)) : 0}`; }).join('|');
-    const k = [khoaTv, khoaTum, sm, ck].join('§');
+    return { bc, mauT, vts, k: [khoaTv, khoaTum, sm, ck].join('§') };
+  };
+  // dựng trước (chia nhỏ) các bố cục tầng chưa có trong bộ nhớ hình; `mauCua` sau đó trúng bộ nhớ (thống kê vẫn tính là dựng mới)
+  const dungTruoc = new Set<string>();
+  for (const tang of [null, ...tangCoRieng(toa)]) {
+    const { bc, mauT, vts, k } = khoaTang(tang);
+    if (nhoTang.has(k) || dungTruoc.has(k)) continue;
+    const hinh = yield* dungMauTung(bc, mauT, vts);
+    layNho(nhoTang, k, () => ({ hinh, nhoNet: new Map<string, THREE.BufferGeometry[]>() }), TOI_DA_TANG);
+    dungTruoc.add(k);
+  }
+  const mauCua = (tang: number | null): TangDung => {
+    const { bc, mauT, vts, k } = khoaTang(tang);
     return lay(theoKhoa, k, () => {
       const r = layNho(nhoTang, k, () => ({ hinh: dungMau(bc, mauT, vts), nhoNet: new Map<string, THREE.BufferGeometry[]>() }), TOI_DA_TANG);
-      if (r.trung) thongKeNho.tangTrung++; else thongKeNho.tangMoi++;
+      if (r.trung && !dungTruoc.has(k)) thongKeNho.tangTrung++; else thongKeNho.tangMoi++;
       let ds: CanChon[] | null = null;
       const so = vts.filter((vt) => congNangTai(vt.khoa, bc) === 'can' && du.khoi3d.get(canDangDung(vt, bc))).length;
       return {
@@ -426,5 +449,7 @@ export function dungToa(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien, P: T
     chan: chanChon, chanDe: chanChon, hDe: hDe * K, caoTang: P.tang * K, nDH,
     canTang: (tang) => tangCua(tang).can(), canChung: () => chung.can(), chanTang: (tang) => tangCua(tang).chan,
   };
-  return { canh: { tam: [cx * K, cao * 0.45, -cy * K] as [number, number, number], coCanh, cao }, soCan, chon };
+  yield;
+  return ketQuaToa([cx * K, cao * 0.45, -cy * K], coCanh, cao, soCan, chon);
 }
+const ketQuaToa = (tam: [number, number, number], coCanh: number, cao: number, soCan: number, chon: BanDoChonToa) => ({ canh: { tam, coCanh, cao }, soCan, chon });
