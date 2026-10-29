@@ -60,7 +60,7 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
           <label>{t('duAn.ten')}<input value={ten} onInput={(e) => setTen(e.currentTarget.value)} required autoFocus /></label>
           <label>{t('duAn.diaDiem')}<input value={diaDiem} onInput={(e) => setDiaDiem(e.currentTarget.value)} /></label>
           {loi && <p class="vuot" role="alert">{loi}</p>}
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+          <div class="chan-hop">
             <button type="button" class="nut-phu" onClick={dongMem}>{t('duAn.huy')}</button>
             <button type="submit" class="nut-chinh" disabled={dangTao}>
               {dangTao && <img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '16px', height: '16px', verticalAlign: '-3px', marginRight: '6px', filter: 'invert(1)' }} />}
@@ -76,7 +76,7 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
           <div class="dong-link"><code>{linkSua(kq.ma, kq.ma_sua)}</code><ChepNut chu={linkSua(kq.ma, kq.ma_sua)} /></div>
           <span>{t('duAn.linkXem')}</span>
           <div class="dong-link"><code>{linkXem(kq.ma)}</code><ChepNut chu={linkXem(kq.ma)} /></div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div class="chan-hop">
             <button type="button" class="nut-chinh" onClick={() => route(`/du-an/${kq.ma}`)}>{t('duAn.moDuAn')}</button>
           </div>
         </div>

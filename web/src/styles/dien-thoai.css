@@ -138,8 +138,55 @@
   .thanh-3d .nhom-3d button, .thanh-3d .nut-phu, .thanh-3d .nut-chinh { min-height: 40px; }
   .thanh-3d-phu { display: flex; }
   .the-chon-3d { bottom: 62px; white-space: normal; max-width: calc(100% - 128px); }
-  .hop-thoai > div, .hop-xuat { max-height: calc(100dvh - 32px); overflow: auto; }
+  /* ---- hộp thoại (bảng QH, đề bài KD, tạo dự án, so sánh PA, xuất CAD, xem căn 3D) ----
+     Hộp ra thẳng <body> (ui/LopNoi.tsx) nên nằm TRÊN dock + ngăn kéo; cao theo phần nhìn thấy thật (--vv-h / --vv-y từ
+     visualViewport, ui/manHep.ts — co lại khi bàn phím iOS mở, 100dvh thì không); thân cuộn trong hộp; hàng nút chân hộp
+     (.chan-hop) dính đáy hộp nên Áp / Huỷ luôn bấm được dù bảng xem trước dài. */
+  .hop-thoai, .hop-3d {
+    z-index: 40; top: var(--vv-y, 0px); bottom: auto; height: var(--vv-h, 100dvh); box-sizing: border-box; overscroll-behavior: contain;
+    padding: calc(8px + var(--an-t)) calc(8px + var(--an-r)) calc(8px + var(--an-b)) calc(8px + var(--an-l));
+  }
+  .hop-thoai > div, .hop-thoai > form {
+    --hop-dem: 16px; box-sizing: border-box; max-height: 100%; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    padding: var(--hop-dem);
+  }
+  .hop-thoai > div:has(> .chan-hop), .hop-thoai > form:has(> .chan-hop) { padding-bottom: 0; } /* chân dính tự chừa đáy */
+  .hop-thoai .chan-hop {
+    position: sticky; bottom: 0; z-index: 4; margin: auto calc(-1 * var(--hop-dem)) 0; padding: 10px var(--hop-dem) 12px;
+    background: var(--panel); border-top: 1px solid var(--line);
+  }
+  .hop-thoai .chan-hop > button, .hop-thoai .chan-hop > a { min-height: 44px; }
+  .hop-thoai .nut-phu, .hop-thoai .nut-chinh { min-height: 40px; }
   .hop-thoai input, .hop-thoai select, .hop-thoai textarea { font-size: 16px; }
+  .hop-thoai .o-chon select, .hop-thoai .o-chon input { max-width: min(220px, 100%); min-height: 40px; }
+  /* hàng chọn tệp + sheet: xuống dòng thay vì tràn khỏi hộp */
+  .hop-thoai .dong-tep { flex-wrap: wrap; align-items: center; }
+  .hop-thoai .dong-tep > .nut-phu { white-space: nowrap; min-height: 44px; align-items: center; justify-content: center; }
+  .hop-thoai .dong-tep > .o-chon { padding: 0; min-width: 0; max-width: 100%; }
+  /* bảng xem trước: cuộn ngang / dọc TRONG khung bảng, tiêu đề dính trên + cột ký hiệu dính trái (unitmix.css) */
+  .hop-thoai .bang-nhap { max-height: max(180px, calc(var(--vv-h, 100dvh) * .5)); overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  .hop-thoai .hang-nhap select { font-size: 16px; min-height: 40px; }
+  /* so sánh PA: đầu hộp (tiêu đề + Đóng) dính trên */
+  .hop-thoai .so-sanh .ss-dau { position: sticky; top: 0; z-index: 4; margin: calc(-1 * var(--hop-dem)) calc(-1 * var(--hop-dem)) 0; padding: var(--hop-dem) var(--hop-dem) 10px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .hop-thoai .so-sanh .ss-dau .nut-phu { min-height: 44px; }
+  .hop-xuat { max-height: 100%; overscroll-behavior: contain; }
+  .hop-3d-trong { height: 100%; }
+  .dong-hop { min-width: 44px; min-height: 44px; top: 0; right: 0; }
+  .hop-xuat h3 { padding-right: 40px; }
+  /* bàn phím ảo đang mở (html.ban-phim, ui/manHep.ts): ngăn kéo bám mép trên bàn phím, dock ẩn để ô nhập không bị che */
+  .ban-phim .dock-duoi { visibility: hidden; }
+  .ban-phim .khung-soan .ngan-keo { bottom: var(--vv-duoi, 0px); max-height: calc(var(--vv-h, 100dvh) - 8px); }
+}
+
+/* Điện thoại dọc: hộp thoại thành tấm trượt từ đáy (sheet), trải hết bề ngang, nút chân hộp chia đều cho ngón cái. */
+@media (max-width: 600px) {
+  .hop-thoai { align-items: flex-end; padding: calc(12px + var(--an-t)) 0 0; }
+  .hop-thoai > div, .hop-thoai > form { width: 100%; border-radius: 14px 14px 0 0; --hop-dem: 16px; padding-left: calc(16px + var(--an-l)); padding-right: calc(16px + var(--an-r)); }
+  .hop-thoai .chan-hop { padding-bottom: calc(12px + var(--an-b)); flex-wrap: nowrap; }
+  .hop-thoai .chan-hop > button, .hop-thoai .chan-hop > a { flex: 1 1 0; min-width: 0; justify-content: center; }
+  .hop-thoai .chan-hop > .nut-chinh { flex-grow: 2; }
+  .hop-3d { padding: calc(8px + var(--an-t)) 0 0; align-items: flex-end; }
+  .hop-xuat, .hop-3d-trong { width: 100%; border-radius: 14px 14px 0 0; padding-bottom: calc(16px + var(--an-b)); }
 }
 
 /* Điện thoại nằm ngang (thấp): thanh trên 44 px, dock thành cột bên phải để bản vẽ giữ chiều cao. */

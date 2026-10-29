@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { useDongHop } from '../ui/useDongHop';
+import { LopNoi } from '../ui/LopNoi';
 import { docDeBai, type DeBaiDoc } from '../nhap/deBaiKD';
 import { docTepExcel, luoiTuChuDan } from '../nhap/docExcel';
 import type { Sheet } from '../nhap/luoi';
@@ -44,6 +45,7 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
   const soLo = ds.filter(apDung).length;
 
   return (
+    <LopNoi>
     <div class={`hop-thoai${lop}`} role="dialog" aria-modal="true" aria-labelledby="tieu-de-db">
       <div>
         <h2 id="tieu-de-db">{t('db.tieuDe')}</h2>
@@ -89,7 +91,7 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
             </label>
           </>
         )}
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+        <div class="chan-hop">
           <button type="button" class="nut-phu" onClick={dongMem}>{t('duAn.huy')}</button>
           <button type="button" class="nut-chinh" disabled={!kq || !kq.dong.length || !soLo}
             onClick={() => {
@@ -106,5 +108,6 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
         </div>
       </div>
     </div>
+    </LopNoi>
   );
 }

@@ -23,8 +23,10 @@ import './styles/dien-thoai.css';
 import { langHienTai } from './i18n/i18n';
 import { DuAn } from './man/DuAn';
 import { SoanThao } from './man/SoanThao';
+import { theoDoiKhungNhin } from './ui/manHep';
 
 document.documentElement.lang = langHienTai();
+theoDoiKhungNhin();
 
 function App() {
   return (
