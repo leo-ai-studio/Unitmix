@@ -1,23 +1,45 @@
 /**
- * Thao tác tay nặng chạy nền (Web Worker) — như tinh/hamNen.ts: ⟲ "thang về tự động" bắt PC-11 dò lại từ đầu (tuChinhToa không có
- * tập thang lần trước), mẫu lớn 150–400 ms trên luồng chính. Chạy nền thì bản vẽ giữ mặt bằng cũ, nút hiện vòng O `spin-o`;
- * có lượt mới (bấm lại, hoặc thao tác tay khác) thì lượt cũ bị huỷ (terminate worker, dựng worker mới cho lượt sau).
- * Không có Worker (vitest / node) thì chạy đồng bộ, kết quả y hệt (cùng hàm thuần tinh/thaoTacTay.ts).
+ * Thao tác tay màn Tầng chạy nền (Web Worker) — như tinh/hamNen.ts. Mọi phép tay (xoá / đổi chỗ / lật căn, thêm / xoá / dời thang,
+ * ⟲ thang về tự động…) chạy lại tự chỉnh; khi không giữ được tập thang cũ thì PC-11 dò lại từ đầu, mẫu lớn 150–400 ms trên luồng
+ * chính. Chạy nền thì bản vẽ giữ mặt bằng tạm (phần hình học nhanh `hinhNhanh`: đổi ô, chưa tự chỉnh), thanh công cụ hiện vòng O
+ * `spin-o`; có lượt mới thì lượt cũ bị huỷ (terminate worker, dựng worker mới cho lượt sau). Kết quả cuối y hệt bản đồng bộ (cùng
+ * hàm thuần tinh/thaoTacTay.ts trên bản chép structuredClone). Không có Worker (vitest / node) thì chạy đồng bộ.
  */
-import type { DuLieuMB } from './loiThang';
+import { goiYGiuCan, type GoiYGiuCan } from './baoThaoTac';
+import { doiChoO, doiCongNang, latO } from './doiCan';
+import type { DuLieuMB, LoaiThangBo } from './loiThang';
 import type { ThuVien, ToaDat } from './kieu';
-import { thangTuDongLai, type Ctx, type KetQuaTay } from './thaoTacTay';
+import type { ViTriCan } from './matBang';
+import { doiChoTay, doiLoaiThangTay, doiThangTay, latTay, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from './thaoTacTay';
 
-/** Bảng thao tác được chạy nền (tên → hàm thuần). Đối số phải chép được qua structuredClone. */
+type Tangs = number[] | null;
+/** Bảng thao tác được chạy nền (tên → hàm thuần, ctx đứng đầu). Đối số phải chép được qua structuredClone. */
 export const BANG_TAY = {
   thangTuDongLai: (c: Ctx, toa: ToaDat) => thangTuDongLai(toa, c),
+  doiChoTay: (c: Ctx, toa: ToaDat, tangs: Tangs, a: ViTriCan, b: ViTriCan) => doiChoTay(toa, tangs, a, b, c),
+  latTay: (c: Ctx, toa: ToaDat, tangs: Tangs, khoas: string[]) => latTay(toa, tangs, khoas, c),
+  xoaCanTay: (c: Ctx, toa: ToaDat, tangs: Tangs, khoas: string[]) => xoaCanTay(toa, tangs, khoas, c),
+  themCanTay: (c: Ctx, toa: ToaDat, tangs: Tangs, neo: ViTriCan, id: string, truoc: boolean) => themCanTay(toa, tangs, neo, id, c, truoc),
+  themVaoO: (c: Ctx, toa: ToaDat, tangs: Tangs, vt: ViTriCan, id: string) => themVaoO(toa, tangs, vt, id, c),
+  themThangTay: (c: Ctx, toa: ToaDat, mat: number, sau: string) => themThangTay(toa, mat, sau, c),
+  xoaThangTay: (c: Ctx, toa: ToaDat, khoa: string) => xoaThangTay(toa, khoa, c),
+  doiLoaiThangTay: (c: Ctx, toa: ToaDat, khoa: string, loai: LoaiThangBo) => doiLoaiThangTay(toa, khoa, loai, c),
+  doiThangTay: (c: Ctx, toa: ToaDat, khoa: string, mat: number, sau: string) => doiThangTay(toa, khoa, mat, sau, c),
+  /** Gợi ý giữ số căn (tinh/baoThaoTac.ts) — bọc trong object để null "không có gợi ý" khác null "bị huỷ". */
+  goiYGiuCan: (c: Ctx, sau: ToaDat, goTN: string[], canTruoc: number, tang: number | null, hanMs: number) => ({ g: goiYGiuCan(sau, goTN, canTruoc, c, tang, hanMs) as GoiYGiuCan | null }),
 } as const;
 export type TenTay = keyof typeof BANG_TAY;
 export type DoiSoTay<T extends TenTay> = Parameters<(typeof BANG_TAY)[T]> extends [Ctx, ...infer R] ? R : never;
+export type KqTay<T extends TenTay> = ReturnType<(typeof BANG_TAY)[T]>;
+/** Phép tay trả KetQuaTay (mọi tên trừ gợi ý). */
+export type TenPhep = Exclude<TenTay, 'goiYGiuCan'>;
+/** Một phép tay dạng dữ liệu (tên + đối số) — chép được sang worker, chạy đồng bộ được bằng `chayPhep`. */
+export type PhepTay = { [T in TenPhep]: { ten: T; args: DoiSoTay<T> } }[TenPhep];
+export const phepTay = <T extends TenPhep>(ten: T, ...args: DoiSoTay<T>): PhepTay => ({ ten, args } as unknown as PhepTay);
 
 /** Thư gửi worker: `tv` / `dl` chỉ gửi khi worker chưa có đúng bản này. */
 export type ThuTay = { id: number; ten: TenTay; args: unknown[]; tv?: ThuVien; dl?: DuLieuMB | null };
-export type ThuTayXong = { id: number; kq?: KetQuaTay; loi?: string };
+export type ThuTayXong = { id: number; kq?: unknown; loi?: string };
 
 export type WorkerTay = {
   postMessage: (m: ThuTay) => void;
@@ -27,10 +49,26 @@ export type WorkerTay = {
 };
 
 /** Chạy một thao tác theo tên (dùng chung cho worker và đường đồng bộ). */
-export const chayTay = (ten: TenTay, c: Ctx, args: unknown[]): KetQuaTay =>
-  (BANG_TAY[ten] as (c: Ctx, ...a: unknown[]) => KetQuaTay)(c, ...args);
+export const chayTay = (ten: TenTay, c: Ctx, args: unknown[]): unknown =>
+  (BANG_TAY[ten] as (c: Ctx, ...a: unknown[]) => unknown)(c, ...args);
+/** Chạy đồng bộ một phép tay (bản chuẩn để so kết quả nền). */
+export const chayPhep = (ph: PhepTay, c: Ctx): KetQuaTay => chayTay(ph.ten, c, ph.args) as KetQuaTay;
 
-type Cho = { id: number; ten: TenTay; args: unknown[]; c: Ctx; xong: (r: KetQuaTay | null) => void };
+/**
+ * Phần hình học nhanh của phép (đổi ô trong bố cục, CHƯA tự chỉnh — vài ms): bản vẽ hiện ngay trong lúc chờ kết quả nền. Phép thang
+ * (thêm / xoá / dời / đổi loại, ⟲) không có phần nhanh → null (giữ mặt bằng cũ).
+ */
+export function hinhNhanh(ph: PhepTay): ToaDat | null {
+  switch (ph.ten) {
+    case 'doiChoTay': { const [toa, tangs, a, b] = ph.args; return a.khoa === b.khoa ? null : doiChoO(toa, tangs, a, b); }
+    case 'latTay': { const [toa, tangs, khoas] = ph.args; return khoas.length ? latO(toa, tangs, khoas) : null; }
+    case 'xoaCanTay': { const [toa, tangs, khoas] = ph.args; return khoas.length ? doiCongNang(toa, tangs, khoas, 'bo') : null; }
+    case 'themVaoO': { const [toa, tangs, vt] = ph.args; return doiCongNang(toa, tangs, [vt.khoa], 'can'); }
+    default: return null;
+  }
+}
+
+type Cho = { id: number; ten: TenTay; args: unknown[]; c: Ctx; xong: (r: unknown) => void };
 
 export class DieuPhoiTay {
   private worker: WorkerTay | null = null;
@@ -53,18 +91,23 @@ export class DieuPhoiTay {
   /**
    * Chạy `ten` với đối số `args`. Lượt cũ còn chạy thì bị huỷ (promise của nó trả null). Không có Worker → chạy đồng bộ, trả ngay.
    */
-  chay<T extends TenTay>(ten: T, c: Ctx, ...args: DoiSoTay<T>): Promise<KetQuaTay | null> {
+  chay<T extends TenTay>(ten: T, c: Ctx, ...args: DoiSoTay<T>): Promise<KqTay<T> | null> {
     this.huy();
-    if (!this.coWorker()) return Promise.resolve(chayTay(ten, c, args));
+    if (!this.coWorker()) return Promise.resolve(chayTay(ten, c, args) as KqTay<T>);
     return new Promise((xong) => {
       const id = ++this.soId;
-      this.cho = { id, ten, args, c, xong };
+      this.cho = { id, ten, args, c, xong: xong as (r: unknown) => void };
       const thu: ThuTay = { id, ten, args };
       if (this.tvW !== c.tv) { thu.tv = c.tv; this.tvW = c.tv; }
       if (!this.dlCo || this.dlW !== c.dl) { thu.dl = c.dl ?? null; this.dlW = c.dl; this.dlCo = true; }
       this.worker!.postMessage(thu);
       this.bao();
     });
+  }
+
+  /** Chạy một phép tay (PhepTay) — như `chay`. */
+  chayPhep(ph: PhepTay, c: Ctx): Promise<KetQuaTay | null> {
+    return (this.chay as (t: TenTay, c: Ctx, ...a: unknown[]) => Promise<KetQuaTay | null>)(ph.ten, c, ...ph.args);
   }
 
   /** Huỷ lượt đang chạy (thao tác khác bắt đầu, rời màn): worker bị terminate, promise lượt đó trả null. */
@@ -128,4 +171,28 @@ const taoWorkerMacDinh = (): WorkerTay | null => {
   }
 };
 
+/** Phép tay ghi vào PA (một lượt một lúc; lượt mới huỷ lượt cũ) + gợi ý giữ số căn sau câu báo. */
 export const dieuPhoiTay = new DieuPhoiTay(taoWorkerMacDinh);
+/** Dò hợp lệ ô đích khi rê kéo thả (worker riêng: dò không huỷ phép đang ghi, phép ghi không huỷ lượt dò). */
+export const dieuPhoiDo = new DieuPhoiTay(taoWorkerMacDinh);
+
+// ---- mặt bằng tạm trong lúc chờ (bản vẽ màn Tầng đọc) ----
+export type ToaTam = { id: number; goc: ToaDat; toa: ToaDat };
+let tam: ToaTam | null = null, soTam = 0;
+const ngheTam = new Set<() => void>();
+/** Đặt mặt bằng tạm cho tòa `goc` (null = bỏ); trả mã để chỉ chính lượt đó gỡ được (`goTam`). */
+export function datTam(goc: ToaDat, toa: ToaDat | null): number {
+  const id = ++soTam;
+  tam = toa ? { id, goc, toa } : null;
+  ngheTam.forEach((f) => f());
+  return id;
+}
+/** Gỡ mặt bằng tạm của lượt `id` (lượt khác đã đặt tạm mới thì giữ). */
+export function goTam(id: number): void {
+  if (tam?.id !== id) return;
+  tam = null;
+  ngheTam.forEach((f) => f());
+}
+/** Mặt bằng tạm của tòa `toa` (chỉ khi tòa trong PA vẫn đúng bản gốc của lượt chờ). */
+export const layTam = (toa: ToaDat): ToaDat | null => (tam && tam.goc === toa ? tam.toa : null);
+export const ngheToaTam = (fn: () => void): (() => void) => { ngheTam.add(fn); return () => { ngheTam.delete(fn); }; };

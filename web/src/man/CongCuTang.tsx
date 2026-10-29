@@ -8,13 +8,13 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
-import { bienDongCan, goiYGiuCan, type BienDongCan, type GoiYGiuCan } from '../tinh/baoThaoTac';
+import { bienDongCan, type BienDongCan, type GoiYGiuCan } from '../tinh/baoThaoTac';
 import { choTrong, type ChoTrong } from '../tinh/choTrong';
 import type { ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { mauToa } from '../tinh/canThem';
 import { boCucTang, canDangDung, type BoCuc, type ViTriCan } from '../tinh/matBang';
-import { dieuPhoiTay } from '../tinh/tayNen';
-import { doiChoTay, doiLoaiThangTay, doiThangTay, dsMauThem, latTay, mauThem, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from '../tinh/thaoTacTay';
+import { datTam, dieuPhoiDo, dieuPhoiTay, goTam, hinhNhanh, layTam, ngheToaTam, phepTay, type PhepTay } from '../tinh/tayNen';
+import { dsMauThem, mauThem, type Ctx, type KetQuaTay } from '../tinh/thaoTacTay';
 import { demLoaiThang, THANG_N2, THANG_N3, type LoaiThangBo } from '../tinh/loiThang';
 import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { soLieuTang, type ToaVe } from '../ve/MatBangTang';
@@ -86,29 +86,46 @@ function apKetQua(q: PropsCongCu, ctx: Ctx, r: KetQuaTay, chuOk: (toaMoi: ToaDat
   const nhay = bd.truoc !== bd.sau || bd.goTN.length > 0;
   const id = datBaoStretch({ loai: 'ok', chu, giuMs: nhay ? 14000 : undefined });
   // gợi ý giữ số căn (dời thang như PC-11): chạy sau khi câu báo đã hiện, có hạn thời gian; KHÔNG tự áp
+  // (chạy nền như phép tay — mỗi phép thử chạy lại tự chỉnh; phép tay mới huỷ lượt gợi ý đang dò)
   if (bd.sau < bd.truoc && bd.goTN.length) {
-    setTimeout(() => {
-      if (!baoConHien(id)) return;
-      const g = goiYGiuCan(r.toa, bd.goTN, bd.truoc, ctx, k0, 1500);
-      if (baoConHien(id)) datBaoStretch({ loai: 'ok', chu: chu + (g ? chuGoiY(g, tenO, q.mau) : ' ' + t('cc.goiY.khong')), giuMs: 16000 });
-    }, 60);
+    void dieuPhoiTay.chay('goiYGiuCan', ctx, r.toa, bd.goTN, bd.truoc, k0, 1500).then((x) => {
+      if (x && baoConHien(id)) datBaoStretch({ loai: 'ok', chu: chu + (x.g ? chuGoiY(x.g, tenO, q.mau) : ' ' + t('cc.goiY.khong')), giuMs: 16000 });
+    });
   }
   return true;
 }
 
-/** Chạy một thao tác tay (đồng bộ) rồi ghi / báo (apKetQua). Thao tác nền đang chờ (⟲) bị huỷ: mặt bằng nó dựa vào đã cũ. */
+/**
+ * Chạy một phép tay NỀN (tinh/tayNen.ts — tự chỉnh / PC-11 dò lại từ đầu 150–400 ms ở mẫu lớn không chặn luồng chính): bản vẽ hiện
+ * ngay phần hình học nhanh (`hinhNhanh`: đổi ô, chưa tự chỉnh) làm mặt bằng tạm, thanh công cụ hiện vòng O; có kết quả cuối mà tòa
+ * chưa bị sửa gì khác thì ghi (MỘT bước hoàn tác) + báo (apKetQua), không thì bỏ. Lượt mới (phép tay khác, ⟲) huỷ lượt cũ.
+ * `daCo` = kết quả đã dò sẵn (kéo thả) cho đúng tòa này → ghi ngay. Trả true khi đã ghi.
+ */
 function useChay(p: PropsCongCu) {
   const pRef = useRef(p);
   pRef.current = p;
-  return (op: (c: Ctx) => KetQuaTay, chuOk: (toaMoi: ToaDat) => string): boolean => {
+  return (ph: PhepTay, chuOk: (toaMoi: ToaDat) => string, daCo?: KetQuaTay): Promise<boolean> => {
     const q = pRef.current;
-    if (q.chiXem) return false;
+    if (q.chiXem) return Promise.resolve(false);
     const dl = layDuLieuMB();
-    if (!dl) { datBaoStretch({ loai: 'loi', chu: t('cc.loi.chuaTai') }); return false; }
-    dieuPhoiTay.huy();
-    const ctx = { tv: q.tv, dl };
-    return apKetQua(q, ctx, op(ctx), chuOk);
+    if (!dl) { datBaoStretch({ loai: 'loi', chu: t('cc.loi.chuaTai') }); return Promise.resolve(false); }
+    const ctx = { tv: q.tv, dl }, goc = q.toa;
+    if (daCo) { dieuPhoiTay.huy(); datTam(goc, null); return Promise.resolve(apKetQua(q, ctx, daCo, chuOk)); }
+    const maTam = datTam(goc, hinhNhanh(ph));
+    return dieuPhoiTay.chayPhep(ph, ctx).then((r) => {
+      goTam(maTam);
+      const q2 = pRef.current;
+      if (!r || q2.toa !== goc) return false; // bị huỷ (lượt mới), hoặc tòa đã đổi trong lúc chờ
+      return apKetQua(q2, ctx, r, chuOk);
+    });
   };
+}
+
+/** Mặt bằng tạm của tòa `toa` trong lúc phép tay chạy nền (null = vẽ tòa như trong PA). */
+export function useToaTam(toa: ToaDat): ToaDat | null {
+  const [, ve] = useState(0);
+  useEffect(() => ngheToaTam(() => ve((n) => n + 1)), []);
+  return layTam(toa);
 }
 
 /**
@@ -128,6 +145,7 @@ function useChayNen(p: PropsCongCu) {
     const dl = layDuLieuMB();
     if (!dl) { datBaoStretch({ loai: 'loi', chu: t('cc.loi.chuaTai') }); return; }
     const ctx = { tv: q.tv, dl }, goc = q.toa;
+    datTam(goc, null);
     void dieuPhoiTay.chay(ten, ctx, goc).then((r) => {
       const q2 = pRef.current;
       if (!r || q2.toa !== goc) return; // bị huỷ, hoặc tòa đã đổi trong lúc chờ
@@ -175,16 +193,16 @@ export function ThanhCongCuTang(p: PropsCongCu) {
     const ten = p.tv.can.get(id)?.ten_vi ?? id;
     // ô đang chọn là ô trống / phòng KT…: đặt căn vào chính ô
     if (oChinh.cn !== 'can') {
-      if (chay((c) => themVaoO(toa, tangs, oChinh.vt, id, c), () => t('cc.ok.themVaoO').replace('{c}', ten).replace('{o}', tenCH(oChinh.no)))) p.chonCan(null);
+      void chay(phepTay('themVaoO', toa, tangs, oChinh.vt, id), () => t('cc.ok.themVaoO').replace('{c}', ten).replace('{o}', tenCH(oChinh.no))).then((ok) => ok && p.chonCan(null));
       return;
     }
-    if (chay((c) => themCanTay(toa, tangs, oChinh.vt, id, c, truoc),
-      (x) => t(truoc ? 'cc.ok.themTruoc' : 'cc.ok.themCan').replace('{c}', ten).replace('{o}', tenCH(oChinh.no)).replace('{n}', String(soCanSau(x))))) p.chonCan(null);
+    void chay(phepTay('themCanTay', toa, tangs, oChinh.vt, id, truoc),
+      (x) => t(truoc ? 'cc.ok.themTruoc' : 'cc.ok.themCan').replace('{c}', ten).replace('{o}', tenCH(oChinh.no)).replace('{n}', String(soCanSau(x)))).then((ok) => ok && p.chonCan(null));
   };
   const themCho = (cho: ChoTrong, id: string) => {
     dong();
     const ten = p.tv.can.get(id)?.ten_vi ?? id;
-    chay((c) => (cho.loai === 'o' ? themVaoO(toa, tangs, cho.neo, id, c) : themCanTay(toa, tangs, cho.neo, id, c, cho.truoc)),
+    void chay(cho.loai === 'o' ? phepTay('themVaoO', toa, tangs, cho.neo, id) : phepTay('themCanTay', toa, tangs, cho.neo, id, cho.truoc),
       () => t('cc.ok.themCho').replace('{c}', ten).replace('{r}', m1(cho.rong)).replace('{m}', String(cho.matIdx + 1)));
   };
   const themThang = () => {
@@ -193,30 +211,30 @@ export function ThanhCongCuTang(p: PropsCongCu) {
     const mat = oChinh ? oChinh.vt.matIdx : thang;
     const sau = oChinh ? oChinh.vt.khoa : thangKhoa;
     if (mat === undefined || !sau) { datBaoStretch({ loai: 'loi', chu: t('cc.chonTruoc') }); return; }
-    chay((c) => themThangTay(toa, mat, sau, c), (x) => t('cc.ok.themThang').replace('{o}', tenO(sau)).replace('{n}', String(x.matBang?.thangBo.length ?? 0)));
+    void chay(phepTay('themThangTay', toa, mat, sau), (x) => t('cc.ok.themThang').replace('{o}', tenO(sau)).replace('{n}', String(x.matBang?.thangBo.length ?? 0)));
   };
   const xoa = () => {
     if (chiXem) return;
     if (thangKhoa) {
-      if (chay((c) => xoaThangTay(toa, thangKhoa, c), (x) => t('cc.ok.xoaThang').replace('{n}', String(x.matBang?.thangBo.length ?? 0)))) p.chonThang(null);
+      void chay(phepTay('xoaThangTay', toa, thangKhoa), (x) => t('cc.ok.xoaThang').replace('{n}', String(x.matBang?.thangBo.length ?? 0))).then((ok) => ok && p.chonThang(null));
       return;
     }
     if (!dsO.length) { datBaoStretch({ loai: 'loi', chu: t('cc.chonTruoc') }); return; }
-    if (chay((c) => xoaCanTay(toa, tangs, dsO, c), () => t('cc.ok.xoaCan').replace('{n}', String(dsO.length)))) p.chonCan(null);
+    void chay(phepTay('xoaCanTay', toa, tangs, dsO), () => t('cc.ok.xoaCan').replace('{n}', String(dsO.length))).then((ok) => ok && p.chonCan(null));
   };
   // loại thang đang chọn (QT-63): N3 | N2 — tòa luôn giữ ít nhất một N2 + một N3
   const loaiChon = thangKhoa ? p.mau.mat.flatMap((m) => m.phan_tu.filter((q) => q.loai === 'thang_bo' && q.khoa === thangKhoa).map((q) => q.block))[0] : undefined;
   const doiLoai = (l: LoaiThangBo) => {
     if (!thangKhoa || l === loaiChon) return;
     const ten = tenThang(p.mau, thangKhoa);
-    chay((c) => doiLoaiThangTay(toa, thangKhoa, l, c), (x) => {
+    void chay(phepTay('doiLoaiThangTay', toa, thangKhoa, l), (x) => {
       const d = demLoaiThang(x.matBang?.thangBo ?? []);
       return t('cc.ok.doiLoai').replace('{th}', ten).replace('{l}', l === THANG_N2 ? 'N2' : 'N3').replace('{n2}', String(d.n2)).replace('{n3}', String(d.n3));
     });
   };
   const lat = () => {
     if (!dsO.length) { datBaoStretch({ loai: 'loi', chu: t('cc.chonTruoc') }); return; }
-    chay((c) => latTay(toa, tangs, dsO, c), () => t('cc.ok.lat').replace('{n}', String(dsO.length)));
+    void chay(phepTay('latTay', toa, tangs, dsO), () => t('cc.ok.lat').replace('{n}', String(dsO.length)));
   };
 
   // phím Delete: xoá ô / thang đang chọn (như app cũ)
@@ -299,6 +317,9 @@ export function ThanhCongCuTang(p: PropsCongCu) {
           {nen.dang === 'thangTuDongLai' && <img class="spin-o cc-dang-do" src="/brand/leo_ai_o.png" alt={t('cc.dangTuDong')} />}
         </NutBieuTuong>
       </span>
+      {nen.dang && nen.dang !== 'thangTuDongLai' && nen.dang !== 'goiYGiuCan' && (
+        <span class="cc-dang-chay" role="status" title={t('cc.dangChay')}><img class="spin-o" src="/brand/leo_ai_o.png" alt={t('cc.dangChay')} /></span>
+      )}
     </div>
   );
 }
@@ -327,13 +348,13 @@ export function useKeoTay(p: PropsCongCu) {
   pRef.current = p;
 
   /** Phép thao tác ứng với thả ô `k` lên `dich` (hàm thuần, chưa ghi) + câu báo khi thành công. */
-  const phep = (k: Keo, dich: string): { op: (c: Ctx) => KetQuaTay; chu: () => string } | null => {
+  const phep = (k: Keo, dich: string): { ph: PhepTay; chu: () => string } | null => {
     const q = pRef.current, toa = q.toa;
     const cO = (kh: string) => q.can.find((x) => x.vt.khoa === kh);
     const a = k.loai === 'o' ? cO(k.khoa) : undefined, b = cO(dich);
-    if (a && b) return { op: (c) => doiChoTay(toa, q.tangs, a.vt, b.vt, c), chu: () => t('cc.ok.doiCho').replace('{a}', tenCH(a.no)).replace('{b}', tenCH(b.no)) };
-    if (k.loai === 'thang' && b) return { op: (c) => doiThangTay(toa, k.khoa, b.vt.matIdx, b.vt.khoa, c), chu: () => t('cc.ok.doiThang').replace('{o}', tenCH(b.no)) };
-    if (a && !b) return { op: (c) => doiThangTay(toa, dich, a.vt.matIdx, a.vt.khoa, c), chu: () => t('cc.ok.doiThang').replace('{o}', tenCH(a.no)) };
+    if (a && b) return { ph: phepTay('doiChoTay', toa, q.tangs, a.vt, b.vt), chu: () => t('cc.ok.doiCho').replace('{a}', tenCH(a.no)).replace('{b}', tenCH(b.no)) };
+    if (k.loai === 'thang' && b) return { ph: phepTay('doiThangTay', toa, k.khoa, b.vt.matIdx, b.vt.khoa), chu: () => t('cc.ok.doiThang').replace('{o}', tenCH(b.no)) };
+    if (a && !b) return { ph: phepTay('doiThangTay', toa, dich, a.vt.matIdx, a.vt.khoa), chu: () => t('cc.ok.doiThang').replace('{o}', tenCH(a.no)) };
     return null;
   };
 
@@ -358,9 +379,12 @@ export function useKeoTay(p: PropsCongCu) {
       w: Math.min(240, Math.max(96, b.width)), h: Math.min(140, Math.max(40, b.height)),
       nhan: c ? `${tenCH(c.no)} · ${q.tv.can.get(c.canId)?.ten_vi.split(' · ')[0] ?? ''}` : t('cc.thang') };
     let dangKeo = false, dich: string | null = null, x = e.clientX, y = e.clientY;
-    // dò hợp lệ: cache theo ô đích trong lượt kéo; hẹn chạy khi chuột dừng
+    // dò hợp lệ: cache theo ô đích trong lượt kéo (cho đúng tòa lúc bắt đầu kéo); hẹn chạy NỀN khi chuột dừng (worker dò riêng,
+    // dò ô mới huỷ lượt dò ô cũ) — luồng chính không bị chặn, bóng vẫn bám tay
+    const toaKeo = q.toa;
     const cache = new Map<string, KetQuaTay>();
     let hen: ReturnType<typeof setTimeout> | undefined, cham = false;
+    let dangDo: { d: string; hua: Promise<KetQuaTay | null> } | null = null;
     const baoDo = (d: string) => {
       const r = cache.get(d);
       if (!r) { setDoKq({ dich: d, tt: cham ? 'cham' : 'dang' }); return; }
@@ -373,11 +397,17 @@ export function useKeoTay(p: PropsCongCu) {
       hen = undefined;
       if (cache.has(d) || cham || d !== dich) return;
       const ph = phep(k, d), dl = layDuLieuMB();
-      if (!ph || !dl) return;
+      if (!ph || !dl || pRef.current.toa !== toaKeo) return;
       const t0 = performance.now();
-      cache.set(d, ph.op({ tv: pRef.current.tv, dl }));
-      if (performance.now() - t0 > DO_HAN_MS) cham = true; // lần sau không dò lúc rê nữa (giữ mượt)
-      if (d === dich) baoDo(d);
+      const hua = dieuPhoiDo.chayPhep(ph.ph, { tv: pRef.current.tv, dl });
+      dangDo = { d, hua };
+      void hua.then((r) => {
+        if (dangDo?.hua === hua) dangDo = null;
+        if (!r) return; // bị huỷ: rê sang ô khác / thả
+        cache.set(d, r);
+        if (performance.now() - t0 > DO_HAN_MS) cham = true; // dò quá lâu: thôi dò lúc rê, kiểm khi thả
+        if (d === dich && phien.current?.id === e.pointerId) baoDo(d);
+      });
     };
     const ve = () => {
       raf.current = 0;
@@ -414,20 +444,32 @@ export function useKeoTay(p: PropsCongCu) {
       go();
       if (!dangKeo) return;
       const ph = dich ? phep(k, dich) : null;
-      const daDo = dich ? cache.get(dich) : undefined;
-      const ok = ph ? chay(daDo ? () => daDo : ph.op, ph.chu) : (datBaoStretch({ loai: 'loi', chu: t('cc.loi.thaNgoai') }), false);
-      if (ok || giamDong() || !bong.current) { setKeo(null); return; }
-      // trả về: bóng trượt về chỗ cũ rồi tắt
-      const el2 = bong.current;
-      el2.style.transition = 'transform 180ms cubic-bezier(.2,.8,.2,1)';
-      el2.style.transform = `translate(${k.x0 - k.w / 2}px, ${k.y0 - k.h / 2}px)`;
-      setTimeout(() => setKeo(null), 200);
+      const dung = pRef.current.toa === toaKeo;
+      const daDo = dich && dung ? cache.get(dich) : undefined;
+      const choDo = dich && dung && dangDo?.d === dich ? dangDo.hua : null;
+      if (!choDo) dieuPhoiDo.huy();
+      const xong = (ok: boolean) => {
+        if (ok || giamDong() || !bong.current) { setKeo(null); return; }
+        // trả về: bóng trượt về chỗ cũ rồi tắt
+        const el2 = bong.current;
+        el2.style.transition = 'transform 180ms cubic-bezier(.2,.8,.2,1)';
+        el2.style.transform = `translate(${k.x0 - k.w / 2}px, ${k.y0 - k.h / 2}px)`;
+        setTimeout(() => setKeo(null), 200);
+      };
+      if (!ph) { datBaoStretch({ loai: 'loi', chu: t('cc.loi.thaNgoai') }); xong(false); return; }
+      // đã dò xong ô đích → ghi ngay; đang dò dở → chờ lượt dò đó (không dò lại); chưa dò → chạy nền như phép tay
+      if (daDo) { void chay(ph.ph, ph.chu, daDo).then(xong); return; }
+      setDoKq({ dich: dich!, tt: 'dang' }); setODich(dich);
+      const ketQua = choDo
+        ? choDo.then((r) => (r && pRef.current.toa === toaKeo ? chay(ph.ph, ph.chu, r) : chay(ph.ph, ph.chu)))
+        : chay(ph.ph, ph.chu);
+      void ketQua.then((ok) => { setODich(null); setDoKq(null); xong(ok); });
     };
     window.addEventListener('pointermove', di);
     window.addEventListener('pointerup', tha);
     window.addEventListener('pointercancel', tha);
     // ngón thứ hai chạm (chụm): bỏ lượt kéo, bóng tắt ngay, không đổi chỗ / không báo
-    phien.current = { id: e.pointerId, huy: () => { go(); dangKeo = false; setKeo(null); } };
+    phien.current = { id: e.pointerId, huy: () => { go(); dieuPhoiDo.huy(); dangKeo = false; setKeo(null); } };
   };
 
   const loiDich = !!doKq && doKq.tt === 'loi' && doKq.dich === oDich;

@@ -1198,6 +1198,7 @@
   "cc.ngan.bd": "units / floor {a} → {b}",
   "cc.dangDo": "checking…",
   "cc.dangTuDong": "re-placing stairs automatically…",
+  "cc.dangChay": "running auto-adjust / egress check in the background…",
   "cc.doCham": "checked on drop",
   "ds.muc": "Population by unit",
   "gt.ds.muc": "Population per unit: the unit's net area → persons from the table / formula in the province's decision (old boundaries before 1 Jul 2025), by housing type (commercial / social / resettlement) and dossier stage; provinces without a decision use P = S / 32 m² per person (Decision 2161/QĐ-TTg). Plots without a province: units × the common persons-per-unit factor. Compared with the plot's planned maximum population.",

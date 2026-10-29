@@ -430,3 +430,39 @@ Kết luận: trên GPU rời không cần hạ chi tiết thêm; `shadow.mapSiz
 
 - Toàn dự án — bấm phần lô trống (ngoài chân tòa) kiểm trên app thật: quét lưới bằng móc `_chamThu(x, y)` (cùng đường dò như bấm chuột) tìm điểm ra lô, bấm thật qua CDP → tòa bỏ chọn ("Chọn tòa"), panel về số liệu lô, lô tô xanh + viền. Raycast không trúng đất / hầm (chỉ dò mesh có `userData.chon`); lỗi thật là tô nhấn lô gần như không thấy khi bật Hầm (lô bán trong suốt 22 %) → thêm lớp phủ xanh mỏng trên mặt lô (`hinhNhan` trong `dungDuAn`).
 - Công trình — dò tia thuần `chon3d.ts · chonTiaToa` trên bản đồ chọn do `dungToa` trả (`chon`: chân tháp, cao độ tầng, căn từng tầng theo mặt bằng / bố cục của tầng đó): tia vào lăng trụ thân tháp, khối đế che thì thôi, phần trên mặt cắt ngang bỏ qua; điểm chạm lùi 0,15 m vào trong → căn chứa điểm (dung sai 350 mm cho tường ngoài) hoặc tầng (trúng lõi / hành lang / mái). Không raycast 1,8 triệu tam giác nên rê chuột không giật.
+
+## 13. Đã làm 2026-10-29 (agent, nhánh `worktree-agent-ab8a24cd55084a81e`): mọi phép tay màn Tầng chạy nền
+
+Trước đây chỉ ⟲ "thang về tự động" chạy trong worker. Xoá / đổi chỗ / lật căn, thêm / xoá / dời thang vẫn gọi tự chỉnh trên luồng chính. Khi PC-11 không giữ được tập thang cũ (thao tác đầu tiên trên PA chưa có mặt bằng lưu, thêm / xoá thang) phép đó chặn 150–420 ms. Kéo thả còn dò hợp lệ ô đích trên luồng chính khi chuột dừng.
+
+Đã làm:
+
+- `useChay` (`man/CongCuTang.tsx`) gửi phép dạng dữ liệu (`PhepTay`: tên + đối số, `tinh/tayNen.ts`) cho `dieuPhoiTay`. Bản vẽ hiện ngay phần hình học nhanh (`hinhNhanh`: đổi ô, chưa tự chỉnh) làm mặt bằng tạm (`datTam` / `useToaTam`, không ghi vào PA). Thanh công cụ có vòng `spin-o`. Có kết quả cuối mới ghi, một bước hoàn tác. Lượt mới huỷ lượt cũ. Tòa đổi trong lúc chờ (hoàn tác…) thì bỏ kết quả.
+- Gợi ý giữ số căn (`goiYGiuCan`, hạn 1,5 s) cũng chạy nền, phép tay mới huỷ nó. Trước đây nó chạy trên luồng chính 60 ms sau câu báo.
+- Kéo thả: dò ô đích chạy trên worker riêng (`dieuPhoiDo`); rê sang ô khác thì huỷ lượt dò cũ. Thả khi đã dò xong thì ghi ngay. Đang dò dở thì chờ đúng lượt đó, không dò lại.
+- `ve/LopPhong.tsx`: tâm vòng nội tiếp phòng (`vongNoiTiep`) nhớ theo hình phòng dời về đỉnh đầu. Trước đây mỗi lần vẽ lại tính lại cả tầng, mất 50–90 ms (xh-z4), cộng hai lần vì có thêm lượt vẽ mặt bằng tạm.
+- Kết quả cuối y hệt bản đồng bộ. Bài phá hoại (`phaHoaiChay.ts`: hạt 0 / 101 / 202 / 303) giờ chạy phép qua cùng bảng phép (`chayPhep`), vẫn 0 vi phạm. `tinh/tayNen.test.ts` so kết quả qua worker giả (structuredClone như worker thật) với chạy đồng bộ: chuỗi phép ngẫu nhiên xh-z4 / tm-t2 / tm-v4, PA mới chưa có mặt bằng lưu, lượt mới huỷ lượt cũ, mặt bằng tạm.
+
+Đo trên app: vite dev 5428, API 8787, Edge headless 1440×900 qua CDP, dự án thử `dfux96ui` (pa-1 xh-z4, pa-2 tm-t2, tòa mới chưa có mặt bằng lưu; trước mỗi ca đặt lại PA qua PUT). Kịch bản `w2/do.mjs` trong scratchpad. Mỗi ca chạy 2 lần, ghi cả hai.
+
+- Long task lấy từ `PerformanceObserver`. "Đứng lớn nhất" lấy từ nhịp `setInterval` 4 ms.
+- "Tới báo" tính từ lúc bấm tới khi câu báo hiện. Với ca kéo: từ lúc thả.
+- Thêm thang trước sửa gồm cả gợi ý giữ số căn. Ca kéo gồm dừng 900 ms trên ô đích.
+
+| Mẫu · phép | Long task trước (ms) | Long task sau (ms) | Đứng lớn nhất trước → sau (ms) | Tới báo trước → sau (ms) |
+|---|---|---|---|---|
+| xh-z4 · xoá căn (PA mới) | 272 · 274 | — · — | 276 / 278 → 33 / 32 | 280 / 280 → 425 / 372 |
+| xh-z4 · thêm thang (PA mới) | 143 + 557 · 131 + 566 | — · — | 563 / 570 → 56 / 47 | 714 / 706 → 237 / 224 |
+| xh-z4 · xoá thang (vừa thêm) | 134 + 185 · 127 + 158 | — · — | 189 / 159 → 47 / 43 | 327 / 138 → 104 / 107 |
+| xh-z4 · kéo đổi chỗ, dò khi rê | 224 + 53 · 253 + 70 | — · — | 231 / 259 → 30 / 57 | 58 / 77 → 28 / 48 |
+| tm-t2 · xoá căn (PA mới) | 392 · 419 | 74 · 68 | 396 / 423 → 79 / 71 | 421 / 450 → 527 / 557 |
+| tm-t2 · xoá thang (PA mới, 3 thang) | 175 · 172 | — · — | 177 / 175 → 51 / 48 | 188 / 178 → 237 / 263 |
+| tm-t2 · kéo đổi chỗ, dò khi rê | 531 · 528 | — · — | 539 / 529 → 20 / 18 | 17 / 28 → 20 / 7 |
+
+Câu báo, số căn / tầng trước và sau trùng nhau ở mọi ca. Ví dụ: xh-z4 xoá căn 23 → 22, thêm thang rồi xoá thang 19 → 15; tm-t2 xoá căn 42 → 41. Kéo trên tm-t2 bị từ chối "căn không vừa ô đích" ở cả trước lẫn sau.
+
+Còn lại:
+
+- tm-t2 xoá căn còn một long task 68–81 ms. Theo profile CDP đây là lượt Preact vẽ lại mặt bằng 42 căn ở chế độ dev (có `preact/debug`; `MatBangTang` + diff vdom ~80 ms). Nó không thuộc tự chỉnh. Bản build chưa đo.
+- `postMessage` của một phép tốn ~10 ms, do chép tòa (và thư viện, ở lượt đầu của mỗi worker).
+- Kết quả tới chậm hơn trước 0–150 ms, vì phải dựng / gửi worker. Riêng thêm thang nhanh hơn, vì gợi ý giữ số căn không còn chặn.
