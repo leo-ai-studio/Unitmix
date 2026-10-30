@@ -45,6 +45,8 @@ type Props = {
   hienHanhLang?: boolean;
   /** Chỗ trống đang trỏ trong danh sách "Thêm căn vào chỗ trống" (mặt, đoạn mm): tô nét đứt. */
   choSang?: { matIdx: number; a0: number; a1: number } | null;
+  /** Đa giác tường lõi (mm, `daGiacCacLoi`) — vật cản khi đặt tem (QT-34); thiếu thì tem chỉ tránh căn / thang / nét bao. */
+  loiDaGiac?: Diem[][];
 };
 
 /** Ô thang bộ (mm thế giới) của phần tử thang trên mặt: [a0, a1] × [0, sâu bay]. */
@@ -70,7 +72,7 @@ export function soLieuTang(mau: ToaVe, toa: BoCuc, tv: ThuVien) {
 
 /** Mặt bằng tầng điển hình vẽ trong BanVe (toạ độ mm, lật trục y bằng phép biến đổi nhóm). */
 export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKhoa, onChonO, dsChon = [], onMenu, loiTT, loiKhoa, nhanCongNang, deBai, nguongDt,
-  thangKhoa, onChonThang, oDich, dichLoi, oKeo, hienHanhLang = true, choSang, canVuot }: Props) {
+  thangKhoa, onChonThang, oDich, dichLoi, oKeo, hienHanhLang = true, choSang, canVuot, loiDaGiac }: Props) {
   const mauDich = dichLoi ? 'var(--warn)' : 'var(--green)';
   const K = KIEU_MB[kieu];
   const { can, loai } = useMemo(() => soLieuTang(mau, toa, tv), [mau, toa.canTheo, toa.canViTri, toa.congNang, toa.latO, tv]);
@@ -87,7 +89,8 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
     onMenu(loaiMenu, khoa, e.clientX, e.clientY);
   };
   const daChon = new Set([...dsChon, ...(canKhoa ? [canKhoa] : [])]);
-  const tem = useMemo(() => datTemCan(can.map((c) => c.vt)), [can]);
+  // tem không đè hình, không chồng tem (app cũ xepTem QT-34): giải một lần theo mặt bằng, nhớ trong temCan
+  const tem = useMemo(() => (hienTem ? new Map(datTemCan(mau, tv, can, loiDaGiac).tem.map((x) => [x.khoa, x])) : null), [hienTem, mau, tv, can, loiDaGiac]);
 
   const lop = useMemo(
     () =>
@@ -241,12 +244,17 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
           transform={`translate(${Math.round(tam[0])} ${Math.round(tam[1])}) scale(1 -1)`}>{nhanCongNang(cn)}</text>
       ))}
       <LopPhong can={can} mau={mau} tv={tv} />
-      {hienTem && can.map(({ vt, canId, no, cn }, i) => {
+      {/* đường dẫn gấp khúc từ chân mặt tiền tới tem bị dời (app cũ: nét mảnh màu đường dẫn, salekit Galia / Rivea nét đứt) */}
+      {tem && [...tem.values()].map((t) => t.dan && (
+        <polyline key={`dd${t.khoa}`} class="tem-dan" points={t.dan.map((q) => `${Math.round(q[0])},${Math.round(q[1])}`).join(' ')} fill="none" stroke={K.duongDan}
+          stroke-width={K.sanTrang ? 0.7 : 1} stroke-dasharray={kieu === 'sk_galia' || kieu === 'sk_rivea' ? '2 2' : undefined} vector-effect="non-scaling-stroke" pointer-events="none" />
+      ))}
+      {tem && can.map(({ vt, canId, no, cn }) => {
         const c = tv.can.get(canId);
-        const t = tem[i];
+        const t = tem.get(vt.khoa);
         if (!c || !t || cn !== 'can') return null;
         return (
-          <g key={`t${vt.khoa}`} data-o={vt.khoa} transform={`translate(${Math.round(t.cx)} ${Math.round(t.cy)}) scale(1 -1)`} onClick={(e) => onChonO(vt.khoa, e)} onContextMenu={menu('o', vt.khoa)} style={{ cursor: 'pointer' }}>
+          <g key={`t${vt.khoa}`} data-o={vt.khoa} data-tem={vt.khoa} transform={`translate(${Math.round(t.cx)} ${Math.round(t.cy)}) scale(1 -1)`} onClick={(e) => onChonO(vt.khoa, e)} onContextMenu={menu('o', vt.khoa)} style={{ cursor: 'pointer' }}>
             <TemCan kieu={kieu} no={`CH-${String(no).padStart(2, '0')}`} loai={NHAN_LOAI[c.loai]} soLoai={`Loại ${loai.get(canId)}`}
               tt={fmt(c.dt_tt_m2)} tim={fmt(c.dt_tim_m2)} mauLoai={K.u[c.loai]}
               chamMau={deBai?.[c.loai] ? Math.abs(c.dt_tt_m2 - deBai[c.loai]!) <= nguongDt ? '#2f7d4f' : c.dt_tt_m2 > deBai[c.loai]! ? '#d98a00' : '#b42318' : undefined} />

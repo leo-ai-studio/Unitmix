@@ -24,7 +24,8 @@ import { MoHinhCan, MoHinhChinh, type Chon3D } from '../ve3d/MoHinh3D';
 import { datCaiTang, useCaiTang } from './caiTang';
 import { datBaoStretch, useBaoStretch } from './baoStretch';
 import { mauCuaToa, suaTuChinh, useDuLieuMB } from './tuChinhTang';
-import { matBangRiengTang, type ChanSua } from '../tinh/loiThang';
+import { daGiacCacLoi, matBangRiengTang, type ChanSua, type ToaMB } from '../tinh/loiThang';
+import { datTemCan, hopCacTem } from '../tinh/temCan';
 import { ST_BUOC, stretchTay, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
 import { ThanhCongCuTang, useKeoHanhLang, useKeoTay, useToaTam, type ChoSang, type PropsCongCu } from './CongCuTang';
@@ -245,10 +246,18 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   const bcVe = useMemo(() => (tam ? boCucTang(tam, k0) : bc), [tam, bc, k0]);
   const loiIds = useMemo(() => mau.mat.flatMap((m) => m.phan_tu.filter((q) => q.loai !== 'can').map((q) => idLoi(q.block))), [mau]);
   const hinh = useHinhHoc(sl.can.map((c) => c.canId), loiIds, tv);
+  // lõi là vật cản khi đặt tem (QT-34): hình lõi có khi đã nạp DuLieuMB (cùng lúc mặt bằng tự chỉnh)
+  const dlMB = useDuLieuMB(tv);
+  const loiDG = useMemo(() => daGiacCacLoi(mau as unknown as ToaMB, dlMB), [mau, dlMB]);
+  const loiDGVe = useMemo(() => (mauVe === mau ? loiDG : daGiacCacLoi(mauVe as unknown as ToaMB, dlMB)), [mauVe, mau, loiDG, dlMB]);
+  // vừa khung = nét bao + 6 m, nới thêm cho tem bị dời ra hàng ngoài (QT-34) để tem không nằm dưới la bàn / thanh công cụ
+  const hopTem = useMemo(() => (cai.hienTem ? hopCacTem(datTemCan(mau, tv, sl.can, loiDG)) : null), [cai.hienTem, mau, tv, sl.can, loiDG]);
   const khung = useMemo(() => {
     const k = khungBao([mau.duong_bao.map(([x, y]): [number, number] => [x / 1000, y / 1000])]);
-    return k ? ([k[0] - 6, k[1] - 6, k[2] + 6, k[3] + 6] as [number, number, number, number]) : null;
-  }, [mau]);
+    if (!k) return null;
+    const h = hopTem ? [hopTem[0] / 1000 - 1.5, hopTem[1] / 1000 - 1.5, hopTem[2] / 1000 + 1.5, hopTem[3] / 1000 + 1.5] : null;
+    return [Math.min(k[0] - 6, h?.[0] ?? Infinity), Math.min(k[1] - 6, h?.[1] ?? Infinity), Math.max(k[2] + 6, h?.[2] ?? -Infinity), Math.max(k[3] + 6, h?.[3] ?? -Infinity)] as [number, number, number, number];
+  }, [mau, hopTem]);
   const dsO = oDangChon(canKhoa, co.ds);
   const soCanTang = sl.can.filter((c) => c.cn === 'can').length;
   const phamVi = nhanPhamVi(co.tangs, toa.soTangDe);
@@ -336,7 +345,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
             deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2}
-            thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} dichLoi={keoTay.dichLoi} oKeo={keoTay.oKeo} hienHanhLang={hienHL} choSang={choSang} canVuot={canVuot} />
+            thangKhoa={co.thang ?? null} onChonThang={onChonThang} oDich={keoTay.oDich} dichLoi={keoTay.dichLoi} oKeo={keoTay.oKeo} hienHanhLang={hienHL} choSang={choSang} canVuot={canVuot} loiDaGiac={loiDGVe} />
           <g transform="scale(0.001 -0.001)"><LopPCCC kq={pccc} chiXem={chiXem} toa={toa}
             datTuTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, tuPCCCTay: ds ?? undefined })))}
             datCncTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, cncTay: ds ?? undefined })))} /></g>
