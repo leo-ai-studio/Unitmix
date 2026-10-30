@@ -17,7 +17,7 @@ import { duongDi, matTroi, NGAY_DONG_CHI, NGAY_HA_CHI } from '../tinh/matTroi';
 import { chonMuc, datSangBanVe, khungLl, khungODat, llSangO, viTriPA, type ODb, type ViTri } from '../tinh/viTri';
 import { fmtSo } from '../ui/so';
 import { anhPhanTich, docTai } from './hienThi';
-import { datNG, layNG, mayYeu, ngheNG } from './kho';
+import { layNG, mayYeu, ngheNG } from './kho';
 import { mauNang } from './mau';
 import { mauO } from './nguonBanDo';
 
@@ -42,12 +42,10 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
   vung?.append(ghi, doc);
 
   // ---- mặt trời ----
-  let gioKhung: number | null = null, gioDay: number | null = null;
+  // giờ = tham số Khung3D đưa vào (đọc từ `moRong.gio()` = kho `luc`, một nguồn); KHÔNG ghi ngược vào kho ở đây (lỗi cũ: thanh giờ giật lùi)
   const nang = (gio: number) => {
     const s = layNG(), vt = viTriPA(layPA());
-    if (gioKhung === null) gioKhung = gio;
-    else if (gio !== gioKhung && gio !== gioDay) { gioKhung = gio; if (Math.abs(gio - s.luc) > 1e-6) datNG({ luc: gio }); }
-    const m = matTroi(vt.lat, vt.lng, s.ngay, layNG().luc);
+    const m = matTroi(vt.lat, vt.lng, s.ngay, gio);
     datMatTroiNho(m.cao, m.phuongVi, vt);
     return { gocCao: m.cao, phuongVi: m.phuongVi };
   };
@@ -285,18 +283,18 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
   c.dom.addEventListener('pointerleave', onLeave);
 
   // ---- nghe kho ----
+  // đổi giờ / ngày: đặt mặt trời ngay (vài µs: vị trí NOAA + hướng đèn) với giờ kho mới nhất; vẽ lại + bản đồ bóng gộp theo rAF trong
+  // Khung3D (`ve`) — kéo / ▶ nhanh hơn khung hình chỉ vẽ một lần / khung, không trễ thêm khung khi ▶ chạy trong rAF
   let cu = layNG(), viTriCu = JSON.stringify(layPA().viTri ?? null) + (layPA().huongView?.gocBac ?? 0);
   const boNghe = ngheNG(() => {
     const s = layNG(), p = cu; cu = s;
     const vtMoi = JSON.stringify(layPA().viTri ?? null) + (layPA().huongView?.gocBac ?? 0), doiVT = vtMoi !== viTriCu; viTriCu = vtMoi;
-    if (s.luc !== p.luc) { gioDay = Math.round(s.luc * 10) / 10; c.datGio(gioDay); } // thanh giờ của khung: 1 số lẻ
     if (s.luc !== p.luc || s.ngay !== p.ngay || doiVT) c.capNang();
     if (s.ngay !== p.ngay || s.duongMT !== p.duongMT || doiVT) dungDuongMT();
     if (s.banDo3D !== p.banDo3D || s.nguon !== p.nguon || doiVT) void dungNen();
     else if (s.doMo !== p.doMo) datDoMo();
     if (s.lop !== p.lop || s.hien3D !== p.hien3D || s.nang.kq !== p.nang.kq || s.gio.kq !== p.gio.kq || s.gioXem !== p.gioXem || s.matDung !== p.matDung || s.dongGio !== p.dongGio) dungPT();
   });
-  gioDay = Math.round(layNG().luc * 10) / 10; c.datGio(gioDay);
 
   return {
     canhMoi(cn) {

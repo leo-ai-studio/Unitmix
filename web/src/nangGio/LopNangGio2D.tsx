@@ -192,7 +192,7 @@ function GhiVaDoc({ coBanDo }: { coBanDo: boolean }) {
 
 /** Bóng đổ của các khối lúc giờ / ngày đang chọn (hoạt ảnh giờ chạy thì vẽ lại theo — vài chục đa giác, rẻ). */
 function Bong2D({ pa, tv }: { pa: TrangThaiPA; tv: ThuVien }) {
-  const s = useNG((t) => ({ ngay: t.ngay, luc: t.luc }));
+  const s = useNG((t) => ({ ngay: t.ngay, luc: t.luc }), true); // gộp theo khung: kéo / ▶ giờ vẽ bóng tối đa một lần / khung
   const khoi = useMemo(() => khoiPA(pa, tv), [pa.lo, pa.toa, tv]);
   const vt = viTriPA(pa);
   const m = matTroi(vt.lat, vt.lng, s.ngay, s.luc);

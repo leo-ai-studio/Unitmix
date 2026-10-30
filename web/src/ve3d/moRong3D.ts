@@ -19,14 +19,19 @@ export type NguCanhMoRong = {
   ve: () => void;
   /** Đặt lại mặt trời (gọi `nang`) rồi vẽ. */
   capNang: () => void;
-  /** Đặt giờ trên thanh trượt giờ của khung. */
-  datGio: (gio: number) => void;
   dom: HTMLCanvasElement;
 };
 export type GanMoRong = {
   canhMoi?: (c: CanhDung) => void;
-  /** Vị trí mặt trời (độ cao, phương vị từ Bắc thật) theo giờ của thanh trượt; null = để khung tự tính. */
+  /** Vị trí mặt trời (độ cao, phương vị từ Bắc thật) theo giờ (`gio()` khi có); null = để khung tự tính. */
   nang?: (gio: number) => { gocCao: number; phuongVi: number } | null;
+  /**
+   * Nguồn giờ DUY NHẤT khi gói ngoài giữ giờ (kho `nangGio/kho` `luc`, liên tục, không làm tròn): Khung3D đọc giờ ở đây mỗi lần đặt mặt
+   * trời, không chép vào state riêng (chép + làm tròn rồi đọc lại giờ cũ từng đẩy ngược giờ vào kho — thanh giờ giật lùi).
+   */
+  gio?: () => number;
+  /** Người dùng đổi giờ từ khung (góc nhìn có giờ, góc đã lưu): ghi vào nguồn giờ — không phải lượt đồng bộ. */
+  datGio?: (gio: number) => void;
   huy: () => void;
 };
 export type MoRong3D = { gan: (c: NguCanhMoRong) => GanMoRong };

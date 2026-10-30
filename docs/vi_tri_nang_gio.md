@@ -25,6 +25,7 @@ hiển thị trên 3D luôn, và 2D có thể bật tắt. Lưu ý cần tối �
 - **Sau gộp `nang-cap/architechtures` (6221899)**: 3D đọc vĩ độ / góc Bắc qua `viTriPA(pa)` (`MoHinh3D`: `viDo={vt.lat}`, `gocBac={vt.gocBac}` cả Toàn dự án lẫn Công trình) — PA cũ vẫn ra `huongView.viDo` / `gocBac`. Mặt trời hoạt ảnh của hộp Nắng đi vào ĐÚNG đèn mặt trời của Khung3D (`datNang` → `moRong.nang`), nên bóng / màu nắng theo bộ vật liệu mới.
 - **3D sau gộp**: ảnh vệ tinh nằm trong nhóm `phu` của Khung3D (cùng `goc` khi áp Lớp / làm nhạt): mục **Lớp › Ảnh vệ tinh nền** trong menu Lớp 3D, bật / tắt tức thì (đổi `visible`, không tải lại); vật liệu `toneMapped: false` + sRGB (không bị NeutralToneMapping làm bạc), vẫn nhận bóng đổ; bật Phân tích view thì ảnh nền mờ về nền đất (`userData.lamNhat`). Lớp nắng / gió (MeshBasic) `toneMapped: false` để màu thang đúng.
 - Không có dữ liệu cá nhân trong URL: chỉ toạ độ; link Google dán vào không lưu.
+- **Giờ nắng — một nguồn** (sửa 2026-10-30, thanh giờ 3D giật lùi): kho `nangGio/kho` `luc` (liên tục, chỉ làm tròn khi hiện — `gioPhut` ở `tinh/nangGio/dongHo.ts`). Khung3D đọc qua `moRong.gio()` mỗi lần đặt mặt trời, không chép vào state; chỉ thao tác người dùng ở khung (góc có giờ) ghi qua `moRong.datGio`. ▶ = `buocChay` (1 h/s đều). Thanh giờ: `onInput` + `useNgheChange` (preact/compat nuốt `onChange`). Kiểm: `dongHo.test.ts`, `nangGio/dongBoGio.test.ts`, CDP `node scripts/kiem_gio_nang.mjs`.
 
 ## 3. Nguồn ảnh và điều khoản
 
