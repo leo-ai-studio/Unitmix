@@ -243,6 +243,15 @@ const LOAI_THEO_LOP: [RegExp, string, ChucNang][] = [
 /** Lớp đường giao thông: lòng đường, hè đường, tim đường. */
 export const laLopDuongGT = (lop: string): boolean => /longduong|heduong|timduong/.test(boDau(lop)) || /(^|[^a-z])tim([^a-z]|$)/i.test(lop);
 
+/** Đoán lớp công trình xung quanh (hiện trạng): bỏ lớp đường GT và lớp đất quy hoạch (HTKT_GT_…, QHDH_DAT_…) — "HT" phải đứng riêng. */
+export function doanLopXungQuanh(lop: string[]): string {
+  const tu = (l: string) => ` ${l.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, ' ')} `;
+  return lop.find((l) => {
+    const s = tu(l);
+    return !laLopDuongGT(l) && !/ (qh\w*|dat|htkt|cg) /.test(s) && / (ht|hien ?trang|xq|xung ?quanh|nha|context|env) /.test(s);
+  }) ?? '';
+}
+
 function ranhVaTen(ban: BanDxf, chon: ChonLop): { ranh: Diem[]; kyHieu?: string; chucNang?: ChucNang }[] {
   if (chon.ranh !== RANH_HATCH) return ban.polyKin(chon.ranh).map((ranh) => ({ ranh }));
   const ds = ban.lopHatch.flatMap((lop) => {

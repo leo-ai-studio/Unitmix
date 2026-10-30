@@ -15,7 +15,8 @@ const K = 0.001;
 export const CAO_TANG_DE_MM = 4000;
 export const CAO_TUM_MM = 3000;
 
-export type LoiHinh = { bao_tuong_mm?: [number, number, number, number] };
+/** `bao_tm` = đa giác khung tường thật của lõi (chữ V / T / Y không phải hình chữ nhật); `bao_tuong_mm` = hộp bao chữ nhật (dự phòng). */
+export type LoiHinh = { bao_tuong_mm?: [number, number, number, number]; bao_tm?: Diem[] };
 export type DuLieuToa = {
   mau: ToaCoMat & { duong_bao: Diem[] };
   toa: Pick<ToaDat, 'canTheo' | 'canViTri' | 'congNang' | 'tangRieng' | 'soTangDe' | 'soTangDH'>;
@@ -63,7 +64,8 @@ export function ranhTumCo(mau: DuLieuToa['mau'], loi: Map<string, LoiHinh>, idLo
   for (const m of mau.mat) for (const q of m.phan_tu) {
     if (q.loai === 'can' || q.bang) continue;
     const id = idLoi(q.block), l = loi.get(id);
-    if (l?.bao_tuong_mm) kq.push({ pts: ranhLoi(l.bao_tuong_mm, q), thang: id.startsWith('loi-tb-') });
+    const rl = l && (l.bao_tm?.length ? ranhLoiDG(l.bao_tm, q) : l.bao_tuong_mm ? ranhLoi(l.bao_tuong_mm, q) : null);
+    if (rl) kq.push({ pts: rl, thang: id.startsWith('loi-tb-') });
   }
   return kq;
 }
@@ -264,6 +266,50 @@ const trongTam = (P: Diem[]): Diem => {
   return [cx / (3 * A), cy / (3 * A)];
 };
 
+/** Khoảng cách từ điểm tới đoạn pq (mm). */
+const kcDoan = (x: number, y: number, p: Diem, q: Diem): number => {
+  const dx = q[0] - p[0], dy = q[1] - p[1], l2 = dx * dx + dy * dy;
+  const t = l2 < 1e-9 ? 0 : Math.max(0, Math.min(1, ((x - p[0]) * dx + (y - p[1]) * dy) / l2));
+  return Math.hypot(x - (p[0] + t * dx), y - (p[1] + t * dy));
+};
+/** Cửa sổ lõi (sảnh thang máy / hành lang): rộng, chân bệ, cao, dày khung (mm); cách tối thiểu giữa hai cửa, mép chừa hai đầu cạnh. */
+export const CUA_SO_LOI = { rong: 1500, be: 900, cao: 1500, khung: 60, cachMin: 900, chua: 700, nhoCanh: 1800, saiLech: 450 } as const;
+export type CuaSoLoi = { a: Diem; t: Diem; n: Diem; tam: number };
+/**
+ * Cửa sổ trên các cạnh lõi lộ ra mặt ngoài tòa: cạnh đủ dài nằm sát nét bao (≤ 450 mm) và song song nét bao thì đặt các cửa sổ cách đều
+ * (sảnh thang máy / hành lang đầu lõi có ánh sáng tự nhiên — trước đây lõi chỉ là khối đặc không cửa). `a` = điểm đầu cạnh, `t` = hướng
+ * dọc cạnh, `n` = hướng ra ngoài (đơn vị), `tam` = vị trí tâm cửa dọc cạnh (mm từ `a`). Toạ độ mm của mặt tòa.
+ */
+export function cuaSoLoi(r: Diem[], foot: Diem[]): CuaSoLoi[] {
+  const kq: CuaSoLoi[] = [], c = trongTam(r), C = CUA_SO_LOI;
+  for (let i = 0; i < r.length; i++) {
+    const a = r[i], b = r[(i + 1) % r.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (L < C.nhoCanh) continue;
+    const t: Diem = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+    let n: Diem = [t[1], -t[0]];
+    if ((c[0] - a[0]) * n[0] + (c[1] - a[1]) * n[1] > 0) n = [-n[0], -n[1]]; // hướng ra khỏi tâm lõi
+    // cạnh phải nằm sát và song song một cạnh nét bao (đầu mút và giữa cạnh đều sát) mới là mặt ngoài
+    let sat = false;
+    for (let j = 0; j < foot.length && !sat; j++) {
+      const p = foot[j], q = foot[(j + 1) % foot.length], lq = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (lq < 1) continue;
+      const song = Math.abs(((q[0] - p[0]) * t[1] - (q[1] - p[1]) * t[0]) / lq) < 0.06;
+      if (song && [0.1, 0.5, 0.9].every((u) => kcDoan(a[0] + t[0] * L * u, a[1] + t[1] * L * u, p, q) <= C.saiLech)) sat = true;
+    }
+    if (!sat) continue;
+    const dai = L - 2 * C.chua, nCua = Math.max(1, Math.min(3, Math.floor((dai + C.cachMin) / (C.rong + C.cachMin))));
+    if (dai < C.rong) continue;
+    for (let k = 0; k < nCua; k++) kq.push({ a, t, n, tam: C.chua + (dai * (k + 0.5)) / nCua });
+  }
+  return kq;
+}
+
+/** Đa giác khung tường cục bộ của lõi, đưa lên thế giới theo điểm chèn (chữ V: hộp chữ nhật sẽ lòi ra ngoài nét bao DTXD). */
+function ranhLoiDG(dg: Diem[], q: { x: number; y: number; rot: number; sx: number; sy: number }): Diem[] {
+  const p = veLoiTaiViTri([{ cat: 'bao', pts: dg }], q)[0].pts;
+  return p.length > 1 && p[0][0] === p[p.length - 1][0] && p[0][1] === p[p.length - 1][1] ? p.slice(0, -1) : p;
+}
+
 /** Danh sách đỉnh ngoài của hình chữ nhật cục bộ lõi, đưa lên thế giới theo điểm chèn. */
 function ranhLoi(bt: [number, number, number, number], q: { x: number; y: number; rot: number; sx: number; sy: number }): Diem[] {
   const [x0, y0, x1, y1] = bt;
@@ -325,6 +371,17 @@ export function* dungToaTung(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien,
     khoi(footT, P.san, M.san, -P.san, false, tmp); // sàn dưới; tấm "sàn trên" mờ của tầng cũ luôn ẩn khi gộp nên bỏ
     for (const d of sanHanhLangNgoai(mauT)) khoi(d, P.san, M.san, -P.san, false, tmp);
     ranhTum(mauT, du.loi, du.idLoi).forEach((r) => khoi(r, Hc, M.khung2, 0, true, tmp));
+    // cửa sổ sảnh thang máy / hành lang trên mặt ngoài của lõi: khung (nhô 40 mm) + kính (nhô 60 mm) + nẹp giữa
+    const CS = CUA_SO_LOI, hCua = Math.min(CS.cao, Hc - CS.be - 300);
+    const hop = (c: CuaSoLoi, u0: number, u1: number, d: number, h: number, z0: number, m: THREE.Material) =>
+      khoi([[c.a[0] + c.t[0] * u0, c.a[1] + c.t[1] * u0], [c.a[0] + c.t[0] * u1, c.a[1] + c.t[1] * u1],
+        [c.a[0] + c.t[0] * u1 + c.n[0] * d, c.a[1] + c.t[1] * u1 + c.n[1] * d], [c.a[0] + c.t[0] * u0 + c.n[0] * d, c.a[1] + c.t[1] * u0 + c.n[1] * d]], h, m, z0, false, tmp);
+    if (hCua > 600) for (const r of ranhTum(mauT, du.loi, du.idLoi)) for (const c of cuaSoLoi(r, footT)) {
+      const u0 = c.tam - CS.rong / 2, u1 = c.tam + CS.rong / 2, f = CS.khung;
+      hop(c, u0, u1, 40, hCua, CS.be, M.khung);
+      hop(c, u0 + f, u1 - f, 60, hCua - 2 * f, CS.be + f, M.kinh);
+      hop(c, c.tam - 20, c.tam + 20, 70, hCua - 2 * f, CS.be + f, M.khung);
+    }
     const gom = gomMoi<KhoaVL>();
     gomHinh(T, tmp, gom, (m) => khoaVL.get(m) ?? 'tuong');
     tmp.traverse((o) => { (o as THREE.Mesh).geometry?.dispose?.(); });

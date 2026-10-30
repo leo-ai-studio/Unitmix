@@ -132,6 +132,8 @@ button:disabled { cursor: not-allowed; }
 
 /* Hộp thoại nhập bảng (chỉ tiêu QH, đề bài KD) */
 .hop-thoai > div.hop-rong { width: min(1180px, 100%); max-height: calc(100vh - 32px); overflow: auto; }
+/* hộp rộng (bảng QH): bảng xem trước dài thì Huỷ / Áp vẫn thấy ngay — chân dính đáy như màn hẹp (dien-thoai.css) */
+@media (min-width: 1025px) { .hop-thoai > div.hop-rong > .chan-hop { position: sticky; bottom: -22px; z-index: 4; margin: 0 -22px -22px; padding: 10px 22px; background: var(--panel); border-top: 1px solid var(--line); border-radius: 0 0 10px 10px; } }
 .hop-thoai textarea { width: 100%; box-sizing: border-box; resize: vertical; }
 .bang-nhap { border: 1px solid var(--line); border-radius: 4px; overflow-x: auto; font-size: 12px; }
 .hang-nhap { display: grid; grid-template-columns: 70px 92px minmax(220px, 2fr) 92px 70px repeat(9, minmax(52px, 1fr)); gap: 6px; align-items: center; padding: 5px 8px; border-bottom: 1px solid var(--line); min-width: 1120px; } /* ≥ tổng cột + khe: nền dòng tiêu đề phủ hết cột cuối */

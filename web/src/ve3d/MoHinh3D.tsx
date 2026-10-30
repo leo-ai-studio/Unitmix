@@ -44,7 +44,7 @@ export function useNap3d(canIds: string[], loiIds: string[], tv?: ThuVien | null
     setKq((o) => ({ ...o, xong: false }));
     Promise.all([
       Promise.all(c.map((id) => tai<{ khoi3d: Khoi3d | null }>(`/lib/can/${idTepCan(id)}.json`).then((j) => [id, khoi3dTheoId(id, j?.khoi3d ?? null, tv)] as const))),
-      Promise.all(l.map((id) => tai<HinhLoi>(`/lib/loi/${id}.json`).then((j) => [id, { bao_tuong_mm: j?.bao_tuong_mm }] as const))),
+      Promise.all(l.map((id) => tai<HinhLoi>(`/lib/loi/${id}.json`).then((j) => [id, { bao_tuong_mm: j?.bao_tuong_mm, bao_tm: j?.bao_tm }] as const))),
     ]).then(([a, b]) => { if (!huy) setKq({ khoi3d: new Map(a), loi: new Map(b), xong: true }); });
     return () => { huy = true; };
   }, [khoa, tv]);

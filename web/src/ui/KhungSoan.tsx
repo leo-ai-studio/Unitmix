@@ -24,6 +24,8 @@ type Props = {
   onHoanTac?: () => void;
   onLamLai?: () => void;
   onXuatCad?: () => void;
+  onXuatPdf?: () => void;
+  onXuat3d?: () => void;
   onXuatXls?: () => void | Promise<void>;
   buoc?: { ds: [string, string][]; chon: string; onChon: (k: string) => void };
   thongBao?: ComponentChildren;
@@ -74,7 +76,7 @@ export function KhungSoan(p: Props) {
     <div class={`khung khung-soan${hep ? ' hep' : ''}${mo ? ' co-ngan' : ''}`}>
       <ThanhTren capDo={p.capDo} cheDoXem={xem} onCheDoXem={setXem} cheDo={p.cheDo} onCheDo={p.onCheDo}
         trangThaiLuu={p.trangThaiLuu} dangXuLy={p.dangXuLy} duocSua={p.duocSua}
-        onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} onXuatCad={p.onXuatCad} onXuatXls={p.onXuatXls} buoc={p.buoc} leoAi={p.leoAi} />
+        onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} onXuatCad={p.onXuatCad} onXuatPdf={p.onXuatPdf} onXuat3d={p.onXuat3d} onXuatXls={p.onXuatXls} buoc={p.buoc} leoAi={p.leoAi} />
       <div class="khung-than">
         {panel('trai', t('panel.nhap'), p.trai)}
         <main class="panel-giua" aria-label={t('panel.banVe')}>

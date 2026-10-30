@@ -78,7 +78,7 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
   async function docTep(f: File) {
     setLoiDoc('');
     try {
-      const [{ napDxf, RANH_HATCH }, text] = await Promise.all([napModDxf(), f.text()]);
+      const [{ napDxf, RANH_HATCH, doanLopXungQuanh }, text] = await Promise.all([napModDxf(), f.text()]);
       const b = napDxf(text);
       setBan(b);
       // Ranh lập quy hoạch là ranh cả khu, không phải ranh lô.
@@ -89,7 +89,7 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
         ranh: soHatch > (ranh ? b.polyKin(ranh).length : 0) ? RANH_HATCH : ranh,
         chiGioi: doanLop(b.lop, /CGXD|CHI.?GIOI|SETBACK|BUILD.?LINE/i),
         tem: doanLop(b.lop, /TEM|KY.?HIEU|TAG|TEXT/i),
-        xungQuanh: doanLop(b.lop, /HT|XQ|NHA|CONTEXT|ENV/i),
+        xungQuanh: doanLopXungQuanh(b.lop),
       });
     } catch {
       setBan(null);
