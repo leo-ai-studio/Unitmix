@@ -187,6 +187,17 @@ LUAT = [
          ten_vi="Mọi lượt chèn căn / lõi / thang phải có trong thư viện", ten_en="Every insert exists in library",
          nguon="MDI · QT-61", nguong=[], ma_kiem="xref_du", cach_tinh="thiếu tệp thư viện thì dừng và báo tên, không bỏ qua im lặng",
          ma_cu=["QT-61"], ham="scripts/chep_thu_vien.py (_loi khi thiếu căn / lõi)"),
+    dict(id="mdi_tem_can", buoc="xep_day_can", nhom="qt", bat_buoc=False, ap_dung="ca_hai",
+         ten_vi="Tem căn ngoài mặt tiền: không đè hình, không chồng tem", ten_en="Unit tags outside the facade, no overlap",
+         nguon="MDI · QT-11 · QT-34 (xepTem / temGoc / neoTemKhung app cũ, chủ nhiệm 3/10/2026) · QT-34b bổ sung web",
+         nguong=[N(3760, "mm (rộng tem)"), N(2600, "mm (cao tem)"), N(900, "mm (cách mặt đứng)"), N(250, "mm (bước dịch dọc hàng)"),
+                 N(400, "mm (khe hàng ngoài)"), N(150, "mm (lề tem với vật / tem)")],
+         ma_kiem="tem_khong_de",
+         cach_tinh="tem một cỡ đặt giữa mặt tiền, ra ngoài 900 mm + nửa bề dày hộp theo pháp tuyến (W/2·|nx| + H/2·|ny|); căn góc V đặt "
+                   "trên hàng tem của dãy kề có cạnh ngoài trùng khung dài nhất; tem không vướng giữ gốc, tem vướng: dịch dọc hàng ≤ 0,6 W → "
+                   "dời ra hàng ngoài (bước bề dày + 400, ≤ 3 hàng, dịch ≤ 2,2 W) + đường dẫn gấp khúc vuông góc; QT-34b: vật cản thêm nét bao "
+                   "DTXD, hết chỗ thì tới 8 hàng / dịch 4 W / vòng quanh khối",
+         ma_cu=["QT-11"], ham="temCan.ts · datTemCan (xepTem) · temGoc · neoTemKhung"),
 
     # ---------------- Đổi mẫu căn ----------------
     dict(id="qcvn04_min_area", buoc="doi_mau_can", nhom="qcvn04", bat_buoc=True, ap_dung="ca_hai",
@@ -343,7 +354,6 @@ BO = {
     "QT-3": ("giao_dien", None, "cắt nét vẽ căn về mô-đun ±125 mm (clipPath) — cách vẽ SVG"),
     "QT-4": ("giao_dien", None, "vành tường 125 mm do app vẽ — cách vẽ"),
     "QT-8": ("thay_the", "QT-30", "đoạn xoá căn để lại khe bỏ từ 04/9/2026; phần dồn khít gộp vào mdi_don_khit"),
-    "QT-11": ("giao_dien", None, "bảng thông tin căn đặt ngoài căn"),
     "QT-12": ("giao_dien", None, "nét theo layer"),
     "QT-13": ("giao_dien", None, "nhãn dẹt trong bảng"),
     "QT-14": ("giao_dien", None, "khe ≤ 400 mm không tô màu"),
