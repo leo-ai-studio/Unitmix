@@ -836,6 +836,57 @@
    "thay_cho": []
   },
   {
+   "ma": "XC-14",
+   "id": "mdi_tem_can",
+   "buoc": "xep_day_can",
+   "nhom": "qt",
+   "bat_buoc": false,
+   "ten_vi": "Tem căn ngoài mặt tiền: không đè hình, không chồng tem",
+   "ten_en": "Unit tags outside the facade, no overlap",
+   "nguon": "MDI · QT-11 · QT-34 (xepTem / temGoc / neoTemKhung app cũ, chủ nhiệm 3/10/2026) · QT-34b bổ sung web",
+   "nguong": [
+    {
+     "gia_tri": 3760,
+     "don_vi": "mm (rộng tem)",
+     "chieu": "<="
+    },
+    {
+     "gia_tri": 2600,
+     "don_vi": "mm (cao tem)",
+     "chieu": "<="
+    },
+    {
+     "gia_tri": 900,
+     "don_vi": "mm (cách mặt đứng)",
+     "chieu": "<="
+    },
+    {
+     "gia_tri": 250,
+     "don_vi": "mm (bước dịch dọc hàng)",
+     "chieu": "<="
+    },
+    {
+     "gia_tri": 400,
+     "don_vi": "mm (khe hàng ngoài)",
+     "chieu": "<="
+    },
+    {
+     "gia_tri": 150,
+     "don_vi": "mm (lề tem với vật / tem)",
+     "chieu": "<="
+    }
+   ],
+   "ap_dung": "ca_hai",
+   "ma_kiem": "tem_khong_de",
+   "cach_tinh": "tem một cỡ đặt giữa mặt tiền, ra ngoài 900 mm + nửa bề dày hộp theo pháp tuyến (W/2·|nx| + H/2·|ny|); căn góc V đặt trên hàng tem của dãy kề có cạnh ngoài trùng khung dài nhất; tem không vướng giữ gốc, tem vướng: dịch dọc hàng ≤ 0,6 W → dời ra hàng ngoài (bước bề dày + 400, ≤ 3 hàng, dịch ≤ 2,2 W) + đường dẫn gấp khúc vuông góc; QT-34b: vật cản thêm nét bao DTXD, hết chỗ thì tới 8 hàng / dịch 4 W / vòng quanh khối",
+   "ma_cu": [
+    "QT-11"
+   ],
+   "thay_the_boi": null,
+   "ham": "temCan.ts · datTemCan (xepTem) · temGoc · neoTemKhung",
+   "thay_cho": []
+  },
+  {
    "ma": "DC-01",
    "id": "qcvn04_min_area",
    "buoc": "doi_mau_can",
@@ -2400,11 +2451,10 @@
   },
   {
    "ma_cu": "QT-11",
-   "giu": false,
-   "loai_bo": "giao_dien",
-   "thay_the_boi": null,
-   "luat_moi": null,
-   "ly_do": "bảng thông tin căn đặt ngoài căn"
+   "giu": true,
+   "luat_moi": [
+    "XC-14"
+   ]
   },
   {
    "ma_cu": "QT-12",
@@ -3315,13 +3365,13 @@
  "thong_ke": {
   "luat_yaml": 21,
   "qt_goc": 132,
-  "qt_giu": 90,
-  "qt_bo": 42,
-  "luat_moi": 62,
+  "qt_giu": 91,
+  "qt_bo": 41,
+  "luat_moi": 63,
   "bo_theo_loai": {
    "thay_the": 8,
    "trung": 0,
-   "giao_dien": 19,
+   "giao_dien": 18,
    "xuat": 6,
    "ai": 3,
    "tinh_nang": 5,

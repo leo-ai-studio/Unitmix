@@ -895,3 +895,43 @@ Script trong trang (bắt blob `URL.createObjectURL`, bắt lỗi `error` / `unh
 3. Đưa cửa ngăn cháy lý tưởng V về khớp app cũ (nét bao căn V theo khung) để tm-v3 khớp 139 / 139.
 4. Lớp "Vòi CC" theo đường đi (QT-77 cũ, PC07) để so với R 18 m đo thẳng.
 5. Xuất `.scr` / đồng bộ AutoCAD lớp MDI-PCCC-* như app cũ.
+
+## 2026-10-30 · Tem căn không đè hình, không chồng tem — chép luật app cũ (QT-11 · QT-34 → XC-14) · Claude Code (Opus 5.5, agent)
+
+Người dùng (ảnh tòa V, tầng điển hình): ở góc trong chữ V hai tem căn nằm lên bản vẽ / nét bao và đè nhau — "xem lại quy tắc tem căn
+không đè hình, không chồng lên nhau của app cũ và áp dụng".
+
+**Luật app cũ** (`MDI_Unitmix_v4/prototype/shell.src.html`): `TAG_OFF / TAG_H / TAG_W / tagSpan` (dòng ~6337–6354, QT-11 + QT-34 hàm tựa
+W/2·|nx| + H/2·|ny|), `neoTemKhung` (~6370, căn góc V: tem lên hàng tem của dãy kề có cạnh ngoài trùng khung dài nhất), `temGoc` (~6404),
+`rectChamDa` (~6416), `xepTem` (~6429: tem không vướng giữ gốc; tem vướng dịch dọc hàng bước 250 ≤ 0,6 W → hàng ngoài bước bề dày + 400,
+≤ 3 hàng, dịch ≤ 2,2 W, lề 150; đường dẫn gấp khúc khi k > 0 hoặc trượt quá nửa căn; hết chỗ giữ gốc), gọi ở `draw()` (~6909), hàng dim lùi
+theo `TEM_DAT.ngoai` (~7304). App cũ KHÔNG có luật nhãn tòa ở TMB (③ chỉ vẽ đa giác tòa + tên lô).
+
+**Đã làm:**
+- `tinh/temCan.ts` viết lại: `datTemCan(mau, tv, can, loi?, them?)` chép đúng thứ tự / ưu tiên / bước của `xepTem` + `temGoc` + `neoTemKhung`,
+  vật cản = căn (hốc logia → khung V → ô), thang, lõi (`daGiacCacLoi`), **bổ sung QT-34b**: nét bao DTXD + vật ngoài; hết chỗ ở 3 hàng thì tới
+  8 hàng / dịch 4 W / vòng quanh khối (không còn "giữ gốc mà đè"). Nhớ theo mặt bằng (WeakMap + khoá bố cục). Giải một tầng ≤ 1,1 ms → chạy
+  luồng chính, không cần worker.
+- `ve/MatBangTang.tsx`: vẽ tem theo kết quả, đường dẫn `.tem-dan` (màu `duongDan` của kiểu, salekit Galia / Rivea nét đứt như app cũ),
+  `data-tem` trên tem. `man/ManTang.tsx`: truyền đa giác lõi; vừa khung chứa cả tem bị dời (+1,5 m) nên tem không nằm dưới la bàn / thanh.
+- Luật: `XC-14` "Tem căn ngoài mặt tiền: không đè hình, không chồng tem" (`ma_cu` QT-11, bỏ QT-11 khỏi danh sách giao diện).
+
+**Đo:**
+- Trước (bản cũ `temCan.ts`, đếm theo vật cản đầy đủ): **20 tem đè hình ở 10 ca** (2 tem góc V × tm-v1/v2/v3/v4/xh-v1, bản vẽ + tự chỉnh), 0 cặp
+  hộp chồng; sau: **0 / 0** mọi mẫu, 6 góc xoay, mặt bằng tự chỉnh, tầng riêng. App cũ (`scripts/tem_cu.js` → `web/src/thu/tem_cu.json`): 0 / 0 sau
+  xếp (trước xếp 10 chỗ ở 8 tòa).
+- Khớp vị trí app cũ: 770 / 772 tem (lệch 2 tem xh-z5 = 450 mm do dữ liệu mặt tòa khác app cũ, không phải luật tem).
+- Màn thật `scripts/chup_tem.mjs` (Z3, V1, V4, L1, T1, Y1, Y2): 0 tem chồng, 0 tem dưới lớp phủ, 0 tem ra ngoài khung; số đường dẫn như app cũ
+  (Z3 1, T1 1, Y1 2, Y2 1). Ảnh `docs/anh/tem-can/cu-moi-*.png` (trái app cũ, phải app mới).
+- Test `tinh/temCan.test.ts` (7 ca).
+
+**Không khớp / còn dở:**
+- Chưa có hàng dim mặt bằng tầng nên `ngoai` (hàng tem dời) chưa dùng — sẵn trong kết quả.
+- Nhãn tòa TMB ("Z3 · 12T · 253 căn"): app cũ không có luật → chưa đổi (đề xuất dưới).
+- PCCC: ký hiệu tủ / cửa / nhãn đều trong nét bao nên tem ngoài mặt tiền không chạm; chưa đưa vào vật cản (đưa vào sẽ làm tem nhảy khi phân tích nền xong).
+
+**Đề xuất:**
+1. Nhãn tòa TMB tránh đè tòa khác / nhãn khác bằng cùng bộ giải (dịch dọc → ra ngoài + đường dẫn), luật bổ sung có ghi `bo_sung`.
+2. Hàng dim mặt bằng tầng một chuỗi mỗi mặt như app cũ `hangDim`, lùi theo `ngoai`.
+3. Kéo tay tem (giữ vị trí tay theo khoá ô) cho bản trình bày salekit.
+4. Thêm `chup_tem.mjs --khong-chup` vào một cổng nhẹ khi sửa `temCan.ts` / `MatBangTang.tsx`.
