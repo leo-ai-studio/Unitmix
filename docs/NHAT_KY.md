@@ -1025,3 +1025,16 @@ tâm thân chi tiết trùng tâm chân tòa (`chanToa`), mọi tum / lõi nằm
 **Lưu ý nhỏ cho AI sau:** script Python mở tệp ở chế độ văn bản trên Windows ghi CRLF → diff cả tệp (đã gặp ở `i18n/*.json`); ghi `newline='
 '` hoặc `git ls-files --eol -m` rồi đổi lại LF (`napDxf.ts` vốn CRLF trong kho).
 
+
+## 2026-10-31 · 3D: cửa sổ đầu hành lang như app cũ (QT-119 · QT-128) + một cửa 1.800 ở sảnh thang máy I · V · Claude Code (Opus 5.5)
+
+Người dùng: chưa thấy cửa sổ đầu hành lang như app cũ; sảnh thang máy tòa I, V để MỘT cửa sổ ở giữa, rộng 1.800 như cửa căn hộ (bản trước đặt 1–3 cửa 1.500 theo cạnh lõi).
+- **Đầu hành lang** (`ve3d/kheHo.ts · kheHoNetBao`, chép app cũ `c3dKheHo`): quét từng cạnh nét bao, mỗi 100 mm lấy điểm lùi 400 mm (không thuộc căn nào) và điểm lùi 120 mm
+  (không thuộc tường lõi) → hở; đoạn hở liền 1.000–2.200 mm là khe. Khe cách đầu trục hành lang ≤ 2,5 m → đầu hành lang: tường dày 200 hai bên + cửa sổ rộng
+  = hành lang − 200 (bề rộng khe chốt bằng hành lang nếu lệch ≤ 300). Dựng trong `dungToa.ts · dungMauTung`: tường (M.tuong) kín tầng, tường dưới bệ + trên đầu cửa,
+  khung + kính theo đúng cỡ cửa sổ căn hộ (bệ `bauSo` 600, cao `caoSo` 1.800). Mọi 33 mẫu tòa có khe ở đúng đầu hành lang (tòa I: 2; Z: 4; U: 6). `LoiHinh.tuong` = các nét tường lõi (nạp ở `MoHinh3D`).
+- **Sảnh thang máy I · V:** `cuaSoLoi` còn đúng MỘT cửa sổ ở giữa mỗi mặt ngoài lõi (cạnh lõi sát + song song nét bao, dài ≥ 3,2 m), rộng 1.800 (`CUA_SO_LOI.rong`), khung nhô 50 mm.
+  Thang bộ không có cửa. Tòa I: 2 (mỗi lõi một mặt tiền sảnh), V: 1.
+- **Khác app cũ:** lõi app mới là khối đặc nên cửa sảnh gắn nổi trên mặt lõi (app cũ dựng lõi bằng tường CAD, khe sảnh hở thật); dữ liệu tường lõi app mới
+  phủ kín mặt tiền sảnh I / V nên dò khe không ra khe sảnh — vị trí cửa lấy theo mặt ngoài lõi, không theo khe.
+- Test: `ve3d/cuaSoLoi.test.ts` (10 ca). Còn dở: lõi xh-l1 / xh-l2 chưa có `bao_tm`; hai khe 1,2–1,3 m ở tm-v4 / xh-u1 (khe sảnh theo luật app cũ) dựng cửa kín khe — chưa đối chiếu app cũ.
