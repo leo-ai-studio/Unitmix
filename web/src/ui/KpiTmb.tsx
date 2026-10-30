@@ -21,7 +21,6 @@ export function KpiTmb({ pa, tv, lo, kq }: { pa: TrangThaiPA; tv: ThuVien | null
   const k = useMemo(() => (tv && kq ? kpiTmb(pa, tv, kq, caDuAn ? dsLo : [lo.id], hsMin) : null), [pa, tv, kq, caDuAn, dsLo, lo.id, hsMin]);
   if (!k) return null;
   const tenToa = (id: string) => nhanToa(pa, tv, id, { lo: caDuAn });
-  const kyHieu = (id: string) => pa.lo.find((l) => l.id === id)?.temDat.kyHieu ?? '';
   const soToa = k.toa.length;
   return (
     <section class="kpi kpi-tmb" aria-label={t('kpi.tmb.tieuDe')}>
@@ -53,7 +52,7 @@ export function KpiTmb({ pa, tv, lo, kq }: { pa: TrangThaiPA; tv: ThuVien | null
             <div class="kpi-hang dau" role="row"><span>{t('xep.toa')}</span><span>{t('kpi.cot.can')}</span><span>{t('kpi.cot.dan')}</span><span>{t('kpi.cot.dtsd')}</span><span>{t('kpi.cot.hs')}</span></div>
             {k.toa.map((x) => (
               <div class="kpi-hang" role="row" key={x.toaId} title={`${tenToa(x.toaId)} · ${x.soTang} ${t('kpi.tang')} · DTXD ${fmtSo(x.dtxd1San, { thapPhan: 1 })} m²`}>
-                <span>{caDuAn ? `${kyHieu(x.loId)} · ` : ''}{tenToa(x.toaId)}</span>
+                <span>{tenToa(x.toaId)}</span>
                 <span>{fmtSo(x.soCan)}</span><span>{fmtSo(x.dan)}</span><span>{fmtSo(x.dtsd)}</span>
                 <span class={x.hieuSuat !== null && x.hieuSuat < hsMin ? 'kpi-warn' : ''}>{pct1(x.hieuSuat)}</span>
               </div>

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useCaiTang } from '../man/caiTang';
-import type { ThuVien } from '../tinh/kieu';
+import type { Diem, ThuVien } from '../tinh/kieu';
 import type { NetVe } from '../tinh/matBang';
 import { tinhCuaCan } from '../tinh/pccc';
 import { idTepCan, veTheoId } from '../tinh/stretch';
 
-export type HinhLoi = { paths: NetVe[]; bao_tuong_mm?: [number, number, number, number] };
+export type HinhLoi = { paths: NetVe[]; bao_tuong_mm?: [number, number, number, number]; bao_tm?: Diem[] };
 
 const nho = new Map<string, Promise<unknown>>();
 /** Tải một tệp hình học thư viện, nhớ cả khi lỗi để không gọi lại liên tục. */

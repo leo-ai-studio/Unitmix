@@ -944,3 +944,97 @@ theo `TEM_DAT.ngoai` (~7304). App cũ KHÔNG có luật nhãn tòa ở TMB (③ 
 2. Hàng dim mặt bằng tầng một chuỗi mỗi mặt như app cũ `hangDim`, lùi theo `ngoai`.
 3. Kéo tay tem (giữ vị trí tay theo khoá ô) cho bản trình bày salekit.
 4. Thêm `chup_tem.mjs --khong-chup` vào một cổng nhẹ khi sửa `temCan.ts` / `MatBangTang.tsx`.
+
+## 2026-10-30 · Kiểm bản online (workers.dev) bằng dự án M7 thật · Claude Code (Opus 5.5)
+
+Bản online `https://unitmix.nghiavt-ai1.workers.dev` = commit `29c5d60`. Dự án thử `bl9pn1zj` (M7, QH 261019) dựng qua giao diện bằng Edge
+headless + CDP (ô chọn tệp). Trình duyệt trong app Claude không đọc được tệp máy / localhost, nên phải dùng CDP.
+- DXF `SDD M7 261019.dxf` cho 16 ô đất (4 lô cao tầng), bảng `261019-Chi tieu SDĐ NOXH M7.xlsx` ghép 12/16 (CX-1/3/4/5 không có dòng),
+  CT-1 / CT-2 tự sang NOXH. Trần cả dự án: 4.994 căn, 9.348 người (khớp số C3 đối chiếu).
+- Xếp hàng loạt 4 lô: 14 tòa, 4.010 căn (CT-1 6×Z1 12T, CT-2 5×Z1 11T, HH-2 2×i3 27T, HH-1 U2 27T). Đo 974 s nhưng trang ở trạng thái
+  `hidden` (hộp đồng bộ Edge đè), trình duyệt hãm timer, nên thời gian không dùng được.
+- Tầng · Căn, Hầm, 3D, Chi phí mở được, console 0 lỗi. API: PUT không mã / sai mã → 403; đường dẫn trang con → 200 (SPA).
+- `kiem_man_hep.mjs --url <online>`: 136 ca, 1 lỗi (hộp Bảng QH 1440×900: Huỷ / Áp ngoài khung nhìn).
+
+**Đã sửa (chưa deploy):**
+1. `dxf/napDxf.ts` `doanLopXungQuanh`: không còn tự chọn lớp hè đường `HTKT_GT_Heduong` / lớp đất QH làm "công trình xung quanh" (regex cũ `/HT|…/` khớp "HTKT"). Có test.
+2. `ui/KpiTmb.tsx`: tên tòa ở "Chi tiết theo tòa" (cả dự án) không lặp ký hiệu lô ("CT-1 · Z1 · 1 · CT-1" → "Z1 · 1 · CT-1").
+3. `styles/unitmix.css`: chân hộp rộng (Bảng QH) dính đáy ở màn ≥ 1025 px; đo trên online: nút Áp 1141 → 711 px (khung 774).
+
+**Thấy, chưa sửa:** QCVN 04 in "8.34" (dấu chấm) trong câu phòng ngủ < 9 m² (`tinh/qcvn04.ts` ghép số thô); hầm mặc định 2 tầng
+dù bảng QH CT ghi 1 hầm; hầm CT-1: 11 đầu làn cụt, cự ly 40,3 > 40 m, ram 2 / 4 làn, 1 khoang thiếu quạt; Z1 NOXH: phòng ngủ 8,34 m²,
+1 phòng ngủ không giáp tường ngoài; cơ cấu Z1 2PN 65 % / mục tiêu 45 % — tối ưu báo không có phép đổi; đĩa mặt trời (đường MT) to,
+đè lô gần camera trên 3D; nhãn "12T · 220 căn" đè hình tòa trên TMB.
+
+## 2026-10-30 · 3D: lõi không lòi khỏi nét bao DTXD + cửa sổ sảnh thang máy / hành lang (tòa I, V) · Claude Code (Sonnet 5.5)
+
+Người dùng (ảnh 3D tòa I, V): lõi thang máy lòi ra ngoài nét bao DTXD ở góc chữ V; mặt ngoài lõi là dải đặc không cửa sổ.
+- **Nguyên nhân lòi:** `ve3d/dungToa.ts · ranhTumCo` dựng lõi từ hộp chữ nhật `bao_tuong_mm`; lõi chữ V xoay 30–60° nên hộp lòi ~25 m² ra ngoài nét bao
+  (tm-v1 / v2 / v3 / v4, xh-v1, tm-t2, tm-l1…). Mặt bằng 2D / `daGiacLoi` (tinh/loiThang.ts) đã dùng `bao_tm` (đa giác khung tường thật) từ trước.
+  Sửa: `LoiHinh.bao_tm`, `ranhLoiDG`; `MoHinh3D` nạp thêm `bao_tm`. Đo: lõi ra ngoài nét bao còn 0 (≤ 0,05 m²) ở mọi mẫu trừ xh-l1 / xh-l2.
+- **Cửa sổ lõi:** `cuaSoLoi(r, foot)` (hàm thuần, `CUA_SO_LOI`): cạnh lõi dài ≥ 1,8 m nằm sát (≤ 450 mm) và song song nét bao → 1–3 cửa sổ rộng 1,5 m, bệ 0,9 m,
+  cao 1,5 m, chừa 0,7 m hai đầu, cách đều; mỗi tầng một bộ: khung (nhô 40 mm) + kính (nhô 60 mm) + nẹp giữa, nằm trong tầng điển hình đã gộp (không thêm draw call).
+  Tòa I: 6 cửa sổ lõi + 2 thang bộ; V: 3 + 2. Cạnh lõi trong nhà không có cửa. Test `ve3d/cuaSoLoi.test.ts`.
+- **Còn dở:** xh-l1 / xh-l2 chưa có `bao_tm` (lõi `loi-xh-l1-tm-08`) nên vẫn là hộp chữ nhật lòi ~7 m²; cần đa giác từ chủ nhiệm / vẽ từ nét `wall`.
+  Chưa có cửa sổ ở đầu hành lang hở (cuối cánh) — chưa biết đầu hành lang có tường bao hay để hở, cần chủ nhiệm xác nhận.
+  Mặt bằng tầng 2D (`MatBangTang.tsx`) vẫn tô nền lõi bằng hộp chữ nhật `bao_tuong_mm`.
+
+## 2026-10-30 · Xuất PDF (báo cáo · Salekit · HĐMB) và xuất 3D / BIM (.dae SketchUp · .ifc Revit) · Claude Code (Opus 5.5)
+
+Yêu cầu: nút xuất cạnh XLS / CAD — PDF gồm tài liệu bán hàng (Salekit, HĐMB lấy form app cũ) + báo cáo (TMB QH, mặt bằng tầng điển hình các mẫu,
+bảng chỉ tiêu PA so với QH / KD); 3D TMB + 3D công trình ra SketchUp, BIM các mẫu tòa cho Revit.
+
+**Cách làm (chọn mặc định, chủ nhiệm cho "làm luôn"):** PDF = hộp in trình duyệt "Lưu thành PDF" như app cũ `xuatPDF` (vector, chữ chọn được);
+.skp = trình duyệt KHÔNG ghi được (định dạng đóng) → xuất COLLADA `.dae` (SketchUp Nhập → Lưu = .skp); BIM = IFC4 Reference View (tessellation).
+- Nút `PDF ⤓`, `3D ⤓` cạnh `XLS ⤓ / CAD ⤓` (cũng trong menu ⋯); hộp `man/HopXuatTaiLieu.tsx` (chunk lười).
+- `xuat/pdf/`: `duLieuIn.ts` (nhóm tòa theo mẫu + bố cục, nạp hình căn / lõi, mặt bằng đã tự chỉnh `choDuLieuMB`, thống kê lô), `TrangIn.tsx` (trang A3 / A4:
+  TMB, bảng chỉ tiêu 3 lô / trang — trái so QH, phải so đề bài KD —, mặt bằng tầng bằng ĐÚNG `MatBangTang` của màn Tầng, Salekit: mặt bằng + rổ hàng + mỗi mẫu căn
+  một trang kèm key plan, HĐMB: mặt bằng CH-xx + bảng DT + chỗ ký), `inPdf.tsx` (CSS in, `@page` tên a3n / a4n / a4d, mount `#in-pdf`, dọn sau `afterprint`).
+- `xuat/xuat3d.ts` dựng lại cảnh KHÔNG cần mở tab 3D (`dungDuAn` / `dungToa` trên three tải lười), `luoi3d.ts` thu tam giác theo vật liệu (trải InstancedMesh, Z lên, mét),
+  `tachTang` chia theo tầng + băm hình → tầng giống nhau dùng chung một hình: `xuatDae.ts` (geometry một lần, node tầng dịch z, node tòa translate + rotate),
+  `xuatIfc.ts` (IfcRepresentationMap + IfcMappedItem; IfcBuilding / Storey; tường→IfcWall, sàn→IfcSlab, kính→IfcPlate, khung→IfcMember, lan can→IfcRailing).
+  Hai tòa V + i 12 tầng: 34 MB → 3,4 MB; 6 tòa M7: .dae 2,1 MB, .ifc 2,4 MB, < 1 s.
+- Sửa kèm (ve3d): lõi 3D dùng đa giác khung tường thật `bao_tm` (trước: hộp chữ nhật `bao_tuong_mm` → lòi ra ngoài nét bao DTXD ở tòa V; `dungToa.ts` `ranhLoiDG`).
+
+**Đo:** `npm run kiem` ĐẠT (1009 test web). IFC mở bằng ifcopenshell 0.9: 2 IfcBuilding, 28 tầng, 204 IfcMappedItem, hình dựng được, bbox hợp lý (V 61 × 72 m, i 102 × 19 m).
+Màn thật (Edge CDP + `Page.printToPDF`): báo cáo 3 trang A3, Salekit 5 trang A3 (1 mặt bằng + 4 trang căn), HĐMB 1 trang A4 ngang; `kiem_man_hep.mjs` 122 ca 0 lỗi.
+
+**Chưa kiểm / còn dở:** chưa mở thử .dae trong SketchUp thật (SketchUp không chạy khi làm) và .ifc trong Revit thật; .skp ghi thẳng cần cầu SketchUp trên máy (connector) — chưa nối.
+Nội dung HĐMB (câu chữ pháp lý, chỗ ký) là khung tạm, chờ pháp chế / chủ nhiệm chốt; PDF chưa có trang Hầm / 3D; DT bình quân KD tính theo bố cục chung (tầng riêng lệch ít).
+Màn Hầm / tem căn ở Salekit dùng kiểu salekit đang chọn (kiểu LEO → Galia).
+
+**Đề xuất:** (1) nối cầu SketchUp để `.skp` thật một chạm trên máy có SketchUp; (2) Revit: gán IfcWindow / IfcDoor thật cho kính / cửa (cần mở lỗ tường); (3) PDF thêm trang Hầm + ảnh 3D chụp từ khung 3D; (4) xuất PDF Leo AI ("in báo cáo PA").
+
+## 2026-10-30 · Làm lại Salekit + HĐMB đúng app cũ; soát "nét bao theo tòa" · Claude Code (Opus 5.5)
+
+Chủ nhiệm: bản PDF Salekit / hợp đồng mua bán làm sai — "làm đúng như app cũ đã làm mới nhất". Chạy THẲNG app cũ (`MDIUnitmix.html`, Edge CDP, `xuatPDF('sale' | 'hdmb')`,
+tòa Z3 NOXH) lấy PDF chuẩn rồi chép: `xuat/pdf/TrangBanHang.tsx` (+ CSS trong `inPdf.tsx`, phông Be Vietnam Pro / Roboto chép từ app cũ vào `public/fonts`, `phongIn.ts`).
+- **Salekit (mẫu HH1)**: trang MẶT BẰNG TẦNG ĐIỂN HÌNH A3 ngang / dọc theo tỷ lệ tòa — đầu trang cam + tên dự án, "TẦNG a–b" (a = tầng ngay trên đế), nhãn tòa "Z3 · NOXH",
+  mặt bằng CÓ nội thất + tem theo kiểu salekit đang chọn (kiểu LEO → Galia), chân trang GHI CHÚ (màu từng loại căn + cách đọc tem Galia / Rivea / HH1) + hai đoạn ghi chú diện tích;
+  rồi MỖI MẪU CĂN một trang A3 DỌC: "1PN · LOẠI 1", bảng DT THÔNG THUỶ / DT TIM TƯỜNG (xanh + be), hình căn có nội thất và chuỗi kích thước rộng × sâu, KEYPLAN đơn sắc (căn đúng mã tô đỏ nhạt), ghi chú.
+  Bỏ phần tôi tự thêm lúc đầu: bảng rổ hàng / tổng căn (app cũ ghi rõ Salekit KHÔNG có số liệu nội bộ).
+- **HĐMB (A4)**: MỘT tờ mặt bằng tầng điển hình (tô màu loại nhạt 30 %, tem HH1, hàng chú thích, KHUYẾN CÁO 6 ý hai cột, chỗ ký BÊN BÁN / BÊN MUA) rồi MỖI MẪU CĂN một trang
+  (hình căn không nội thất có kích thước + keyplan + bảng 5 dòng + KHUYẾN CÁO 4 ý). Bỏ bảng DT từng căn + khung ký tự chế ở bản đầu. Khác app cũ: "căn / tòa" = căn mỗi tầng × số tầng căn hộ (app cũ nhân cả tầng đế).
+- `MatBangTang` thêm `kieuTem` (tô kiểu này, tem kiểu khác); `kieuMb` thêm `hd_mb` (không vào menu kiểu hiển thị). Khổ giấy A3 dọc (`a3d`).
+- Chưa có: dòng "Mẫu đặc biệt · TCC" (căn trừ DT tường sau tủ PCCC) của app cũ — dữ liệu này ở màn Tầng, chưa nối vào PDF.
+
+**Soát "lỗi nét bao theo tòa" của app cũ** (QT-144 app cũ: tòa LẬT thì mái / khối đế lệch nét bao thân; ảnh PDF HĐMB app cũ có nét đỏ DTXD đứt đoạn lạ): app mới KHÔNG bị — 33 mẫu × lật / không lật:
+tâm thân chi tiết trùng tâm chân tòa (`chanToa`), mọi tum / lõi nằm trong nét bao; DTXD vẽ khít quanh từng tòa. Đã sửa riêng một lỗi cùng loại: lõi 3D V / L / T dùng hộp chữ nhật nên lòi ra ngoài nét bao
+(giờ dùng `bao_tm`). **Còn nghi:** `tinh/ham.ts › loiCotTuToa` lấy lõi / thang theo MẪU GỐC chứ không theo mặt bằng đã tự chỉnh — thang N2 do tự chỉnh thêm không xuống hầm; chưa sửa, chờ chủ nhiệm xác nhận ý.
+
+**Lưu ý nhỏ cho AI sau:** script Python mở tệp ở chế độ văn bản trên Windows ghi CRLF → diff cả tệp (đã gặp ở `i18n/*.json`); ghi `newline='
+'` hoặc `git ls-files --eol -m` rồi đổi lại LF (`napDxf.ts` vốn CRLF trong kho).
+
+
+## 2026-10-31 · 3D: cửa sổ đầu hành lang như app cũ (QT-119 · QT-128) + một cửa 1.800 ở sảnh thang máy I · V · Claude Code (Opus 5.5)
+
+Người dùng: chưa thấy cửa sổ đầu hành lang như app cũ; sảnh thang máy tòa I, V để MỘT cửa sổ ở giữa, rộng 1.800 như cửa căn hộ (bản trước đặt 1–3 cửa 1.500 theo cạnh lõi).
+- **Đầu hành lang** (`ve3d/kheHo.ts · kheHoNetBao`, chép app cũ `c3dKheHo`): quét từng cạnh nét bao, mỗi 100 mm lấy điểm lùi 400 mm (không thuộc căn nào) và điểm lùi 120 mm
+  (không thuộc tường lõi) → hở; đoạn hở liền 1.000–2.200 mm là khe. Khe cách đầu trục hành lang ≤ 2,5 m → đầu hành lang: tường dày 200 hai bên + cửa sổ rộng
+  = hành lang − 200 (bề rộng khe chốt bằng hành lang nếu lệch ≤ 300). Dựng trong `dungToa.ts · dungMauTung`: tường (M.tuong) kín tầng, tường dưới bệ + trên đầu cửa,
+  khung + kính theo đúng cỡ cửa sổ căn hộ (bệ `bauSo` 600, cao `caoSo` 1.800). Mọi 33 mẫu tòa có khe ở đúng đầu hành lang (tòa I: 2; Z: 4; U: 6). `LoiHinh.tuong` = các nét tường lõi (nạp ở `MoHinh3D`).
+- **Sảnh thang máy I · V:** `cuaSoLoi` còn đúng MỘT cửa sổ ở giữa mỗi mặt ngoài lõi (cạnh lõi sát + song song nét bao, dài ≥ 3,2 m), rộng 1.800 (`CUA_SO_LOI.rong`), khung nhô 50 mm.
+  Thang bộ không có cửa. Tòa I: 2 (mỗi lõi một mặt tiền sảnh), V: 1.
+- **Khác app cũ:** lõi app mới là khối đặc nên cửa sảnh gắn nổi trên mặt lõi (app cũ dựng lõi bằng tường CAD, khe sảnh hở thật); dữ liệu tường lõi app mới
+  phủ kín mặt tiền sảnh I / V nên dò khe không ra khe sảnh — vị trí cửa lấy theo mặt ngoài lõi, không theo khe.
+- Test: `ve3d/cuaSoLoi.test.ts` (10 ca). Còn dở: lõi xh-l1 / xh-l2 chưa có `bao_tm`; hai khe 1,2–1,3 m ở tm-v4 / xh-u1 (khe sảnh theo luật app cũ) dựng cửa kín khe — chưa đối chiếu app cũ.

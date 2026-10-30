@@ -67,3 +67,13 @@ describe('đọc DXF', () => {
     expect(() => napDxf('xin chao')).toThrow(/DXF/);
   });
 });
+
+describe('đoán lớp công trình xung quanh', () => {
+  it('không nhận lớp hè đường / đất quy hoạch (bản vẽ SDĐ M7)', async () => {
+    const { doanLopXungQuanh } = await import('./napDxf');
+    const m7 = ['!!CGXD', '!QH-GT-Timduong', 'HTKT_GT_Heduong', 'HTKT_GT_Longduong', 'HT_DAT_CTHTKT_Nghiatrang', 'QHDH_DAT_NO_Nhaochungcu', 'bo lk', '0'];
+    expect(doanLopXungQuanh(m7)).toBe('');
+    expect(doanLopXungQuanh(['QH-CGXD', 'HT-NHA', 'QH-TEM'])).toBe('HT-NHA');
+    expect(doanLopXungQuanh(['A', 'Hiện trạng công trình'])).toBe('Hiện trạng công trình');
+  });
+});

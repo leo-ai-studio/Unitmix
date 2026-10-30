@@ -39,6 +39,7 @@ const napChiPhi = () => import('./ManChiPhi');
 const ChiPhiGiua = luoi(() => napChiPhi().then((m) => m.ChiPhiGiua), 'giua');
 const ChiPhiPhai = luoi(() => napChiPhi().then((m) => m.ChiPhiPhai));
 const HopXuatCad = luoi(() => import('./HopXuatCad').then((m) => m.HopXuatCad), 'hop');
+const HopXuatTaiLieu = luoi(() => import('./HopXuatTaiLieu').then((m) => m.HopXuatTaiLieu), 'hop');
 // Trợ lý Leo AI (troLy/): chunk riêng, tải khi mở khung lần đầu.
 const LeoAI = luoi(() => import('../troLy/LeoAI').then((m) => m.LeoAI), 'hop');
 
@@ -122,6 +123,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const [tangHam, setTangHam] = useState(1);
   const [canKhoa, setCanKhoa] = useState<string | null>(null);
   const [moXuat, setMoXuat] = useState(false);
+  const [moTl, setMoTl] = useState<'pdf' | '3d' | null>(null); // hộp xuất PDF / 3D · BIM
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
   const chungXep = { ...chung, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); },
@@ -194,6 +196,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}
       <HopSoSanhMau pa={kho.pa} tv={tv} sua={kho.sua} chiXem={chiXem} loId={loId}
         daDat={(lo, id) => { setLoId(lo); setToaId(id); setCanKhoa(null); setBuoc('tmb'); setXemGiua('mat_bang'); }} />
+      {moTl && tv && <HopXuatTaiLieu nhom={moTl} pa={kho.pa} tv={tv} tenDuAn={da.ten} tenPA={tenPA} toaDangXem={xemXuat?.toa.id ?? null} dong={() => setMoTl(null)} />}
       {moXuat && xemXuat && tv && <HopXuatCad toa={xemXuat.toa} mau={xemXuat.mauTang(null)} mauTang={xemXuat.mauTang} tv={tv} ten={da.ten} dong={() => setMoXuat(false)} />}
       {coNhap && (
         <div class="thong-bao canh" role="status">
@@ -220,6 +223,8 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       onLamLai={kho.lamLai}
       thongBao={thongBao}
       onXuatCad={xemXuat && tv ? () => setMoXuat(true) : undefined}
+      onXuatPdf={tv && kho.pa.toa.length ? () => setMoTl('pdf') : undefined}
+      onXuat3d={tv && kho.pa.toa.length ? () => setMoTl('3d') : undefined}
       onXuatXls={tv && kq ? () => xuatBaoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)) : undefined}
       xem={xemGiua}
       onXem={setXemGiua}

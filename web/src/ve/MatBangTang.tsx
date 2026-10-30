@@ -15,6 +15,8 @@ type Props = {
   tv: ThuVien;
   hinh: HinhHocTai;
   kieu: KieuMb;
+  /** Kiểu của TEM căn nếu khác kiểu tô (HĐMB: tô màu loại nhạt, tem như HH1). */
+  kieuTem?: KieuMb;
   noiThat: boolean;
   hienTem: boolean;
   canKhoa: string | null;
@@ -71,7 +73,7 @@ export function soLieuTang(mau: ToaVe, toa: BoCuc, tv: ThuVien) {
 }
 
 /** Mặt bằng tầng điển hình vẽ trong BanVe (toạ độ mm, lật trục y bằng phép biến đổi nhóm). */
-export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKhoa, onChonO, dsChon = [], onMenu, loiTT, loiKhoa, nhanCongNang, deBai, nguongDt,
+export function MatBangTang({ mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTem, canKhoa, onChonO, dsChon = [], onMenu, loiTT, loiKhoa, nhanCongNang, deBai, nguongDt,
   thangKhoa, onChonThang, oDich, dichLoi, oKeo, hienHanhLang = true, choSang, canVuot, loiDaGiac }: Props) {
   const mauDich = dichLoi ? 'var(--warn)' : 'var(--green)';
   const K = KIEU_MB[kieu];
@@ -255,7 +257,7 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, noiThat, hienTem, canKho
         if (!c || !t || cn !== 'can') return null;
         return (
           <g key={`t${vt.khoa}`} data-o={vt.khoa} data-tem={vt.khoa} transform={`translate(${Math.round(t.cx)} ${Math.round(t.cy)}) scale(1 -1)`} onClick={(e) => onChonO(vt.khoa, e)} onContextMenu={menu('o', vt.khoa)} style={{ cursor: 'pointer' }}>
-            <TemCan kieu={kieu} no={`CH-${String(no).padStart(2, '0')}`} loai={NHAN_LOAI[c.loai]} soLoai={`Loại ${loai.get(canId)}`}
+            <TemCan kieu={kieuTem ?? kieu} no={`CH-${String(no).padStart(2, '0')}`} loai={NHAN_LOAI[c.loai]} soLoai={`Loại ${loai.get(canId)}`}
               tt={fmt(c.dt_tt_m2)} tim={fmt(c.dt_tim_m2)} mauLoai={K.u[c.loai]}
               chamMau={deBai?.[c.loai] ? Math.abs(c.dt_tt_m2 - deBai[c.loai]!) <= nguongDt ? '#2f7d4f' : c.dt_tt_m2 > deBai[c.loai]! ? '#d98a00' : '#b42318' : undefined} />
           </g>

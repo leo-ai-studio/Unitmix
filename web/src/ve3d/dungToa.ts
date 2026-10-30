@@ -8,6 +8,7 @@ import { chayHet, type Tung } from './chiaNho';
 import type * as THREE from 'three';
 import type { Diem, ThuVien, ToaDat } from '../tinh/kieu';
 import { boCucTang, canDangDung, congNangTai, khungTaiO, soCanChuVi, tangCoRieng, veLoiTaiViTri, viTriCan, type BoCuc, type ToaCoMat } from '../tinh/matBang';
+import { kheHoNetBao, type DauHanhLang } from './kheHo';
 import { nguongLod, type BanDoChonToa, type CanChon } from './chon3d';
 import { dungCan, hinhDaiCua, nhomMoi, type Khoi3d, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
 
@@ -15,7 +16,8 @@ const K = 0.001;
 export const CAO_TANG_DE_MM = 4000;
 export const CAO_TUM_MM = 3000;
 
-export type LoiHinh = { bao_tuong_mm?: [number, number, number, number] };
+/** `bao_tm` = đa giác khung tường thật của lõi (chữ V / T / Y không phải hình chữ nhật); `bao_tuong_mm` = hộp bao chữ nhật (dự phòng). */
+export type LoiHinh = { bao_tuong_mm?: [number, number, number, number]; bao_tm?: Diem[]; /** vùng tường lõi (nét `wall` đóng kín, toạ độ cục bộ) — dò khe hở nét bao */ tuong?: Diem[][] };
 export type DuLieuToa = {
   mau: ToaCoMat & { duong_bao: Diem[] };
   toa: Pick<ToaDat, 'canTheo' | 'canViTri' | 'congNang' | 'tangRieng' | 'soTangDe' | 'soTangDH'>;
@@ -63,7 +65,8 @@ export function ranhTumCo(mau: DuLieuToa['mau'], loi: Map<string, LoiHinh>, idLo
   for (const m of mau.mat) for (const q of m.phan_tu) {
     if (q.loai === 'can' || q.bang) continue;
     const id = idLoi(q.block), l = loi.get(id);
-    if (l?.bao_tuong_mm) kq.push({ pts: ranhLoi(l.bao_tuong_mm, q), thang: id.startsWith('loi-tb-') });
+    const rl = l && (l.bao_tm?.length ? ranhLoiDG(l.bao_tm, q) : l.bao_tuong_mm ? ranhLoi(l.bao_tuong_mm, q) : null);
+    if (rl) kq.push({ pts: rl, thang: id.startsWith('loi-tb-') });
   }
   return kq;
 }
@@ -264,6 +267,47 @@ const trongTam = (P: Diem[]): Diem => {
   return [cx / (3 * A), cy / (3 * A)];
 };
 
+/** Khoảng cách từ điểm tới đoạn pq (mm). */
+const kcDoan = (x: number, y: number, p: Diem, q: Diem): number => {
+  const dx = q[0] - p[0], dy = q[1] - p[1], l2 = dx * dx + dy * dy;
+  const t = l2 < 1e-9 ? 0 : Math.max(0, Math.min(1, ((x - p[0]) * dx + (y - p[1]) * dy) / l2));
+  return Math.hypot(x - (p[0] + t * dx), y - (p[1] + t * dy));
+};
+/** Cửa sổ mặt ngoài lõi (sảnh thang máy tòa I / V): MỘT cửa sổ giữa cạnh, rộng 1.800 mm như cửa sổ căn hộ; chừa 700 mm hai đầu cạnh. */
+export const CUA_SO_LOI = { rong: 1800, chua: 700, saiLech: 450 } as const;
+export type CuaSoLoi = { a: Diem; t: Diem; n: Diem; tam: number };
+/**
+ * Mặt ngoài của lõi = cạnh lõi nằm sát (≤ 450 mm) và song song nét bao DTXD, đủ dài (≥ 1.800 + 2 × 700): sảnh thang máy mở ra mặt
+ * tiền (tòa I · V) có đúng MỘT cửa sổ ở giữa cạnh. `a` = điểm đầu cạnh, `t` = hướng dọc cạnh, `n` = hướng ra ngoài (đơn vị), `tam` = vị trí
+ * tâm cửa dọc cạnh (mm từ `a`). Toạ độ mm của mặt tòa. Cạnh quay vào trong nhà không có cửa.
+ */
+export function cuaSoLoi(r: Diem[], foot: Diem[]): CuaSoLoi[] {
+  const kq: CuaSoLoi[] = [], c = trongTam(r), C = CUA_SO_LOI;
+  for (let i = 0; i < r.length; i++) {
+    const a = r[i], b = r[(i + 1) % r.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (L < C.rong + 2 * C.chua) continue;
+    const t: Diem = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+    let n: Diem = [t[1], -t[0]];
+    if ((c[0] - a[0]) * n[0] + (c[1] - a[1]) * n[1] > 0) n = [-n[0], -n[1]]; // hướng ra khỏi tâm lõi
+    // cạnh phải nằm sát và song song một cạnh nét bao (đầu mút và giữa cạnh đều sát) mới là mặt ngoài
+    let sat = false;
+    for (let j = 0; j < foot.length && !sat; j++) {
+      const p = foot[j], q = foot[(j + 1) % foot.length], lq = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (lq < 1) continue;
+      const song = Math.abs(((q[0] - p[0]) * t[1] - (q[1] - p[1]) * t[0]) / lq) < 0.06;
+      if (song && [0.1, 0.5, 0.9].every((u) => kcDoan(a[0] + t[0] * L * u, a[1] + t[1] * L * u, p, q) <= C.saiLech)) sat = true;
+    }
+    if (sat) kq.push({ a, t, n, tam: L / 2 });
+  }
+  return kq;
+}
+
+/** Đa giác khung tường cục bộ của lõi, đưa lên thế giới theo điểm chèn (chữ V: hộp chữ nhật sẽ lòi ra ngoài nét bao DTXD). */
+function ranhLoiDG(dg: Diem[], q: { x: number; y: number; rot: number; sx: number; sy: number }): Diem[] {
+  const p = veLoiTaiViTri([{ cat: 'bao', pts: dg }], q)[0].pts;
+  return p.length > 1 && p[0][0] === p[p.length - 1][0] && p[0][1] === p[p.length - 1][1] ? p.slice(0, -1) : p;
+}
+
 /** Danh sách đỉnh ngoài của hình chữ nhật cục bộ lõi, đưa lên thế giới theo điểm chèn. */
 function ranhLoi(bt: [number, number, number, number], q: { x: number; y: number; rot: number; sx: number; sy: number }): Diem[] {
   const [x0, y0, x1, y1] = bt;
@@ -325,6 +369,45 @@ export function* dungToaTung(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien,
     khoi(footT, P.san, M.san, -P.san, false, tmp); // sàn dưới; tấm "sàn trên" mờ của tầng cũ luôn ẩn khi gộp nên bỏ
     for (const d of sanHanhLangNgoai(mauT)) khoi(d, P.san, M.san, -P.san, false, tmp);
     ranhTum(mauT, du.loi, du.idLoi).forEach((r) => khoi(r, Hc, M.khung2, 0, true, tmp));
+    // cửa sổ: (1) sảnh thang máy tòa I / V — một cửa 1.800 ở giữa mặt ngoài lõi; (2) khe hở nét bao (đầu hành lang, app cũ QT-119 · QT-128):
+    // tường dày 200 hai bên + cửa sổ rộng = hành lang − 200. Cửa sổ dựng bằng đúng cỡ cửa sổ căn hộ (bệ `bauSo`, cao `caoSo`).
+    const fw = 60, sill = P.bauSo, hW = Math.min(P.caoSo, Hc - sill - 150);
+    const veCuaSo = (pt: (a: number, m: number) => Diem, a0: number, a1: number, m0: number, m1: number, mk: number) => {
+      const rc = (u0: number, u1: number, v0: number, v1: number) => [pt(u0, v0), pt(u1, v0), pt(u1, v1), pt(u0, v1)];
+      const bar = (u0: number, u1: number, z0: number, h: number) => khoi(rc(u0, u1, m0, m1), h, M.khung, z0, false, tmp);
+      bar(a0, a1, sill, fw); bar(a0, a1, sill + hW - fw, fw); bar(a0, a0 + fw, sill, hW); bar(a1 - fw, a1, sill, hW);
+      if (a1 - a0 > 1300) bar((a0 + a1) / 2 - 20, (a0 + a1) / 2 + 20, sill, hW);
+      khoi(rc(a0 + fw, a1 - fw, mk - 4, mk + 4), hW - 2 * fw, M.kinh, sill + fw, false, tmp);
+    };
+    if (hW > 600) {
+      for (const r of ranhTumCo(mauT, du.loi, du.idLoi)) {
+        if (r.thang) continue;
+        for (const c of cuaSoLoi(r.pts, footT)) { // n ra ngoài: m > 0 là ngoài nhà → khung nhô 50 mm khỏi mặt lõi, kính nhô 30 mm
+          const pt = (a: number, m: number): Diem => [c.a[0] + c.t[0] * a + c.n[0] * m, c.a[1] + c.t[1] * a + c.n[1] * m];
+          veCuaSo(pt, c.tam - CUA_SO_LOI.rong / 2, c.tam + CUA_SO_LOI.rong / 2, 0, 50, 30);
+        }
+      }
+      const polys: Diem[][] = vts.map((vt) => { const cm = tv.can.get(canDangDung(vt, bc)); return khungTaiO(mauT, vt.matIdx, vt.a0, vt.a1, cm?.sau_mm ?? vt.sau, vt.guong, cm?.khung) ?? vt.goc; });
+      const tuongLoi: Diem[][] = [];
+      for (const m of mauT.mat) for (const q of m.phan_tu) {
+        if (q.loai === 'can' || q.bang) continue;
+        const l = du.loi.get(du.idLoi(q.block));
+        if (!l) continue;
+        if (l.tuong?.length) l.tuong.forEach((w) => tuongLoi.push(veLoiTaiViTri([{ cat: 'wall', pts: w }], q)[0].pts));
+        else if (l.bao_tm?.length) polys.push(ranhLoiDG(l.bao_tm, q));
+        else if (l.bao_tuong_mm) polys.push(ranhLoi(l.bao_tuong_mm, q));
+      }
+      const wHL = mauT.hanh_lang_mm || 1800;
+      const dau: DauHanhLang[] = (mauT.hanhlang_ve ?? []).flatMap((pl) => (pl.length > 1 ? [{ p: pl[0], c: wHL }, { p: pl[pl.length - 1], c: wHL }] : []));
+      for (const e of kheHoNetBao(footT, polys, tuongLoi, dau)) {
+        const pt = (a: number, m: number): Diem => [e.o[0] + e.d[0] * a + e.n[0] * m, e.o[1] + e.d[1] * a + e.n[1] * m]; // m > 0 là vào trong nhà
+        const a0 = (e.w - e.cw) / 2, a1 = a0 + e.cw, TD = 200, rc = (u0: number, u1: number) => [pt(u0, 0), pt(u1, 0), pt(u1, TD), pt(u0, TD)];
+        if (a0 > 1) { khoi(rc(0, a0), Hc, M.tuong, 0, false, tmp); khoi(rc(a1, e.w), Hc, M.tuong, 0, false, tmp); }
+        khoi(rc(a0, a1), sill, M.tuong, 0, false, tmp); // tường dưới bệ cửa
+        khoi(rc(a0, a1), Hc - sill - hW, M.tuong, sill + hW, false, tmp); // tường trên đầu cửa
+        veCuaSo(pt, a0, a1, 70, 130, 100);
+      }
+    }
     const gom = gomMoi<KhoaVL>();
     gomHinh(T, tmp, gom, (m) => khoaVL.get(m) ?? 'tuong');
     tmp.traverse((o) => { (o as THREE.Mesh).geometry?.dispose?.(); });
