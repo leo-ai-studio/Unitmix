@@ -4,7 +4,7 @@ Sinh bằng `python scripts/chep_quy_tac.py --nguon <MDI_Unitmix_v4>` từ `rule
 và `docs/QUY_TAC_XEP_CAN.md` (QT-xx). Dữ liệu máy đọc: `web/public/lib/quy_tac.json`; mã nạp: `web/src/tinh/quyTac.ts`.
 Ngưỡng, điều khoản và cách tính giữ nguyên app cũ; biểu thức JS trong yaml không chép, thay bằng ngưỡng số + `ma_kiem`.
 
-**Thống kê:** 21 luật yaml + 132 mã QT gốc → **62 luật** ở app mới. QT giữ (gộp vào luật) 90, bỏ 42: bị QT sau thay 8, chỉ dành cho giao diện / cách vẽ app cũ 19, xuất / bóc CAD-BIM, không phải luật xếp 6, tính năng trợ lý AI 3, tính năng thao tác, không phải luật 5, đã thử và bỏ 1.
+**Thống kê:** 21 luật yaml + 132 mã QT gốc → **63 luật** ở app mới. QT giữ (gộp vào luật) 91, bỏ 41: bị QT sau thay 8, chỉ dành cho giao diện / cách vẽ app cũ 18, xuất / bóc CAD-BIM, không phải luật xếp 6, tính năng trợ lý AI 3, tính năng thao tác, không phải luật 5, đã thử và bỏ 1.
 
 Thứ tự theo bước làm của app mới; trong mỗi bước luật **bắt buộc** (QCVN / QĐ / chỉ tiêu QH) trước, luật nội bộ MDI sau.
 Cột *Hàm app mới*: ✔ = đã có hàm (ghi tên), — = chưa làm.
@@ -48,6 +48,7 @@ Cột *Hàm app mới*: ✔ = đã có hàm (ghi tên), — = chưa làm.
 | XC-11 | Tự sinh: xếp căn theo luật, không theo lượt chèn | MDI | — | MDI · QT-40…43 · QT-70 | QT-40, QT-41, QT-42, QT-43, QT-70 | — |
 | XC-12 | Căn góc tòa V: ranh căn = khung CAD (polyline kín DefPoints) | MDI | — | MDI · QT-58 | QT-58 | — |
 | XC-13 | Mọi lượt chèn căn / lõi / thang phải có trong thư viện | MDI | — | MDI · QT-61 | QT-61 | ✔ scripts/chep_thu_vien.py (_loi khi thiếu căn / lõi) |
+| XC-14 | Tem căn ngoài mặt tiền: không đè hình, không chồng tem | MDI | 3760 mm (rộng tem); 2600 mm (cao tem); 900 mm (cách mặt đứng); 250 mm (bước dịch dọc hàng); 400 mm (khe hàng ngoài); 150 mm (lề tem với vật / tem) | MDI · QT-11 · QT-34 (xepTem / temGoc / neoTemKhung app cũ, chủ nhiệm 3/10/2026) · QT-34b bổ sung web | QT-11 | ✔ temCan.ts · datTemCan (xepTem) · temGoc · neoTemKhung |
 
 ## DC · Đổi mẫu căn
 
@@ -112,7 +113,6 @@ App cũ chưa có luật cho bước này (sức chứa hầm đang tính ở `r
 | QT-3 | chỉ dành cho giao diện / cách vẽ app cũ | — | cắt nét vẽ căn về mô-đun ±125 mm (clipPath) — cách vẽ SVG |
 | QT-4 | chỉ dành cho giao diện / cách vẽ app cũ | — | vành tường 125 mm do app vẽ — cách vẽ |
 | QT-8 | bị QT sau thay | QT-30 → XC-04 | đoạn xoá căn để lại khe bỏ từ 04/9/2026; phần dồn khít gộp vào mdi_don_khit |
-| QT-11 | chỉ dành cho giao diện / cách vẽ app cũ | — | bảng thông tin căn đặt ngoài căn |
 | QT-12 | chỉ dành cho giao diện / cách vẽ app cũ | — | nét theo layer |
 | QT-13 | chỉ dành cho giao diện / cách vẽ app cũ | — | nhãn dẹt trong bảng |
 | QT-14 | chỉ dành cho giao diện / cách vẽ app cũ | — | khe ≤ 400 mm không tô màu |
@@ -154,7 +154,7 @@ App cũ chưa có luật cho bước này (sức chứa hầm đang tính ở `r
 
 ## QT giữ → luật mới
 
-QT-1 → XC-01, QT-2 → XC-02, QT-5 → MT-02, QT-6 → XC-01, QT-7 → XC-01, QT-9 → XC-02, QT-10 → XC-03, QT-16 → MT-02, QT-19 → XC-07, QT-19b → XC-07, QT-20 → XC-08, QT-21 → XC-02, QT-22 → XC-05, QT-22b → XC-05, QT-24 → PC-02/PC-03/PC-04, QT-25 → XC-07/PC-01, QT-30 → XC-04, QT-31 → XC-09, QT-32 → XC-02, QT-33 → XC-09, QT-36 → XC-05, QT-40 → XC-11, QT-41 → XC-11, QT-42 → XC-11, QT-43 → XC-11, QT-44 → PC-11, QT-45 → PC-01, QT-46 → XC-04, QT-46b → XC-04, QT-47 → XC-05, QT-49 → XC-04, QT-49b → XC-04, QT-49c → XC-04, QT-51 → XC-07, QT-54 → XC-07/XC-09, QT-55 → XC-07, QT-56 → XC-05, QT-56b → XC-04, QT-57 → PC-10, QT-57c → XC-04, QT-58 → XC-12, QT-59 → XC-09, QT-59b → XC-09, QT-60 → XC-01/XC-03, QT-61 → XC-13, QT-62 → XC-04, QT-63 → PC-11, QT-64 → CT-05, QT-65 → XC-09, QT-66 → DC-03, QT-67 → MT-05, QT-69 → XC-04, QT-70 → XC-11, QT-71 → MT-04, QT-72 → MT-04/XC-06, QT-72b → MT-04, QT-74 → MT-04, QT-74b → MT-04, QT-75 → CT-05, QT-75b → CT-05, QT-76 → CT-05, QT-77 → PC-08, QT-77b → PC-08, QT-77c → PC-08, QT-77d → PC-08, QT-77e → PC-08, QT-77f → PC-08, QT-77g → PC-14, QT-79 → DC-05, QT-81 → DC-04, QT-81b → DC-04, QT-82 → LO-01/LO-02/LO-03/MT-01/CT-01/CT-02/CT-03, QT-84 → LO-06, QT-86 → MT-01, QT-88 → MT-06, QT-88b → MT-06, QT-89 → LO-02/LO-06, QT-90 → MT-04, QT-94 → CT-05, QT-96 → MT-05/DC-05, QT-98 → PC-05/PC-06, QT-99 → PC-12/PC-13, QT-100 → PC-05/PC-12, QT-103 → PC-12, QT-104 → PC-05/PC-12, QT-104c → PC-05/PC-12, QT-105 → PC-12, QT-107 → LO-04, QT-111 → MT-06, QT-118 → LO-01/LO-05
+QT-1 → XC-01, QT-2 → XC-02, QT-5 → MT-02, QT-6 → XC-01, QT-7 → XC-01, QT-9 → XC-02, QT-10 → XC-03, QT-11 → XC-14, QT-16 → MT-02, QT-19 → XC-07, QT-19b → XC-07, QT-20 → XC-08, QT-21 → XC-02, QT-22 → XC-05, QT-22b → XC-05, QT-24 → PC-02/PC-03/PC-04, QT-25 → XC-07/PC-01, QT-30 → XC-04, QT-31 → XC-09, QT-32 → XC-02, QT-33 → XC-09, QT-36 → XC-05, QT-40 → XC-11, QT-41 → XC-11, QT-42 → XC-11, QT-43 → XC-11, QT-44 → PC-11, QT-45 → PC-01, QT-46 → XC-04, QT-46b → XC-04, QT-47 → XC-05, QT-49 → XC-04, QT-49b → XC-04, QT-49c → XC-04, QT-51 → XC-07, QT-54 → XC-07/XC-09, QT-55 → XC-07, QT-56 → XC-05, QT-56b → XC-04, QT-57 → PC-10, QT-57c → XC-04, QT-58 → XC-12, QT-59 → XC-09, QT-59b → XC-09, QT-60 → XC-01/XC-03, QT-61 → XC-13, QT-62 → XC-04, QT-63 → PC-11, QT-64 → CT-05, QT-65 → XC-09, QT-66 → DC-03, QT-67 → MT-05, QT-69 → XC-04, QT-70 → XC-11, QT-71 → MT-04, QT-72 → MT-04/XC-06, QT-72b → MT-04, QT-74 → MT-04, QT-74b → MT-04, QT-75 → CT-05, QT-75b → CT-05, QT-76 → CT-05, QT-77 → PC-08, QT-77b → PC-08, QT-77c → PC-08, QT-77d → PC-08, QT-77e → PC-08, QT-77f → PC-08, QT-77g → PC-14, QT-79 → DC-05, QT-81 → DC-04, QT-81b → DC-04, QT-82 → LO-01/LO-02/LO-03/MT-01/CT-01/CT-02/CT-03, QT-84 → LO-06, QT-86 → MT-01, QT-88 → MT-06, QT-88b → MT-06, QT-89 → LO-02/LO-06, QT-90 → MT-04, QT-94 → CT-05, QT-96 → MT-05/DC-05, QT-98 → PC-05/PC-06, QT-99 → PC-12/PC-13, QT-100 → PC-05/PC-12, QT-103 → PC-12, QT-104 → PC-05/PC-12, QT-104c → PC-05/PC-12, QT-105 → PC-12, QT-107 → LO-04, QT-111 → MT-06, QT-118 → LO-01/LO-05
 
 ## Đối chiếu kết quả PCCC với app cũ
 
