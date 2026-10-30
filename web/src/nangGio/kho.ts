@@ -7,6 +7,7 @@ import { useEffect, useState } from 'preact/hooks';
 import type { Diem } from '../tinh/kieu';
 import type { KetQuaNang } from '../tinh/nangGio/gioNang';
 import type { PhanBoGio } from '../tinh/nangGio/gio';
+import { taoNhip } from '../tinh/nangGio/dongHo';
 
 export type NguonBanDo = 'esri' | 'osm' | 'google';
 export type LopPhanTich = 'nang' | 'gio' | null;
@@ -76,12 +77,22 @@ export function datNG(p: Partial<TrangThai> | ((t: TrangThai) => Partial<TrangTh
   nghe.forEach((f) => f());
 }
 export function ngheNG(f: () => void): () => void { nghe.add(f); return () => void nghe.delete(f); }
-/** Hook: vẽ lại khi trạng thái đổi (chọn phần cần để đỡ vẽ lại — `chon` trả giá trị so sánh nông). */
-export function useNG<T>(chon: (t: TrangThai) => T): T {
+/**
+ * Hook: vẽ lại khi trạng thái đổi (chọn phần cần để đỡ vẽ lại — `chon` trả giá trị so sánh nông).
+ * `theoKhung`: gộp vẽ lại theo rAF (tối đa một lần / khung, đọc giá trị mới nhất lúc vẽ) — cho lớp nặng theo giờ (bóng 2D) khi kéo / ▶ chạy giờ.
+ */
+export function useNG<T>(chon: (t: TrangThai) => T, theoKhung = false): T {
   const [, ve] = useState(0);
   useEffect(() => {
     let cu = chon(tt);
-    return ngheNG(() => { const m = chon(tt); if (!bang(m, cu)) { cu = m; ve(phienBan); } });
+    const nhip = theoKhung && typeof requestAnimationFrame === 'function' ? taoNhip(() => ve(phienBan)) : null;
+    const bo = ngheNG(() => {
+      const m = chon(tt);
+      if (bang(m, cu)) return;
+      cu = m;
+      if (nhip) nhip.goi(); else ve(phienBan);
+    });
+    return () => { bo(); nhip?.huy(); };
   }, []);
   return chon(tt);
 }
