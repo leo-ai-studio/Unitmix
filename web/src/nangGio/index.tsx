@@ -12,9 +12,9 @@ import { luoi } from '../ui/Luoi';
 import { LopNoi } from '../ui/LopNoi';
 import { useManHep } from '../ui/manHep';
 import type { NutHienThi } from '../ui/ThanhHienThi';
-import type { GanMoRong, MoRong3D } from '../ve3d/moRong3D';
-import type { CanhDung } from '../ve3d/Khung3D';
+import type { MoRong3D } from '../ve3d/moRong3D';
 import { datNG, layNG, useNG } from './kho';
+import { taoMoRongNangGio } from './moRongVo';
 
 type Lop2D = typeof import('./LopNangGio2D').LopNangGio2D;
 let Lop2DDaNap: Lop2D | null = null;
@@ -77,20 +77,5 @@ export function useMoRongNangGio(pa: TrangThaiPA): MoRong3D {
   // đổi toạ độ / góc Bắc (sửa ở hộp) → báo kho để phần 3D đặt lại mặt trời, ảnh nền, đường mặt trời
   const khoaVT = JSON.stringify(pa.viTri ?? null) + '|' + (pa.huongView?.gocBac ?? 0);
   useEffect(() => { datNG({}); }, [khoaVT]);
-  return useMemo<MoRong3D>(() => ({
-    gan(c) {
-      let impl: GanMoRong | null = null, huy = false, canh: CanhDung | null = null;
-      import('./moRong3DImpl').then((m) => {
-        if (huy) return;
-        impl = m.gan(c, () => ref.current);
-        if (canh) impl.canhMoi?.(canh);
-        c.capNang();
-      }).catch(() => {});
-      return {
-        canhMoi(cn) { canh = cn; impl?.canhMoi?.(cn); },
-        nang: (g) => impl?.nang?.(g) ?? null,
-        huy() { huy = true; impl?.huy(); },
-      };
-    },
-  }), []);
+  return useMemo(() => taoMoRongNangGio(() => ref.current), []);
 }

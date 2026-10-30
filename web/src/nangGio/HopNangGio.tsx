@@ -10,8 +10,10 @@ import type { ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { mocLan, muiGioTheoKinhDo, NGAY_DONG_CHI, NGAY_HA_CHI } from '../tinh/matTroi';
 import { huongChuDao, SO_HUONG } from '../tinh/nangGio/gio';
 import { thongKeGio } from '../tinh/nangGio/gioNang';
+import { buocChay, docGio, gioPhut, kepGio } from '../tinh/nangGio/dongHo';
 import { docLienKet, ganViTri, khopHaiDiem, viTriPA, datSangLl, type LatLng } from '../tinh/viTri';
 import { fmtSo } from '../ui/so';
+import { useNgheChange } from '../ui/ngheChange';
 import { ThangMau } from '../ui/ThangMau';
 import { chayGio, huyGio, taiHoaGio, xemHuong } from './chayGio';
 import { chayNang, huyNang } from './chayNang';
@@ -23,7 +25,6 @@ import { TEN_LOP_GIO } from './hienThi';
 
 type Props = { pa: TrangThaiPA; tv: ThuVien | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; /** đang ở 3D (ẩn chọn điểm trên bản vẽ) */ la3D?: boolean };
 
-const gioPhut = (g: number) => { const h = Math.floor(g + 1e-6), m = Math.round((g - h) * 60); return `${h}:${String(m === 60 ? 0 : m).padStart(2, '0')}`; };
 
 export default function HopNangGio({ pa, tv, sua, chiXem, la3D }: Props) {
   useLang();
@@ -175,20 +176,27 @@ function TabNang({ pa, tv, la3D }: { pa: TrangThaiPA; tv: ThuVien | null; la3D?:
   const ml = useMemo(() => mocLan(vt.lat, vt.lng, s.ngay), [vt.lat, vt.lng, s.ngay]);
   const mg = muiGioTheoKinhDo(vt.lng);
   const g0 = ml ? Math.ceil(ml.moc * 4) / 4 : 6, g1 = ml ? Math.floor(ml.lan * 4) / 4 : 18;
-  // hoạt ảnh giờ: 1 giờ / giây, vòng lại từ mọc khi tới lặn
+  // hoạt ảnh giờ: tốc độ đều 1 giờ / giây (bước khung kẹp 0,1 s — tab ẩn không nhảy cóc), vòng lại từ mọc khi tới lặn; giờ liên tục, không làm tròn
   const raf = useRef(0);
   useEffect(() => {
     if (!chay) return;
     let truoc = performance.now();
     const vong = (bay: number) => {
       const dt = (bay - truoc) / 1000; truoc = bay;
-      const g = layNG().luc + dt;
-      datNG({ luc: g > g1 ? g0 : Math.max(g0, +g.toFixed(3)) });
+      datNG({ luc: buocChay(layNG().luc, dt, g0, g1) });
       raf.current = requestAnimationFrame(vong);
     };
     raf.current = requestAnimationFrame(vong);
     return () => cancelAnimationFrame(raf.current);
   }, [chay, g0, g1]);
+  // kéo / phím mũi tên / đặt bằng mã (input + change): một đường ghi vào kho; giá trị trùng thì bỏ (không vẽ lại thừa)
+  const nhapGio = (e: Event) => {
+    const g = docGio((e.currentTarget as HTMLInputElement).value);
+    if (g === null) return;
+    setChay(false);
+    if (g !== layNG().luc) datNG({ luc: kepGio(g, g0, g1) });
+  };
+  const refGio = useNgheChange(nhapGio); // `change` thuần (preact/compat gộp onChange vào onInput)
   const kq = s.n.kq;
   const tk = useMemo(() => (kq ? thongKeGio(kq.gio, kq.tongGio, 2, (i) => kq.cao[i] === 0) : null), [kq]);
   const tkMat = useMemo(() => {
@@ -211,7 +219,7 @@ function TabNang({ pa, tv, la3D }: { pa: TrangThaiPA; tv: ThuVien | null; la3D?:
         <span>{t('ng.nang.gio')} <b>{gioPhut(s.luc)}</b> (UTC+{mg}){ml ? ` · ${t('ng.nang.moc')} ${gioPhut(ml.moc)} · ${t('ng.nang.lan')} ${gioPhut(ml.lan)}` : ''}</span>
         <span class="hng-hang">
           <button type="button" class="nut-phu hng-chay" aria-label={chay ? t('ng.nang.dung') : t('ng.nang.chay')} title={chay ? t('ng.nang.dung') : t('ng.nang.chay')} onClick={() => setChay(!chay)}>{chay ? '❚❚' : '▶'}</button>
-          <input type="range" min={g0} max={g1} step="0.05" value={s.luc} onInput={(e) => { setChay(false); datNG({ luc: +e.currentTarget.value }); }} />
+          <input type="range" min={g0} max={g1} step="0.05" value={s.luc} aria-valuetext={gioPhut(s.luc)} ref={refGio} onInput={nhapGio} />
         </span>
       </div>
       <div class="hng-hang hng-boc">

@@ -6,11 +6,13 @@ import { chayRaf, easeInOut, giamChuyenDong, tron } from '../ui/chuyenDong';
 import type { GocNhin } from '../tinh/kieu';
 import { GocBanVe } from '../ui/GocBanVe';
 import { MenuNut } from '../ui/MenuNut';
+import { useNgheChange } from '../ui/ngheChange';
 import { coDaGiac } from '../tinh/matBang';
 import { dangChon, doiTuongTrung, khoaDoiTuong, laBam, laBamDup, trungRo, type DangChon3D, type DiemBam, type DoiTuong3D } from './chon3d';
 import type { GanMoRong, MoRong3D } from './moRong3D';
 import { capDo3D, coBoDem, huongMatTroi, THONG_SO_CAP, type CapDo3D } from './khungVe';
 import { bauTroi } from './moiTruong';
+import { docGio } from '../tinh/nangGio/dongHo';
 import { catY, chepVa, dichBong, dichDan, locMoiTruong, moiTruongGia, nhuong, thieuDich } from './dichShader';
 import { chayDan, laTung, type Tung } from './chiaNho';
 import type { NutHienThi } from '../ui/ThanhHienThi';
@@ -146,6 +148,13 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
   const [moTs, setMoTs] = useState(false); // bảng kích thước đứng (mở từ menu ⋯)
   const tr = useRef({ ts, hien, gio, cat, gocBac, kieu, lopAn, viDo });
   tr.current = { ts, hien, gio, cat, gocBac, kieu, lopAn, viDo };
+  /** Giờ do gói ngoài giữ (`moRong.gio` — một nguồn, liên tục): có thì khung KHÔNG chép giờ vào state, chỉ đọc khi đặt mặt trời. */
+  const gioNgoaiRef = useRef<{ doc: () => number; dat?: (g: number) => void } | null>(null);
+  const gioDung = (): number => gioNgoaiRef.current?.doc() ?? tr.current.gio;
+  const doiGio = (g: number) => { const n = gioNgoaiRef.current; if (n?.dat) n.dat(g); else setGio(g); };
+  const nhapGio = (e: Event) => { const g = docGio((e.currentTarget as HTMLInputElement).value); if (g !== null && g !== tr.current.gio) setGio(g); };
+  const refGio = useNgheChange(nhapGio);
+  const nangCuoi = useRef({ n: 0, gio: NaN, huong: [0, 0, 0] as [number, number, number] }).current;
   const dungRef = useRef(dung);
   dungRef.current = dung;
   const phanRef = useRef(phan);
@@ -434,11 +443,14 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
         const datNang = () => {
           if (!canh) return;
           const h = new Date(); // giờ Việt Nam (UTC+7) của ngày hôm nay
-          const { gocCao, phuongVi } = mr?.nang?.(tr.current.gio) ?? viTriMatTroi(tr.current.viDo, 105.85, new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate(), 0, 0, 0) + (tr.current.gio - 7) * 3600e3));
+          const g = gioDung(); // một nguồn giờ: gói ngoài (`mr.gio`) hoặc thanh giờ của khung
+          nangCuoi.n++; nangCuoi.gio = g;
+          const { gocCao, phuongVi } = mr?.nang?.(g) ?? viTriMatTroi(tr.current.viDo, 105.85, new Date(Date.UTC(h.getFullYear(), h.getMonth(), h.getDate(), 0, 0, 0) + (g - 7) * 3600e3));
           const [hx, hy, hz] = huongMatTroi(gocCao, phuongVi, tr.current.gocBac); // Bắc = +Y bản vẽ = −Z three khi gocBac = 0
           const c = canh.coCanh, [tx, ty, tz] = canh.tam;
           sun.position.set(tx + c * 1.6 * hx, ty + c * 1.6 * hy, tz + c * 1.6 * hz);
           sun.target.position.set(tx, 0, tz);
+          nangCuoi.huong = [hx, hy, hz];
           const s = sun.shadow.camera; s.left = -c; s.right = c; s.top = c; s.bottom = -c; s.near = 0.5; s.far = c * 6; s.updateProjectionMatrix();
           // Vật liệu: nắng chiều / sáng sớm dịu và ấm hơn giữa trưa
           sun.intensity = (gocCao > 2 ? 2.6 : 0.8) * (tr.current.kieu === 'vatlieu' ? 0.75 + 0.25 * Math.min(1, Math.max(0, gocCao) / 45) : 1);
@@ -654,7 +666,8 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
         const ob = new ResizeObserver(kichCo);
         ob.observe(hop.current);
         kichCo();
-        try { mr = moRongRef.current?.gan({ T, R, scene, phu, cam, sun, ve, apLop: () => apLop(), capNang: () => datNang(), datGio: (g) => setGio(g), dom: R.domElement }) ?? null; } catch { mr = null; }
+        try { mr = moRongRef.current?.gan({ T, R, scene, phu, cam, sun, ve, apLop: () => apLop(), capNang: () => datNang(), dom: R.domElement }) ?? null; } catch { mr = null; }
+        gioNgoaiRef.current = mr?.gio ? { doc: mr.gio, dat: mr.datGio } : null;
         void dungLai(false);
         apView();
         // --- mở dần: xem trước (vài chương trình) → đủ chất lượng (mọi vật liệu + bóng + môi trường), dịch song song không chặn ---
@@ -662,7 +675,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
         void (async () => {
           await daDungLan1; // lượt dựng đầu (có thể chia nhiều mẩu) xong mới dịch / hiện
           if (huy) return;
-          const bt = vatLieu ? bauTroi(T, tr.current.gio) : null;
+          const bt = vatLieu ? bauTroi(T, gioDung()) : null;
           try {
             R.shadowMap.enabled = false;
             // 1) xem trước: một vật liệu cho mọi vật thể — mỗi biến thể (mesh / nét / instanced có màu) một chương trình
@@ -703,6 +716,8 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
         he.current = { ve: () => { void dungLai(true); }, phan: () => { void dungPhanDoi(); }, datGoc, layGoc, anh };
         const hopEl = hop.current as HTMLDivElement & { _cap?: () => void; _nhan?: () => void; _chieuDoiTuong?: () => { loai: string; id: string; x: number; y: number }[] };
         hopEl._cap = () => { apHien(); datNang(); };
+        // để kiểm tự động (scripts/kiem_gio_nang.mjs): giờ + hướng mặt trời của lần đặt gần nhất, số lần đặt
+        (hopEl as typeof hopEl & { _nang?: () => typeof nangCuoi })._nang = () => ({ ...nangCuoi });
         hopEl._nhan = () => { apNhan(); ve(); };
         (hopEl as typeof hopEl & { _lop?: () => void })._lop = () => { apLop(); ve(); };
         (hopEl as typeof hopEl & { _view?: () => void })._view = apView;
@@ -774,7 +789,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
           return kq;
         };
         don = () => {
-          mr?.huy(); mr = null;
+          mr?.huy(); mr = null; gioNgoaiRef.current = null;
           huyBay(); cancelAnimationFrame(vong); cancelAnimationFrame(choRo); ob.disconnect(); cancelAnimationFrame(cho);
           cv0.removeEventListener('pointerdown', onDown); cv0.removeEventListener('pointerup', onUp); cv0.removeEventListener('pointermove', onMove);
           cv0.removeEventListener('pointerleave', onLeave); cv0.removeEventListener('pointercancel', onCancel);
@@ -798,7 +813,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
   useEffect(() => { (hop.current as (HTMLDivElement & { _lop?: () => void }) | null)?._lop?.(); }, [(lopAn ?? []).join()]);
   useEffect(() => { (hop.current as (HTMLDivElement & { _view?: () => void }) | null)?._view?.(); }, [phanTich?.bat, phanTich?.khoa, !!phanTich?.dung, JSON.stringify(phanTich?.loc ?? null)]);
 
-  const apGoc = (g: GocDeXuat) => { if (g.gio !== undefined) setGio(g.gio); he.current?.datGoc(g, true); };
+  const apGoc = (g: GocDeXuat) => { if (g.gio !== undefined) doiGio(g.gio); he.current?.datGoc(g, true); };
   const taiAnh = () => {
     const url = he.current?.anh(2);
     if (!url) return;
@@ -807,7 +822,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
     document.body.appendChild(a); a.click(); a.remove();
   };
   const chepPrompt = async () => {
-    const p = t('m3d.promptAI').replace('{ten}', tieuDe ?? 'Unitmix').replace('{gio}', String(gio));
+    const p = t('m3d.promptAI').replace('{ten}', tieuDe ?? 'Unitmix').replace('{gio}', String(Math.round(gioDung() * 10) / 10));
     try { await navigator.clipboard.writeText(p); setBaoChep(t('m3d.daChep')); } catch { setBaoChep(p); }
     setTimeout(() => setBaoChep(''), 4000);
   };
@@ -815,7 +830,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
     const g = he.current?.layGoc();
     if (!g || !onLuuGoc) return;
     const ten = prompt(t('m3d.tenGoc'), `${t('m3d.goc')} ${(gocLuu?.length ?? 0) + 1}`);
-    if (ten?.trim()) onLuuGoc({ ten: ten.trim(), vt: g.vt, dich: g.dich, gio });
+    if (ten?.trim()) onLuuGoc({ ten: ten.trim(), vt: g.vt, dich: g.dich, gio: Math.round(gioDung() * 100) / 100 });
   };
 
   const dsHien: [keyof typeof hien, string][] = [['dam', 'm3d.dam'], ['lov', 'm3d.lover'], ['mo', 'm3d.moCua'], ['top', 'm3d.sanTren'], ['vien', 'm3d.vien']];
@@ -850,7 +865,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
             {!toaNguyen && dsHien.map(([k, n]) => <label class="menu-nut-tich" key={k}><input type="checkbox" checked={hien[k]} onChange={(e) => setHien({ ...hien, [k]: e.currentTarget.checked })} /><span>{t(n)}</span></label>)}
           </MenuNut>
           <MenuNut k="nangCat" nhan={gioNgoai ? t('m3d.cat') : t('bt.nangCat')} dongKhiChon={false} lop="menu-nang-3d">
-            {!gioNgoai && <label class="menu-nut-truot"><span>{t('m3d.gio')}</span><input type="range" min="6" max="18" step="0.5" value={gio} onInput={(e) => setGio(+e.currentTarget.value)} /><b>{gio}h</b></label>}
+            {!gioNgoai && <label class="menu-nut-truot"><span>{t('m3d.gio')}</span><input type="range" min="6" max="18" step="0.5" value={gio} ref={refGio} onInput={nhapGio} /><b>{Math.round(gio * 10) / 10}h</b></label>}
             <label class="menu-nut-truot"><span>{t('m3d.cat')}</span><input type="range" min="0.05" max="1" step="0.01" value={cat} onInput={(e) => setCat(+e.currentTarget.value)} /><b>{Math.round(cat * 100)}%</b></label>
           </MenuNut>
         </span>
