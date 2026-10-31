@@ -92,7 +92,11 @@ Mỗi lượt bạn trả MỘT đối tượng JSON {"chu": "...", "goi": [{"te
   Có thể gọi nhiều công cụ độc lập trong cùng một lượt; app chạy lần lượt rồi gửi kết quả ở lượt sau.
 - Hội thoại bên dưới ghi lại các lượt trước: "→ GỌI ten {...}" là công cụ bạn đã gọi, "← KẾT QUẢ ten: ..." là kết quả app trả về.
   Chỉ nói đã làm xong việc gì sau khi THẤY kết quả công cụ tương ứng. Khi đã xong: goi = [] và chu = tóm tắt cho người dùng.
-- Không bịa tên công cụ, không bịa kết quả công cụ."""
+- Không bịa tên công cụ, không bịa kết quả công cụ.
+- HÀNH ĐỘNG, đừng hỏi lại điều tự xem được: khi người dùng nhờ làm việc trên app ("xếp tòa", "đổi căn", "xem KPI"...), lượt đầu hãy GỌI công cụ
+  (get_state / get_floor_plan / công cụ sửa phù hợp) thay vì trả lời bằng chữ. "Lô đang chọn" = man_hinh.lo trong <ngu_canh>; nếu rỗng thì gọi get_state.
+  Chỉ hỏi lại khi thật sự thiếu thông tin mà công cụ không đọc được.
+- "chu" là Markdown thật: xuống dòng bằng ký tự xuống dòng thật, KHÔNG viết hai ký tự gạch chéo + n; bảng Markdown mỗi hàng một dòng."""
 
 
 def tim_lenh_claude():
@@ -193,6 +197,10 @@ def dung_ban_ghi(messages, thu_muc):
 
 
 # ------------------------------------------------------------------ gọi claude -p
+# Windows: mỗi lần gọi claude.exe (console) sẽ bật một cửa sổ terminal nếu không đặt cờ này.
+KHONG_CUA_SO = 0x08000000 if os.name == "nt" else 0
+
+
 def _ghi_loi(s):
     """pythonw (chạy ngầm) không có stderr → ghi log không được làm đứt yêu cầu."""
     try:
@@ -239,7 +247,7 @@ def chay_mot_lan(lenh_goc, he_thong, prompt, mo_hinh, nghi, thu_muc, co_tep, con
         lenh += ["--model", MO_HINH[mo_hinh]]
     if nghi in MUC_NGHI:
         lenh += ["--effort", nghi]
-    p = subprocess.Popen(lenh, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=thu_muc)
+    p = subprocess.Popen(lenh, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=thu_muc, creationflags=KHONG_CUA_SO)
     ket = {}
 
     def doc():
@@ -299,6 +307,8 @@ def ra_tin_nhan(o, body):
     ten_ok = {t.get("name") for t in body.get("tools") or []}
     noi_dung, bo = [], []
     chu = str(dau_ra.get("chu") or "")
+    if "\n" not in chu and "\\n" in chu:   # mô hình đôi khi ghi chữ \n thay vì xuống dòng thật
+        chu = chu.replace("\\n", "\n")
     for g in dau_ra.get("goi") or []:
         if not isinstance(g, dict) or g.get("ten") not in ten_ok or not isinstance(g.get("dau_vao", {}), dict):
             bo.append(str(g.get("ten") if isinstance(g, dict) else g))
@@ -600,9 +610,9 @@ class XuLy(BaseHTTPRequestHandler):
             return ra
         if time.time() - tt["luc"] > 20:   # `claude auth status` không tốn lượt AI nhưng tốn ~0,5 s → nhớ 20 s
             try:
-                pb = subprocess.run(lenh + ["--version"], capture_output=True, timeout=30).stdout.decode().strip()
+                pb = subprocess.run(lenh + ["--version"], capture_output=True, timeout=30, creationflags=KHONG_CUA_SO).stdout.decode().strip()
                 a = json.loads(subprocess.run(lenh + ["auth", "status", "--json"], capture_output=True, timeout=30,
-                                              cwd=tempfile.gettempdir()).stdout.decode("utf-8", "replace") or "{}")
+                                              cwd=tempfile.gettempdir(), creationflags=KHONG_CUA_SO).stdout.decode("utf-8", "replace") or "{}")
                 tt["kq"] = {"phien_ban": pb, "dang_nhap": bool(a.get("loggedIn")),
                             "tai_khoan": {k: a.get(k) for k in ("authMethod", "email", "emailAddress", "organizationName", "subscriptionType") if a.get(k)}}
                 tt["luc"] = time.time()
@@ -696,7 +706,7 @@ def main():
     if lenh:
         try:
             tk = json.loads(subprocess.run(lenh + ["auth", "status", "--json"], capture_output=True, timeout=30,
-                                           cwd=tempfile.gettempdir()).stdout.decode("utf-8", "replace") or "{}")
+                                           cwd=tempfile.gettempdir(), creationflags=KHONG_CUA_SO).stdout.decode("utf-8", "replace") or "{}")
             print("Claude Code: " + ("đã đăng nhập" if tk.get("loggedIn") else "CHƯA ĐĂNG NHẬP — chạy `claude auth login`"))
         except Exception as e:
             print("Claude Code: không đọc được trạng thái đăng nhập (%s)" % e)
