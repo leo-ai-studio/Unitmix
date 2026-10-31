@@ -193,6 +193,15 @@ def dung_ban_ghi(messages, thu_muc):
 
 
 # ------------------------------------------------------------------ gọi claude -p
+def _ghi_loi(s):
+    """pythonw (chạy ngầm) không có stderr → ghi log không được làm đứt yêu cầu."""
+    try:
+        if sys.stderr is not None:
+            sys.stderr.write(s)
+    except Exception:
+        pass
+
+
 class LoiCau(Exception):
     def __init__(self, ma_http, kieu, chu):
         super().__init__(chu)
@@ -519,13 +528,13 @@ class XuLy(BaseHTTPRequestHandler):
     _tt_dn = {"luc": 0, "kq": {}}
 
     def log_message(self, fmt, *a):
-        sys.stderr.write("[cau] " + (fmt % a) + "\n")
+        _ghi_loi("[cau] " + (fmt % a) + "\n")
 
     def _nguon(self):
         n = self.headers.get("Origin")
         if n is None or NGUON_OK.match(n) or n.rstrip("/") in nguon_cho_phep():
             return n
-        sys.stderr.write("[cau] TỪ CHỐI nguồn %s — không phải file:// / localhost / nguồn khai ở cau_claude.json (LEO_CAU_NGUON)\n" % n)
+        _ghi_loi("[cau] TỪ CHỐI nguồn %s — không phải file:// / localhost / nguồn khai ở cau_claude.json (LEO_CAU_NGUON)\n" % n)
         return False
 
     def _dau(self, ma, nguon, kieu=None, dai=None):
