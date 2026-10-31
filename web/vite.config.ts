@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 import preact from '@preact/preset-vite';
+import type { Plugin } from 'vite';
 import { sinhServiceWorker } from './pwa/plugin';
 
 // Phiên bản hiện trên app: số trong package.json + mã commit + ngày build (không có git thì bỏ mã commit).
@@ -13,11 +14,27 @@ const git = (lenh: string) => {
     return '';
   }
 };
+/** Đưa cầu Claude + bộ cài lên cùng app (dist/cau/*, và khi chạy dev) để nút "Tải bộ cài cầu AI" tải từ chính địa chỉ app. */
+const TEP_CAU = ['cau_claude.py', 'cai_cau_ai.ps1'];
+const docCau = (t: string) => readFileSync(new URL(`../scripts/${t}`, import.meta.url));
+const phatCau = (): Plugin => ({
+  name: 'unitmix-cau',
+  generateBundle() { for (const t of TEP_CAU) this.emitFile({ type: 'asset', fileName: `cau/${t}`, source: docCau(t) }); },
+  configureServer(sv) {
+    sv.middlewares.use('/cau', (req, res, next) => {
+      const t = (req.url ?? '').split('?')[0].slice(1);
+      if (!TEP_CAU.includes(t)) return next();
+      res.setHeader('content-type', 'text/plain; charset=utf-8');
+      res.end(docCau(t));
+    });
+  },
+});
+
 const commit = git('git rev-parse --short HEAD');
 const sua = commit && git('git status --porcelain -- .') ? '+' : ''; // '+' = có sửa chưa commit
 
 export default defineConfig({
-  plugins: [preact(), sinhServiceWorker()], // sinhServiceWorker: dist/sw.js cho app mở từ màn hình chính (web/pwa)
+  plugins: [preact(), phatCau(), sinhServiceWorker()], // sinhServiceWorker: dist/sw.js cho app mở từ màn hình chính (web/pwa)
   define: {
     __PHIEN_BAN__: JSON.stringify(goi.version),
     __COMMIT__: JSON.stringify(commit + sua),

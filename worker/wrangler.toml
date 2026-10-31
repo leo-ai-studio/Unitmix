@@ -16,3 +16,12 @@ binding = "DB"
 database_name = "unitmix"
 database_id = "a703077d-cc4e-4d77-819d-dd18108bc00d"
 migrations_dir = "migrations"
+
+# Trạm chuyển Leo AI cho điện thoại (src/tram.ts): cầu trên máy tính nối WebSocket vào, điện thoại hỏi qua https
+[[durable_objects.bindings]]
+name = "TRAM"
+class_name = "Tram"
+
+[[migrations]]
+tag = "v1-tram"
+new_sqlite_classes = ["Tram"]

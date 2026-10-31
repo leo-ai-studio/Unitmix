@@ -103,6 +103,7 @@
 .leo-hoi p, .leo-loi p { margin: 0 0 8px; }
 .leo-hang { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .leo-hang input { flex: 1; min-width: 0; }
+.leo-ghep { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
 .leo-cau-tt { margin: 0; font-size: 13px; font-weight: 600; }
 .leo-chon-nguon { display: grid; gap: 4px; font-size: 13px; }
 .leo-chon-nguon select { min-height: 44px; font-size: 16px; border: 1px solid #cad6cd; border-radius: 10px; background: #fcfcf7; padding: 0 8px; }

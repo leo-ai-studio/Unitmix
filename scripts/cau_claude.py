@@ -16,6 +16,14 @@ Chạy:   python scripts/cau_claude.py              (cổng mặc định 3032; 
   GET  /suc-khoe    → {ok, cau, cong, phien_ban, dang_nhap, tai_khoan, xa}      (không tốn lượt AI)
   POST /v1/messages → giao thức Anthropic Messages (stream true / false); lỗi theo dạng lỗi Anthropic
   POST /dang-nhap   → mở terminal chạy `claude auth login` để NGƯỜI DÙNG tự đăng nhập (cầu không chạm mật khẩu)
+  GET  /ghep        → (chỉ máy này) {khoa, tram, noi}: mã ghép điện thoại + trạng thái nối trạm
+  POST /doi-ma      → (chỉ máy này) đổi mã ghép (điện thoại cũ hết dùng), nối lại trạm
+
+Điện thoại: điện thoại không gọi được 127.0.0.1 của máy tính → khi cau_claude.json (hoặc LEO_CAU_TRAM) khai địa chỉ app, cầu TỰ
+NỐI RA trạm chuyển trên Worker của app (worker/src/tram.ts, WebSocket wss://<app>/api/tram/cau), giữ nối suốt lúc chạy, đứt thì
+tự nối lại. Điện thoại gọi trạm bằng https cùng nguồn với trang, trạm chuyển yêu cầu xuống đây, cầu gọi chính nó ở 127.0.0.1 rồi gửi
+kết quả lên. Không mở cổng nào, không cần terminal. Mã ghép 32 byte sinh một lần, giữ ở LeoUnitmix/ghep.json; trạm chỉ thấy
+SHA-256 của mã. Từ trạm chỉ nhận /suc-khoe và /v1/messages; trạm giới hạn 30 câu/phút.
 
 An toàn: chỉ nghe 127.0.0.1; chỉ nhận yêu cầu từ trang mở bằng file:// (Origin "null"), localhost, hoặc nguồn khai ở
 cau_claude.json / biến LEO_CAU_NGUON (bản app trên Cloudflare) — trang lạ ngoài Internet KHÔNG gọi được cầu. Claude chạy trong
@@ -25,19 +33,25 @@ import base64
 import json
 import os
 import re
+import secrets
 import select
 import shlex
 import shutil
 import socket
+import ssl
+import struct
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-PHIEN_BAN_CAU = 1
+PHIEN_BAN_CAU = 2   # 1 = chỉ máy tính (127.0.0.1) · 2 = thêm trạm chuyển cho điện thoại
 GOC = os.path.dirname(os.path.abspath(__file__))
 GOC_DU_LIEU = os.path.join(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~"), "LeoUnitmix")
 GIOI_HAN_GIAY = int(os.environ.get("LEO_CAU_GIOI_HAN_GIAY") or 600)
@@ -108,9 +122,17 @@ def doc_cau_hinh():
 
 def nguon_cho_phep():
     """Nguồn khai thêm (bản app trên Cloudflare): cau_claude.json {"nguon": ["https://…"]} và/hoặc LEO_CAU_NGUON="a,b"."""
-    ds = [x.rstrip("/") for x in (doc_cau_hinh().get("nguon") or []) if isinstance(x, str)]
+    ng = doc_cau_hinh().get("nguon") or []
+    ds = [x.rstrip("/") for x in ([ng] if isinstance(ng, str) else ng) if isinstance(x, str)]
     ds += [x.strip().rstrip("/") for x in (os.environ.get("LEO_CAU_NGUON") or "").split(",") if x.strip()]
-    return set(ds)
+    t = diachi_tram()
+    return set(ds + ([t] if t else []))
+
+
+def diachi_tram():
+    """Địa chỉ app có trạm chuyển (https://<app>): LEO_CAU_TRAM hoặc cau_claude.json {"tram": …}; rỗng = không nối trạm."""
+    t = os.environ.get("LEO_CAU_TRAM") or doc_cau_hinh().get("tram") or ""
+    return t.strip().rstrip("/") if isinstance(t, str) else ""
 
 
 # ------------------------------------------------------------------ dựng prompt
@@ -308,6 +330,188 @@ def su_kien_sse(msg):
     yield "message_stop", {"type": "message_stop"}
 
 
+# ------------------------------------------------------------------ trạm chuyển cho điện thoại
+TEP_GHEP = os.path.join(GOC_DU_LIEU, "ghep.json")
+NOI = {"trang_thai": "chua", "loi": "", "luc": 0}   # chua · dang_noi · da_noi · loi
+_KHOA_GUI = threading.Lock()
+_NOI_LAI = threading.Event()
+HIEN_WS = [None]    # nối đang mở — /doi-ma đóng ngay để nối lại bằng mã mới
+DUONG_TRAM_OK = {("GET", "/suc-khoe"), ("POST", "/v1/messages")}
+CONG_HIEN_TAI = [0]
+
+
+def doc_khoa(moi=False):
+    """Mã ghép 32 byte: sinh một lần, giữ ở ghep.json (moi=True: đổi mã, điện thoại cũ hết dùng)."""
+    if not moi:
+        try:
+            with open(TEP_GHEP, encoding="utf-8") as f:
+                k = json.load(f).get("khoa")
+            if isinstance(k, str) and re.fullmatch(r"[A-Za-z0-9_-]{32,100}", k):
+                return k
+        except (OSError, ValueError):
+            pass
+    k = secrets.token_urlsafe(32)
+    os.makedirs(GOC_DU_LIEU, exist_ok=True)
+    with open(TEP_GHEP, "w", encoding="utf-8") as f:
+        json.dump({"khoa": k, "tao": time.strftime("%Y-%m-%d %H:%M:%S")}, f)
+    return k
+
+
+class WS:
+    """WebSocket khách tối giản (RFC 6455) bằng thư viện chuẩn — Python nhúng của bộ cài không có gói ngoài."""
+
+    def __init__(self, url, dau):
+        u = urllib.parse.urlsplit(url)
+        an = u.scheme == "wss"
+        s = socket.create_connection((u.hostname, u.port or (443 if an else 80)), timeout=20)
+        if an:
+            s = ssl.create_default_context().wrap_socket(s, server_hostname=u.hostname)
+        k = base64.b64encode(os.urandom(16)).decode()
+        yc = ("GET %s HTTP/1.1\r\nHost: %s\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %s\r\n"
+              "Sec-WebSocket-Version: 13\r\nUser-Agent: LeoCauClaude/%d\r\n" % (u.path or "/", u.netloc, k, PHIEN_BAN_CAU))
+        yc += "".join("%s: %s\r\n" % kv for kv in dau.items()) + "\r\n"
+        s.sendall(yc.encode())
+        ra = b""
+        while b"\r\n\r\n" not in ra:
+            c = s.recv(4096)
+            if not c:
+                raise OSError("trạm đóng nối khi bắt tay")
+            ra += c
+        dong, _, du = ra.partition(b"\r\n\r\n")
+        dong0 = dong.split(b"\r\n")[0].decode("latin-1")
+        if " 101 " not in dong0 + " ":
+            raise OSError("trạm trả " + dong0)
+        self.s, self.du = s, du
+        s.settimeout(None)
+
+    def _doc(self, n):
+        while len(self.du) < n:
+            c = self.s.recv(65536)
+            if not c:
+                raise OSError("trạm đóng nối")
+            self.du += c
+        r, self.du = self.du[:n], self.du[n:]
+        return r
+
+    def gui(self, chu, op=1):
+        b = chu.encode("utf-8") if isinstance(chu, str) else chu
+        n = len(b)
+        dau = bytes([0x80 | op])
+        if n < 126:
+            dau += bytes([0x80 | n])
+        elif n < 65536:
+            dau += bytes([0x80 | 126]) + struct.pack(">H", n)
+        else:
+            dau += bytes([0x80 | 127]) + struct.pack(">Q", n)
+        mn = os.urandom(4)
+        with _KHOA_GUI:
+            self.s.sendall(dau + mn + bytes(x ^ mn[i % 4] for i, x in enumerate(b)))
+
+    def nhan(self):
+        """Chuỗi văn bản tiếp theo; tự đáp ping; None khi trạm đóng."""
+        manh = b""
+        while True:
+            b0, b1 = self._doc(2)
+            op, n = b0 & 0x0F, b1 & 0x7F
+            if n == 126:
+                n = struct.unpack(">H", self._doc(2))[0]
+            elif n == 127:
+                n = struct.unpack(">Q", self._doc(8))[0]
+            mn = self._doc(4) if b1 & 0x80 else None
+            d = self._doc(n)
+            if mn:
+                d = bytes(x ^ mn[i % 4] for i, x in enumerate(d))
+            if op == 8:
+                return None
+            if op == 9:
+                self.gui(d, 10)
+                continue
+            if op == 10:
+                continue
+            manh = d if op in (1, 2) else manh + d
+            if b0 & 0x80:
+                return manh.decode("utf-8", "replace")
+
+    def dong(self):
+        for f in (lambda: self.gui(b"", 8), self.s.close):
+            try:
+                f()
+            except OSError:
+                pass
+
+
+def xu_ly_viec(ws, v, tram, cong):
+    """Một yêu cầu từ điện thoại: gọi chính cầu này ở 127.0.0.1 (đủ kiểm tra như máy tính), gửi kết quả lên trạm."""
+    ma_http, than, loai = 502, json.dumps({"type": "error", "error": {"type": "api_error", "message": "cầu lỗi khi chuyển"}}), "application/json"
+    try:
+        duong, la_hoi = v.get("duong"), v.get("duong") == "/v1/messages"
+        if (("POST" if la_hoi else "GET"), duong) not in DUONG_TRAM_OK:
+            raise ValueError("đường lạ")
+        rq = urllib.request.Request("http://127.0.0.1:%d%s" % (cong, duong), data=(v.get("than") or "{}").encode("utf-8") if la_hoi else None,
+                                    method="POST" if la_hoi else "GET",
+                                    headers={"Content-Type": "application/json", "Origin": tram, "X-Leo-Qua-Tram": "1"})
+        try:
+            with urllib.request.urlopen(rq, timeout=GIOI_HAN_GIAY + 60) as r:
+                ma_http, than, loai = r.status, r.read().decode("utf-8", "replace"), r.headers.get("Content-Type", "application/json")
+        except urllib.error.HTTPError as e:
+            ma_http, than, loai = e.code, e.read().decode("utf-8", "replace"), e.headers.get("Content-Type", "application/json")
+    except Exception as e:
+        than = json.dumps({"type": "error", "error": {"type": "api_error", "message": "cầu lỗi khi chuyển: %s" % e}}, ensure_ascii=False)
+    try:
+        ws.gui(json.dumps({"ma": v.get("ma"), "ma_http": ma_http, "than": than, "loai": loai}, ensure_ascii=False))
+    except OSError:
+        pass
+
+
+def chay_tram(tram, cong, khoa_ham=doc_khoa):
+    """Giữ nối tới trạm suốt lúc cầu chạy; đứt / lỗi → chờ 5 s … 5 phút rồi nối lại."""
+    url = re.sub(r"^http", "ws", tram) + "/api/tram/cau"
+    cho = 5
+    while True:
+        NOI.update(trang_thai="dang_noi")
+        ws, dung = None, threading.Event()
+        try:
+            ws = WS(url, {"X-Leo-Khoa": khoa_ham(), "Origin": tram})
+            HIEN_WS[0] = ws
+            NOI.update(trang_thai="da_noi", loi="", luc=time.time())
+            print("[cau] Đã nối trạm điện thoại %s" % tram)
+            cho = 5
+
+            def nhip(w=ws):
+                while not dung.wait(30):
+                    try:
+                        w.gui("ping")
+                    except OSError:
+                        return
+            threading.Thread(target=nhip, daemon=True).start()
+            while True:
+                t = ws.nhan()
+                if t is None:
+                    break
+                if t == "pong":
+                    continue
+                try:
+                    v = json.loads(t)
+                except ValueError:
+                    continue
+                threading.Thread(target=xu_ly_viec, args=(ws, v, tram, cong), daemon=True).start()
+            NOI.update(trang_thai="dang_noi", loi="trạm đóng nối")
+        except Exception as e:
+            if not _NOI_LAI.is_set():
+                NOI.update(trang_thai="loi", loi=str(e)[:200])
+                print("[cau] Chưa nối được trạm điện thoại (%s) — thử lại sau %d giây" % (e, cho))
+        finally:
+            dung.set()
+            HIEN_WS[0] = None
+            if ws:
+                ws.dong()
+        if _NOI_LAI.is_set():
+            _NOI_LAI.clear()
+            continue
+        time.sleep(cho)
+        cho = min(cho * 2, 300)
+
+
 # ------------------------------------------------------------------ máy phục vụ
 class XuLy(BaseHTTPRequestHandler):
     server_version = "LeoCauClaude/%d" % PHIEN_BAN_CAU
@@ -372,14 +576,17 @@ class XuLy(BaseHTTPRequestHandler):
         nguon = self._nguon()
         if nguon is False:
             return self._json(403, {"loi": "nguồn không được phép"}, None)
-        if self.path.split("?")[0] != "/suc-khoe":
+        duong = self.path.split("?")[0]
+        if duong == "/ghep" and self.headers.get("X-Leo-Qua-Tram") != "1":   # mã ghép chỉ trả cho trang trên chính máy này
+            return self._json(200, {"khoa": doc_khoa(), "tram": diachi_tram(), "noi": NOI["trang_thai"], "loi_noi": NOI["loi"]}, nguon)
+        if duong != "/suc-khoe":
             return self._json(404, {"loi": "không có"}, nguon)
         self._json(200, self.suc_khoe(), nguon)
 
     def suc_khoe(self):
         lenh, tt = self.lenh_claude, XuLy._tt_dn
         ra = {"ok": bool(lenh), "cau": PHIEN_BAN_CAU, "cong": self.server.server_address[1], "phien_ban": None,
-              "dang_nhap": None, "tai_khoan": {}, "xa": self.headers.get("X-Leo-Qua-Tram") == "1"}
+              "dang_nhap": None, "tai_khoan": {}, "xa": self.headers.get("X-Leo-Qua-Tram") == "1", "tram": NOI["trang_thai"]}
         if not lenh:
             return ra
         if time.time() - tt["luc"] > 20:   # `claude auth status` không tốn lượt AI nhưng tốn ~0,5 s → nhớ 20 s
@@ -400,6 +607,16 @@ class XuLy(BaseHTTPRequestHandler):
         if nguon is False:
             return self._json(403, {"loi": "nguồn không được phép"}, None)
         duong = self.path.split("?")[0]
+        if duong == "/doi-ma" and self.headers.get("X-Leo-Qua-Tram") != "1":
+            k = doc_khoa(moi=True)
+            _NOI_LAI.set()   # đóng nối cũ (mã cũ) → vòng chay_tram nối lại NGAY bằng mã mới
+            w = HIEN_WS[0]
+            if w:
+                try:
+                    w.s.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+            return self._json(200, {"khoa": k}, nguon)
         if duong == "/dang-nhap":
             if not self.lenh_claude:
                 return self._json(200, {"loi": "chưa cài Claude Code", "ma": "khong_co_cli"}, nguon)
@@ -461,6 +678,12 @@ def main():
         return
     print("Cầu Claude cho Leo AI · http://127.0.0.1:%d · claude = %s" % (cong, " ".join(lenh) if lenh else "KHÔNG TÌM THẤY"))
     print("Nguồn được phép: file:// · localhost" + "".join(" · " + n for n in sorted(nguon_cho_phep())))
+    tram = diachi_tram()
+    if tram:
+        threading.Thread(target=chay_tram, args=(tram, cong), daemon=True).start()
+        print("Trạm điện thoại: %s · mã ghép ở %s" % (tram, TEP_GHEP))
+    else:
+        print("Trạm điện thoại: (chưa khai — thêm {\"tram\": \"https://<app>\"} vào cau_claude.json)")
     if lenh:
         try:
             tk = json.loads(subprocess.run(lenh + ["auth", "status", "--json"], capture_output=True, timeout=30,

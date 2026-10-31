@@ -2,8 +2,11 @@ import { Hono, type Context } from 'hono';
 import { bam, bangNhau, chuoiNgauNhien, taoMaDuAn, taoMaSua } from './maSua';
 import { tuyenAI, type EnvAI } from './ai';
 import { cauHinhBanDo, type EnvBanDo } from './banDo';
+import { xuLyTram, type EnvTram } from './tram';
 
-type Env = { Bindings: EnvAI & EnvBanDo };
+export { Tram } from './tram';
+
+type Env = { Bindings: EnvAI & EnvBanDo & EnvTram };
 const app = new Hono<Env>();
 const GIOI_HAN_BODY = 2_000_000; // byte
 
@@ -141,6 +144,8 @@ app.get('/api/ai/trang-thai', tuyenAI.trangThai);
 // bản đồ nền: khoá Google Maps trình duyệt nếu chủ app đã đặt (worker/src/banDo.ts)
 app.get('/api/ban-do/cau-hinh', (c) => cauHinhBanDo(c as never));
 app.post('/api/ai/v1/messages', tuyenAI.chuyen);
+// Leo AI bằng tài khoản Claude trên máy tính, cho điện thoại: trạm chuyển Durable Object (worker/src/tram.ts)
+app.all('/api/tram/*', (c) => xuLyTram(c.req.raw, c.env));
 
 app.notFound((c) => c.json({ loi: 'khong_co' }, 404));
 app.onError((err, c) => {

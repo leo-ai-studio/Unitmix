@@ -17,7 +17,7 @@ import { batDauNghe, coDoc, coNghe, docTo, dungDoc, type LoiNghe, type PhienNghe
 import { goiYMoHinh, type GoiYMH } from './goiYMoHinh';
 import { GOI_Y_MO } from './heThong';
 import { docCuoc, ghiCuoc, idCuoc, tenTuCau, type CuocTroChuyen } from './hoiThoai';
-import { cauDungDuoc, chonNguon, docDiaChiCau, DS_NGUON, kiemCau, moDangNhapCau, type TrangThaiCau } from './cau';
+import { cauDungDuoc, chonNguon, docDiaChiCau, docGhepCuaMay, docMaGhep, doiMaGhep, DS_NGUON, ghiMaGhep, kiemCau, linkGhep, moDangNhapCau, taoBoCaiBat, type TrangThaiCau } from './cau';
 import { loiTiengViet, taoKhach, type NguonKhoa } from './khachThat';
 import { phanTichMd, type Inl, type KhoiMd } from './markdown';
 import { cheKhoa, DS_MO_HINH, docCaiDat, docKhoaApi, ghiCaiDat, ghiKhoaApi, moHinhTheoId, type CaiDatLeo, type MaMoHinh, type MucNghi } from './moHinh';
@@ -177,6 +177,9 @@ export function LeoAI(p: PropsLeo) {
   const [nhapKhoa, setNhapKhoa] = useState('');
   /** cầu Claude trên máy (undefined = đang dò, null = không trả lời) */
   const [cauTT, setCauTT] = useState<TrangThaiCau | null | undefined>(undefined);
+  /** mã ghép điện thoại + trạng thái nối trạm (chỉ lấy được từ cầu trên máy này) */
+  const [ghep, setGhep] = useState<{ khoa: string; tram: string; noi: string } | null>(null);
+  const [daChep, setDaChep] = useState(false);
   const huy = useRef<AbortController | null>(null);
   const thanRef = useRef<HTMLDivElement>(null);
   const oNhap = useRef<HTMLTextAreaElement>(null);
@@ -198,6 +201,7 @@ export function LeoAI(p: PropsLeo) {
   const doCau = () => kiemCau().then(setCauTT);
   useEffect(() => { void doCau(); const h = setInterval(doCau, 20_000); return () => clearInterval(h); }, []);
   useEffect(() => { if (man === 'caiDat') void doCau(); }, [man]);
+  useEffect(() => { if (man === 'caiDat' && cauTT?.qua === 'may') void docGhepCuaMay().then(setGhep); }, [man, cauTT?.qua]);
   useEffect(() => { if (man === 'caiDat' && chungCo === null) fetch('/api/ai/trang-thai').then((r) => r.json()).then((j: { coKhoaChung?: boolean }) => setChungCo(!!j.coKhoaChung), () => setChungCo(false)); }, [man]);
   // Esc đóng (khi không đang hỏi)
   useEffect(() => {
@@ -217,6 +221,13 @@ export function LeoAI(p: PropsLeo) {
   // cuộn xuống khi có chữ mới (nếu đang ở đáy)
   useEffect(() => { const th = thanRef.current; if (th && cuoiDay) th.scrollTop = th.scrollHeight; }, [ve, dang, cuocId, hoi, loi]);
 
+  /** tải Cai_Cau_AI_Unitmix.bat (nhúng địa chỉ app đang mở) — chạy một lần trên máy tính Windows */
+  const taiBoCai = () => {
+    const url = URL.createObjectURL(new Blob([taoBoCaiBat()], { type: 'application/octet-stream' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'Cai_Cau_AI_Unitmix.bat'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
   const luuDs = (moi: CuocTroChuyen[]) => { setDs(moi); ghiCuoc(p.maDuAn, moi); };
   const datCai = (c: Partial<CaiDatLeo>) => { const m = { ...cai, ...c }; setCai(m); ghiCaiDat(m); };
   const datMoHinhCuoc = (id: MaMoHinh, nghi?: MucNghi) => {
@@ -253,7 +264,7 @@ export function LeoAI(p: PropsLeo) {
     setDang({ ...DANG_RONG });
     // khách giả chỉ nhận ở bản dev (kịch bản E2E scripts/leo_ai_e2e.mjs), bản build bỏ qua
     const gia = p.khachGia ?? (import.meta.env.DEV ? (window as unknown as { __leoKhachGia?: KhachClaude }).__leoKhachGia : undefined);
-    const khach: KhachClaude & { nguon?: NguonKhoa } = gia ?? taoKhach({ nguon: nguonDung, khoaRieng: khoaApi, maDuAn: p.maDuAn, maSua: p.maSua, diaChiCau: docDiaChiCau() });
+    const khach: KhachClaude & { nguon?: NguonKhoa } = gia ?? taoKhach({ nguon: nguonDung, khoaRieng: khoaApi, maDuAn: p.maDuAn, maSua: p.maSua, diaChiCau: docDiaChiCau(), qua: cauTT?.qua, maGhep: docMaGhep() });
     let kt: KetThuc | null = null;
     try {
       kt = await chayVong({
@@ -433,8 +444,28 @@ export function LeoAI(p: PropsLeo) {
             </p>
             <div class="leo-hang">
               <button type="button" class="nut-phu" onClick={() => { setCauTT(undefined); void doCau(); }}>{t('leo.cau.kiemLai')}</button>
+              {!cauTT && cauTT !== undefined && location.protocol === 'https:' && <button type="button" class="nut-chinh" onClick={taiBoCai}>{t('leo.cau.taiBoCai')}</button>}
               {cauTT && cauTT.ok && cauTT.dangNhap === false && <button type="button" class="nut-chinh" onClick={() => { void moDangNhapCau().then(() => setTimeout(doCau, 4000)); }}>{t('leo.cau.dangNhap')}</button>}
             </div>
+            {cauTT?.qua === 'may' && ghep && (
+              <div class="leo-ghep">
+                <b>{t('leo.ghep.tieuDe')}</b>
+                <p class="muted">{ghep.tram ? t('leo.ghep.giaiThich') : t('leo.ghep.chuaKhaiTram')}</p>
+                {ghep.tram && (
+                  <>
+                    <p class="leo-cau-tt" role="status">{ghep.noi === 'da_noi' ? t('leo.ghep.daNoi') : t('leo.ghep.chuaNoi')}</p>
+                    <div class="leo-hang">
+                      <button type="button" class="nut-chinh" onClick={() => { void navigator.clipboard?.writeText(linkGhep(ghep.khoa, ghep.tram)).then(() => { setDaChep(true); setTimeout(() => setDaChep(false), 2500); }); }}>{daChep ? t('leo.ghep.daChep') : t('leo.ghep.chepLink')}</button>
+                      {'share' in navigator && <button type="button" class="nut-phu" onClick={() => { void navigator.share({ title: 'LEO Unitmix', url: linkGhep(ghep.khoa, ghep.tram) }).catch(() => undefined); }}>{t('leo.ghep.chia')}</button>}
+                      <button type="button" class="nut-phu" onClick={() => { if (confirm(t('leo.ghep.doiMaHoi'))) void doiMaGhep().then((k) => k && setGhep({ ...ghep, khoa: k })); }}>{t('leo.ghep.doiMa')}</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            {cauTT?.qua === 'tram' && (
+              <div class="leo-hang"><span class="muted">{t('leo.ghep.dangDung')}</span><button type="button" class="nut-phu" onClick={() => { ghiMaGhep(null); setCauTT(null); }}>{t('leo.ghep.huyGhep')}</button></div>
+            )}
             <label class="leo-chon-nguon">
               <span>{t('leo.nguon.tieuDe')}</span>
               <select value={cai.nguon} onChange={(e) => datCai({ nguon: e.currentTarget.value as typeof cai.nguon })}>

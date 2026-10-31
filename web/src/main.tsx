@@ -28,11 +28,13 @@ import './styles/pccc.css';
 import './styles/nang-gio.css'; // vị trí · ảnh nền · nắng · gió (nangGio/*) + thang màu dùng chung
 import './styles/gon.css'; // gọn giao diện: nạp sau cùng (sửa hàng nhãn / ô, thanh 3D một hàng…)
 import { langHienTai } from './i18n/i18n';
+import { nhanMaGhepTuLink } from './troLy/cau';
 import { dangKySW } from './pwa/dangKySW';
 import { DuAn } from './man/DuAn';
 import { SoanThao } from './man/SoanThao';
 import { theoDoiKhungNhin } from './ui/manHep';
 
+nhanMaGhepTuLink(); // mở bằng link ghép điện thoại (#ghep=…) → lưu mã, xoá khỏi thanh địa chỉ
 document.documentElement.lang = langHienTai();
 theoDoiKhungNhin();
 

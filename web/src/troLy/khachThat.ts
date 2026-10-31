@@ -7,16 +7,20 @@
  * Lỗi đổi sang câu tiếng Việt dễ hiểu (`loiTiengViet`) theo lớp lỗi có kiểu của SDK.
  */
 import Anthropic from '@anthropic-ai/sdk';
+import { GOC_TRAM, taoFetchTram } from './cau';
 import type { KhachClaude } from './vongLap';
 
 export type NguonKhoa = 'rieng' | 'chung' | 'cau';
 
 /** `nguon` chọn nguồn; 'cau' = tài khoản Claude qua cầu trên máy (troLy/cau.ts) tại `diaChiCau`. */
-export function taoKhach(v: { nguon?: NguonKhoa; khoaRieng: string | null; maDuAn: string; maSua: string | null; diaChiCau?: string }): KhachClaude & { nguon: NguonKhoa } {
+export function taoKhach(v: { nguon?: NguonKhoa; khoaRieng: string | null; maDuAn: string; maSua: string | null; diaChiCau?: string; qua?: 'may' | 'tram'; maGhep?: string | null }): KhachClaude & { nguon: NguonKhoa } {
   const nguon: NguonKhoa = v.nguon ?? (v.khoaRieng ? 'rieng' : 'chung');
   const client = nguon === 'cau'
     // cầu tự gọi Claude Code bằng tài khoản đăng nhập trên máy; SDK không tự gọi lại (mỗi lần gọi lại là thêm một lượt claude -p)
-    ? new Anthropic({ apiKey: 'tai-khoan-claude', baseURL: v.diaChiCau, dangerouslyAllowBrowser: true, maxRetries: 0 })
+    ? v.qua === 'tram' && v.maGhep
+      // điện thoại: đi qua trạm chuyển trên Worker (cầu trên máy tính tự nối ra trạm); fetch riêng lo hỏi + chờ tiếp
+      ? new Anthropic({ apiKey: 'tai-khoan-claude', baseURL: location.origin + GOC_TRAM, fetch: taoFetchTram(v.maGhep), dangerouslyAllowBrowser: true, maxRetries: 0 })
+      : new Anthropic({ apiKey: 'tai-khoan-claude', baseURL: v.diaChiCau, dangerouslyAllowBrowser: true, maxRetries: 0 })
     : nguon === 'rieng' && v.khoaRieng
     ? new Anthropic({ apiKey: v.khoaRieng, dangerouslyAllowBrowser: true, maxRetries: 2 })
     : new Anthropic({
@@ -38,6 +42,8 @@ export function loiTiengViet(e: unknown, nguon: NguonKhoa): { chu: string; can?:
   if (kieu?.type === 'chua_cau_hinh' || kieu?.type === 'can_ma_sua' || kieu?.type === 'het_luot') return { chu: kieu.message ?? 'Máy chủ từ chối.', can: 'khoa' };
   if (nguon === 'cau') {
     // cầu trả lỗi theo dạng Anthropic (scripts/cau_claude.py); câu ở đây chỉ rõ việc người dùng làm được
+    if (kieu?.type === 'ma_ghep_sai') return { chu: 'Mã ghép điện thoại không còn đúng — mở Leo AI trên máy tính, Cài đặt → Dùng trên điện thoại, rồi ghép lại.', can: 'khoa' };
+    if (kieu?.type === 'may_tat') return { chu: 'Máy tính chưa nối: máy đang tắt, đang ngủ, hoặc cầu AI chưa chạy. Bật máy tính rồi thử lại.', can: 'khoa' };
     if (kieu?.type === 'chua_cai_claude') return { chu: 'Máy chưa cài Claude Code — chạy bộ cài cầu AI (Cài đặt Leo AI).', can: 'khoa' };
     if (e instanceof Anthropic.AuthenticationError) return { chu: 'Claude Code trên máy chưa đăng nhập hoặc phiên đã hết hạn — bấm "Đăng nhập Claude" trong Cài đặt Leo AI.', can: 'khoa' };
     if (e instanceof Anthropic.RateLimitError) return { chu: 'Tài khoản Claude của bạn hết hạn mức tạm thời (gói Pro/Max) — đợi hạn mức làm mới rồi thử lại, hoặc chọn mô hình nhẹ hơn.' };
