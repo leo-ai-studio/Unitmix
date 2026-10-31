@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.3', ngay: '2026-11-01',
+    vi: [
+      'Leo AI trên điện thoại: dán link / mã ghép ngay trong Cài đặt; báo đúng khi máy tính chưa nối',
+      'Ô căn đang chọn trên mặt bằng Tầng nhạt hơn, thấy rõ nội thất',
+    ],
+    en: [
+      'Leo AI on phones: paste the pairing link / code right in Settings; clear message when the computer is not connected',
+      'Selected unit on the floor plan is lighter so the furniture stays visible',
+    ],
+  },
+  {
     v: '0.4.2', ngay: '2026-10-31',
     vi: [
       'Quy tắc vị trí căn: căn góc chỉ ở góc, căn giữa chỉ ở giữa, căn V / Y khoá đúng chỗ cạnh lõi thang máy',

@@ -237,7 +237,7 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTe
         <path key={`tn${vt.khoa}`} class="can-vuot-tn" d={ranh} vector-effect="non-scaling-stroke" />
       ))}
       {lop.filter((x) => daChon.has(x.vt.khoa)).map(({ vt, ranh }) => (
-        <path key={`chon${vt.khoa}`} d={ranh} fill="var(--green)" fill-opacity="0.18" stroke="var(--green)" stroke-width="3" stroke-dasharray={vt.khoa === canKhoa ? undefined : '6 3'}
+        <path key={`chon${vt.khoa}`} d={ranh} fill="var(--green)" fill-opacity="0.07" stroke="var(--green)" stroke-width="3" stroke-dasharray={vt.khoa === canKhoa ? undefined : '6 3'}
           vector-effect="non-scaling-stroke" pointer-events="none" />
       ))}
       {/* nhãn ô đổi công năng ở tâm ô */}
