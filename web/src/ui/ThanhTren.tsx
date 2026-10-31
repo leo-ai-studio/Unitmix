@@ -28,6 +28,9 @@ type Props = {
   onHoanTac?: () => void;
   onLamLai?: () => void;
   onXuatCad?: () => void;
+  /** Mở hộp xuất PDF (báo cáo, Salekit, HĐMB) / xuất 3D · BIM (SketchUp .dae, Revit .ifc). */
+  onXuatPdf?: () => void;
+  onXuat3d?: () => void;
   /** Trả Promise thì nút hiện vòng O tới khi xong (xuất chờ rải hầm chạy nền). */
   onXuatXls?: () => void | Promise<void>;
   /** Các bước làm việc chính (tab cố định trên thanh trên). */
@@ -154,7 +157,7 @@ function TabTruot({ lop, nhan, chon, children }: { lop: string; nhan: string; ch
  * Menu "⋯" khi thanh hẹp: lớp phủ cố định dưới nút, không đẩy gì và không bị thanh cuộn ngang cắt.
  * Màn hẹp (≤ 1024 px) gom thêm phần ít dùng của thanh vào đây (`hep`): dải cấp, chế độ sửa, trạng thái lưu (CSS `.chi-hep`).
  */
-function MenuThem({ onXls, onCad, hep }: { onXls?: () => void; onCad?: () => void; hep?: ComponentChildren }) {
+function MenuThem({ onXls, onCad, onPdf, on3d, hep }: { onXls?: () => void; onCad?: () => void; onPdf?: () => void; on3d?: () => void; hep?: ComponentChildren }) {
   const [mo, setMo] = useState(false);
   const [vt, setVt] = useState({ top: 0, right: 0 });
   const nut = useRef<HTMLButtonElement>(null);
@@ -185,6 +188,8 @@ function MenuThem({ onXls, onCad, hep }: { onXls?: () => void; onCad?: () => voi
           {hep && <div class="chi-hep menu-them-hep">{hep}</div>}
           <button type="button" role="menuitem" onClick={onXls}>{t('xuat.xls')}</button>
           <button type="button" role="menuitem" disabled={!onCad} onClick={onCad}>{t('xuat.cad')}</button>
+          <button type="button" role="menuitem" disabled={!onPdf} onClick={onPdf}>{t('xuat.pdf')}</button>
+          <button type="button" role="menuitem" disabled={!on3d} onClick={on3d}>{t('xuat.mo3d')}</button>
           <div class="menu-them-lang" role="group" aria-label={t('lang.chon')}>
             <button type="button" aria-pressed={lang === 'vi'} onClick={() => datLang('vi')}>VI</button>
             <button type="button" aria-pressed={lang === 'en'} onClick={() => datLang('en')}>EN</button>
@@ -350,8 +355,10 @@ export function ThanhTren(p: Props) {
         {dangXls && <img class="spin-o" src="/brand/leo_ai_o.png" alt="" style={{ width: '14px', height: '14px', verticalAlign: '-2px', marginRight: '6px' }} />}{t('xuat.xls')}
       </button>
       <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatCad} onClick={p.onXuatCad}>{t('xuat.cad')}</button>
+      <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuatPdf} onClick={p.onXuatPdf}>{t('xuat.pdf')}</button>
+      <button class="nut-chu nhom-xuat" type="button" disabled={!p.onXuat3d} onClick={p.onXuat3d}>{t('xuat.mo3d')}</button>
       <span class="nhom-xuat"><ChonLang /></span>
-      <MenuThem onXls={p.onXuatXls && xuatXls} onCad={p.onXuatCad}
+      <MenuThem onXls={p.onXuatXls && xuatXls} onCad={p.onXuatCad} onPdf={p.onXuatPdf} on3d={p.onXuat3d}
         hep={<>{p.capDo && <DaiCap c={p.capDo} />}{nhomCheDo}{chuLuu(false)}</>} />
     </header>
   );

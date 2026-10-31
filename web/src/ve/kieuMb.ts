@@ -1,7 +1,8 @@
 import type { LoaiCan } from '../tinh/kieu';
 
 /** Kiểu hiển thị mặt bằng tầng. `leo` là bảng màu của app; ba kiểu salekit đo từ PDF tài liệu bán hàng (mã màu lấy từ app cũ). */
-export type KieuMb = 'leo' | 'sk_galia' | 'sk_hh1' | 'sk_rivea';
+/** `hd_mb` chỉ dùng khi in phụ lục HĐMB (style "type" của app cũ: màu loại căn nhạt 30 %): không nằm trong DS_KIEU_MB nên không hiện ở menu kiểu hiển thị. */
+export type KieuMb = 'leo' | 'sk_galia' | 'sk_hh1' | 'sk_rivea' | 'hd_mb';
 export const DS_KIEU_MB: KieuMb[] = ['leo', 'sk_galia', 'sk_hh1', 'sk_rivea'];
 
 export type BangKieu = {
@@ -21,6 +22,10 @@ export const KIEU_MB: Record<KieuMb, BangKieu> = {
   leo: {
     u: { stu: 'var(--u-stu)', '1pn': 'var(--u-1pn)', '2pn': 'var(--u-2pn)', '2pnp': 'var(--u-2pnp)', '3pn': 'var(--u-3pn)' },
     doDac: 0.6, tuong: '#292D2D', thietBi: '#8A9494', duongDan: '#174F52', sanTrang: false, sanMau: '#E9EDF2', loiMau: '#F6F8FA',
+  },
+  hd_mb: {
+    u: { stu: 'var(--u-stu)', '1pn': 'var(--u-1pn)', '2pn': 'var(--u-2pn)', '2pnp': 'var(--u-2pnp)', '3pn': 'var(--u-3pn)' },
+    doDac: 0.3, tuong: '#1F3F45', thietBi: '#8A9494', duongDan: '#174F52', sanTrang: false, sanMau: '#E9EDF2', loiMau: '#F6F8FA',
   },
   sk_galia: {
     u: { stu: '#DEEFEA', '1pn': '#F2E4DE', '2pn': '#DDDDDC', '2pnp': '#CDDEC0', '3pn': '#EBE0C9' },
