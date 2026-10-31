@@ -11,6 +11,7 @@ import { mocLan, muiGioTheoKinhDo, NGAY_DONG_CHI, NGAY_HA_CHI } from '../tinh/ma
 import { huongChuDao, SO_HUONG } from '../tinh/nangGio/gio';
 import { thongKeGio } from '../tinh/nangGio/gioNang';
 import { buocChay, docGio, gioPhut, kepGio } from '../tinh/nangGio/dongHo';
+import { KINH_TUYEN_TRUC, tinhTuTen } from '../tinh/nangGio/vn2000';
 import { docLienKet, ganViTri, khopHaiDiem, viTriPA, datSangLl, type LatLng } from '../tinh/viTri';
 import { fmtSo } from '../ui/so';
 import { useNgheChange } from '../ui/ngheChange';
@@ -22,11 +23,13 @@ import { datNG, layNG, useNG, type NguonBanDo } from './kho';
 import { GRADIENT_K, GRADIENT_NANG, MAU_GIO_CSS } from './mau';
 import { docCauHinh } from './nguonBanDo';
 import { TEN_LOP_GIO } from './hienThi';
+import { timDiaDiem, type DiaDiem } from './timDiaDiem';
+import { apDungTuBanVe, coToaDoThat } from './viTriTuDong';
 
-type Props = { pa: TrangThaiPA; tv: ThuVien | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; /** đang ở 3D (ẩn chọn điểm trên bản vẽ) */ la3D?: boolean };
+type Props = { pa: TrangThaiPA; tv: ThuVien | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; /** đang ở 3D (ẩn chọn điểm trên bản vẽ) */ la3D?: boolean; /** tên / địa điểm dự án: đoán tỉnh để đặt vị trí từ toạ độ bản vẽ */ diaDiem?: string };
 
 
-export default function HopNangGio({ pa, tv, sua, chiXem, la3D }: Props) {
+export default function HopNangGio({ pa, tv, sua, chiXem, la3D, diaDiem }: Props) {
   useLang();
   const s = useNG((x) => ({ moHop: x.moHop, tab: x.tab }));
   if (!s.moHop) return null;
@@ -41,7 +44,7 @@ export default function HopNangGio({ pa, tv, sua, chiXem, la3D }: Props) {
         <button type="button" class="hng-dong" aria-label={t('ng.dong')} title={t('ng.dong')} onClick={() => datNG({ moHop: false, chonDiem: null })}>✕</button>
       </header>
       <div class="hng-than">
-        {s.tab === 'viTri' && <TabViTri pa={pa} sua={sua} chiXem={chiXem} la3D={la3D} />}
+        {s.tab === 'viTri' && <TabViTri pa={pa} sua={sua} chiXem={chiXem} la3D={la3D} diaDiem={diaDiem} />}
         {s.tab === 'nang' && <TabNang pa={pa} tv={tv} la3D={la3D} />}
         {s.tab === 'gio' && <TabGio pa={pa} tv={tv} la3D={la3D} />}
       </div>
@@ -49,13 +52,18 @@ export default function HopNangGio({ pa, tv, sua, chiXem, la3D }: Props) {
   );
 }
 
-function TabViTri({ pa, sua, chiXem, la3D }: { pa: TrangThaiPA; sua: Props['sua']; chiXem: boolean; la3D?: boolean }) {
+function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Props['sua']; chiXem: boolean; la3D?: boolean; diaDiem?: string }) {
   const vt = viTriPA(pa);
   const s = useNG((x) => ({ banDo2D: x.banDo2D, banDo3D: x.banDo3D, doMo: x.doMo, nguon: x.nguon, A: x.diemA, B: x.diemB, chon: x.chonDiem }));
   const [dan, setDan] = useState('');
   const [bao, setBao] = useState('');
   const [llA, setLlA] = useState(''), [llB, setLlB] = useState('');
   const [coGoogle, setCoGoogle] = useState(false);
+  // đặt vị trí khỏi dán link: (1) từ toạ độ thật của bản vẽ quy hoạch, (2) tìm theo tên địa điểm
+  const coThat = useMemo(() => coToaDoThat(pa), [pa.lo]);
+  const [tinhId, setTinhId] = useState(() => tinhTuTen(diaDiem ?? '')?.id ?? KINH_TUYEN_TRUC[0].id);
+  const [ktt, setKtt] = useState('105');
+  const [q, setQ] = useState(''), [kqTim, setKqTim] = useState<DiaDiem[] | null>(null), [dangTim, setDangTim] = useState(false);
   useEffect(() => { docCauHinh().then((c) => setCoGoogle(!!c.google)); }, []);
   const tam = useMemo(() => {
     const ds = pa.lo.flatMap((l) => l.ranh);
@@ -63,9 +71,31 @@ function TabViTri({ pa, sua, chiXem, la3D }: { pa: TrangThaiPA; sua: Props['sua'
     const xs = ds.map((p) => p[0]), ys = ds.map((p) => p[1]);
     return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2] as [number, number];
   }, [pa.lo]);
-  const datToaDo = (ll: LatLng, cach: 'lienKet' | 'tay') => {
+  const datToaDo = (ll: LatLng, cach: 'lienKet' | 'tay' | 'timKiem') => {
     sua((p) => ganViTri(p, { lat: ll.lat, lng: ll.lng, neo: tam, cachDat: cach }));
     if (!layNG().banDo2D && !layNG().banDo3D) datNG({ banDo2D: true, banDo3D: true });
+  };
+  const datTuBanVe = () => {
+    const k = tinhId === 'khac' ? Number(ktt) : KINH_TUYEN_TRUC.find((x) => x.id === tinhId)?.ktt ?? NaN;
+    const moi = Number.isFinite(k) && k > 90 && k < 120 ? apDungTuBanVe(pa, k) : null;
+    if (!moi) { setBao(t('ng.vt.tuBanVeKhong')); return; }
+    const v = viTriPA(moi);
+    sua((p) => apDungTuBanVe(p, k) ?? p);
+    if (!layNG().banDo2D && !layNG().banDo3D) datNG({ banDo2D: true, banDo3D: true });
+    setBao(t('ng.vt.tuBanVeXong').replace('{lat}', v.lat.toFixed(6)).replace('{lng}', v.lng.toFixed(6)).replace('{goc}', fmtSo(v.gocBac, { thapPhan: 2 })));
+  };
+  const tim = async () => {
+    setDangTim(true); setBao('');
+    try {
+      const r = await timDiaDiem(q);
+      setKqTim(r);
+      if (!r.length) setBao(t('ng.vt.timRong'));
+    } catch { setKqTim(null); setBao(t('ng.vt.timLoi')); } finally { setDangTim(false); }
+  };
+  const chonDiaDiem = (d: DiaDiem) => {
+    datToaDo({ lat: d.lat, lng: d.lng }, 'timKiem');
+    setBao(t('ng.vt.timDat').replace('{ten}', d.ten.split(',').slice(0, 3).join(',')));
+    setKqTim(null);
   };
   const apDan = () => {
     const r = docLienKet(dan);
@@ -97,6 +127,35 @@ function TabViTri({ pa, sua, chiXem, la3D }: { pa: TrangThaiPA; sua: Props['sua'
       <p class={vt.coToaDo ? 'hng-trang ok' : 'hng-trang canh'}>
         {vt.coToaDo ? `${so(vt.lat)}, ${so(vt.lng)} · ${t('ng.vt.gocBac')} ${fmtSo(vt.gocBac, { thapPhan: 1 })}°` : t('ng.vt.chuaDat')}
       </p>
+      {coThat && (
+        <div class="hng-tu-ban-ve">
+          <h4>{t('ng.vt.tuBanVe')}</h4>
+          <p class="hng-goi-y">{t('ng.vt.tuBanVeGiai')}</p>
+          <label class="hng-o"><span>{t('ng.vt.tinh')}</span>
+            <select value={tinhId} disabled={tat} onChange={(e) => setTinhId(e.currentTarget.value)}>
+              {KINH_TUYEN_TRUC.map((x) => <option key={x.id} value={x.id}>{x.ten} · {x.ktt}°</option>)}
+              <option value="khac">{t('ng.vt.tinhKhac')}</option>
+            </select>
+          </label>
+          {tinhId === 'khac' && <label class="hng-o"><span>{t('ng.vt.ktt')}</span><input type="number" step="0.25" value={ktt} disabled={tat} onInput={(e) => setKtt(e.currentTarget.value)} /></label>}
+          <button type="button" class="nut-chinh" disabled={tat} onClick={datTuBanVe}>{t('ng.vt.datTuBanVe')}</button>
+        </div>
+      )}
+      <label class="hng-o">
+        <span>{t('ng.vt.tim')}</span>
+        <span class="hng-hang">
+          <input type="text" value={q} disabled={tat} placeholder="KĐT Tây Hồ Tây, Hà Nội" onInput={(e) => setQ(e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && q.trim().length >= 3 && !dangTim && void tim()} />
+          <button type="button" class="nut-chinh" disabled={tat || dangTim || q.trim().length < 3} onClick={() => void tim()}>{dangTim ? '…' : t('ng.vt.timNut')}</button>
+        </span>
+      </label>
+      <p class="hng-goi-y">{t('ng.vt.timGoiY')}</p>
+      {kqTim && kqTim.length > 0 && (
+        <ul class="hng-kq-tim">
+          {kqTim.map((d) => <li key={`${d.lat},${d.lng}`}><button type="button" class="nut-phu" disabled={tat} onClick={() => chonDiaDiem(d)}>{d.ten}</button></li>)}
+        </ul>
+      )}
+      <details class="hng-khop">
+        <summary>{t('ng.vt.danTuyChon')}</summary>
       <label class="hng-o">
         <span>{t('ng.vt.dan')}</span>
         <span class="hng-hang">
@@ -105,6 +164,7 @@ function TabViTri({ pa, sua, chiXem, la3D }: { pa: TrangThaiPA; sua: Props['sua'
         </span>
       </label>
       <p class="hng-goi-y">{t('ng.vt.goiYDan')}</p>
+      </details>
       <div class="hng-luoi2">
         <label><span>{t('ng.vt.viDo')}</span><input type="number" step="0.000001" disabled={tat} value={vt.coToaDo ? so(vt.lat) : ''} onChange={(e) => { const v = +e.currentTarget.value; if (Math.abs(v) <= 90) datToaDo({ lat: v, lng: vt.coToaDo ? vt.lng : 105.85 }, 'tay'); }} /></label>
         <label><span>{t('ng.vt.kinhDo')}</span><input type="number" step="0.000001" disabled={tat} value={vt.coToaDo ? so(vt.lng) : ''} onChange={(e) => { const v = +e.currentTarget.value; if (Math.abs(v) <= 180) datToaDo({ lat: vt.lat, lng: v }, 'tay'); }} /></label>

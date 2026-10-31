@@ -35,7 +35,7 @@ export function LopNangGio2D(p: { pa: TrangThaiPA; tv: ThuVien | null }) {
 }
 
 const HopNangGioLuoi = luoi(() => import('./HopNangGio').then((m) => m.default), 'hop');
-type PropsHop = { pa: TrangThaiPA; tv: ThuVien | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; la3D?: boolean };
+type PropsHop = { pa: TrangThaiPA; tv: ThuVien | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; la3D?: boolean; diaDiem?: string };
 /** Hộp Vị trí · Nắng · Gió — chỉ tải mã khi mở lần đầu. */
 export function HopNangGioCho(p: PropsHop) {
   const mo = useNG((x) => x.moHop), hep = useManHep();
@@ -61,24 +61,16 @@ export function useNutNangGio3D(): NutHienThi[] {
 }
 
 /**
- * Mục "Hướng nắng" và "Hướng gió" trong menu Lớp của 3D Toàn dự án: bật / tắt tức thì từng lớp có hướng.
+ * Nút "Hướng nắng" / "Hướng gió" trên thanh 3D: bật / tắt tức thì từng lớp có hướng.
  * Hướng nắng = đường mặt trời (vòng B Đ N T, quỹ đạo, chấm giờ). Hướng gió = lớp gió (tiện nghi + đường dòng); chưa có kết quả gió thì
- * bấm mở hộp tab Gió để chạy phân tích (không có gì để hiện).
+ * bấm mở hộp tab Gió để chạy phân tích (chưa có gì để hiện).
  */
-export function useNutHuong3D(): NutHienThi[] {
-  const s = useNG((x) => ({ mt: x.duongMT, gio: x.lop === 'gio' }));
-  return [
-    { khoa: 'huongNang', nhan: t('ng.lop.huongNang'), bat: s.mt, onClick: () => datNG({ duongMT: !layNG().duongMT }) },
-    {
-      khoa: 'huongGio', nhan: t('ng.lop.huongGio'), bat: s.gio,
-      onClick: () => {
-        const g = layNG();
-        if (g.lop === 'gio') datNG({ lop: null });
-        else if (g.gio.kq) datNG({ lop: 'gio', hien3D: true, dongGio: true });
-        else datNG({ moHop: true, tab: 'gio' });
-      },
-    },
-  ];
+export const chuyenNang = () => datNG({ duongMT: !layNG().duongMT });
+export function chuyenGio() {
+  const g = layNG();
+  if (g.lop === 'gio') datNG({ lop: null });
+  else if (g.gio.kq) datNG({ lop: 'gio', hien3D: true, dongGio: true });
+  else datNG({ moHop: true, tab: 'gio' });
 }
 
 /** Nút mở hộp Vị trí · Nắng · Gió ở thanh công cụ 3D. */

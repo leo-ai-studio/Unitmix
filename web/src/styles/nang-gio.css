@@ -93,3 +93,9 @@
 @media (max-width: 1024px) and (max-height: 520px) {
   .cho-hop-ng, .cho-hop-ng.o-3d { left: auto; width: min(420px, 60vw); right: calc(var(--dock-rong, 0px) + var(--an-r, 0px)); bottom: 0; }
 }
+
+/* Vị trí: đặt từ bản vẽ quy hoạch + tìm địa điểm (khỏi dán link) */
+.hng-tu-ban-ve { display: grid; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); }
+.hng-tu-ban-ve h4 { margin: 0; }
+.hng-kq-tim { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.hng-kq-tim .nut-phu { width: 100%; min-height: 40px; text-align: left; white-space: normal; line-height: 1.3; }
