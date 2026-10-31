@@ -2,6 +2,8 @@
  * Mô hình Claude cho Leo AI + cài đặt người dùng (lưu ở trình duyệt này). Mã mô hình đúng như tài liệu Claude API (không hậu tố ngày).
  * Giá USD / 1 triệu token (vào / ra) dùng để ước chi phí tương đối khi gợi ý mô hình — cập nhật khi Anthropic đổi giá.
  */
+import { DS_NGUON, type NguonChon } from './cau';
+
 export type MaMoHinh = 'claude-opus-5-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5';
 export type MucNghi = 'low' | 'medium' | 'high';
 
@@ -36,8 +38,10 @@ export type CaiDatLeo = {
   nghi: MucNghi;
   /** đọc to câu trả lời (speechSynthesis) */
   docTo: boolean;
+  /** nguồn gọi Claude: tự động (khoá riêng → tài khoản Claude qua cầu → khoá chung) hoặc ép một nguồn */
+  nguon: NguonChon;
 };
-export const CAI_DAT_MAC_DINH: CaiDatLeo = { moHinh: MO_HINH_MAC_DINH, nghi: NGHI_MAC_DINH, docTo: false };
+export const CAI_DAT_MAC_DINH: CaiDatLeo = { moHinh: MO_HINH_MAC_DINH, nghi: NGHI_MAC_DINH, docTo: false, nguon: 'tu_dong' };
 
 const KHOA_CAI_DAT = 'unitmix.leoAi.caiDat';
 const KHOA_API = 'unitmix.leoAi.khoaApi';
@@ -52,6 +56,7 @@ export function docCaiDat(): CaiDatLeo {
       moHinh: v.moHinh === 'tu_chon' || DS_MO_HINH.some((m) => m.id === v.moHinh) ? v.moHinh! : CAI_DAT_MAC_DINH.moHinh,
       nghi: v.nghi === 'low' || v.nghi === 'medium' || v.nghi === 'high' ? v.nghi : NGHI_MAC_DINH,
       docTo: v.docTo === true,
+      nguon: DS_NGUON.includes(v.nguon as NguonChon) ? v.nguon! : CAI_DAT_MAC_DINH.nguon,
     };
   } catch { return { ...CAI_DAT_MAC_DINH }; }
 }

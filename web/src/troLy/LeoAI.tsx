@@ -17,6 +17,7 @@ import { batDauNghe, coDoc, coNghe, docTo, dungDoc, type LoiNghe, type PhienNghe
 import { goiYMoHinh, type GoiYMH } from './goiYMoHinh';
 import { GOI_Y_MO } from './heThong';
 import { docCuoc, ghiCuoc, idCuoc, tenTuCau, type CuocTroChuyen } from './hoiThoai';
+import { cauDungDuoc, chonNguon, docDiaChiCau, DS_NGUON, kiemCau, moDangNhapCau, type TrangThaiCau } from './cau';
 import { loiTiengViet, taoKhach, type NguonKhoa } from './khachThat';
 import { phanTichMd, type Inl, type KhoiMd } from './markdown';
 import { cheKhoa, DS_MO_HINH, docCaiDat, docKhoaApi, ghiCaiDat, ghiKhoaApi, moHinhTheoId, type CaiDatLeo, type MaMoHinh, type MucNghi } from './moHinh';
@@ -174,6 +175,8 @@ export function LeoAI(p: PropsLeo) {
   const [cuoiDay, setCuoiDay] = useState(true);
   const [sapTen, setSapTen] = useState<string | null>(null);
   const [nhapKhoa, setNhapKhoa] = useState('');
+  /** cầu Claude trên máy (undefined = đang dò, null = không trả lời) */
+  const [cauTT, setCauTT] = useState<TrangThaiCau | null | undefined>(undefined);
   const huy = useRef<AbortController | null>(null);
   const thanRef = useRef<HTMLDivElement>(null);
   const oNhap = useRef<HTMLTextAreaElement>(null);
@@ -185,11 +188,16 @@ export function LeoAI(p: PropsLeo) {
   const moHinh: MaMoHinh = (cuoc?.moHinh as MaMoHinh) ?? (cai.moHinh === 'tu_chon' ? 'claude-sonnet-5-5' : cai.moHinh);
   const [nghiCuoc, setNghiCuoc] = useState<MucNghi>(cai.nghi);
   const chay = !!dang;
+  const nguonDung: NguonKhoa = chonNguon(cai.nguon, { khoaRieng: !!khoaApi, cau: cauDungDuoc(cauTT ?? null) });
 
   useEffect(() => { p.khiChay?.(chay); }, [chay]);
   useEffect(() => () => { huy.current?.abort(); dungDoc(); p.khiChay?.(false); }, []);
   // chip xác nhận cho công cụ (xoá PA, tải tệp, bấm nút nhạy cảm)
   useEffect(() => { p.datXacNhan((c) => new Promise((xong) => setHoi({ cau: c, xong: (b) => { setHoi(null); xong(b); } }))); }, []);
+  // dò cầu Claude trên máy: lúc mở, mỗi 20 s, và ngay khi mở Cài đặt (0 token)
+  const doCau = () => kiemCau().then(setCauTT);
+  useEffect(() => { void doCau(); const h = setInterval(doCau, 20_000); return () => clearInterval(h); }, []);
+  useEffect(() => { if (man === 'caiDat') void doCau(); }, [man]);
   useEffect(() => { if (man === 'caiDat' && chungCo === null) fetch('/api/ai/trang-thai').then((r) => r.json()).then((j: { coKhoaChung?: boolean }) => setChungCo(!!j.coKhoaChung), () => setChungCo(false)); }, [man]);
   // Esc đóng (khi không đang hỏi)
   useEffect(() => {
@@ -245,7 +253,7 @@ export function LeoAI(p: PropsLeo) {
     setDang({ ...DANG_RONG });
     // khách giả chỉ nhận ở bản dev (kịch bản E2E scripts/leo_ai_e2e.mjs), bản build bỏ qua
     const gia = p.khachGia ?? (import.meta.env.DEV ? (window as unknown as { __leoKhachGia?: KhachClaude }).__leoKhachGia : undefined);
-    const khach: KhachClaude & { nguon?: NguonKhoa } = gia ?? taoKhach({ khoaRieng: khoaApi, maDuAn: p.maDuAn, maSua: p.maSua });
+    const khach: KhachClaude & { nguon?: NguonKhoa } = gia ?? taoKhach({ nguon: nguonDung, khoaRieng: khoaApi, maDuAn: p.maDuAn, maSua: p.maSua, diaChiCau: docDiaChiCau() });
     let kt: KetThuc | null = null;
     try {
       kt = await chayVong({
@@ -383,7 +391,7 @@ export function LeoAI(p: PropsLeo) {
     <aside class="leo-ai" role="dialog" aria-label={t('leo.ten')} data-lang={lang}>
       <header class="leo-dau">
         <MarkLeo quay={chay} vuong />
-        <div class="leo-ten"><strong>{t('leo.ten')}</strong><small>{khoaApi ? t('leo.nguon.rieng') : t('leo.nguon.chung')} · {mhHien.ten.replace('Claude ', '')}</small></div>
+        <div class="leo-ten"><strong>{t('leo.ten')}</strong><small>{t(`leo.nguon.${nguonDung === 'cau' ? 'cau' : nguonDung === 'rieng' && khoaApi ? 'rieng' : 'chung'}`)} ·{mhHien.ten.replace('Claude ', '')}</small></div>
         <span class="gian" />
         <NutNho k="leoLichSu" nhan={t('leo.lichSu')} bat={man === 'lichSu'} onClick={() => setMan(man === 'lichSu' ? 'chat' : 'lichSu')} />
         <NutNho k="leoMoi" nhan={t('leo.cuocMoi')} tat={chay} onClick={cuocMoi} />
@@ -413,6 +421,27 @@ export function LeoAI(p: PropsLeo) {
       {man === 'caiDat' && (
         <div class="leo-trang">
           <h3>{t('leo.caiDat')}</h3>
+          <section class="leo-muc">
+            <b>{t('leo.cau.tieuDe')}</b>
+            <p class="muted">{t('leo.cau.giaiThich')}</p>
+            <p class="leo-cau-tt" role="status">
+              {cauTT === undefined ? '…'
+                : !cauTT ? t('leo.cau.khongThay')
+                : !cauTT.ok ? t('leo.cau.chuaCaiClaude')
+                : cauTT.dangNhap === false ? t('leo.cau.chuaDangNhap')
+                : `${t('leo.cau.daNoi')}${cauTT.taiKhoan ? ` · ${cauTT.taiKhoan}` : ''}`}
+            </p>
+            <div class="leo-hang">
+              <button type="button" class="nut-phu" onClick={() => { setCauTT(undefined); void doCau(); }}>{t('leo.cau.kiemLai')}</button>
+              {cauTT && cauTT.ok && cauTT.dangNhap === false && <button type="button" class="nut-chinh" onClick={() => { void moDangNhapCau().then(() => setTimeout(doCau, 4000)); }}>{t('leo.cau.dangNhap')}</button>}
+            </div>
+            <label class="leo-chon-nguon">
+              <span>{t('leo.nguon.tieuDe')}</span>
+              <select value={cai.nguon} onChange={(e) => datCai({ nguon: e.currentTarget.value as typeof cai.nguon })}>
+                {DS_NGUON.map((k) => <option key={k} value={k}>{t(`leo.nguon.chon.${k}`)}</option>)}
+              </select>
+            </label>
+          </section>
           <section class="leo-muc">
             <b>{t('leo.khoa.tieuDe')}</b>
             <p class="muted">{t('leo.khoa.giaiThich')}</p>
