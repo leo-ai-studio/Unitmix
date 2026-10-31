@@ -110,6 +110,7 @@
   .hoa-gio { right: 8px; top: 14px; width: 48px; height: 48px; overflow: visible; }
   .thuoc-ty-le { left: 112px; bottom: 16px; }
   .goc-bv { bottom: 8px; }
+  .goc-bv-hop.lop { max-height: 66vh; } /* menu Lớp 3D có 11 mục: hiện đủ không phải cuộn */
   .goc-bv.trai { left: 8px; } .goc-bv.phai { right: 8px; }
   .goc-bv-hop { max-width: calc(100vw - 32px); max-height: 40dvh; font-size: 13px; }
   .goc-bv-hop.lop label { min-height: 40px; }

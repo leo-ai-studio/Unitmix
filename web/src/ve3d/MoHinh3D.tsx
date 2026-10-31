@@ -25,10 +25,10 @@ import { Khung3D, type NguCanh, type PhanTich3D } from './Khung3D';
 import { NutBieuTuong } from '../ui/NutBieuTuong';
 import { CAO_TANG_DE_MM } from './dungToa';
 import { dungHinhView, oDuAn, type OView } from './lopView3d';
-import { datLopView, TheDiemCan, ThanhMauView, useLocView, useLopView, useViewTang } from '../man/lopView';
+import { datLopView, nutLopView, TheDiemCan, ThanhMauView, useLocView, useLopView, useViewTang } from '../man/lopView';
 import type { KetQuaViewPA } from '../tinh/huongView';
 import { khoi3dTheoId } from './stretch3d';
-import { HopNangGioCho, useMoRongNangGio, useNutNangGio3D } from '../nangGio';
+import { HopNangGioCho, useMoRongNangGio, useNutHuong3D, useNutNangGio3D } from '../nangGio';
 import { datNG, layNG, useNG } from '../nangGio/kho';
 import { viTriPA } from '../tinh/viTri'; // vị trí · ảnh nền · nắng · gió (gói riêng, cắm qua moRong) // góc Bắc dự án (TMB › Điểm view › Cài đặt): mặt trời 3D cả dự án quay theo
 
@@ -128,6 +128,8 @@ function useLop3D(): [Lop3D[], (k: Lop3D) => void] {
   const doi = (k: Lop3D) => setAn((a) => { const b = a.includes(k) ? a.filter((x) => x !== k) : [...a, k]; luuLopAn(b); return b; });
   return [an, doi];
 }
+/** Lớp › Hướng view (điểm view căn): cùng trạng thái với nút Lớp của TMB / màn Tầng. */
+const huongView = (): NutHienThi => ({ ...nutLopView(), nhan: t('ng.lop.huongView') });
 const nutLop = (ds: Lop3D[], an: Lop3D[], doi: (k: Lop3D) => void): NutHienThi[] =>
   ds.map((k) => ({ khoa: k, nhan: t(`m3d.lop.${k}`), bat: !an.includes(k), onClick: () => doi(k) }));
 
@@ -169,7 +171,7 @@ export function MoHinhToa({ toa, mau, mauTang, tv, pa, dauThanh, chon3d, ...luu 
   };
   return (
     <Khung3D khoa={khoa} gocBac={toa.gocDo} viDo={viTriPA(pa).lat} chinhThamSo toaNguyen dauThanh={dauThanh} nutPhanTich={<NutPhanTich />} {...luu} tenAnh={`Unitmix-${mau.id}`} phanTich={phanTich}
-      lop={nutLop(['thang'], lopAn, doiLop)} lopAn={lopAn}
+      lop={[...nutLop(['thang'], lopAn, doiLop), huongView()]} lopAn={lopAn}
       tieuDe={`${mau.ten_vi.split(' · ')[0]} · ${toa.soTangDe ? toa.soTangDe + ' + ' : ''}${toa.soTangDH} ${t('m3d.tang')}`}
       chon={c} onChon={chon3d?.onChonToa} onMo={chon3d?.onMoToa} chuThich={chu}
       dung={function* ({ T, goc, M, G, P }) {
@@ -221,6 +223,7 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   const vHam = useNgheHam('3d'); // hầm rải trong Web Worker: có kết quả mới thì dựng lại (khoaNhe)
   const moRong = useMoRongNangGio(pa);
   const nutNG3D = useNutNangGio3D(); // Lớp › Ảnh vệ tinh nền (bật / tắt tức thì)
+  const nutHuong = useNutHuong3D(); // Lớp › Hướng nắng · Hướng gió
   const vtDA = viTriPA(pa); // một nguồn vĩ độ / góc Bắc: toạ độ dự án (tinh/viTri.ts), PA cũ đọc huongView
   // tầng tum + trục thang mọi tòa: mặt bằng hiệu dụng (đã tự chỉnh) + hình lõi; nạp lõi lười, chưa xong thì dựng không tum rồi dựng lại
   const mbToa = useMemo(() => new Map(pa.toa.flatMap((x) => {
@@ -282,7 +285,7 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   return (<>
     <Khung3D khoa={khoa} moRong={moRong} khoaNhe={toa?.id ?? ''} phan={phan} toaNguyen dauThanh={nut} nutPhanTich={<>{nutHam}<NutPhanTich /><NutNangGio /></>} gioNgoai {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
-      lop={[...nutLop(['tum', 'ham', 'thang', 'gio', 'cay', 'duong', 'ranh'], lopAn, doiLop), ...nutNG3D]} lopAn={lopAn}
+      lop={[...nutLop(['tum', 'ham', 'thang', 'gio', 'cay', 'duong', 'ranh'], lopAn, doiLop), ...nutNG3D, ...nutHuong, huongView()]} lopAn={lopAn}
       gocBac={vtDA.gocBac} viDo={vtDA.lat} dung={({ T, goc, M, kieu, capDo }) => dungDuAnTung(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa, tach: true })} />
     <HopNangGioCho pa={pa} tv={tv} sua={sua} chiXem={chiXem} la3D />
   </>);

@@ -60,6 +60,27 @@ export function useNutNangGio3D(): NutHienThi[] {
   return [{ khoa: 'banDo', nhan: t('ng.lop.banDo'), bat: b, onClick: () => datNG({ banDo3D: !layNG().banDo3D }) }];
 }
 
+/**
+ * Mục "Hướng nắng" và "Hướng gió" trong menu Lớp của 3D Toàn dự án: bật / tắt tức thì từng lớp có hướng.
+ * Hướng nắng = đường mặt trời (vòng B Đ N T, quỹ đạo, chấm giờ). Hướng gió = lớp gió (tiện nghi + đường dòng); chưa có kết quả gió thì
+ * bấm mở hộp tab Gió để chạy phân tích (không có gì để hiện).
+ */
+export function useNutHuong3D(): NutHienThi[] {
+  const s = useNG((x) => ({ mt: x.duongMT, gio: x.lop === 'gio' }));
+  return [
+    { khoa: 'huongNang', nhan: t('ng.lop.huongNang'), bat: s.mt, onClick: () => datNG({ duongMT: !layNG().duongMT }) },
+    {
+      khoa: 'huongGio', nhan: t('ng.lop.huongGio'), bat: s.gio,
+      onClick: () => {
+        const g = layNG();
+        if (g.lop === 'gio') datNG({ lop: null });
+        else if (g.gio.kq) datNG({ lop: 'gio', hien3D: true, dongGio: true });
+        else datNG({ moHop: true, tab: 'gio' });
+      },
+    },
+  ];
+}
+
 /** Nút mở hộp Vị trí · Nắng · Gió ở thanh công cụ 3D. */
 export function NutNangGio3D() {
   const m = useNG((x) => x.moHop);

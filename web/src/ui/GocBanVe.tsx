@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { NutBieuTuong } from './NutBieuTuong';
 import type { NutHienThi } from './ThanhHienThi';
@@ -22,10 +22,19 @@ type Props = {
 export function GocBanVe({ zoom, lop, chuGiai, troGiup }: Props) {
   const [mo, setMo] = useState<'' | 'lop' | 'chuGiai' | 'troGiup'>('');
   const bat = (k: typeof mo) => setMo((m) => (m === k ? '' : k));
+  const trai = useRef<HTMLDivElement>(null), phai = useRef<HTMLDivElement>(null);
+  // bấm ra ngoài hộp đang mở (kể cả lên bản vẽ / 3D) thì tự thu lại — không phải bấm lại nút
+  useEffect(() => {
+    if (!mo) return;
+    const hop = mo === 'lop' ? phai : trai;
+    const ngoai = (e: Event) => { if (!hop.current?.contains(e.target as Node)) setMo(''); };
+    document.addEventListener('pointerdown', ngoai, true);
+    return () => document.removeEventListener('pointerdown', ngoai, true);
+  }, [mo]);
   return (
     <>
       {(chuGiai || troGiup) && (
-        <div class="goc-bv trai">
+        <div class="goc-bv trai" ref={trai}>
           {mo === 'chuGiai' && chuGiai && <div class="goc-bv-hop" role="dialog" aria-label={t('bt.chuGiai')}>{chuGiai}</div>}
           {mo === 'troGiup' && troGiup && <div class="goc-bv-hop" role="note">{troGiup}</div>}
           <div class="nhom-bt">
@@ -35,7 +44,7 @@ export function GocBanVe({ zoom, lop, chuGiai, troGiup }: Props) {
         </div>
       )}
       {(zoom || (lop && lop.length > 0)) && (
-        <div class="goc-bv phai">
+        <div class="goc-bv phai" ref={phai}>
           {mo === 'lop' && lop && (
             <div class="goc-bv-hop lop" role="group" aria-label={t('bt.lop')}>
               {lop.map((n) => (
