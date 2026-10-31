@@ -1038,3 +1038,11 @@ Người dùng: chưa thấy cửa sổ đầu hành lang như app cũ; sảnh t
 - **Khác app cũ:** lõi app mới là khối đặc nên cửa sảnh gắn nổi trên mặt lõi (app cũ dựng lõi bằng tường CAD, khe sảnh hở thật); dữ liệu tường lõi app mới
   phủ kín mặt tiền sảnh I / V nên dò khe không ra khe sảnh — vị trí cửa lấy theo mặt ngoài lõi, không theo khe.
 - Test: `ve3d/cuaSoLoi.test.ts` (10 ca). Còn dở: lõi xh-l1 / xh-l2 chưa có `bao_tm`; hai khe 1,2–1,3 m ở tm-v4 / xh-u1 (khe sảnh theo luật app cũ) dựng cửa kín khe — chưa đối chiếu app cũ.
+
+## 2026-10-31 · Quy tắc vị trí căn: góc chỉ ở góc, giữa chỉ ở giữa, V / Y khoá cạnh lõi thang máy · Claude Code (Sonnet 5.5)
+
+Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang máy như hiện tại, không thay được ở vị trí khác; căn góc chỉ ở góc, căn giữa không ở góc.
+- Trước đó chỉ tối ưu tự động / khít đoạn kẹp / thêm căn giữ đúng loại vị trí; đổi tay ở màn Tầng, kéo đổi chỗ, trợ lý AI vẫn cho căn giữa ↔ góc (chỉ ghi chú ⚠ "khác vị trí") và đổi V / Y sang căn góc khác.
+- **Nguồn quy tắc** `tinh/quyTacViTriCan.ts`: loại vị trí lấy từ mã đuôi id mẫu (`m` giữa · `g` góc · `v`/`y` khoá), ô theo mẫu gốc của bản vẽ. `duocDatVaoO(canGocId, moi)`: ô V / Y chỉ nhận chính mẫu đó (hoặc biến thể STRETCH); ô góc chỉ nhận căn góc thường; ô giữa chỉ nhận căn giữa.
+- **Áp:** `canDangDung` bỏ đổi sai (PA cũ tự về mẫu gốc / đổi theo mẫu hợp lệ); `ungVienDoi` / `ungVienKhacRong` lọc cứng, ô V / Y không có ứng viên (panel phải hiện câu `tang.canKhoa`); `doiCanTaiViTri` / `doiCanTheoTang` không nhận đổi sai; `doiChoTay` trả `sai_vi_tri` khi đổi chỗ góc↔giữa hoặc có V / Y; `themCanTay` chỉ căn giữa, `themVaoO` đúng ô; `goiYVuaO`, `doiMauCungBeNgang` lọc theo quy tắc. Bỏ ghi chú ⚠ `tang.khacViTri` (không còn ca đó). Khoá i18n mới: `tang.canKhoa`, `cc.loi.sai_vi_tri`, `cc.ngan.sai_vi_tri` (vi + en).
+- Test `tinh/quyTacViTriCan.test.ts` (33 mẫu tòa thật): đổi chỗ, thêm căn, danh sách đổi mẫu, PA cũ lưu đổi sai.

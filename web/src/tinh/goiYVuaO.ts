@@ -1,4 +1,5 @@
 import { LOAI_CAN, type CanMau, type LoaiCan, type ThuVien } from './kieu';
+import { duocDatVaoO } from './quyTacViTriCan';
 import { ST_BUOC } from './stretch';
 
 /** STRETCH co tối đa (QT-81 ±500 mm) — mẫu rộng hơn ô trong khoảng này vẫn vừa sau khi co. */
@@ -11,7 +12,7 @@ const CO_TOI_DA = 5 * ST_BUOC;
 export function goiYVuaO(tv: ThuVien, canDangDat: string, loaiChon: LoaiCan, rongO: number): CanMau[] {
   const cu = tv.can.get(canDangDat.split('~')[0]);
   if (!cu) return [];
-  const vua = [...tv.can.values()].filter((x) => !x.id.includes('~') && x.nhom === cu.nhom && x.vi_tri === cu.vi_tri
+  const vua = [...tv.can.values()].filter((x) => !x.id.includes('~') && x.nhom === cu.nhom && x.vi_tri === cu.vi_tri && duocDatVaoO(cu.id, x.id)
     && x.sau_mm === cu.sau_mm && x.loai !== loaiChon && x.rong_mm <= rongO + CO_TOI_DA);
   return LOAI_CAN.map((l) => vua.filter((x) => x.loai === l).sort((a, b) => b.rong_mm - a.rong_mm || a.id.localeCompare(b.id))[0])
     .filter((x): x is CanMau => !!x);
