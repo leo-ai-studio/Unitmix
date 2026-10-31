@@ -689,6 +689,8 @@
   "duAn.luu": "Save",
   "duAn.doiTenDA": "Rename project",
   "duAn.doiTenPA": "Rename",
+  "duAn.xo": "Expand",
+  "duAn.thuGon": "Collapse",
   "duAn.xoaPA": "Delete",
   "duAn.tenPA": "Option name",
   "duAn.xoaHoi": "Delete option “{ten}”? This cannot be undone.",

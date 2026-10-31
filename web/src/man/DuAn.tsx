@@ -134,6 +134,9 @@ export function DuAn() {
   const [loiHang, setLoiHang] = useState('');
   const [soSanh, setSoSanh] = useState<string | null>(null);
   const [bao, setBao] = useState<BaoNho | null>(null);
+  // Mục dự án mặc định THU GỌN (chỉ hiện đầu thẻ), bấm mũi tên để xổ bảng phương án.
+  const [xo, setXo] = useState<Set<string>>(() => new Set());
+  const doiXo = (ma: string) => setXo((s) => { const n = new Set(s); if (!n.delete(ma)) n.add(ma); return n; });
   const henBao = useRef(0);
 
   /** Hiện báo nhỏ; có Hoàn tác thì giữ lâu hơn. */
@@ -274,9 +277,11 @@ export function DuAn() {
         {hien.map(({ ma, da, loi }) => {
           const coMa = !!layMaSua(ma);
           const ten = da?.ten ?? ma;
+          const dangXo = xo.has(ma);
           return (
             <section class="the-du-an" key={ma} aria-label={ten}>
               <div class="the-dau">
+                <button type="button" class={`nut-xo${dangXo ? ' mo' : ''}`} aria-expanded={dangXo} aria-label={t(dangXo ? 'duAn.thuGon' : 'duAn.xo')} title={t(dangXo ? 'duAn.thuGon' : 'duAn.xo')} onClick={() => doiXo(ma)} />
                 {suaDa?.ma === ma ? (
                   <form class="sua-ten" onSubmit={(e) => { e.preventDefault(); luuTenDa(); }}>
                     <input aria-label={t('duAn.ten')} value={suaDa.ten} required autoFocus onInput={(e) => setSuaDa({ ...suaDa, ten: e.currentTarget.value })} />
@@ -309,7 +314,7 @@ export function DuAn() {
               </div>
               {loi && <div class="the-loi vuot">{t('duAn.khongTai')}</div>}
               {loiHang && (suaDa?.ma === ma || suaPA?.ma === ma) ? <div class="the-loi vuot" role="alert">{loiHang}</div> : null}
-              {!!da?.phuong_an.length && (
+              {dangXo && !!da?.phuong_an.length && (
                 <div class="bang-pa">
                   <div class="hang-pa dau" aria-hidden="true">
                     <span>{t('duAn.soPA')}</span><span>{t('duAn.suaLuc')}</span>

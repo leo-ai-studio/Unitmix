@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.1', ngay: '2026-10-31',
+    vi: [
+      'Danh sách dự án: mỗi dự án mặc định thu gọn, bấm mũi tên để xổ bảng phương án',
+      'Lịch sử phiên bản: mỗi bản mặc định thu gọn, bấm để xổ',
+    ],
+    en: [
+      'Project list: each project is collapsed by default; click the arrow to expand its variants',
+      'Version history: each version is collapsed by default; click to expand',
+    ],
+  },
+  {
     v: '0.4.0', ngay: '2026-10-31',
     vi: [
       'Leo AI dùng tài khoản Claude đã đăng nhập (cầu trên máy, cả điện thoại), không cần khoá API',
