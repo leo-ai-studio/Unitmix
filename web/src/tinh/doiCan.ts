@@ -1,5 +1,6 @@
 import type { BoCucTang, CongNangO, LoaiCan, ThongTinLoi, ToaDat } from './kieu';
 import { boCucTang, canDangDung, congNangTai, type BoCucToa, type ViTriCan } from './matBang';
+import { duocDatVaoO } from './quyTacViTriCan';
 
 type DoiCan = Pick<ToaDat, 'canTheo' | 'canViTri'>;
 
@@ -11,6 +12,7 @@ const gon = (canViTri: Record<string, string>): Record<string, string> | undefin
  * Không bật thì chỉ đổi đúng vị trí này; đổi về đúng mẫu mà luật theo mẫu đã cho thì bỏ khoá vị trí.
  */
 export function doiCanTaiViTri<T extends DoiCan>(toa: T, vt: ViTriCan, canMoi: string, vts: ViTriCan[], nhieu: boolean): T {
+  if (!duocDatVaoO(vt.canGocId, canMoi)) return toa; // sai loại vị trí (căn góc ở giữa / căn giữa ở góc / đổi V·Y): không nhận
   const canTheo = { ...toa.canTheo };
   const canViTri = { ...(toa.canViTri ?? {}) };
   if (nhieu) {
@@ -63,6 +65,7 @@ function suaTang<T extends Pick<ToaDat, 'tangRieng'>>(toa: T, tangs: number[], f
  * trên tầng đó. Giá trị trùng bố cục chung thì bỏ ghi đè.
  */
 export function doiCanTheoTang<T extends BoCucToa>(toa: T, tangs: number[], vt: ViTriCan, canMoi: string, vts: ViTriCan[], nhieu: boolean): T {
+  if (!duocDatVaoO(vt.canGocId, canMoi)) return toa;
   const ds = nhieu ? vts.filter((v) => v.canGocId === vt.canGocId) : [vt];
   return suaTang(toa, tangs, (g) => {
     for (const v of ds) {

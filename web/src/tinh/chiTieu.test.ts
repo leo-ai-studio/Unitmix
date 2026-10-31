@@ -145,7 +145,10 @@ describe('cơ cấu căn', () => {
   it('đổi mẫu cùng bề ngang trên thư viện thật', () => {
     const lib = (f: string) => JSON.parse(readFileSync(new URL(`../../public/lib/${f}`, import.meta.url), 'utf-8'));
     const tv = taoThuVien(lib('toa.json'), lib('can.json'));
-    expect(['tm-2pn-y1', 'tm-2pn-y2']).toContain(doiMauCungBeNgang('tm-1pn-m2', '2pn', tv));
+    // quy tắc vị trí căn: căn giữa chỉ đổi sang căn giữa (không còn đổi sang căn góc Y); V / Y không đổi
+    expect(doiMauCungBeNgang('tm-1pn-m2', '2pn', tv)).toBeNull();
+    expect(doiMauCungBeNgang('tm-2pn-m1', '2pn', tv)).toBe('tm-2pn-m2');
+    expect(doiMauCungBeNgang('tm-2pn-y1', '1pn', tv)).toBeNull();
     expect(doiMauCungBeNgang('tm-stu-m1', '3pn', tv)).toBeNull();
     const t = tv.toa.get('tm-i1')!;
     expect(Object.values(t.co_cau).reduce((a, b) => a + b, 0)).toBe(t.so_can_tang);

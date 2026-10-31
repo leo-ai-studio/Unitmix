@@ -4,6 +4,7 @@
  */
 import type { BoCucTang, CanMau, CongNangO, Diem, LoaiCan, ThuVien, ToaDat, ToaMau } from './kieu';
 import type { MatToa, PhanTuMat } from './pccc';
+import { duocDatVaoO, laCanKhoa } from './quyTacViTriCan';
 
 export type ToaCoMat = ToaMau & { mat: MatToa[] };
 export type NetVe = { cat: string; pts: Diem[] };
@@ -69,8 +70,16 @@ export type BoCuc = Pick<ToaDat, 'canTheo' | 'canViTri' | 'congNang' | 'latO'>;
 /** Bố cục cả tòa: bố cục chung + ghi đè theo tầng. */
 export type BoCucToa = BoCuc & Pick<ToaDat, 'tangRieng' | 'soTangDH'>;
 
-/** Căn đang dùng ở từng vị trí: đổi theo vị trí thắng đổi theo mẫu, rồi mới đến căn gốc. */
-export const canDangDung = (vt: ViTriCan, toa: Pick<ToaDat, 'canTheo' | 'canViTri'>): string => toa.canViTri?.[vt.khoa] ?? toa.canTheo[vt.canGocId] ?? vt.canGocId;
+/**
+ * Căn đang dùng ở từng vị trí: đổi theo vị trí thắng đổi theo mẫu, rồi mới đến căn gốc. Chỉ nhận mẫu đúng quy tắc vị trí
+ * (tinh/quyTacViTriCan.ts: căn góc chỉ ở góc, căn giữa chỉ ở giữa, V / Y không đổi) — PA cũ lưu đổi sai thì bỏ, về mẫu kế tiếp hợp lệ.
+ */
+export const canDangDung = (vt: ViTriCan, toa: Pick<ToaDat, 'canTheo' | 'canViTri'>): string => {
+  const a = toa.canViTri?.[vt.khoa];
+  if (a !== undefined && duocDatVaoO(vt.canGocId, a)) return a;
+  const b = toa.canTheo[vt.canGocId];
+  return b !== undefined && duocDatVaoO(vt.canGocId, b) ? b : vt.canGocId;
+};
 /** Công năng ô tại vị trí (thiếu = căn hộ). */
 export const congNangTai = (khoa: string, bc: Pick<ToaDat, 'congNang'>): CongNangO => bc.congNang?.[khoa] ?? 'can';
 
@@ -178,21 +187,24 @@ export function soCanChuVi(duongBao: Diem[], vts: ViTriCan[]): Map<string, numbe
   );
 }
 
-/** Mẫu căn có thể đổi vào chỗ `canId`: cùng nhóm, cùng bề ngang và chiều sâu. `cungViTri` giữ đúng giữa/góc (cách tối ưu tự động dùng). */
-export function ungVienDoi(canId: string, tv: ThuVien, cungViTri = false): CanMau[] {
+/**
+ * Mẫu căn có thể đổi vào chỗ `canId`: cùng nhóm, cùng bề ngang và chiều sâu, ĐÚNG loại vị trí (căn góc chỉ ở góc, căn giữa chỉ ở
+ * giữa — tinh/quyTacViTriCan.ts). Chỗ đang là căn V / Y thì không có mẫu nào để đổi. Tham số cuối giữ cho mã cũ, nay luôn áp.
+ */
+export function ungVienDoi(canId: string, tv: ThuVien, _cungViTri = true): CanMau[] {
   const g = tv.can.get(canId);
-  if (!g) return [];
+  if (!g || laCanKhoa(g.id)) return [];
   return [...tv.can.values()]
-    .filter((c) => c.id !== canId && !c.stretchGoc && c.nhom === g.nhom && c.rong_mm === g.rong_mm && c.sau_mm === g.sau_mm && (!cungViTri || c.vi_tri === g.vi_tri))
-    .sort((a, b) => Number(b.vi_tri === g.vi_tri) - Number(a.vi_tri === g.vi_tri) || a.id.localeCompare(b.id));
+    .filter((c) => c.id !== canId && !c.stretchGoc && c.nhom === g.nhom && c.rong_mm === g.rong_mm && c.sau_mm === g.sau_mm && c.vi_tri === g.vi_tri && duocDatVaoO(g.id, c.id))
+    .sort((a, b) => a.id.localeCompare(b.id));
 }
 
 /** Mẫu gốc (không biến thể STRETCH) cùng nhóm, chiều sâu, vị trí mà KHÁC bề ngang — đổi tay thì dãy tự khít (tinh/loiThang.ts). */
 export function ungVienKhacRong(canId: string, tv: ThuVien): CanMau[] {
   const g0 = tv.can.get(canId), g = g0?.stretchGoc ? tv.can.get(g0.stretchGoc.id) ?? g0 : g0;
-  if (!g) return [];
+  if (!g || laCanKhoa(g.id)) return [];
   return [...tv.can.values()]
-    .filter((c) => !c.stretchGoc && c.nhom === g.nhom && c.sau_mm === g.sau_mm && c.vi_tri === g.vi_tri && c.rong_mm !== g.rong_mm)
+    .filter((c) => !c.stretchGoc && c.nhom === g.nhom && c.sau_mm === g.sau_mm && c.vi_tri === g.vi_tri && c.rong_mm !== g.rong_mm && duocDatVaoO(g.id, c.id))
     .sort((a, b) => a.rong_mm - b.rong_mm || a.id.localeCompare(b.id));
 }
 

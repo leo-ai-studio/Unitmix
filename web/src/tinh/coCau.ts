@@ -1,6 +1,7 @@
 import { LOAI_CAN, type LoaiCan, type ThuVien, type TrangThaiPA } from './kieu';
 import { canCaToa } from './matBang';
 import { mauToa } from './canThem';
+import { duocDatVaoO, laCanKhoa } from './quyTacViTriCan';
 
 export const coCauRong = (): Record<LoaiCan, number> => ({ stu: 0, '1pn': 0, '2pn': 0, '2pnp': 0, '3pn': 0 });
 
@@ -43,13 +44,13 @@ export function diemLechCoCau(datPct: Record<LoaiCan, number>, mucTieuPct: Recor
   return LOAI_CAN.reduce((a, l) => a + Math.abs((datPct[l] ?? 0) - (mucTieuPct[l] ?? 0)), 0);
 }
 
-/** Mẫu căn loại `loaiMoi`, cùng nhóm và cùng bề ngang với `canId`; ưu tiên cùng vị trí (giữa/góc). Không có thì null. */
+/** Mẫu căn loại `loaiMoi`, cùng nhóm, cùng bề ngang và ĐÚNG loại vị trí (giữa / góc) với `canId`; căn V / Y không đổi. Không có thì null. */
 export function doiMauCungBeNgang(canId: string, loaiMoi: LoaiCan, tv: ThuVien): string | null {
   const goc = tv.can.get(canId);
-  if (!goc) return null;
+  if (!goc || laCanKhoa(goc.id)) return null;
   const ung = [...tv.can.values()]
-    .filter((c) => c.nhom === goc.nhom && c.loai === loaiMoi && c.rong_mm === goc.rong_mm && c.id !== canId)
-    .sort((a, b) => Number(b.vi_tri === goc.vi_tri) - Number(a.vi_tri === goc.vi_tri) || a.id.localeCompare(b.id));
+    .filter((c) => c.nhom === goc.nhom && c.loai === loaiMoi && c.rong_mm === goc.rong_mm && c.id !== canId && duocDatVaoO(goc.id, c.id))
+    .sort((a, b) => a.id.localeCompare(b.id));
   return ung[0]?.id ?? null;
 }
 

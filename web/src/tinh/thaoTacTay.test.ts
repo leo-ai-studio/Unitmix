@@ -11,8 +11,9 @@ import { apMatBang, chupThangTay, cungThang, doDeKhe, matBangCua, matBangTang, t
 import { boCucTang, matDaDon, viTriCan } from './matBang';
 import { tinhCuaCan } from './pccc';
 import { themBienThe } from './stretch';
-import { doiChoTay, doiThangTay, latTay, themCanTay, themThangTay, xoaCanTay, xoaThangTay, type KetQuaTay } from './thaoTacTay';
+import { doiChoTay, doiThangTay, latTay, mauThem, themCanTay, themThangTay, xoaCanTay, xoaThangTay, type KetQuaTay } from './thaoTacTay';
 import { demCan } from './coCau';
+import { duocDatVaoO } from './quyTacViTriCan';
 
 const lib = new URL('../../public/lib/', import.meta.url);
 const doc = <T>(p: string) => JSON.parse(readFileSync(new URL(p, lib), 'utf8')) as T;
@@ -119,7 +120,7 @@ describe('Công cụ tay màn Tầng — mẫu thật', () => {
     const ids = new Map(h0.vts.map((v) => [v.khoa, h0.bc.canViTri?.[v.khoa] ?? v.canGocId]));
     // hai căn liền nhau cùng mặt, khác mẫu
     let cap: [typeof h0.vts[0], typeof h0.vts[0]] | null = null;
-    for (const a of h0.vts) for (const b of h0.vts) if (!cap && a.matIdx === b.matIdx && a.khoa < b.khoa && ids.get(a.khoa) !== ids.get(b.khoa)) cap = [a, b];
+    for (const a of h0.vts) for (const b of h0.vts) if (!cap && a.matIdx === b.matIdx && a.khoa < b.khoa && ids.get(a.khoa) !== ids.get(b.khoa) && duocDatVaoO(b.canGocId, ids.get(a.khoa)!) && duocDatVaoO(a.canGocId, ids.get(b.khoa)!)) cap = [a, b];
     expect(cap).not.toBeNull();
     const [a, b] = cap!;
     const r = doiChoTay(t0, null, a, b, c);
@@ -160,13 +161,13 @@ describe('Công cụ tay màn Tầng — mẫu thật', () => {
   it('Thêm căn sau căn đang chọn: +1 căn mỗi tầng, dãy dài ra ở đầu tự do, DTXD tăng; tầng riêng chỉ tầng đó', () => {
     const t0 = toaThu('tm-i1'), h0 = hien(t0), n0 = soCan(t0);
     let r: KetQuaTay | null = null, v0 = h0.vts[0];
-    for (const v of h0.vts) { r = themCanTay(t0, null, v, h0.bc.canViTri?.[v.khoa] ?? v.canGocId, c); if (r.ok) { v0 = v; break; } }
+    for (const v of h0.vts) { r = themCanTay(t0, null, v, mauThem(tv, h0.bc.canViTri?.[v.khoa] ?? v.canGocId), c); if (r.ok) { v0 = v; break; } }
     const t1 = ok(r!), h1 = hien(t1);
     expect(h1.vts.length).toBe(h0.vts.length + 1);
     expect(soCan(t1)).toBe(n0 + 24);
     expect(t1.dtxdM2 ?? 0).toBeGreaterThan(t0.dtxdM2 ?? h0.mau.dtxd_m2);
     expect(h1.deKhe.de).toBe(0);
-    const t5 = ok(themCanTay(t0, [5], v0, h0.bc.canViTri?.[v0.khoa] ?? v0.canGocId, c));
+    const t5 = ok(themCanTay(t0, [5], v0, mauThem(tv, h0.bc.canViTri?.[v0.khoa] ?? v0.canGocId), c));
     expect(soCan(t5)).toBe(n0 + 1);
   });
 

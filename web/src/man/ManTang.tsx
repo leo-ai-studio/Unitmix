@@ -4,6 +4,7 @@ import { demCan, diemLechCoCau, phanTram } from '../tinh/coCau';
 import { dtCongNangToa, kiemShcd } from '../tinh/congNang';
 import { apDoiViTri, apDoiViTriTang, boTangRieng, datCoCauTang, datLoi, doiCanTaiViTri, doiCanTheoTang, doiCongNang, thongTinLoi, veMauGoc } from '../tinh/doiCan';
 import { LOAI_CAN, type BaoCaoTuChinh, type CongNangO, type Lo, type LoaiCan, type ThuVien, type ToaDat, type TrangThaiPA } from '../tinh/kieu';
+import { laCanKhoa } from '../tinh/quyTacViTriCan';
 import { boCucTang, coCauRiengTang, coMat, ghiDeTang, tangCoRieng, ungVienDoi, ungVienKhacRong, viTriCan, type BoCuc } from '../tinh/matBang';
 import { dtHanhLangTang, phanChungPhanBo } from '../tinh/phanChung';
 import { toiUuCoCau } from '../tinh/toiUu';
@@ -643,11 +644,11 @@ export function TangPhai(p: ChungTang) {
                   return (
                     <>
                       <p class="dong muted" style={{ margin: 0 }}>{t(cai.suaNhieu ? 'tang.doiNhieu' : 'tang.doiMot')}</p>
-                      {!ung.length && <p class="dong muted" style={{ margin: 0 }}>{t('tang.khongCoMauDoi')}</p>}
+                      {!ung.length && <p class="dong muted" style={{ margin: 0 }}>{t(laCanKhoa(chon.canId) ? 'tang.canKhoa' : 'tang.khongCoMauDoi')}</p>}
                       {ung.map((c) => (
                         <button type="button" key={c.id} class="muc-lo" disabled={chiXem} onClick={() => doi(c.id)}>
                           <b>{c.ten_vi} · {NHAN_LOAI[c.loai]}</b>
-                          <span>{fmtSo(c.dt_tt_m2, { thapPhan: 2, ...m2 })}{c.vi_tri !== cChon.vi_tri ? ` · ⚠ ${t('tang.khacViTri')}` : ''}</span>
+                          <span>{fmtSo(c.dt_tt_m2, { thapPhan: 2, ...m2 })}</span>
                         </button>
                       ))}
                       {chon.vt.canGocId !== chon.canId && (
