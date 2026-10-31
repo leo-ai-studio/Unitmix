@@ -78,6 +78,15 @@ export function nhanMaGhepTuLink(): boolean {
   } catch { return false; }
 }
 
+/** Lấy mã ghép từ chuỗi người dùng dán: cả link `…/#ghep=<mã>` lẫn mã trần (iPhone: link mở ở Safari không vào được app đã thêm màn hình chính → dán tay). */
+export function docMaGhepTuChuoi(s: string): string | null {
+  const m = /(?:ghep=)?([A-Za-z0-9_-]{32,100})\s*$/.exec((s ?? '').trim());
+  return m ? m[1] : null;
+}
+
+/** Máy cảm ứng / màn nhỏ (điện thoại, máy tính bảng): không cài được cầu ở đây, chỉ ghép với máy tính. */
+export const laDienThoai = (): boolean => { try { return matchMedia('(pointer: coarse)').matches || innerWidth < 768; } catch { return false; } };
+
 /** Mã ghép + trạng thái trạm của cầu trên máy này (chỉ cầu cục bộ trả; trạm không bao giờ trả). */
 export async function docGhepCuaMay(url: string = docDiaChiCau(), goi: typeof fetch = fetch): Promise<{ khoa: string; tram: string; noi: string } | null> {
   try {

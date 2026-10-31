@@ -39,6 +39,8 @@ export function taoKhach(v: { nguon?: NguonKhoa; khoaRieng: string | null; maDuA
 /** Lỗi → câu tiếng Việt + gợi ý hành động. `can` = 'khoa' khi nên mở Cài đặt để dán khoá riêng. */
 export function loiTiengViet(e: unknown, nguon: NguonKhoa): { chu: string; can?: 'khoa' } {
   const kieu = (e as { error?: { error?: { type?: string; message?: string } } })?.error?.error;
+  // khoá chung chưa đặt: đường chính giờ là tài khoản Claude qua cầu — chỉ cách làm, không bảo đi tìm khoá API
+  if (nguon === 'chung' && kieu?.type === 'chua_cau_hinh') return { chu: 'Leo AI chưa nối tài khoản Claude. Trên điện thoại: mở Cài đặt Leo AI → mục "Ghép với máy tính" và dán link ghép lấy từ máy tính (Cài đặt Leo AI → Chép link ghép điện thoại). Trên máy tính: Cài đặt Leo AI → Tải bộ cài cầu AI.', can: 'khoa' };
   if (kieu?.type === 'chua_cau_hinh' || kieu?.type === 'can_ma_sua' || kieu?.type === 'het_luot') return { chu: kieu.message ?? 'Máy chủ từ chối.', can: 'khoa' };
   if (nguon === 'cau') {
     // cầu trả lỗi theo dạng Anthropic (scripts/cau_claude.py); câu ở đây chỉ rõ việc người dùng làm được
