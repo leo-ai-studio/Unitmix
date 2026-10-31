@@ -161,3 +161,14 @@ describe('bộ cài .bat', () => {
     expect(taoBoCaiBat('https://a.b/"&calc&"')).not.toMatch(/calc&/);
   });
 });
+
+describe('dán mã ghép (điện thoại)', () => {
+  it('nhận cả link #ghep=… lẫn mã trần, có khoảng trắng thừa', async () => {
+    const { docMaGhepTuChuoi } = await import('./cau');
+    expect(docMaGhepTuChuoi(`https://u.example/#ghep=${KHOA}`)).toBe(KHOA);
+    expect(docMaGhepTuChuoi(`  ${KHOA}\n`)).toBe(KHOA);
+    expect(docMaGhepTuChuoi('ghep=' + KHOA)).toBe(KHOA);
+    expect(docMaGhepTuChuoi('abc')).toBeNull();
+    expect(docMaGhepTuChuoi('')).toBeNull();
+  });
+});
