@@ -62,7 +62,11 @@ def test_du_luat_yaml_va_nguong_giu_nguyen():
 def test_moi_qt_duoc_phan_loai():
     q = _qt()
     nguon = json.loads((LIB / "nguon.json").read_text(encoding="utf-8"))
-    md = (Path(nguon["duong_dan"]) / "docs" / "QUY_TAC_XEP_CAN.md").read_text(encoding="utf-8")
+    tep = Path(nguon["duong_dan"]) / "docs" / "QUY_TAC_XEP_CAN.md"
+    if not tep.exists():
+        import pytest
+        pytest.skip("không có bản checkout app cũ MDI_Unitmix_v4 (chỉ đối chiếu được trên máy có app cũ)")
+    md = tep.read_text(encoding="utf-8")
     ids = set(re.findall(r"QT-\d+[a-z]?", md))
     assert {x["ma_cu"] for x in q["qt_goc"]} == ids
     ma = {x["ma"] for x in q["luat"]}

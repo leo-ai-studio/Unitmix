@@ -53,7 +53,11 @@ def test_co_cau_tham_chieu_ton_tai():
 
 def test_dt_can_giu_nguyen():
     nguon = _doc("nguon.json")
-    goc = json.loads((Path(nguon["duong_dan"]) / "data" / "master" / "units.json").read_text(encoding="utf-8"))
+    tep = Path(nguon["duong_dan"]) / "data" / "master" / "units.json"
+    if not tep.exists():
+        import pytest
+        pytest.skip("không có bản checkout app cũ MDI_Unitmix_v4 (chỉ đối chiếu được trên máy có app cũ)")
+    goc = json.loads(tep.read_text(encoding="utf-8"))
     goc = {u["ma"]: u for u in goc}
     for c in _doc("can.json"):
         u = goc[c["ma_goc"]]
