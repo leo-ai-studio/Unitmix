@@ -43,6 +43,7 @@ async function sauSuaTmb(ng: NguCanh, loIds: string[], toaIds: string[] = []) {
 const tomGoiY = (g: GoiYXep, i: number) => ({
   option: i, mau: g.mau, so_toa: g.toa.length, tang_dh: g.soTangDH, so_can: g.soCan, so_can_muc_tieu: g.soCanMuc, lech_co_cau: tron(g.lech, 1),
   ty_le_san: tron(g.tyLeSan, 3), mat_do: tron(g.matDo, 1), dan_so: tron(g.danSo, 0), loi_qh: g.loiQH, pccc_vuot: g.pcccVuot, huong_tot: g.huongTot, canh_bao: g.canhBao,
+  ...(g.theoMucTieu ? { theo_muc_tieu: { mau_du_kien: g.theoMucTieu.duKien, thieu_toa: g.theoMucTieu.thieuToa, dtxd_pct: tron(g.theoMucTieu.dtxdPct, 1), thieu_dtxd_pct: tron(g.theoMucTieu.thieuDtxd, 1) } } : {}),
   view_tb: g.view === null || g.view === undefined ? null : tron(g.view, 1), view_pct_tot: g.viewTot === null || g.viewTot === undefined ? null : tron(g.viewTot, 0),
 });
 
@@ -51,16 +52,16 @@ const nhoGoiY = new Map<string, { khoa: string; ds: GoiYXep[] }>();
 const khoaLo = (pa: TrangThaiPA, lo: Lo) => lo.id + '|' + JSON.stringify([lo.ranh, lo.chiGioi, lo.canhDuong ?? null, lo.temDat.chucNang, lo.temDat.chiTieu, lo.temDat.coCauMucTieu,
   pa.toa.filter((x) => x.loId !== lo.id).map((x) => [x.mauId, x.x, x.y, x.gocDo, x.soTangDH]), pa.huongView ?? null]);
 
-async function goiYLo(ng: NguCanh, lo: Lo): Promise<GoiYXep[]> {
+async function goiYLo(ng: NguCanh, lo: Lo, theoMucTieu = false): Promise<GoiYXep[]> {
   const pa = ng.kho.lay(), tv = canTV(ng);
   if (!loXepDuoc(lo)) throw new LoiCongCu(`Lô ${lo.temDat.kyHieu} chưa đủ điều kiện tự xếp: cần chức năng ở (tm/xh), ranh ≥ 3 đỉnh, MĐXD và HSSDĐ > 0.`);
-  const k = khoaLo(pa, lo);
+  const k = khoaLo(pa, lo) + (theoMucTieu ? '|mt' : '');
   const co = nhoGoiY.get(lo.id);
   if (co && co.khoa === k) return co.ds;
   const luat = await ng.luat();
   if (!luat) throw new LoiCongCu('Chưa tải được luật LO-01 / LO-02.');
   const cuaCan = await ng.cuaCan(lo.temDat.chucNang === 'xh' ? 'xh' : 'tm');
-  const ds = (await goiYXepToaNen({ pa, lo, tv, luat, cuaCan })) ?? [];
+  const ds = (await goiYXepToaNen({ pa, lo, tv, luat, cuaCan, theoMucTieu })) ?? [];
   nhoGoiY.set(lo.id, { khoa: k, ds });
   return ds;
 }
@@ -77,22 +78,22 @@ const layToaChon = (pa: TrangThaiPA, ids: string[]) => {
 export const CONG_CU_TMB: CongCu[] = [
   {
     ten: 'suggest_arrangements', nhom: 'tmb',
-    moTa: 'Chạy gợi ý tự xếp tòa (MT-05) cho một lô như nút Gợi ý ở TMB: trả tối đa 5 phương án (mẫu × số tòa, tầng, số căn, lệch cơ cấu, MĐXD, tỷ lệ sàn/trần, dân số, điểm view TB 0–100, cảnh báo; trọng số view theo PA huongView.trongSoXep). Không sửa PA — dùng apply_arrangement để áp.',
-    schema: S.doiTuong({ lot_id: S.chu('id hoặc ký hiệu lô') }, ['lot_id']),
+    moTa: 'Chạy gợi ý tự xếp tòa (MT-05) cho một lô như nút Gợi ý ở TMB (có chế độ target_mode theo mục tiêu DTXD + cơ cấu căn — dùng khi người dùng đặt cơ cấu mục tiêu / muốn đạt MĐXD mà không chỉ định mẫu): trả tối đa 5 phương án (mẫu × số tòa, tầng, số căn, lệch cơ cấu, MĐXD, tỷ lệ sàn/trần, dân số, điểm view TB 0–100, cảnh báo; trọng số view theo PA huongView.trongSoXep). Không sửa PA — dùng apply_arrangement để áp.',
+    schema: S.doiTuong({ lot_id: S.chu('id hoặc ký hiệu lô'), target_mode: S.bool('true = THEO MỤC TIÊU: tự chọn / trộn mẫu tòa sao cho DTXD (MĐXD) ≥ 85 % mức tối đa của lô và cơ cấu căn sát cơ cấu mục tiêu của lô (update_lot), rồi tự đặt; mỗi phương án có theo_muc_tieu {mau_du_kien, thieu_toa, dtxd_pct}. Mặc định false.') }, ['lot_id']),
     chay: async (v, ng) => {
       const lo = timLo(ng.kho.lay(), v.lot_id as string);
-      const ds = await goiYLo(ng, lo);
+      const ds = await goiYLo(ng, lo, v.target_mode === true);
       return { lo: lo.id, so_phuong_an: ds.length, phuong_an: ds.map(tomGoiY) };
     },
   },
   {
     ten: 'apply_arrangement', nhom: 'tmb', sua: true,
     moTa: 'Áp phương án gợi ý thứ `option` (0 = tốt nhất) cho lô: THAY mọi tòa đang có trên lô bằng tòa của phương án (một bước hoàn tác). Tự chạy gợi ý nếu chưa có.',
-    schema: S.doiTuong({ lot_id: S.chu(), option: S.nguyen('chỉ số phương án, mặc định 0', 0) }, ['lot_id']),
+    schema: S.doiTuong({ lot_id: S.chu(), option: S.nguyen('chỉ số phương án, mặc định 0', 0), target_mode: S.bool('đúng giá trị đã dùng ở suggest_arrangements (true = theo mục tiêu DTXD + cơ cấu)') }, ['lot_id']),
     chay: async (v, ng) => {
       kiemSua(ng);
       const lo = timLo(ng.kho.lay(), v.lot_id as string);
-      const ds = await goiYLo(ng, lo);
+      const ds = await goiYLo(ng, lo, v.target_mode === true);
       const i = (v.option as number | undefined) ?? 0;
       const g = ds[i];
       if (!g) throw new LoiCongCu(ds.length ? `Chỉ có ${ds.length} phương án (0..${ds.length - 1}).` : 'Lô không có phương án xếp tòa nào (lô nhỏ / chỉ tiêu chặt).');

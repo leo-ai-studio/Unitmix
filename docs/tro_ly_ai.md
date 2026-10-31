@@ -121,3 +121,7 @@ Một câu sửa điển hình 5–6 lượt gọi: mỗi lượt gửi lại l�
 - `switch PA` (`manage_pa open`) tải lại trang → cuộc trò chuyện dừng (lịch sử vẫn còn).
 - Giọng nói phụ thuộc trình duyệt: Firefox chưa có SpeechRecognition; iOS Safari tự dừng nghe sau một câu (chế độ rảnh tay vẫn nối tiếp).
 - Gọn lịch sử bỏ khối thinking cũ khi hội thoại dài — Claude mất phần suy nghĩ của các lượt rất cũ (kết quả công cụ vẫn còn bản rút gọn).
+
+## Xếp tòa THEO MỤC TIÊU (DTXD + cơ cấu căn)
+
+Ô "Theo mục tiêu: DTXD + cơ cấu" ở panel Gợi ý xếp tòa (hoặc `target_mode: true` ở `suggest_arrangements` / `apply_arrangement` của Leo AI) bật `theoMucTieu` trong `tinh/xepToa.ts`: app tự suy ra tổ hợp tối đa 3 mẫu tòa × số tòa (≤ 8) sao cho tổng DT chân tòa nằm trong [85 % × MĐXD tối đa, MĐXD tối đa] của lô và cơ cấu căn sát `coCauMucTieu` (Σ |% − % mục tiêu| nhỏ nhất), rồi đặt từng tòa theo lưới + LO-01 / LO-02 như gợi ý thường. Phương án ra có `theoMucTieu {duKien, thieuToa, dtxdPct, thieuDtxd}`; nếu lô chật nên không đặt đủ tòa dự kiến thì báo "không đặt được n tòa" và xếp hạng theo lệch cơ cấu + phần thiếu DTXD. Leo AI chọn `target_mode`, đặt cơ cấu mục tiêu (`update_lot`) rồi so sánh / áp phương án.

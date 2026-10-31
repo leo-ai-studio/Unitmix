@@ -15,8 +15,8 @@ import { fmtSo } from './so';
 import { mauToa } from '../tinh/canThem';
 
 // ---- trạng thái dùng chung panel trái ↔ bản vẽ (cấp module, không lưu vào PA) ----
-type TrangThai = { khoa: string | null; ds: GoiYXep[] | null; chay: boolean; tienDo: number; xem: number | null; loi: string | null; ms: number | null };
-let tt: TrangThai = { khoa: null, ds: null, chay: false, tienDo: 0, xem: null, loi: null, ms: null };
+type TrangThai = { mt: boolean; khoa: string | null; ds: GoiYXep[] | null; chay: boolean; tienDo: number; xem: number | null; loi: string | null; ms: number | null };
+let tt: TrangThai = { mt: false, khoa: null, ds: null, chay: false, tienDo: 0, xem: null, loi: null, ms: null };
 const nghe = new Set<() => void>();
 const dat = (p: Partial<TrangThai>) => { tt = { ...tt, ...p }; nghe.forEach((f) => f()); };
 function useTT(): TrangThai {
@@ -43,7 +43,7 @@ async function chay(pa: TrangThaiPA, lo: Lo, tv: ThuVien) {
     const lo01 = traLuat(bo, 'LO-01'), lo02 = traLuat(bo, 'LO-02');
     if (!lo01 || !lo02) throw new Error('LO-01 / LO-02');
     const t0 = performance.now();
-    const ds = await goiYXepToaNen({ pa, lo, tv, luat: { lo01, lo02 }, cuaCan }, (x, n) => lan === lanChay && dat({ tienDo: x / n }), () => lan !== lanChay);
+    const ds = await goiYXepToaNen({ pa, lo, tv, luat: { lo01, lo02 }, cuaCan, theoMucTieu: tt.mt }, (x, n) => lan === lanChay && dat({ tienDo: x / n }), () => lan !== lanChay);
     if (ds && lan === lanChay) dat({ ds, chay: false, tienDo: 1, ms: performance.now() - t0 });
   } catch (e) {
     if (lan === lanChay) dat({ chay: false, loi: String((e as Error).message ?? e) });
@@ -82,6 +82,13 @@ export function GoiYXepToa({ pa, lo, tv, sua, chiXem, chonToa }: { pa: TrangThai
         </button>
         {s.chay && cuaLo && <span class="muted goi-y-tien-do"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" />{fmtSo(s.tienDo * 100, { donVi: '%' })}</span>}
       </div>
+      <label class="goi-y-trong-so goi-y-muc-tieu" title={t('gt.xep.goiYMucTieu')}>
+        <input type="checkbox" checked={s.mt} disabled={chiXem || s.chay} onChange={(e) => {
+          dat({ mt: e.currentTarget.checked });
+          if (tv && cuaLo && s.ds) void chay(pa, lo, tv); // đang có danh sách thì xếp lại theo chế độ mới
+        }} />
+        <span>{t('xep.goiYMucTieu')}</span>
+      </label>
       <label class="goi-y-trong-so" title={t('gt.xep.goiYTrongSoView')}>
         <span>{t('xep.goiYTrongSoView')}</span>
         <input type="range" min={0} max={100} step={10} value={trongSoView(pa)} disabled={chiXem || s.chay} aria-valuetext={`${trongSoView(pa)} %`}
@@ -116,6 +123,12 @@ export function GoiYXepToa({ pa, lo, tv, sua, chiXem, chonToa }: { pa: TrangThai
                   <span title={t('gt.xep.goiYHuong')}>{t('xep.goiYHuong')} {fmtSo(g.huongTot, { thapPhan: 0, donVi: '%' })}</span>
                   <span title={t('gt.xep.goiYView')} class={g.view === null || g.view === undefined ? '' : 'goi-y-view'}>{t('xep.goiYView')} {fmtSo(g.view ?? null, { thapPhan: 0 })}{g.viewTot != null ? ` · ${t('view.tot')} ${fmtSo(g.viewTot, { thapPhan: 0, donVi: '%' })}` : ''}</span>
                 </div>
+                {g.theoMucTieu && (
+                  <p class={`goi-y-cb ${g.theoMucTieu.thieuToa || g.theoMucTieu.thieuDtxd > 0.05 ? 'canh-bao' : 'ok'}`}>
+                    {t('xep.goiYMucTieuKq').replace('{dt}', fmtSo(g.theoMucTieu.dtxdPct, { thapPhan: 1, donVi: '%' }))}
+                    {g.theoMucTieu.thieuToa > 0 ? ` · ${t('xep.goiYMucTieuThieu').replace('{n}', String(g.theoMucTieu.thieuToa))}` : ''}
+                  </p>
+                )}
                 {g.canhBao.length > 0 && <p class="goi-y-cb canh-bao">{g.canhBao.join(' · ')}</p>}
                 <button type="button" class="nut-phu" disabled={chiXem} title={t('gt.xep.goiYApDung')} onClick={() => apDung(g)}>{t('xep.goiYApDung')}</button>
               </li>
