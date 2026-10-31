@@ -1038,3 +1038,31 @@ Người dùng: chưa thấy cửa sổ đầu hành lang như app cũ; sảnh t
 - **Khác app cũ:** lõi app mới là khối đặc nên cửa sảnh gắn nổi trên mặt lõi (app cũ dựng lõi bằng tường CAD, khe sảnh hở thật); dữ liệu tường lõi app mới
   phủ kín mặt tiền sảnh I / V nên dò khe không ra khe sảnh — vị trí cửa lấy theo mặt ngoài lõi, không theo khe.
 - Test: `ve3d/cuaSoLoi.test.ts` (10 ca). Còn dở: lõi xh-l1 / xh-l2 chưa có `bao_tm`; hai khe 1,2–1,3 m ở tm-v4 / xh-u1 (khe sảnh theo luật app cũ) dựng cửa kín khe — chưa đối chiếu app cũ.
+
+## 2026-10-31 · Leo AI dùng tài khoản Claude, xếp tòa THEO MỤC TIÊU, nâng phiên bản, thu gọn mặc định, brand · Claude Code (Sonnet 5.5)
+
+Bản đang chạy: v0.4.1 tại https://unitmix.nghiavt-ai1.workers.dev (Worker `unitmix`, D1 `unitmix`, DO `TRAM`). Luật nâng bản: CLAUDE.md / AGENTS.md mục 8. Cách deploy: `npm run build` ở gốc, rồi `cd worker && npx.cmd wrangler deploy` (PowerShell chặn `npx.ps1`).
+
+- **CI:** test cần app cũ (`E:\Projects\MDI_Unitmix_v4`, `pgrep`) tự bỏ qua khi thiếu.
+- **Cầu Leo AI** (`scripts/cau_claude.py`, cổng 3032, bản cài `%LOCALAPPDATA%\LeoUnitmix\cau`, chạy `pythonw`): `_ghi_loi` (stderr là None), `CREATE_NO_WINDOW` cho tiến trình con (hết bật cửa sổ terminal), prompt "hành động bằng công cụ, không hỏi lại", `Lô đang chọn` = `man_hinh.lo`, đổi `\n` chữ thành xuống dòng thật. Sửa cầu thì chép lại tệp vào thư mục cài rồi chạy lại. Máy khác chạy lại `Cai_Cau_AI_Unitmix.bat`.
+- **Ngữ cảnh AI:** `SoanThao.tsx` gửi `ui.loId = loDangChon?.id ?? loId`.
+- **Xếp tòa THEO MỤC TIÊU** (`tinh/xepToa.ts` `sinhGoiY` có `theoMucTieu`, `matDoMinPct`; `GoiYXep.theoMucTieu {duKien, thieuToa, dtxdPct, thieuDtxd}`): liệt kê tổ hợp ≤ 3 mẫu, mỗi mẫu ≤ 6 tòa, tổng ≤ 8 tòa, chân tòa trong [minPct% · dtMax, dtMax]; đặt 6 tổ hợp tốt nhất theo hạn ngạch, xếp hạng `diemMT`. UI: ô `.goi-y-muc-tieu` ở `ui/GoiYXepToa.tsx`. Leo AI: `target_mode` trên `suggest_arrangements` / `apply_arrangement` (`troLy/congCu/tmb.ts`). Test `tinh/theoMucTieu.test.ts`, tài liệu `docs/tro_ly_ai.md`.
+- **Thu gọn mặc định:** thẻ dự án (`man/DuAn.tsx`) và lịch sử phiên bản (`ui/ThanhTren.tsx` `BangLichSu`, state riêng vì vùng chứa `preventDefault` chặn `<details>` gốc).
+- **Brand:** `docs/brand.md` + dòng Brand ở mục 8 CLAUDE.md / AGENTS.md.
+- **Phiên bản 0.4.1:** `package.json`, `web/package.json`, `package-lock.json` (3 chỗ), `web/src/lichSuPhienBan.ts` (VI + EN). Tệp repo là CRLF; ghi bằng Python phải ghi byte CRLF.
+
+**Đang dở / làm tiếp:**
+1. Thử "Theo mục tiêu" trên LÔ THẬT (người dùng sẽ gửi ảnh). Lô giả 160×120 m: tổ hợp tốt nhất đặt 3/4 tòa, MĐXD 27,9% so với 34% cần. Cần cải thiện bộ đặt cho đủ tòa dự kiến; đối chiếu bảng số căn từng mẫu trong Excel của người dùng (hiện dùng thư viện mẫu).
+2. `batch_arrange` chưa có `target_mode`.
+3. Các panel trình soạn chưa thu gọn mặc định (chưa hỏi người dùng muốn mục nào).
+4. Tên miền `unitmix.leo-ai.dev` chưa gắn vào Worker.
+5. `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.agents/`, `Cai_Cau_AI_Unitmix.bat` chưa vào git.
+6. Chưa xác nhận CI của các commit mới nhất trên GitHub.
+
+## 2026-10-31 · Quy tắc vị trí căn: góc chỉ ở góc, giữa chỉ ở giữa, V / Y khoá cạnh lõi thang máy · Claude Code (Sonnet 5.5)
+
+Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang máy như hiện tại, không thay được ở vị trí khác; căn góc chỉ ở góc, căn giữa không ở góc.
+- Trước đó chỉ tối ưu tự động / khít đoạn kẹp / thêm căn giữ đúng loại vị trí; đổi tay ở màn Tầng, kéo đổi chỗ, trợ lý AI vẫn cho căn giữa ↔ góc (chỉ ghi chú ⚠ "khác vị trí") và đổi V / Y sang căn góc khác.
+- **Nguồn quy tắc** `tinh/quyTacViTriCan.ts`: loại vị trí lấy từ mã đuôi id mẫu (`m` giữa · `g` góc · `v`/`y` khoá), ô theo mẫu gốc của bản vẽ. `duocDatVaoO(canGocId, moi)`: ô V / Y chỉ nhận chính mẫu đó (hoặc biến thể STRETCH); ô góc chỉ nhận căn góc thường; ô giữa chỉ nhận căn giữa.
+- **Áp:** `canDangDung` bỏ đổi sai (PA cũ tự về mẫu gốc / đổi theo mẫu hợp lệ); `ungVienDoi` / `ungVienKhacRong` lọc cứng, ô V / Y không có ứng viên (panel phải hiện câu `tang.canKhoa`); `doiCanTaiViTri` / `doiCanTheoTang` không nhận đổi sai; `doiChoTay` trả `sai_vi_tri` khi đổi chỗ góc↔giữa hoặc có V / Y; `themCanTay` chỉ căn giữa, `themVaoO` đúng ô; `goiYVuaO`, `doiMauCungBeNgang` lọc theo quy tắc. Bỏ ghi chú ⚠ `tang.khacViTri` (không còn ca đó). Khoá i18n mới: `tang.canKhoa`, `cc.loi.sai_vi_tri`, `cc.ngan.sai_vi_tri` (vi + en).
+- Test `tinh/quyTacViTriCan.test.ts` (33 mẫu tòa thật): đổi chỗ, thêm căn, danh sách đổi mẫu, PA cũ lưu đổi sai.

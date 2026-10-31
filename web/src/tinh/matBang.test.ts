@@ -48,9 +48,11 @@ describe('vị trí căn trên tầng', () => {
     expect(sau['2pn']).toBe(truoc['2pn'] - 10);
     expect(sau['2pnp']).toBe(truoc['2pnp'] + 10);
   });
-  it('ứng viên đổi: cùng nhóm, bề ngang, chiều sâu; cungViTri giữ giữa/góc', () => {
-    expect(ungVienDoi('tm-2pn-g1', tv).map((c) => c.id).sort()).toEqual(['tm-2pnp-g1', 'tm-2pnp-g2', 'tm-2pnp-m1']);
+  it('ứng viên đổi: cùng nhóm, bề ngang, chiều sâu, đúng giữa/góc (quy tắc vị trí căn); V / Y không đổi', () => {
+    expect(ungVienDoi('tm-2pn-g1', tv).map((c) => c.id).sort()).toEqual(['tm-2pnp-g1', 'tm-2pnp-g2']);
     expect(ungVienDoi('tm-2pn-g1', tv, true).map((c) => c.id).sort()).toEqual(['tm-2pnp-g1', 'tm-2pnp-g2']);
+    expect(ungVienDoi('tm-2pn-y1', tv)).toEqual([]);
+    expect(ungVienDoi('tm-2pn-v1', tv)).toEqual([]);
     expect(ungVienDoi('tm-3pn-g1', tv)).toEqual([]);
   });
 });

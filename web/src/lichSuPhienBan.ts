@@ -6,6 +6,36 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.1', ngay: '2026-10-31',
+    vi: [
+      'Danh sách dự án: mỗi dự án mặc định thu gọn, bấm mũi tên để xổ bảng phương án',
+      'Lịch sử phiên bản: mỗi bản mặc định thu gọn, bấm để xổ',
+    ],
+    en: [
+      'Project list: each project is collapsed by default; click the arrow to expand its variants',
+      'Version history: each version is collapsed by default; click to expand',
+    ],
+  },
+  {
+    v: '0.4.0', ngay: '2026-10-31',
+    vi: [
+      'Leo AI dùng tài khoản Claude đã đăng nhập (cầu trên máy, cả điện thoại), không cần khoá API',
+      'Xếp tòa THEO MỤC TIÊU: tự chọn / trộn mẫu tòa đạt DTXD + cơ cấu căn rồi đặt; Leo AI điều khiển được',
+      'Xuất PDF (báo cáo, Salekit, HĐMB) và 3D / BIM (.dae SketchUp, .ifc Revit)',
+      'Điểm view căn hộ, ảnh vệ tinh + nắng · gió theo toạ độ dự án, 3D vật liệu thực hơn, zoom / pan hết méo',
+      'PCCC theo app cũ: tủ họng nước, cửa ngăn cháy hành lang, xuất DXF lớp PCCC; tem căn không đè',
+      'Sửa: Leo AI báo đúng lô đang chọn, hết bật cửa sổ terminal khi gọi cầu, thanh giờ nắng không giật',
+    ],
+    en: [
+      'Leo AI uses your signed-in Claude account (local bridge, phones too) — no API key needed',
+      'Tower layout BY TARGET: auto-pick / mix templates to hit site coverage + unit mix, then place; Leo AI can drive it',
+      'PDF export (report, Salekit, sale agreement) and 3D / BIM (.dae SketchUp, .ifc Revit)',
+      'Unit view score, satellite + sun / wind by project location, more realistic 3D, distortion-free zoom / pan',
+      'Fire safety per old app: hydrant cabinets, corridor fire doors, PCCC DXF layers; non-overlapping unit labels',
+      'Fixes: Leo AI sees the selected lot, no terminal window popping up, sun-hour bar no longer jumps',
+    ],
+  },
+  {
     v: '0.3.0', ngay: '2026-10-29',
     vi: [
       'Chi phí: đơn giá theo app cũ, QLDA theo TT 38/2026',

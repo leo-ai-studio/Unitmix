@@ -43,6 +43,11 @@
 
 /* ---- thẻ dự án ---- */
 .the-du-an { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.nut-xo { flex: none; align-self: center; width: 28px; height: 28px; margin-right: 4px; padding: 0; border: 0; border-radius: 6px; background: transparent; cursor: pointer; position: relative; }
+.nut-xo::before { content: ''; position: absolute; left: 10px; top: 9px; width: 7px; height: 7px; border: solid var(--ink); border-width: 0 2px 2px 0; transform: rotate(-45deg); transition: transform .15s; }
+.nut-xo.mo::before { transform: rotate(45deg); top: 8px; }
+.nut-xo:hover { background: var(--line); }
+.nut-xo:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
 .the-dau { display: flex; align-items: center; gap: 8px 16px; padding: 10px 10px 10px 16px; }
 .the-ten { flex: 1; min-width: 0; }
 .dong-ten { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }

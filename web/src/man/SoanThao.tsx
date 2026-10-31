@@ -185,7 +185,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const phuLeo = useRef<PhuSoan>(null as unknown as PhuSoan);
   phuLeo.current = {
     ma, da, paId, tenPA, maSua, loi: kho.loi, layCheDo: kho.layCheDo, tv,
-    ui: { buoc, xem: xemGiua, loId, toaId, canKhoa, tangs: null, tangHam },
+    ui: { buoc, xem: xemGiua, loId: loDangChon?.id ?? loId, toaId, canKhoa, tangs: null, tangHam },
     datBuoc: setBuoc, datXem: setXemGiua, datLo: setLoId, datToa: setToaId, datCan: setCanKhoa, datTangHam: setTangHam,
     xuatXls: tv && kq ? () => xuatBaoCaoPA(kho.pa, tv, kq, da.ten, tenPA, diemLechPA(kho.pa, kq)) : undefined,
     moCad: xemXuat && tv ? () => setMoXuat(true) : undefined,

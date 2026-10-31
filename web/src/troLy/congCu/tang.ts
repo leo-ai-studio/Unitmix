@@ -123,7 +123,7 @@ export const CONG_CU_TANG: CongCu[] = [
     chay: async (v, ng) => {
       const c = await chuanBi(ng, v);
       const o = timO(c.tang.sl.can, v.cell as string);
-      const id = (v.unit_id as string) ?? mauThem(c.tv, o.canId);
+      const id = (v.unit_id as string) ?? (o.cn !== 'can' ? o.vt.canGocId : mauThem(c.tv, o.canId)); // ô trống / đã xoá: đặt lại đúng mẫu gốc của ô
       if (!c.tv.can.has(id)) throw new LoiCongCu(`Không có mẫu căn "${id}".`);
       const ph = o.cn !== 'can' ? phepTay('themVaoO', c.toa, c.tangs, o.vt, id) : phepTay('themCanTay', c.toa, c.tangs, o.vt, id, v.before === true);
       return sauSua(ng, c, { ...chotPhep(ng, c, ph), them: id, neo: tenCH(o.no) });

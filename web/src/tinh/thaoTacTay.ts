@@ -12,8 +12,9 @@ import { doiCanTaiViTri, doiCanTheoTang, doiChoO, doiCongNang, latO } from './do
 import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type ToaDat } from './kieu';
 import { chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
+import { duocDatVaoO, idMauGoc, nhomViTri } from './quyTacViTriCan';
 
-export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'khong_vua' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan';
+export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'khong_vua' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan' | 'sai_vi_tri';
 export type KetQuaTay = { ok: true; toa: ToaDat; chan: ChanSua[]; canhBao?: 'nhieu_thang' | 'it_thang' } | { ok: false; lyDo: LyDoTay; chiTiet?: string };
 
 export type Ctx = { tv: ThuVien; dl: DuLieuMB | null | undefined };
@@ -47,6 +48,12 @@ function chotSua(truoc: ToaDat, sau0: ToaDat, ks: (number | null)[], c: Ctx, tha
 /** Đổi chỗ hai ô (kéo căn sang ô khác — QT-8 · QT-30): mẫu căn, công năng, lật đổi cho nhau; dãy dồn khít lại. */
 export function doiChoTay(toa: ToaDat, tangs: number[] | null, a: ViTriCan, b: ViTriCan, c: Ctx): KetQuaTay {
   if (a.khoa === b.khoa) return { ok: false, lyDo: 'khong_doi' };
+  // quy tắc vị trí căn: căn góc chỉ sang ô góc, căn giữa chỉ sang ô giữa, căn V / Y không rời chỗ (tinh/quyTacViTriCan.ts)
+  for (const k of tangs ?? [null]) {
+    const bc = boCucTang(toa, k);
+    if (congNangTai(a.khoa, bc) === 'can' && !duocDatVaoO(b.canGocId, canDangDung(a, bc))) return { ok: false, lyDo: 'sai_vi_tri' };
+    if (congNangTai(b.khoa, bc) === 'can' && !duocDatVaoO(a.canGocId, canDangDung(b, bc))) return { ok: false, lyDo: 'sai_vi_tri' };
+  }
   const r = chotSua(toa, doiChoO(toa, tangs, a, b), tangs ?? [null], c);
   if (!r.ok) return r;
   // đổi chỗ là MỘT phép: căn vừa chọn không vừa ô bên kia (dãy kẹp — tự chỉnh chặn, giữ căn cũ ở ô đó) thì không nhận nửa vời
@@ -96,6 +103,7 @@ export function xoaCanTay(toa: ToaDat, tangs: number[] | null, khoas: string[], 
 export function themCanTay(toa: ToaDat, tangs: number[] | null, neo: ViTriCan, id: string, c: Ctx, truoc = false): KetQuaTay {
   const goc = c.tv.toa.get(toa.mauId);
   if (!goc) return { ok: false, lyDo: 'khong_doi' };
+  if (nhomViTri(id) !== 'giua') return { ok: false, lyDo: 'sai_vi_tri' }; // căn thêm là căn giữa, không thêm căn góc / V / Y
   const ds: CanThem[] = [...(toa.canThem ?? []), truoc ? { mat: neo.matIdx, truoc: neo.khoa, id } : { mat: neo.matIdx, sau: neo.khoa, id }];
   const { hong } = moRong(goc, ds, c.tv);
   if (hong.includes(ds.length - 1)) return { ok: false, lyDo: 'khong_dau_tu_do' };
@@ -118,6 +126,7 @@ export function themCanTay(toa: ToaDat, tangs: number[] | null, neo: ViTriCan, i
  * dãy giãn lại đúng chỗ cũ (QT-69); số căn phải tăng, không thì trả lý do.
  */
 export function themVaoO(toa: ToaDat, tangs: number[] | null, vt: ViTriCan, id: string, c: Ctx): KetQuaTay {
+  if (!duocDatVaoO(vt.canGocId, id)) return { ok: false, lyDo: 'sai_vi_tri' };
   let sua = doiCongNang(toa, tangs, [vt.khoa], 'can');
   const k0 = tangs?.[0] ?? null;
   if (id !== canDangDung(vt, boCucTang(sua, k0))) {
@@ -136,11 +145,14 @@ export function themVaoO(toa: ToaDat, tangs: number[] | null, vt: ViTriCan, id: 
  * Mẫu căn chọn được khi thêm căn cạnh căn `id` (menu Thêm căn): căn GIỮA cùng nhóm (NOTM / NOXH) và cùng chiều sâu, không gồm biến
  * thể STRETCH. `rong` (mm, chỗ trống cần lấp) thì chỉ mẫu rộng ≤ chỗ + STRETCH co tối đa (QT-81 ±500), vừa nhất trước; không thì theo
  * loại rồi bề ngang.
+ * `choO` = mẫu GỐC của chính ô cần đặt lại (chỗ loại 'o'): đặt lại đúng quy tắc vị trí của ô đó — ô góc nhận căn góc thường, ô V / Y chỉ
+ * nhận lại chính mẫu đó (tinh/quyTacViTriCan.ts); không có `choO` (chèn thêm) thì chỉ căn giữa.
  */
-export function dsMauThem(tv: ThuVien, id: string, rong?: number): CanMau[] {
+export function dsMauThem(tv: ThuVien, id: string, rong?: number, choO?: string): CanMau[] {
   const c0 = tv.can.get(id), c = c0?.stretchGoc ? tv.can.get(c0.stretchGoc.id) ?? c0 : c0;
   if (!c) return [];
-  const ds = [...tv.can.values()].filter((x) => !x.stretchGoc && !x.id.includes('~') && x.vi_tri === 'giua' && x.nhom === c.nhom && x.sau_mm === c.sau_mm
+  const hopO = (x: CanMau) => (choO === undefined ? x.vi_tri === 'giua' : duocDatVaoO(choO, x.id) && (nhomViTri(choO) !== 'khoa' || idMauGoc(x.id) === idMauGoc(choO)));
+  const ds = [...tv.can.values()].filter((x) => !x.stretchGoc && !x.id.includes('~') && hopO(x) && x.nhom === c.nhom && x.sau_mm === c.sau_mm
     && (rong === undefined || x.rong_mm <= rong + CO_TOI_DA_MM));
   return rong === undefined
     ? ds.sort((a, b) => LOAI_CAN.indexOf(a.loai) - LOAI_CAN.indexOf(b.loai) || a.rong_mm - b.rong_mm || a.id.localeCompare(b.id))

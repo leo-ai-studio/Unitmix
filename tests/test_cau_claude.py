@@ -141,7 +141,10 @@ def test_suc_khoe(may, monkeypatch):
 
 
 def test_dung_giua_chung_giet_tien_trinh(may, monkeypatch):
+    import shutil
     import socket
+    if not shutil.which("pgrep"):
+        pytest.skip("cần pgrep để đếm tiến trình (Linux/macOS)")
     cong, ghi = may
     monkeypatch.setenv("FAKE_KICH_BAN", "treo")
     s = socket.create_connection(("127.0.0.1", cong))

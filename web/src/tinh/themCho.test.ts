@@ -14,7 +14,7 @@ import { apMatBang, doDeKhe, matBangTang, tuChinhToa, type DuLieuMB, type HinhLo
 import { boCucTang, congNangTai, viTriCan } from './matBang';
 import { tinhCuaCan } from './pccc';
 import { themBienThe } from './stretch';
-import { doiChoTay, dsMauThem, latTay, themCanTay, themVaoO, xoaCanTay, xoaThangTay, type KetQuaTay } from './thaoTacTay';
+import { doiChoTay, dsMauThem, latTay, mauThem, themCanTay, themVaoO, xoaCanTay, xoaThangTay, type KetQuaTay } from './thaoTacTay';
 
 const lib = new URL('../../public/lib/', import.meta.url);
 const doc = <T>(p: string) => JSON.parse(readFileSync(new URL(p, lib), 'utf8')) as T;
@@ -42,9 +42,10 @@ const so = (x: ToaDat) => soCanTang(x, c, null);
 describe('Thêm căn trước ô chọn / vào chỗ trống — mẫu thật', () => {
   it('chèn TRƯỚC căn đầu dãy (tm-i1 0:0): +1 căn / tầng, căn mới đứng trước ô chọn, không đè mới', () => {
     const t0 = toaThu('tm-i1'), h0 = hien(t0), v0 = h0.vts.find((v) => v.khoa === '0:0')!;
-    const t1 = ok(themCanTay(t0, null, v0, v0.canGocId, c, true));
+    const idThem = mauThem(tv, v0.canGocId); // đầu dãy là căn góc → thêm căn giữa cùng loại (quy tắc vị trí căn)
+    const t1 = ok(themCanTay(t0, null, v0, idThem, c, true));
     expect(so(t1)).toBe(so(t0) + 1);
-    expect(t1.canThem).toEqual([{ mat: 0, truoc: '0:0', id: v0.canGocId }]);
+    expect(t1.canThem).toEqual([{ mat: 0, truoc: '0:0', id: idThem }]);
     const h1 = hien(t1), khoa = khoaCanThem(mauGoc('tm-i1') as unknown as ToaMau, t1.canThem!, 0)!;
     const moi = h1.vts.find((v) => v.khoa === khoa)!, cu = h1.vts.find((v) => v.khoa === '0:0')!;
     expect(moi.a1).toBeLessThanOrEqual(cu.a0 + 5);
@@ -103,7 +104,7 @@ describe('Thêm căn trước ô chọn / vào chỗ trống — mẫu thật', 
     const t1 = ok(xoaCanTay(t0, null, ['0:4'], c));
     const ds = choTrong(t1, tv, dl, null);
     expect(ds.map((x) => [x.loai, x.neo.khoa, x.daXoa])).toEqual([['o', '0:4', true]]);
-    const m = dsMauThem(tv, ds[0].canKe, ds[0].rong)[0];
+    const m = dsMauThem(tv, ds[0].canKe, ds[0].rong, ds[0].neo.canGocId)[0]; // đặt lại đúng quy tắc vị trí của ô
     expect(Math.abs(m.rong_mm - ds[0].rong)).toBeLessThanOrEqual(500);
     const t2 = ok(themVaoO(t1, null, ds[0].neo, m.id, c));
     expect(so(t2)).toBe(so(t0));

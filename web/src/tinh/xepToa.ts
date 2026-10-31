@@ -15,11 +15,11 @@
  * số tầng trần; phương án trả về tính lại đúng số tầng.
  */
 import { tinhChiTieu } from './chiTieu';
-import { diemLechCoCau } from './coCau';
+import { coCauRong, diemLechCoCau, phanTram } from './coCau';
 import { chanToa, dienTich, trongTam } from './hinhHoc';
 import { taoToaTrenLo, vungDat } from './hopLo';
 import type { Diem, Lo, LoaiCan, ThuVien, ToaDat, ToaMau, TrangThaiPA } from './kieu';
-import { coMat, viTriCan, type ToaCoMat } from './matBang';
+import { canCaToa, coMat, viTriCan, type ToaCoMat } from './matBang';
 import { chieuCaoPCCC, thoatNan, type ToaPCCC } from './pccc';
 import { BoDemView, boiCanhView, caiDatView, datMatCan, tongHopView, viewXoayMau, type BoiCanhView, type ToaView } from './huongView';
 import type { Luat } from './quyTac';
@@ -145,6 +145,14 @@ export type DauVaoXep = {
   soGoiY?: number;
   /** Trọng số điểm view khi xếp hạng (0–100 %); thiếu = `pa.huongView.trongSoXep` hoặc 20. 0 = không xét view khi xếp (vẫn báo điểm). */
   trongSoView?: number;
+  /**
+   * Chế độ THEO MỤC TIÊU: tự suy ra tổ hợp mẫu tòa (≤ 3 mẫu, trộn được) × số tòa sao cho DTXD (MĐXD) nằm trong
+   * [`matDoMinPct` % × MĐXD tối đa, MĐXD tối đa] và cơ cấu căn sát `coCauMucTieu` của lô, rồi đặt từng tòa. Phương án ra được xếp hạng theo
+   * độ lệch cơ cấu + phần thiếu DTXD (xem `GoiYXep.theoMucTieu`).
+   */
+  theoMucTieu?: boolean;
+  /** DTXD tối thiểu (% của MĐXD tối đa) để tổ hợp được coi là đạt; mặc định 85. */
+  matDoMinPct?: number;
 };
 /** Trọng số view mặc định khi xếp hạng gợi ý (%) — nhẹ: chỉ tách các phương án gần bằng nhau. Giá trị tạm, chờ chủ nhiệm chốt. */
 export const TRONG_SO_VIEW_XEP = 20;
@@ -175,6 +183,8 @@ export type GoiYXep = {
   view: number | null;
   /** % căn view Tốt. */
   viewTot: number | null;
+  /** Phương án sinh ở chế độ THEO MỤC TIÊU: tổ hợp dự kiến, số tòa không đặt được so với dự kiến, DTXD đạt (% MĐXD tối đa). */
+  theoMucTieu?: { duKien: [string, number][]; thieuToa: number; dtxdPct: number; thieuDtxd: number };
 };
 
 // ---------- MT-06: % căn hướng tốt (app cũ `huongThat` + nhóm mặc định TỐT = Đ · ĐN · N) ----------
@@ -265,14 +275,14 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
   const LECH_VIEW = 2 * buoc; // m: biến thể "ưu tiên view" — ứng viên xa neo hơn tối đa chừng này vẫn đứng trước nếu góc xoay hướng tốt hơn hẳn
   // xếp tham lam từ neo: mỗi lần lấy ứng viên gần neo nhất còn đủ khoảng cách cạnh dài với các tòa đã có; dừng khi chạm MĐXD.
   // `uuTienView`: cùng khoảng tới neo thì góc xoay có điểm hướng + nắng tốt hơn đứng trước.
-  const xepThamLam = (uv: Dat[], nNeo: Diem, daCo: Dat[], dtChan: number, uuTienView = false) => {
+  const xepThamLam = (uv: Dat[], nNeo: Diem, daCo: Dat[], dtChan: number, uuTienView = false, toiDa = 40) => {
     const khoaSx = new Map(uv.map((a) => [a, Math.hypot(a.x - nNeo[0], a.y - nNeo[1]) - (uuTienView ? (LECH_VIEW * huongXoay(a)) / 100 : 0)]));
     const ds = uv.slice().sort((a, b) => khoaSx.get(a)! - khoaSx.get(b)!);
     const dat = daCo.slice();
     let foot = daCo.reduce((s, d) => s + dienTich(d.F), 0);
     // ứng viên đã hỏng với các tòa đang có thì còn hỏng khi có thêm tòa → dò tiếp từ sau ứng viên vừa chọn (cùng kết quả với dò lại từ đầu)
     let i = 0;
-    while (dat.length < 40) {
+    while (dat.length < Math.min(40, daCo.length + toiDa)) {
       if (((foot + dtChan) / dtLo) * 100 > ct.matDoMax + 1e-6) break;
       let ch: Dat | null = null;
       for (; i < ds.length && !ch; i++) {
@@ -377,6 +387,7 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
   const ketQua: GoiYXep[] = [];
   const tot1: { dat: Dat[]; diem: number }[] = [];
   const uvTheoMau = new Map<string, Dat[]>();
+  const chanMau = new Map<string, { dt: number; nMax: number }>(); // DT chân tòa + số tòa nhiều nhất đặt được (chế độ theo mục tiêu)
   for (let k = 0; k < mauDs.length; k++) {
     const mau = mauDs[k];
     const uv = ungVienTinh(mau);
@@ -398,6 +409,7 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
       for (const u of uv) { const k = oLuoi(u.x, u.y); const a = theoDiem.get(k); if (a) a.push(u); else theoDiem.set(k, [u]); }
       cach = xoayHuongTot(cach, theoDiem);
     }
+    chanMau.set(mau.id, { dt: dtChan, nMax: cach.length });
     const bo = wView > 0 && cach.length ? boViewMoi() : null; // tăng dần: n tòa = n − 1 tòa + một tòa
     for (let n = 1; n <= cach.length; n++) {
       bo?.them(toaView(cach[n - 1], n - 1, Hmax));
@@ -420,9 +432,71 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
       if (g) ketQua.push(g);
     }
   }
+  // THEO MỤC TIÊU: suy tổ hợp mẫu × số tòa đạt DTXD + cơ cấu, rồi đặt từng tòa theo chỉ tiêu từng mẫu
+  const minPct = Math.max(0, Math.min(100, v.matDoMinPct ?? 85));
+  const dtMax = (dtLo * ct.matDoMax) / 100, dtMin = (dtMax * minPct) / 100;
+  const mucTieuCC = lo.temDat.coCauMucTieu as Record<LoaiCan, number>;
+  const coMucTieuCC = !!mucTieuCC && Object.values(mucTieuCC).some((x) => x > 0);
+  if (v.theoMucTieu) {
+    const canMau = new Map<string, Record<LoaiCan, number>>();
+    for (const mau of mauDs) {
+      const dem = coCauRong();
+      for (const [id, n] of canCaToa(mau, taoToaTrenLo(mau, lo, 'dem'), tv)) { const c = tv.can.get(id); if (c) dem[c.loai] += n; }
+      canMau.set(mau.id, dem);
+    }
+    const lechCo = (dem: Record<LoaiCan, number>) => (coMucTieuCC ? diemLechCoCau(phanTram(dem), mucTieuCC) : 0);
+    // mẫu đặt được, ưu tiên mẫu cơ cấu sát mục tiêu (cắt còn 12 mẫu để tổ hợp không nổ)
+    const ung = mauDs.filter((m) => (chanMau.get(m.id)?.nMax ?? 0) > 0 && (chanMau.get(m.id)?.dt ?? 0) > 0)
+      .sort((a, b) => lechCo(canMau.get(a.id)!) - lechCo(canMau.get(b.id)!)).slice(0, 12);
+    type ToHop = { ds: [string, number][]; lech: number; dt: number };
+    const toHop: ToHop[] = [];
+    const duyet = (i: number, chon: [string, number][], dt: number, n: number) => {
+      if (chon.length && dt >= dtMin - 1e-6 && dt <= dtMax + 1e-6) {
+        const dem = coCauRong();
+        for (const [id, c] of chon) for (const l of Object.keys(dem) as LoaiCan[]) dem[l] += c * canMau.get(id)![l];
+        toHop.push({ ds: chon.slice(), lech: lechCo(dem), dt });
+      }
+      if (chon.length >= 3) return;
+      for (let k = i; k < ung.length; k++) {
+        const { dt: d, nMax: nm } = chanMau.get(ung[k].id)!;
+        for (let c = 1; c <= Math.min(nm, 6) && n + c <= 8 && dt + c * d <= dtMax + 1e-6; c++) duyet(k + 1, [...chon, [ung[k].id, c]], dt + c * d, n + c);
+      }
+    };
+    duyet(0, [], 0, 0);
+    toHop.sort((a, b) => a.lech - b.lech || b.dt - a.dt);
+    // giữ các tổ hợp tốt nhất, khác nhau về tập mẫu hoặc số tòa
+    const giu: ToHop[] = [], thay = new Set<string>();
+    for (const h of toHop) {
+      const k = h.ds.map((m) => m.join('×')).join('+');
+      if (thay.has(k)) continue;
+      thay.add(k); giu.push(h);
+      if (giu.length >= 6) break;
+    }
+    for (const h of giu) {
+      const thu = (nNeo: Diem) => {
+        let dat: Dat[] = [];
+        for (const [id, c] of h.ds.slice().sort((a, b) => chanMau.get(b[0])!.dt - chanMau.get(a[0])!.dt)) {
+          dat = xepThamLam(uvTheoMau.get(id) ?? [], nNeo, dat, chanMau.get(id)!.dt, false, c);
+        }
+        return dat;
+      };
+      const [a, b] = [thu(neo.tam), thu(neo.goc)];
+      const dat = b.length > a.length ? b : a;
+      const g = cham(dat, `mt×${h.ds.map((m) => m.join('×')).join('+')}`);
+      if (!g) continue;
+      const duKienN = h.ds.reduce((s, [, c]) => s + c, 0);
+      g.theoMucTieu = {
+        duKien: h.ds, thieuToa: Math.max(0, duKienN - dat.length), dtxdPct: g.matDo,
+        thieuDtxd: Math.max(0, (minPct * ct.matDoMax) / 100 - g.matDo),
+      };
+      ketQua.push(g);
+    }
+  }
   yield { xong: mauDs.length + 1, tong: mauDs.length + 1 };
-  // xếp hạng: đạt QH → ít căn vượt PCCC → điểm; bỏ trùng số liệu
-  ketQua.sort((a, b) => a.loiQH - b.loiQH || (a.pcccVuot ?? 99) - (b.pcccVuot ?? 99) || b.diem - a.diem);
+  // xếp hạng: đạt QH → ít căn vượt PCCC → điểm; bỏ trùng số liệu. THEO MỤC TIÊU: đạt QH → lệch cơ cấu + phần thiếu DTXD → PCCC → điểm
+  const diemMT = (g: GoiYXep) => g.lech + 2 * (g.theoMucTieu ? g.theoMucTieu.thieuDtxd : Math.max(0, (minPct * ct.matDoMax) / 100 - g.matDo));
+  if (v.theoMucTieu) ketQua.sort((a, b) => a.loiQH - b.loiQH || diemMT(a) - diemMT(b) || (a.pcccVuot ?? 99) - (b.pcccVuot ?? 99) || b.diem - a.diem);
+  else ketQua.sort((a, b) => a.loiQH - b.loiQH || (a.pcccVuot ?? 99) - (b.pcccVuot ?? 99) || b.diem - a.diem);
   const daCo = new Set<string>(), top: GoiYXep[] = [];
   for (const g of ketQua) {
     const k = `${g.mau.map((m) => m.join('×')).join('+')}|${g.soTangDH}|${g.soCan}`;

@@ -299,7 +299,7 @@ export function ThanhCongCuTang(p: PropsCongCu) {
               {moCho && (
                 <ul class="cc-cho-trong" aria-label={t('cc.cho.nhom')} onMouseLeave={() => sang(null)}>
                   {dsCho.map((c) => {
-                    const ms = dsMauThem(p.tv, c.canKe, c.rong).slice(0, 4);
+                    const ms = dsMauThem(p.tv, c.canKe, c.rong, c.loai === 'o' ? c.neo.canGocId : undefined).slice(0, 4);
                     return (
                       <li key={`${c.loai}${c.matIdx}:${Math.round(c.a0)}`} onMouseEnter={() => sang(c)}>
                         <span class="cc-cho-ten">{tenLoaiCho(c)} · {t('cc.mat')} {c.matIdx + 1} · {m1(c.rong)} m</span>

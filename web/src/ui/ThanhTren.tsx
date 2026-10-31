@@ -55,14 +55,17 @@ function useLichSu(): [boolean, (f: (m: boolean) => boolean) => void] {
 /** Bảng lịch sử phiên bản tóm tắt (LICH_SU_PHIEN_BAN), mới nhất ở trên. */
 function BangLichSu() {
   const [lang] = useLang();
+  // Mỗi bản mặc định THU GỌN; bấm dòng phiên bản để xổ. Bảng nằm trong thẻ <a> nên chặn mặc định → tự đổi trạng thái, không dựa vào <details>.
+  const [xo, setXo] = useState<Set<string>>(() => new Set());
+  const doi = (v: string) => setXo((s) => { const n = new Set(s); if (!n.delete(v)) n.add(v); return n; });
   return (
     <div class="lich-su-ban" role="dialog" aria-label={t('ls.tieuDe')} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
       <b>{t('ls.tieuDe')}</b>
       {LICH_SU_PHIEN_BAN.map((m) => (
-        <div key={m.v} class="ls-muc">
-          <div class="ls-dau"><span>v{m.v}</span><small>{m.ngay}</small></div>
+        <details key={m.v} class="ls-muc" open={xo.has(m.v)}>
+          <summary class="ls-dau" onClick={() => doi(m.v)}><span>v{m.v}</span><small>{m.ngay}</small></summary>
           <ul>{(lang === 'en' ? m.en : m.vi).map((x) => <li key={x}>{x}</li>)}</ul>
-        </div>
+        </details>
       ))}
       <small class="ls-chan">{nhanPhienBan()}</small>
     </div>

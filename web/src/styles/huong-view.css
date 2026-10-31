@@ -146,6 +146,8 @@
 .goi-y-trong-so { display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 2px 12px 4px; font-size: 12px; color: var(--muted-text); }
 .goi-y-trong-so input[type='range'] { flex: 1; min-width: 80px; accent-color: var(--green); }
 .goi-y-trong-so b { min-width: 38px; text-align: right; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.goi-y-muc-tieu { cursor: pointer; }
+.goi-y-muc-tieu input[type='checkbox'] { accent-color: var(--green); }
 .goi-y-so .goi-y-view { grid-column: 1 / -1; color: var(--green); }
 
 @media (prefers-reduced-motion: reduce) {
