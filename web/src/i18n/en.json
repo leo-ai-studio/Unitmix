@@ -1817,7 +1817,7 @@
   "leo.cau.dangNhap": "Sign in to Claude",
   "leo.nguon.cau": "Claude account",
   "leo.nguon.tieuDe": "Source",
-  "leo.nguon.chon.tu_dong": "Automatic (own key → Claude account → shared key)",
+  "leo.nguon.chon.tu_dong": "Automatic (recommended)",
   "leo.nguon.chon.cau": "Claude account (bridge on this computer)",
   "leo.nguon.chon.chung": "Server shared key",
   "leo.nguon.chon.rieng": "Own API key",

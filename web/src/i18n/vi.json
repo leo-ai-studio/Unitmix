@@ -1817,7 +1817,7 @@
   "leo.cau.dangNhap": "Đăng nhập Claude",
   "leo.nguon.cau": "Tài khoản Claude",
   "leo.nguon.tieuDe": "Nguồn dùng",
-  "leo.nguon.chon.tu_dong": "Tự động (khoá riêng → tài khoản Claude → khoá chung)",
+  "leo.nguon.chon.tu_dong": "Tự động (khuyên dùng)",
   "leo.nguon.chon.cau": "Tài khoản Claude (cầu trên máy)",
   "leo.nguon.chon.chung": "Khoá chung của máy chủ",
   "leo.nguon.chon.rieng": "Khoá API riêng",
