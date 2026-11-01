@@ -26,3 +26,29 @@
    mở "Thông số tòa") làm cả trang có thanh cuộn dọc → khung giữa hẹp đi 15 px. */
 .panel-trai, .panel-phai { position: relative; }
 .tmb-vong-xoay { opacity: .45; }
+
+/* ===== Rà soát nút (0.4.9): menu gộp trên thanh công cụ TMB, "Nhập liệu ▾" panel trái, "?" gộp, zoom ± chỉ cảm ứng ===== */
+.menu-bt { position: relative; display: inline-flex; }
+.menu-bt > .nut-bt { gap: 1px; }
+.menu-bt-mui { font-size: 9px; font-style: normal; line-height: 1; opacity: .7; }
+.menu-bt-bang { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; min-width: 200px; display: flex; flex-direction: column; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 8px 22px rgb(0 0 0 / .14); }
+.menu-bt-bang button { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.menu-bt-bang button:hover:not(:disabled) { background: var(--hover); }
+.menu-bt-bang button:disabled { opacity: .45; cursor: default; }
+.menu-bt-o { flex: none; width: 14px; height: 14px; border: 1.5px solid var(--muted); border-radius: 4px; }
+.menu-bt-bang button[aria-checked='true'] .menu-bt-o { border-color: var(--green); background: var(--green); box-shadow: inset 0 0 0 2px var(--panel); }
+.nhom-bt .nut-bt[aria-pressed='true']::after { content: ''; position: absolute; right: 4px; top: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.nhom-bt .nut-bt { position: relative; }
+.goc-bv-phim { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted-text); }
+.menu-nhap { position: relative; }
+.menu-nhap-bang { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; display: flex; flex-direction: column; gap: 2px; min-width: 190px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 8px 22px rgb(0 0 0 / .14); }
+.menu-nhap-bang[hidden] { display: none; }
+.menu-nhap-bang .nut-nho { justify-content: flex-start; width: 100%; min-height: 34px; text-align: left; }
+.thanh-tren .cap-do .cap-len .cap-len-chu { font-size: 12px; }
+.thanh-tren .nut-hoan { min-width: 36px; min-height: 36px; font-size: 18px; }
+@media (hover: hover) and (pointer: fine) { .nut-bt.chi-cam-ung { display: none; } }
+@media (max-width: 1024px) { .thanh-tren .cap-do .cap-len .cap-len-chu { display: none; } }
+.thanh-tmb .nhom-bt { overflow: visible; }
+.thanh-tmb .nhom-bt > .nut-bt:first-child, .thanh-tmb .nhom-bt > .menu-bt:first-child > .nut-bt { border-radius: 5px 0 0 5px; }
+.thanh-tmb .nhom-bt > .nut-bt:last-child, .thanh-tmb .nhom-bt > .menu-bt:last-child > .nut-bt { border-radius: 0 5px 5px 0; }
+.thanh-tmb .nhom-bt > .menu-bt:last-child > .nut-bt { border-right: 0; }

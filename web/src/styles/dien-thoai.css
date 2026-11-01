@@ -118,7 +118,7 @@
   .goc-bv-hop { max-width: calc(100vw - 32px); max-height: 40dvh; font-size: 13px; }
   .goc-bv-hop.lop label { min-height: 40px; }
   /* thanh công cụ TMB: một hàng, dư thì vuốt ngang trong thanh (không cuộn cả trang), chừa chỗ hoa gió */
-  .thanh-tmb { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; max-width: calc(100% - 64px); box-sizing: border-box; padding: 8px 8px 4px; touch-action: pan-x; }
+  .thanh-tmb { flex-wrap: wrap; overflow: visible; max-width: calc(100% - 64px); box-sizing: border-box; padding: 8px 8px 4px; }
   .thanh-tmb::-webkit-scrollbar { display: none; }
   .thanh-tmb > * { flex: none; }
   .tmb-toa-do, .tmb-ds-cb, .tmb-goi-y { max-width: calc(100% - 72px); }

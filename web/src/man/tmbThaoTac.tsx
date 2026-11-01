@@ -8,7 +8,8 @@ import { t } from '../i18n/i18n';
 import type { ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { taiQuyTac, traLuat } from '../tinh/quyTac';
 import type { KetQuaKiem, LuatTMB } from '../tinh/thaoTacToa';
-import { NutBieuTuong } from '../ui/NutBieuTuong';
+import { NutBieuTuong, BieuTuong } from '../ui/NutBieuTuong';
+import type { KhoaBieuTuong } from '../ui/bieuTuong';
 import { fmtSo } from '../ui/so';
 import { batTatHangLoat, useHangLoat } from './xepHangLoat';
 
@@ -64,6 +65,35 @@ export function suaNhom(sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void, ids:
   });
 }
 
+/** Nút biểu tượng mở menu nhỏ gồm các mục bật / tắt (gộp nhiều nút ít dùng thành một). `bat` = có mục nào đang bật. */
+type MucMenu = { nhan: string; ghiChu?: string; bat?: boolean; tat?: boolean; onClick: () => void };
+function NutMenuBt({ k, nhan, bat, ds }: { k: KhoaBieuTuong; nhan: string; bat: boolean; ds: MucMenu[] }) {
+  const [mo, setMo] = useState(false);
+  useEffect(() => {
+    if (!mo) return;
+    const ngoai = (e: Event) => { if (!(e.target as Element).closest?.('.menu-bt')) setMo(false); };
+    const phim = (e: KeyboardEvent) => { if (e.key === 'Escape') setMo(false); };
+    document.addEventListener('pointerdown', ngoai); document.addEventListener('keydown', phim);
+    return () => { document.removeEventListener('pointerdown', ngoai); document.removeEventListener('keydown', phim); };
+  }, [mo]);
+  return (
+    <span class="menu-bt">
+      <button type="button" class="nut-bt" title={nhan} aria-label={nhan} aria-pressed={bat} aria-haspopup="menu" aria-expanded={mo} onClick={() => setMo(!mo)}>
+        <BieuTuong k={k} /><i class="menu-bt-mui" aria-hidden="true">▾</i>
+      </button>
+      {mo && (
+        <div class="menu-bt-bang" role="menu" aria-label={nhan}>
+          {ds.map((m) => (
+            <button key={m.nhan} type="button" role="menuitemcheckbox" aria-checked={!!m.bat} disabled={m.tat} title={m.ghiChu} onClick={m.onClick}>
+              <i class="menu-bt-o" aria-hidden="true" />{m.nhan}
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  );
+}
+
 type ThanhProps = {
   chiXem: boolean;
   soChon: number;
@@ -88,24 +118,31 @@ export function ThanhTMB(p: ThanhProps) {
     <div class="thanh-tmb" role="toolbar" aria-label={t('tmb.congCu')}>
       <div class="nhom-bt">
         <NutBieuTuong k="chonNhieu" ghiChu={t('tmb.gc.chonNhieu')} bat={tc.khung} onClick={() => datTuyChon({ khung: !tc.khung, do: false })} />
-        <NutBieuTuong k="batDinh" ghiChu={t('tmb.gc.batDinh')} bat={tc.bat} onClick={() => datTuyChon({ bat: !tc.bat })} />
-        <NutBieuTuong k="khoaCG" ghiChu={t('tmb.gc.khoaCG')} bat={tc.khoaCG} onClick={() => datTuyChon({ khoaCG: !tc.khoaCG })} />
         <NutBieuTuong k="do" ghiChu={t('tmb.gc.do')} bat={tc.do} onClick={() => datTuyChon({ do: !tc.do, khung: false })} />
+        <NutMenuBt k="batDinh" nhan={t('bt.rangBuoc')} bat={tc.bat || tc.khoaCG} ds={[
+          { nhan: t('bt.batDinh'), ghiChu: t('tmb.gc.batDinh'), bat: tc.bat, onClick: () => datTuyChon({ bat: !tc.bat }) },
+          { nhan: t('bt.khoaCG'), ghiChu: t('tmb.gc.khoaCG'), bat: tc.khoaCG, onClick: () => datTuyChon({ khoaCG: !tc.khoaCG }) },
+        ]} />
       </div>
       <div class="nhom-bt">
-        <NutBieuTuong k="xoay" ghiChu={t('tmb.gc.xoay')} tat={!sua || !p.coDiChuyen} onClick={p.xoay90} />
-        <NutBieuTuong k="lat" ghiChu={t('tmb.gc.lat')} tat={!sua || !p.coDiChuyen} onClick={p.lat} />
-        <NutBieuTuong k="nhanBan" ghiChu={t('tmb.gc.nhanBan')} tat={!sua || !p.soChon} onClick={p.nhanBan} />
-        <NutBieuTuong k={p.tatCaKhoa ? 'moKhoa' : 'khoa'} ghiChu={t('tmb.gc.khoa')} tat={!sua || !p.soChon} onClick={p.khoa} />
-        <NutBieuTuong k="xoa" ghiChu={t('tmb.gc.xoa')} tat={!sua || !p.coDiChuyen} onClick={p.xoa} />
-      </div>
-      <div class="nhom-bt">
-        <NutBieuTuong k="toaDo" ghiChu={t('tmb.gc.toaDo')} bat={tc.toaDo} tat={!p.soChon} onClick={() => datTuyChon({ toaDo: !tc.toaDo })} />
-        <NutBieuTuong k="hangLoat" ghiChu={t('tmb.gc.hangLoat')} bat={hl.mo} onClick={batTatHangLoat} />
         <NutBieuTuong k="canhBao" ghiChu={t('tmb.gc.canhBao')} bat={tc.dsCanhBao} onClick={() => datTuyChon({ dsCanhBao: !tc.dsCanhBao })}>
           {soLoi + soCanh > 0 && <span class={soLoi ? 'tmb-dem loi' : 'tmb-dem'}>{soLoi + soCanh}</span>}
         </NutBieuTuong>
+        <NutMenuBt k="hangLoat" nhan={t('bt.congCuTmb')} bat={tc.toaDo || hl.mo} ds={[
+          { nhan: t('bt.toaDo'), ghiChu: t('tmb.gc.toaDo'), bat: tc.toaDo, tat: !p.soChon, onClick: () => datTuyChon({ toaDo: !tc.toaDo }) },
+          { nhan: t('bt.hangLoat'), ghiChu: t('tmb.gc.hangLoat'), bat: hl.mo, onClick: batTatHangLoat },
+        ]} />
       </div>
+      {/* 5 thao tác trên tòa chỉ hiện khi đã chọn tòa (trước đây 5 ô xám chiếm chỗ cả khi chưa chọn) */}
+      {p.soChon > 0 && (
+        <div class="nhom-bt" role="group" aria-label={t('tmb.thaoTacToa')}>
+          <NutBieuTuong k="xoay" ghiChu={t('tmb.gc.xoay')} tat={!sua || !p.coDiChuyen} onClick={p.xoay90} />
+          <NutBieuTuong k="lat" ghiChu={t('tmb.gc.lat')} tat={!sua || !p.coDiChuyen} onClick={p.lat} />
+          <NutBieuTuong k="nhanBan" ghiChu={t('tmb.gc.nhanBan')} tat={!sua || !p.soChon} onClick={p.nhanBan} />
+          <NutBieuTuong k={p.tatCaKhoa ? 'moKhoa' : 'khoa'} ghiChu={t('tmb.gc.khoa')} tat={!sua || !p.soChon} onClick={p.khoa} />
+          <NutBieuTuong k="xoa" ghiChu={t('tmb.gc.xoa')} tat={!sua || !p.coDiChuyen} onClick={p.xoa} />
+        </div>
+      )}
       {p.soChon > 1 && <span class="tmb-ghi">{t('tmb.daChon').replace('{n}', String(p.soChon))}</span>}
     </div>
   );

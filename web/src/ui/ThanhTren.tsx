@@ -11,7 +11,7 @@ export type MucCap = { khoa: string; nhan: string; phu?: string; nhom?: string; 
 /** Một ô trên dải cấp: chữ đang hiện (cắt … khi chật), tooltip đủ tên, danh sách mục thả xuống. `dangO` = cấp đang đứng (tô --selected). */
 export type MenuCap = { nhan: string; tieuDe: string; ds: MucCap[]; onChon: (khoa: string) => void; dangO?: boolean };
 /** Dải cấp giữa thanh trên: lô / PA · cốt · tòa · tầng · căn; `onLen` lên một cấp (căn → tầng → tòa → lô). */
-export type CapDo = { lo: MenuCap; coTe: MenuCap; toa?: MenuCap; tang?: MenuCap; can?: MenuCap; onLen?: () => void; nhanLen?: string };
+export type CapDo = { lo: MenuCap; coTe?: MenuCap; toa?: MenuCap; tang?: MenuCap; can?: MenuCap; onLen?: () => void; nhanLen?: string };
 export type CheDo = 'tu_dong' | 'chinh_tay' | 'chi_xem';
 export type CheDoXem = 'mat_bang' | 'mo_hinh' | 'chi_phi';
 export type TrangThaiLuu = 'da_luu' | 'dang_luu' | 'chua_luu_duoc';
@@ -53,13 +53,13 @@ function useLichSu(): [boolean, (f: (m: boolean) => boolean) => void] {
 }
 
 /** Bảng lịch sử phiên bản tóm tắt (LICH_SU_PHIEN_BAN), mới nhất ở trên. */
-function BangLichSu() {
+function BangLichSu({ style }: { style?: Record<string, string> }) {
   const [lang] = useLang();
   // Mỗi bản mặc định THU GỌN; bấm dòng phiên bản để xổ. Bảng nằm trong thẻ <a> nên chặn mặc định → tự đổi trạng thái, không dựa vào <details>.
   const [xo, setXo] = useState<Set<string>>(() => new Set());
   const doi = (v: string) => setXo((s) => { const n = new Set(s); if (!n.delete(v)) n.add(v); return n; });
   return (
-    <div class="lich-su-ban" role="dialog" aria-label={t('ls.tieuDe')} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+    <div class="lich-su-ban" role="dialog" aria-label={t('ls.tieuDe')} style={style} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
       <b>{t('ls.tieuDe')}</b>
       {LICH_SU_PHIEN_BAN.map((m) => (
         <details key={m.v} class="ls-muc" open={xo.has(m.v)}>
@@ -165,6 +165,7 @@ function MenuThem({ onXls, onCad, onPdf, on3d, hep }: { onXls?: () => void; onCa
   const [vt, setVt] = useState({ top: 0, right: 0 });
   const nut = useRef<HTMLButtonElement>(null);
   const [lang, datLang] = useLang();
+  const [moLs, setMoLs] = useLichSu();
   useEffect(() => {
     if (!mo) return;
     // điện thoại ẩn / hiện thanh địa chỉ cũng bắn resize: chỉ đóng khi bề ngang đổi (xoay máy, kéo cửa sổ)
@@ -193,12 +194,14 @@ function MenuThem({ onXls, onCad, onPdf, on3d, hep }: { onXls?: () => void; onCa
           <button type="button" role="menuitem" disabled={!onCad} onClick={onCad}>{t('xuat.cad')}</button>
           <button type="button" role="menuitem" disabled={!onPdf} onClick={onPdf}>{t('xuat.pdf')}</button>
           <button type="button" role="menuitem" disabled={!on3d} onClick={on3d}>{t('xuat.mo3d')}</button>
+          <button type="button" role="menuitem" class="ban" onClick={() => setMoLs(() => true)}>{t('ls.tieuDe')} · v{PHIEN_BAN}</button>
           <div class="menu-them-lang" role="group" aria-label={t('lang.chon')}>
             <button type="button" aria-pressed={lang === 'vi'} onClick={() => datLang('vi')}>VI</button>
             <button type="button" aria-pressed={lang === 'en'} onClick={() => datLang('en')}>EN</button>
           </div>
         </div>
       )}
+      {moLs && <BangLichSu style={{ position: 'fixed', top: `${vt.top}px`, right: `${vt.right}px`, left: 'auto' }} />}
     </span>
   );
 }
@@ -208,7 +211,7 @@ function DaiCap({ c }: { c: CapDo }) {
   const o = ([['lo', c.lo], ['cot', c.coTe], ['toa', c.toa], ['tang', c.tang], ['can', c.can]] as const).filter((x): x is [typeof x[0], MenuCap] => !!x[1]);
   return (
     <nav class="cap-do" aria-label={t('cap.nhom')}>
-      <button type="button" class="cap-len" aria-label={t('cap.len')} title={c.nhanLen ?? t('cap.len')} disabled={!c.onLen} onClick={c.onLen}>↑</button>
+      <button type="button" class="cap-len" aria-label={t('cap.len')} title={c.nhanLen ?? t('cap.len')} disabled={!c.onLen} onClick={c.onLen}>↑<span class="cap-len-chu"> {t('cap.lenChu')}</span></button>
       {o.map(([k, m]) => <NutCap key={k} m={m} lop={`cap-${k}`} />)}
     </nav>
   );
@@ -299,7 +302,8 @@ const nhanNgan = (k: string, nhan: string) => { const x = t(`buoc.ngan.${k}`); r
 
 export function ThanhTren(p: Props) {
   useLang();
-  const xem: [CheDoXem, string][] = [['mat_bang', 'xem.matBang'], ['mo_hinh', 'xem.moHinh'], ['chi_phi', 'xem.chiPhi']];
+  const xem: [CheDoXem, string][] = [['mat_bang', 'xem.matBang'], ['mo_hinh', 'xem.moHinh']];
+  const laChiPhi = p.cheDoXem === 'chi_phi';
   const cheDo: [CheDo, string][] = [['tu_dong', 'cheDo.tuDong'], ['chinh_tay', 'cheDo.chinhTay'], ['chi_xem', 'cheDo.chiXem']];
   const luu = p.trangThaiLuu;
   // Xuất XLS có thể chờ rải hầm chạy nền: hiện vòng O trên nút, chặn bấm lặp.
@@ -325,16 +329,17 @@ export function ThanhTren(p: Props) {
   );
   return (
     <header class="thanh-tren">
-      <ThuongHieu dangXuLy={p.dangXuLy} />
+      <ThuongHieu dangXuLy={p.dangXuLy} anBan />
       <button class="nut-chu nut-hoan" type="button" aria-label={t('nut.hoanTac')} title={t('nut.hoanTac')} disabled={!p.onHoanTac || p.cheDo === 'chi_xem'} onClick={p.onHoanTac}>↶</button>
       <button class="nut-chu nut-hoan" type="button" aria-label={t('nut.lamLai')} title={t('nut.lamLai')} disabled={!p.onLamLai || p.cheDo === 'chi_xem'} onClick={p.onLamLai}>↷</button>
       {p.buoc && (
-        <TabTruot lop="tab-buoc" nhan={t('buoc.nhom')} chon={p.buoc.chon}>
+        <TabTruot lop="tab-buoc" nhan={t('buoc.nhom')} chon={`${p.buoc.chon}${laChiPhi ? '+cp' : ''}`}>
           {p.buoc.ds.map(([k, nhan]) => (
-            <button type="button" key={k} aria-pressed={p.buoc!.chon === k} title={nhan} onClick={() => p.buoc!.onChon(k)}>
+            <button type="button" key={k} aria-pressed={!laChiPhi && p.buoc!.chon === k} title={nhan} onClick={() => { if (laChiPhi) p.onCheDoXem?.('mat_bang'); p.buoc!.onChon(k); }}>
               <span class="nhan-dai">{nhan}</span><span class="nhan-ngan" aria-hidden="true">{nhanNgan(k, nhan)}</span>
             </button>
           ))}
+          {p.onCheDoXem && <button type="button" aria-pressed={laChiPhi} title={t('xem.chiPhi')} onClick={() => p.onCheDoXem?.('chi_phi')}><span class="nhan-dai">{t('xem.chiPhi')}</span><span class="nhan-ngan" aria-hidden="true">{t('xem.chiPhi')}</span></button>}
         </TabTruot>
       )}
       <TabTruot lop="tab-xem" nhan={t('xem.nhom')} chon={p.cheDoXem}>

@@ -9,9 +9,11 @@ export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
     v: '0.4.8', ngay: '2026-11-02',
     vi: [
       'Hiệu năng: kéo tòa trên Tổng mặt bằng mượt lại (dự án 14 tòa: từ ~10 lên ~60 khung/giây) — tính chỉ tiêu và kiểm khoảng cách nhanh hơn nhiều lần, nhớ kết quả khối đế của lô không đổi',
+      'Rà soát nút: thanh trên gọn hơn (bỏ ô Tòa / Căn / Cốt trùng chức năng, Chi phí chuyển sang nhóm TMB · Tầng · Hầm, số phiên bản vào menu ⋯); thanh công cụ TMB gộp Ràng buộc (bắt dính + giữ trong chỉ giới) và Công cụ (tọa độ + xếp hàng loạt), 5 nút thao tác tòa chỉ hiện khi đã chọn tòa; Chú giải + Hướng dẫn thành một nút ?; Nhập liệu gom DXF · Bảng QH · Đề bài KD · thêm lô; điện thoại không còn bị cắt nút Cảnh báo',
     ],
     en: [
       'Performance: dragging towers on the site plan is smooth again (14-tower project: ~10 → ~60 fps) — indicator maths and distance checks are many times faster, and unchanged plots reuse their podium result',
+      'Button review: slimmer top bar (removed duplicate Tower / Unit / Level pickers, Cost moved next to Site · Floor · Basement, version moved into the ⋯ menu); site-plan toolbar merges Constraints (snap + keep inside) and Tools (coordinates + batch), tower actions appear only with a selection; Legend + Help are one ? button; Import groups DXF · Planning table · Brief · add plot; phones no longer cut off the Warnings button',
     ],
   },
   {

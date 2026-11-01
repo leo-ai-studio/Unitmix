@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import type { BanDxf } from '../dxf/napDxf';
 import { t } from '../i18n/i18n';
 import type { DongChiTieu } from '../tinh/chiTieu';
@@ -73,6 +73,14 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
   const [kt, setKt] = useState({ rong: 80, dai: 60 });
   const [hop, setHop] = useState<'chiTieu' | 'deBai' | null>(null);
   const [tay, setTay] = useState(false);
+  const [moNhap, setMoNhap] = useState(false);
+  useEffect(() => {
+    if (!moNhap) return;
+    const ngoai = (e: Event) => { if (!(e.target as Element).closest?.('.menu-nhap')) setMoNhap(false); };
+    const phim = (e: KeyboardEvent) => { if (e.key === 'Escape') setMoNhap(false); };
+    document.addEventListener('pointerdown', ngoai); document.addEventListener('keydown', phim);
+    return () => { document.removeEventListener('pointerdown', ngoai); document.removeEventListener('keydown', phim); };
+  }, [moNhap]);
   const lo = loDangChonHoacDatO(pa.lo, loId);
 
   async function docTep(f: File) {
@@ -118,14 +126,18 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
   const loiRanh = ban && chon.ranh ? ban.loiLop(chon.ranh) : null;
   return (
     <>
-      <div class="hang-nhap-tmb" role="group" aria-label={t('lo.nhapBang')}>
-        <label class={`nut-nho${chiXem ? ' tat' : ''}`} title={t('gt.lo.dxf')}>
-          {t('lo.nutDxf')}
-          <input type="file" accept=".dxf" class="sr-only" disabled={chiXem} onChange={(e) => e.currentTarget.files?.[0] && docTep(e.currentTarget.files[0])} />
-        </label>
-        <button type="button" class="nut-nho" disabled={chiXem || !pa.lo.length} title={t('gt.lo.bangQH')} onClick={() => setHop('chiTieu')}>{t('lo.nutBangQH')}</button>
-        <button type="button" class="nut-nho" disabled={chiXem || !lo} title={t('gt.lo.deBai')} onClick={() => setHop('deBai')}>{t('lo.nutDeBai')}</button>
-        <button type="button" class="nut-nho" aria-pressed={tay} disabled={chiXem} title={t('gt.lo.themTay')} onClick={() => setTay(!tay)}>＋</button>
+      {/* một nút "Nhập liệu ▾" thay 4 nút nhỏ (DXF · Bảng QH · Đề bài KD · ＋); panel luôn gắn trong DOM để ô chọn tệp DXF còn hoạt động */}
+      <div class="hang-nhap-tmb menu-nhap" role="group" aria-label={t('lo.nhapBang')}>
+        <button type="button" class="nut-nho" aria-haspopup="menu" aria-expanded={moNhap} disabled={chiXem} onClick={() => setMoNhap(!moNhap)}>{t('lo.nhapLieu')} ▾</button>
+        <div class="menu-nhap-bang" role="menu" hidden={!moNhap} onClick={() => setMoNhap(false)}>
+          <label class={`nut-nho${chiXem ? ' tat' : ''}`} role="menuitem" title={t('gt.lo.dxf')}>
+            {t('lo.nutDxf')}
+            <input type="file" accept=".dxf" class="sr-only" disabled={chiXem} onChange={(e) => e.currentTarget.files?.[0] && docTep(e.currentTarget.files[0])} />
+          </label>
+          <button type="button" class="nut-nho" role="menuitem" disabled={chiXem || !pa.lo.length} title={t('gt.lo.bangQH')} onClick={() => setHop('chiTieu')}>{t('lo.nutBangQH')}</button>
+          <button type="button" class="nut-nho" role="menuitem" disabled={chiXem || !lo} title={t('gt.lo.deBai')} onClick={() => setHop('deBai')}>{t('lo.nutDeBai')}</button>
+          <button type="button" class="nut-nho" role="menuitem" aria-pressed={tay} disabled={chiXem} title={t('gt.lo.themTay')} onClick={() => setTay(!tay)}>{t('lo.themTay')}</button>
+        </div>
       </div>
       {loiDoc && <p class="dong vuot" role="alert">{loiDoc}</p>}
       {ban && (

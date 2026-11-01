@@ -20,7 +20,7 @@ type Props = {
  * chú giải / lớp / hướng dẫn chỉ mở khi bấm — nhường tối đa chỗ cho mặt bằng / layout / 3D. Mọi thứ là lớp phủ, không đổi kích thước khung giữa.
  */
 export function GocBanVe({ zoom, lop, chuGiai, troGiup }: Props) {
-  const [mo, setMo] = useState<'' | 'lop' | 'chuGiai' | 'troGiup'>('');
+  const [mo, setMo] = useState<'' | 'lop' | 'troGiup'>('');
   const bat = (k: typeof mo) => setMo((m) => (m === k ? '' : k));
   const trai = useRef<HTMLDivElement>(null), phai = useRef<HTMLDivElement>(null);
   // bấm ra ngoài hộp đang mở (kể cả lên bản vẽ / 3D) thì tự thu lại — không phải bấm lại nút
@@ -35,11 +35,15 @@ export function GocBanVe({ zoom, lop, chuGiai, troGiup }: Props) {
     <>
       {(chuGiai || troGiup) && (
         <div class="goc-bv trai" ref={trai}>
-          {mo === 'chuGiai' && chuGiai && <div class="goc-bv-hop" role="dialog" aria-label={t('bt.chuGiai')}>{chuGiai}</div>}
-          {mo === 'troGiup' && troGiup && <div class="goc-bv-hop" role="note">{troGiup}</div>}
+          {mo === 'troGiup' && (
+            <div class="goc-bv-hop" role="dialog" aria-label={t('bt.troGiup')}>
+              {chuGiai}
+              {troGiup && <p class="goc-bv-phim" role="note">{troGiup}</p>}
+            </div>
+          )}
+          {/* một nút "?" mở cả chú giải lẫn hướng dẫn thao tác (trước đây hai nút nhỏ cạnh nhau) */}
           <div class="nhom-bt">
-            {chuGiai && <NutBieuTuong k="chuGiai" bat={mo === 'chuGiai'} onClick={() => bat('chuGiai')} />}
-            {troGiup && <NutBieuTuong k="troGiup" ghiChu={troGiup} bat={mo === 'troGiup'} onClick={() => bat('troGiup')} />}
+            <NutBieuTuong k="troGiup" bat={mo === 'troGiup'} onClick={() => bat('troGiup')} />
           </div>
         </div>
       )}
@@ -56,8 +60,8 @@ export function GocBanVe({ zoom, lop, chuGiai, troGiup }: Props) {
           )}
           <div class="nhom-bt doc">
             {lop && lop.length > 0 && <NutBieuTuong k="lop" bat={mo === 'lop'} onClick={() => bat('lop')} />}
-            {zoom && <NutBieuTuong k="phong" onClick={zoom.phong} />}
-            {zoom && <NutBieuTuong k="thu" onClick={zoom.thu} />}
+            {zoom && <NutBieuTuong k="phong" lop="chi-cam-ung" onClick={zoom.phong} />}
+            {zoom && <NutBieuTuong k="thu" lop="chi-cam-ung" onClick={zoom.thu} />}
             {zoom && <NutBieuTuong k="vuaKhung" onClick={zoom.vua} />}
           </div>
         </div>

@@ -16,12 +16,10 @@ import { chonSauBam, chonSauBamToa } from '../ve3d/chon3d';
 import type { Chon3D } from '../ve3d/MoHinh3D';
 import { ChonLang, ThuongHieu, type CapDo, type MenuCap } from '../ui/ThanhTren';
 import { capHienTai, dsMucTang, giaiKhoaTang, khoaTangDangXem, lenMotCap, type BuocSoan } from '../ui/capDo';
-import { mauToa } from '../tinh/canThem';
 import { laCaoTang } from '../tinh/loaiDat';
 import { tangCoRieng } from '../tinh/matBang';
 import { tinhChiTieu, type KetQuaChiTieu } from '../tinh/chiTieu';
 import type { ThuVien } from '../tinh/kieu';
-import { soCanChuVi, viTriCan } from '../tinh/matBang';
 import { taiThuVien } from '../tinh/thuVien';
 import { tomTatPA } from '../tinh/tomTat';
 import { diemLechPA } from '../tinh/diemPA';
@@ -250,14 +248,6 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   );
 }
 
-const tenCH = (so: number) => `CH-${String(so).padStart(2, '0')}`;
-/** Căn trên tầng đang xem theo số CH-xx (đánh số theo chu vi như bản vẽ). */
-function dsCan(xem: NonNullable<ReturnType<typeof toaDangXem>>, tv: ThuVien | null): [string, number][] {
-  if (!tv) return [];
-  return [...soCanChuVi(xem.mau.duong_bao, viTriCan(xem.mau, tv)).entries()].sort((a, b) => a[1] - b[1]);
-}
-const tenMau = (tv: ThuVien | null, x: ToaDat) => (tv && mauToa(tv, x)?.ten_vi) || x.mauId;
-
 type DauVaoCap = {
   da: DuAnApi; paId: string; tenPA: string; pa: TrangThaiPA; tv: ThuVien | null; buoc: BuocSoan; buocTren: 'tmb' | 'tang';
   loDangChon: Lo | undefined; toaDangChon: ToaDat | undefined; xemTang: ReturnType<typeof toaDangXem>; chonO: { tangs: number[] | null };
@@ -268,13 +258,12 @@ type DauVaoCap = {
 
 /** Dải cấp trên thanh trên: lô / PA · cốt · tòa · tầng · căn, mỗi ô một menu thả xuống; ↑ lên một cấp. Chỉ đổi state chọn của SoanThao. */
 function dungCapDo(v: DauVaoCap): CapDo {
-  const { da, pa, tv, buoc, loDangChon, toaDangChon, canKhoa } = v;
+  const { da, pa, buoc, loDangChon, toaDangChon, canKhoa } = v;
   const tangHam = Math.min(v.tangHam, v.soTangHam);
   const viTri = { buoc, toaId: toaDangChon?.id ?? null, canKhoa: buoc === 'tang' ? canKhoa : null };
   const cap = capHienTai(viTri);
   const len = lenMotCap(viTri);
   const nhanCap = (c: ReturnType<typeof capHienTai>) => t(c === 'lo' ? 'cap.tmb' : c === 'toa' ? 'cap.capToa' : c === 'tang' ? 'cap.tang' : 'cap.can');
-  const chonToa = (id: string) => { const x = pa.toa.find((q) => q.id === id); if (x) v.datLo(x.loId); v.datToa(id); v.datCan(null); };
 
   // Lô / PA: tên dự án · PA · lô
   const loMenu: MenuCap = {
@@ -305,20 +294,6 @@ function dungCapDo(v: DauVaoCap): CapDo {
     onChon: (k) => { if (k === 'duoi' && buoc !== 'ham') v.datBuoc('ham'); else if (k === 'tren' && buoc === 'ham') v.datBuoc(v.buocTren); },
   };
 
-  // Tòa của lô đang xem (Hầm: không có)
-  const loToa = buoc === 'tang' ? v.xemTang?.lo ?? loDangChon : loDangChon;
-  const dsToa = pa.toa.filter((x) => !loToa || x.loId === loToa.id);
-  // nhiều tòa cùng mẫu trên một lô: đánh số thứ tự cho phân biệt (như danh sách tòa ở panel trái)
-  const trungTen = new Set(dsToa.map((x) => tenMau(tv, x))).size < dsToa.length;
-  const nhanToa = (x: ToaDat) => { const i = dsToa.indexOf(x); return trungTen && i >= 0 ? `${i + 1} · ${tenMau(tv, x)}` : tenMau(tv, x); };
-  const toa: MenuCap | undefined = buoc !== 'ham' && dsToa.length ? {
-    // ô trên thanh: mã ngắn ("1 · V4"), tên đầy đủ ở tooltip + menu — tên dài bị cắt "1 · V4 · Chữ …"
-    nhan: toaDangChon ? nhanToa(toaDangChon).split(' · ').slice(0, trungTen ? 2 : 1).join(' · ') : t('cap.chonToa'),
-    tieuDe: toaDangChon ? nhanToa(toaDangChon) : t('cap.chonToa'),
-    dangO: cap === 'toa',
-    ds: dsToa.map((x) => ({ khoa: x.id, nhan: nhanToa(x), phu: `${x.soTangDe} + ${x.soTangDH} T`, nhom: loToa ? `${t('cap.toa')} ${loToa.temDat.kyHieu}` : undefined, chon: x.id === toaDangChon?.id })),
-    onChon: (id) => { if (id !== toaDangChon?.id) chonToa(id); },
-  } : undefined;
 
   // Tầng: tầng điển hình, từng tầng (đánh dấu tầng riêng), tầng hầm
   const toaTang = buoc === 'tang' ? v.xemTang?.toa : toaDangChon;
@@ -350,19 +325,10 @@ function dungCapDo(v: DauVaoCap): CapDo {
     },
   } : undefined;
 
-  // Căn trên tầng đang xem
-  const cans = buoc === 'tang' && v.xemTang ? dsCan(v.xemTang, tv) : [];
-  const soChon = canKhoa ? cans.find(([k]) => k === canKhoa)?.[1] : undefined;
-  const can: MenuCap | undefined = cans.length ? {
-    nhan: soChon ? tenCH(soChon) : t('cap.chonCan'),
-    tieuDe: soChon ? tenCH(soChon) : t('cap.chonCan'),
-    dangO: cap === 'can',
-    ds: cans.map(([k, so]) => ({ khoa: k, nhan: tenCH(so), chon: k === canKhoa })),
-    onChon: (k) => v.datCan(k),
-  } : undefined;
 
   return {
-    lo: loMenu, coTe, toa, tang, can,
+    // thanh trên gọn: bỏ ô Tòa / Căn (trùng danh sách tòa bên trái và bấm thẳng trên bản vẽ), ô Cốt chỉ ở màn Hầm (trùng tab Hầm)
+    lo: loMenu, coTe: buoc === 'ham' ? coTe : undefined, tang,
     onLen: len ? () => { v.datCan(len.canKhoa); v.datToa(len.toaId); v.datBuoc(len.buoc); } : undefined,
     nhanLen: len ? t('cap.lenToi').replace('{c}', nhanCap(capHienTai(len))) : t('cap.len'),
   };
