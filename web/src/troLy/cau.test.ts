@@ -92,7 +92,7 @@ describe('ghép điện thoại', () => {
       if (String(u).startsWith('http://127.0.0.1')) throw new TypeError('Failed to fetch');
       expect(String(u)).toBe('/api/tram/hoi');
       expect((init!.headers as Record<string, string>)['X-Leo-Khoa']).toBe(KHOA);
-      expect(JSON.parse(String(init!.body))).toEqual({ duong: '/suc-khoe', than: null });
+      expect(JSON.parse(String(init!.body))).toMatchObject({ duong: '/suc-khoe', than: null });
       return jsonRes({ ma_http: 200, than: JSON.stringify({ ok: true, dang_nhap: true, tai_khoan: { email: 'a@b.c' } }), loai: 'application/json' });
     }) as typeof fetch;
     expect(await kiemCau('http://127.0.0.1:3032', 300, goi)).toMatchObject({ qua: 'tram', ok: true, dangNhap: true, taiKhoan: 'a@b.c' });
@@ -170,5 +170,24 @@ describe('dán mã ghép (điện thoại)', () => {
     expect(docMaGhepTuChuoi('ghep=' + KHOA)).toBe(KHOA);
     expect(docMaGhepTuChuoi('abc')).toBeNull();
     expect(docMaGhepTuChuoi('')).toBeNull();
+  });
+});
+
+describe('bấm Dừng qua trạm', () => {
+  it('abort → báo trạm huỷ đúng mã lượt đã gửi lên (không đợi trạm trả mã)', async () => {
+    const thu: { u: string; body?: string }[] = [];
+    const ac = new AbortController();
+    const goi = (async (u: RequestInfo | URL, init?: RequestInit) => {
+      thu.push({ u: String(u), body: init?.body as string | undefined });
+      if (String(u) === '/api/tram/hoi') { await new Promise((r) => setTimeout(r, 50)); throw Object.assign(new Error('aborted'), { name: 'AbortError' }); }
+      return new Response(null, { status: 204 });
+    }) as unknown as typeof fetch;
+    const p = taoFetchTram(KHOA, goi)('/_cau/v1/messages', { method: 'POST', body: '{}', signal: ac.signal });
+    await new Promise((r) => setTimeout(r, 10));
+    ac.abort();
+    await expect(p).rejects.toThrow();
+    const ma = JSON.parse(thu[0].body!).ma as string;
+    expect(ma).toMatch(/^[0-9a-f-]{36}$/);
+    expect(thu.map((x) => x.u)).toContain(`/api/tram/huy?ma=${ma}`);
   });
 });

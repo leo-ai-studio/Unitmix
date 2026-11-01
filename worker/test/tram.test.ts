@@ -105,4 +105,23 @@ describe('Trạm chuyển Leo AI', () => {
     moi.dap(v.ma, 200, '{}');
     expect((await p).status).toBe(200);
   });
+
+  it('Dừng: điện thoại tự sinh mã, huỷ → cầu nhận {huy}, người chờ nhận 499, kết quả đến sau bị bỏ', async () => {
+    const k = khoaMoi();
+    const cau = await noiCau(k);
+    const ma = crypto.randomUUID();
+    const p = SELF.fetch(`${goc}/api/tram/hoi`, { method: 'POST', headers: H(k), body: JSON.stringify({ ma, duong: '/v1/messages', than: '{}' }) });
+    const v = await cau.tiep();
+    expect(v.ma).toBe(ma); // trạm dùng mã của điện thoại
+    const huy = await SELF.fetch(`${goc}/api/tram/huy?ma=${ma}`, { method: 'POST', headers: H(k) });
+    expect(huy.status).toBe(204);
+    const nhan = await cau.tiep() as unknown as { huy: string };
+    expect(nhan.huy).toBe(ma);
+    const j = (await (await p).json()) as { ma_http: number; than: string };
+    expect(j.ma_http).toBe(499);
+    cau.dap(ma, 200, '{"type":"message"}'); // cầu trả muộn: bỏ qua
+    expect((await kq(k, ma)).status).toBe(404);
+    expect((await SELF.fetch(`${goc}/api/tram/huy?ma=khong-phai-ma`, { method: 'POST', headers: H(k) })).status).toBe(404);
+  });
 });
+

@@ -119,7 +119,10 @@ export function taoFetchTram(khoa: string, goi: typeof fetch = fetch): typeof fe
     const u = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     const duong = u.includes('/suc-khoe') ? '/suc-khoe' : '/v1/messages';
     const signal = init?.signal ?? undefined;
-    const r = await goi('/api/tram/hoi', { method: 'POST', headers: H, signal, body: JSON.stringify({ duong, than: duong === '/suc-khoe' ? null : (init?.body as string) ?? '{}' }) });
+    // mã lượt do điện thoại tự sinh: bấm Dừng thì báo trạm huỷ NGAY (cầu giết claude -p), không đợi trạm trả mã
+    const ma = crypto.randomUUID();
+    if (duong === '/v1/messages') signal?.addEventListener('abort', () => { void goi(`/api/tram/huy?ma=${ma}`, { method: 'POST', headers: H, keepalive: true }).catch(() => undefined); }, { once: true });
+    const r = await goi('/api/tram/hoi', { method: 'POST', headers: H, signal, body: JSON.stringify({ ma, duong, than: duong === '/suc-khoe' ? null : (init?.body as string) ?? '{}' }) });
     if (!r.ok) return tuTram(r);
     let j = (await r.json()) as { ma?: string; ma_http?: number; than?: string; loai?: string };
     while (!j.ma_http) {

@@ -30,8 +30,10 @@ cau_claude.json / biến LEO_CAU_NGUON (bản app trên Cloudflare) — trang l�
 thư mục tạm riêng (không nạp CLAUDE.md), không MCP, không Bash / Edit / Write / Web; chỉ có `Read` khi có ảnh / PDF đính kèm.
 """
 import base64
+import http.client
 import json
 import os
+import queue
 import re
 import secrets
 import select
@@ -232,12 +234,12 @@ def phan_loai_loi(chu):
     return LoiCau(500, "api_error", chu[:600])
 
 
-def chay_mot_lan(lenh_goc, he_thong, prompt, mo_hinh, nghi, thu_muc, co_tep, con_song):
-    """Một lần `claude -p`. con_song() = False khi trình duyệt đã ngắt nối (bấm Dừng) → giết tiến trình."""
+def _dung_lenh(lenh_goc, he_thong, mo_hinh, nghi, thu_muc, co_tep, luong):
     tep_ht = os.path.join(thu_muc, "he_thong.md")
     with open(tep_ht, "w", encoding="utf-8") as f:
         f.write(he_thong)
-    lenh = list(lenh_goc) + ["-p", "--output-format", "json", "--no-session-persistence", "--strict-mcp-config",
+    kieu = ["--output-format", "stream-json", "--include-partial-messages", "--verbose"] if luong else ["--output-format", "json"]
+    lenh = list(lenh_goc) + ["-p"] + kieu + ["--no-session-persistence", "--strict-mcp-config",
                              "--disable-slash-commands", "--system-prompt-file", tep_ht,
                              "--json-schema", json.dumps(LUOC_DO, separators=(",", ":")),
                              "--tools", "Read" if co_tep else ""]
@@ -247,6 +249,21 @@ def chay_mot_lan(lenh_goc, he_thong, prompt, mo_hinh, nghi, thu_muc, co_tep, con
         lenh += ["--model", MO_HINH[mo_hinh]]
     if nghi in MUC_NGHI:
         lenh += ["--effort", nghi]
+    return lenh
+
+
+def _kiem_ket_qua(o, loi):
+    if o.get("is_error"):
+        kq = str(o.get("result") or loi or "")
+        if _la_tam_thoi(kq):
+            raise LoiCau(503, "tam_thoi", kq)
+        raise phan_loai_loi(kq)
+    return o
+
+
+def chay_mot_lan(lenh_goc, he_thong, prompt, mo_hinh, nghi, thu_muc, co_tep, con_song):
+    """Một lần `claude -p`. con_song() = False khi trình duyệt đã ngắt nối (bấm Dừng) → giết tiến trình."""
+    lenh = _dung_lenh(lenh_goc, he_thong, mo_hinh, nghi, thu_muc, co_tep, False)
     p = subprocess.Popen(lenh, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=thu_muc, creationflags=KHONG_CUA_SO)
     ket = {}
 
@@ -269,20 +286,145 @@ def chay_mot_lan(lenh_goc, he_thong, prompt, mo_hinh, nghi, thu_muc, co_tep, con
         o = json.loads(ra.splitlines()[-1] if ra else "{}")
     except ValueError:
         raise phan_loai_loi(ra or loi or "Claude Code không trả JSON")
-    if o.get("is_error"):
-        kq = str(o.get("result") or loi or "")
-        if _la_tam_thoi(kq):
-            raise LoiCau(503, "tam_thoi", kq)
-        raise phan_loai_loi(kq)
-    return o
+    return _kiem_ket_qua(o, loi)
 
 
-def hoi_claude(lenh_goc, body, thu_muc, con_song):
+class TrichChu:
+    """Rút DẦN giá trị chuỗi của khoá "chu" từ JSON đang đến theo từng mảnh (input_json_delta của đầu ra có cấu trúc) —
+    xử lý thoát chuỗi (\\n, \\", \\uXXXX, cặp thay thế) bị cắt ngang giữa hai mảnh. `nap(mảnh)` trả phần chữ MỚI."""
+    DAU = re.compile(r'"chu"\s*:\s*"')
+    THOAT = {"n": "\n", "t": "\t", "r": "\r", "b": "\b", "f": "\f", "/": "/", "\\": "\\", '"': '"'}
+
+    def __init__(self):
+        self.buf, self.pos, self.xong = "", -1, False
+
+    def nap(self, manh):
+        if self.xong:
+            return ""
+        self.buf += manh
+        b = self.buf
+        if self.pos < 0:
+            m = self.DAU.search(b)
+            if not m:
+                return ""
+            self.pos = m.end()
+        i, ra = self.pos, []
+        while i < len(b):
+            c = b[i]
+            if c == '"':
+                self.xong = True
+                i += 1
+                break
+            if c != "\\":
+                ra.append(c)
+                i += 1
+                continue
+            if i + 1 >= len(b):
+                break
+            d = b[i + 1]
+            if d != "u":
+                ra.append(self.THOAT.get(d, d))
+                i += 2
+                continue
+            if i + 6 > len(b):
+                break
+            try:
+                cp = int(b[i + 2:i + 6], 16)
+            except ValueError:
+                cp = 0xFFFD
+            if 0xD800 <= cp < 0xDC00:           # nửa đầu cặp thay thế: chờ đủ nửa sau
+                if i + 12 > len(b):
+                    break
+                if b[i + 6:i + 8] == "\\u":
+                    try:
+                        thap = int(b[i + 8:i + 12], 16)
+                    except ValueError:
+                        thap = 0
+                    if 0xDC00 <= thap < 0xE000:
+                        cp = 0x10000 + ((cp - 0xD800) << 10) + (thap - 0xDC00)
+                        i += 6
+            ra.append(chr(cp))
+            i += 6
+        self.pos = i
+        return "".join(ra)
+
+
+def chay_luong(lenh_goc, he_thong, prompt, mo_hinh, nghi, thu_muc, co_tep, con_song, khi_chu):
+    """Như chay_mot_lan nhưng đọc `stream-json`: chữ của "chu" gọi khi_chu(mảnh) NGAY khi Claude viết ra (chữ chạy dần)."""
+    lenh = _dung_lenh(lenh_goc, he_thong, mo_hinh, nghi, thu_muc, co_tep, True)
+    p = subprocess.Popen(lenh, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=thu_muc, creationflags=KHONG_CUA_SO)
+    hang, loi_buf = queue.Queue(), []
+
+    def ghi_vao():
+        try:
+            p.stdin.write(prompt.encode("utf-8"))
+            p.stdin.close()
+        except OSError:
+            pass
+
+    def doc_ra():
+        try:
+            for dong in p.stdout:
+                hang.put(dong)
+        finally:
+            hang.put(None)
+
+    def doc_loi():
+        try:
+            loi_buf.append(p.stderr.read())
+        except OSError:
+            pass
+    for f in (ghi_vao, doc_ra, doc_loi):
+        threading.Thread(target=f, daemon=True).start()
+    trich, o, han = TrichChu(), None, time.time() + GIOI_HAN_GIAY
+    while True:
+        try:
+            dong = hang.get(timeout=0.3)
+        except queue.Empty:
+            dong = b""
+        if not con_song():
+            p.kill()
+            raise LoiCau(499, "da_huy", "Người dùng đã dừng.")
+        if time.time() > han:
+            p.kill()
+            raise LoiCau(504, "timeout_error", "Claude Code chạy quá %d giây." % GIOI_HAN_GIAY)
+        if dong is None:
+            break
+        if not dong.strip():
+            continue
+        try:
+            e = json.loads(dong.decode("utf-8", "replace"))
+        except ValueError:
+            continue
+        if e.get("type") == "stream_event":
+            ev = e.get("event") or {}
+            if ev.get("type") == "content_block_start":
+                trich = TrichChu()     # mỗi khối mới (vd. công cụ Read) tách riêng
+            d = ev.get("delta") or {}
+            if ev.get("type") == "content_block_delta" and d.get("type") == "input_json_delta":
+                moi = trich.nap(d.get("partial_json") or "")
+                if moi:
+                    khi_chu(moi)
+        elif e.get("type") == "result":
+            o = e
+    try:
+        p.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        p.kill()
+    loi = (loi_buf[0] if loi_buf else b"").decode("utf-8", "replace").strip()
+    if o is None:
+        raise phan_loai_loi(loi or "Claude Code không trả kết quả")
+    return _kiem_ket_qua(o, loi)
+
+
+def hoi_claude(lenh_goc, body, thu_muc, con_song, khi_chu=None):
     he_thong = lap_he_thong(body.get("system"), body.get("tools"))
     prompt, tep = dung_ban_ghi(body.get("messages"), thu_muc)
     nghi = (body.get("output_config") or {}).get("effort")
     for lan in range(TOI_DA_TAM_THOI + 1):
         try:
+            if khi_chu is not None:
+                return chay_luong(lenh_goc, he_thong, prompt, body.get("model"), nghi, thu_muc, bool(tep), con_song, khi_chu)
             return chay_mot_lan(lenh_goc, he_thong, prompt, body.get("model"), nghi, thu_muc, bool(tep), con_song)
         except LoiCau as e:
             if e.kieu == "tam_thoi" and lan < TOI_DA_TAM_THOI:
@@ -356,6 +498,7 @@ _KHOA_GUI = threading.Lock()
 _NOI_LAI = threading.Event()
 HIEN_WS = [None]    # nối đang mở — /doi-ma đóng ngay để nối lại bằng mã mới
 DUONG_TRAM_OK = {("GET", "/suc-khoe"), ("POST", "/v1/messages")}
+VIEC = {}           # mã lượt → kết nối đang chờ cầu trả lời (đóng kết nối = bấm Dừng → con_song() thấy EOF → giết claude -p)
 CONG_HIEN_TAI = [0]
 
 
@@ -459,25 +602,45 @@ class WS:
                 pass
 
 
+def huy_viec(ma):
+    """Điện thoại bấm Dừng: đóng kết nối của lượt đó → máy phục vụ thấy ngắt nối và giết `claude -p`."""
+    c = VIEC.pop(ma, None)
+    if c is None:
+        return False
+    try:
+        if c.sock:
+            c.sock.shutdown(socket.SHUT_RDWR)
+    except OSError:
+        pass
+    try:
+        c.close()
+    except OSError:
+        pass
+    return True
+
+
 def xu_ly_viec(ws, v, tram, cong):
     """Một yêu cầu từ điện thoại: gọi chính cầu này ở 127.0.0.1 (đủ kiểm tra như máy tính), gửi kết quả lên trạm."""
     ma_http, than, loai = 502, json.dumps({"type": "error", "error": {"type": "api_error", "message": "cầu lỗi khi chuyển"}}), "application/json"
+    ma = v.get("ma")
     try:
         duong, la_hoi = v.get("duong"), v.get("duong") == "/v1/messages"
         if (("POST" if la_hoi else "GET"), duong) not in DUONG_TRAM_OK:
             raise ValueError("đường lạ")
-        rq = urllib.request.Request("http://127.0.0.1:%d%s" % (cong, duong), data=(v.get("than") or "{}").encode("utf-8") if la_hoi else None,
-                                    method="POST" if la_hoi else "GET",
-                                    headers={"Content-Type": "application/json", "Origin": tram, "X-Leo-Qua-Tram": "1"})
+        c = http.client.HTTPConnection("127.0.0.1", cong, timeout=GIOI_HAN_GIAY + 60)
+        VIEC[ma] = c
         try:
-            with urllib.request.urlopen(rq, timeout=GIOI_HAN_GIAY + 60) as r:
-                ma_http, than, loai = r.status, r.read().decode("utf-8", "replace"), r.headers.get("Content-Type", "application/json")
-        except urllib.error.HTTPError as e:
-            ma_http, than, loai = e.code, e.read().decode("utf-8", "replace"), e.headers.get("Content-Type", "application/json")
+            c.request("POST" if la_hoi else "GET", duong, body=(v.get("than") or "{}").encode("utf-8") if la_hoi else None,
+                      headers={"Content-Type": "application/json", "Origin": tram, "X-Leo-Qua-Tram": "1"})
+            r = c.getresponse()
+            ma_http, than, loai = r.status, r.read().decode("utf-8", "replace"), r.getheader("Content-Type", "application/json")
+        finally:
+            VIEC.pop(ma, None)
+            c.close()
     except Exception as e:
         than = json.dumps({"type": "error", "error": {"type": "api_error", "message": "cầu lỗi khi chuyển: %s" % e}}, ensure_ascii=False)
     try:
-        ws.gui(json.dumps({"ma": v.get("ma"), "ma_http": ma_http, "than": than, "loai": loai}, ensure_ascii=False))
+        ws.gui(json.dumps({"ma": ma, "ma_http": ma_http, "than": than, "loai": loai}, ensure_ascii=False))
     except OSError:
         pass
 
@@ -512,6 +675,9 @@ def chay_tram(tram, cong, khoa_ham=doc_khoa):
                 try:
                     v = json.loads(t)
                 except ValueError:
+                    continue
+                if v.get("huy"):
+                    huy_viec(v["huy"])
                     continue
                 threading.Thread(target=xu_ly_viec, args=(ws, v, tram, cong), daemon=True).start()
             NOI.update(trang_thai="dang_noi", loi="trạm đóng nối")
@@ -659,17 +825,67 @@ class XuLy(BaseHTTPRequestHandler):
         if not self.lenh_claude:
             return self._loi(LoiCau(503, "chua_cai_claude", "Máy chưa cài Claude Code — chạy bộ cài cầu AI."), nguon)
         thu_muc = tempfile.mkdtemp(prefix="leo_cau_")
+        luong = {"mo": False, "chu": "", "id": "msg_" + uuid.uuid4().hex[:24]}
+        co_luong = bool(body.get("stream"))
+
+        def ghi_sse(ten, du):
+            self.wfile.write(("event: %s\ndata: %s\n\n" % (ten, json.dumps(du, ensure_ascii=False))).encode("utf-8"))
+            self.wfile.flush()
+
+        def khi_chu(manh):
+            """Chữ của "chu" đến dần: lần đầu mở luồng SSE (tới lúc đó lỗi vẫn trả được mã HTTP đúng), rồi đẩy từng mảnh."""
+            try:
+                if not luong["mo"]:
+                    luong["mo"] = True
+                    self._dau(200, nguon, "text/event-stream; charset=utf-8")
+                    self.send_header("request-id", "req_" + uuid.uuid4().hex[:16])
+                    self.end_headers()
+                    dau = tin_nhan_day_du(body, [], None, {"input_tokens": 0, "output_tokens": 0, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0})
+                    dau["id"] = luong["id"]
+                    ghi_sse("message_start", {"type": "message_start", "message": dau})
+                    ghi_sse("content_block_start", {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}})
+                luong["chu"] += manh
+                ghi_sse("content_block_delta", {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": manh}})
+            except OSError:
+                pass   # trình duyệt ngắt nối: con_song() sẽ thấy và giết claude
+
         try:
-            o = hoi_claude(self.lenh_claude, body, thu_muc, self.con_song)
+            o = hoi_claude(self.lenh_claude, body, thu_muc, self.con_song, khi_chu if co_luong else None)
             msg = tin_nhan_day_du(body, *ra_tin_nhan(o, body))
+            msg["id"] = luong["id"]
         except LoiCau as e:
             if e.kieu == "da_huy":
+                return
+            if luong["mo"]:       # đã phát chữ rồi: không còn đổi được mã HTTP → sự kiện error trong luồng
+                try:
+                    ghi_sse("error", {"type": "error", "error": {"type": e.kieu, "message": e.chu}})
+                except OSError:
+                    pass
                 return
             return self._loi(e, nguon)
         finally:
             shutil.rmtree(thu_muc, ignore_errors=True)
-        if not body.get("stream"):
+        if not co_luong:
             return self._json(200, msg, nguon, {"request-id": "req_" + uuid.uuid4().hex[:16]})
+        if luong["mo"]:
+            try:
+                cuoi = next((b["text"] for b in msg["content"] if b["type"] == "text"), "")
+                if cuoi.startswith(luong["chu"]) and len(cuoi) > len(luong["chu"]):     # phần cầu nối thêm (vd. ghi chú công cụ lạ)
+                    ghi_sse("content_block_delta", {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": cuoi[len(luong["chu"]):]}})
+                ghi_sse("content_block_stop", {"type": "content_block_stop", "index": 0})
+                chi_so = 1
+                for b in msg["content"]:
+                    if b["type"] != "tool_use":
+                        continue
+                    ghi_sse("content_block_start", {"type": "content_block_start", "index": chi_so, "content_block": {"type": "tool_use", "id": b["id"], "name": b["name"], "input": {}}})
+                    ghi_sse("content_block_delta", {"type": "content_block_delta", "index": chi_so, "delta": {"type": "input_json_delta", "partial_json": json.dumps(b["input"], ensure_ascii=False)}})
+                    ghi_sse("content_block_stop", {"type": "content_block_stop", "index": chi_so})
+                    chi_so += 1
+                ghi_sse("message_delta", {"type": "message_delta", "delta": {"stop_reason": msg["stop_reason"], "stop_sequence": None}, "usage": msg["usage"]})
+                ghi_sse("message_stop", {"type": "message_stop"})
+            except OSError:
+                pass
+            return
         self._dau(200, nguon, "text/event-stream; charset=utf-8")
         self.send_header("request-id", "req_" + uuid.uuid4().hex[:16])
         self.end_headers()

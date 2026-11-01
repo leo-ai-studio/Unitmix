@@ -115,5 +115,16 @@ export function khoiDe(chan: Diem[][], deOffset: number[], nguongKhe = 6): Diem[
   return goc.map(toDiem);
 }
 
+/** Hợp nhiều vùng (mỗi vùng = các vòng; vòng ngoài ngược chiều kim đồng hồ, lỗ thuận chiều) → vùng mới. */
+export const hopVung = (vung: Diem[][]): Diem[][] => hop(vung.filter((p) => p.length >= 3).map(toPath)).map(toDiem);
+/** Phần chung của vùng `a` với vùng `b`. */
+export const giaoVung = (a: Diem[][], b: Diem[][]): Diem[][] => giao(a.filter((p) => p.length >= 3).map(toPath), b.filter((p) => p.length >= 3).map(toPath)).map(toDiem);
+/** Diện tích CÓ DẤU của một vòng (dương = vòng ngoài, ngược chiều kim đồng hồ khi y hướng lên). */
+export function dtCoDau(poly: Diem[]): number {
+  let s = 0;
+  for (let i = 0; i < poly.length; i++) { const [x1, y1] = poly[i], [x2, y2] = poly[(i + 1) % poly.length]; s += x1 * y2 - x2 * y1; }
+  return s / 2;
+}
+
 /** Số khối liền (đường bao ngoài) của một vùng. */
 export const soKhoi = (vung: Diem[][]): number => vung.map(toPath).filter((p) => ClipperLib.Clipper.Orientation(p)).length;

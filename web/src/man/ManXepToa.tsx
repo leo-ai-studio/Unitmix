@@ -1,8 +1,10 @@
+import { moTaLo } from './theLo';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { KetQuaChiTieu } from '../tinh/chiTieu';
 import { demCan, diemLechCoCau, dtTbTheoLoai } from '../tinh/coCau';
-import { chanToa, dienTich, khoiDe } from '../tinh/hinhHoc';
+import { khoiDeLo } from '../tinh/deLo';
+import { chanToa, dienTich } from '../tinh/hinhHoc';
 import { hopLo, taoToaTrenLo, vungDat } from '../tinh/hopLo';
 import { LOAI_CAN, type Diem, type Lo, type LoaiCan, type ThuVien, type ToaDat, type ToaMau, type TrangThaiPA } from '../tinh/kieu';
 import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
@@ -214,6 +216,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   const [dk, setDk] = useState<DieuKhienVe | null>(null);
   const [hien, setHien] = useState<HienKeo | null>(null);
   const [diemDo, setDiemDo] = useState<Diem[]>([]);
+  const [loXem, setLoXem] = useState<string | null>(null); // lô KHÔNG xếp tòa (cây xanh, trường…) đang bấm xem thông số — không đổi lô làm việc
   const [menuToa, setMenuToa] = useState<{ id: string; x: number; y: number } | null>(null); // menu ngữ cảnh tòa (chuột phải / nhấn giữ)
   const luot = useRef<LuotKeo | null>(null);
   const hienRef = useRef<HienKeo | null>(null);
@@ -447,12 +450,18 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   const dinhBat = (): Diem[] => [...pa.lo.flatMap((l) => [...l.ranh, ...(l.chiGioi ?? [])]), ...hinh.flatMap((h) => h.F)];
   const bamNen = (p: Diem, e: PointerEvent) => {
     // Cảm ứng: chạm tòa CHƯA chọn để bản vẽ dời được khi kéo (không kéo nhầm tòa) — chạm không kéo thì chọn tòa / lô dưới ngón ở đây.
-    if (!tc.do && e.pointerType !== 'mouse') {
+    if (!tc.do) {
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      const idToa = el?.closest('[data-toa]')?.getAttribute('data-toa');
-      if (idToa) { chon([idToa], idToa); return; }
+      if (e.pointerType !== 'mouse') {
+        const idToa = el?.closest('[data-toa]')?.getAttribute('data-toa');
+        if (idToa) { chon([idToa], idToa); return; }
+      }
+      // Chuột cũng chọn lô ở đây: BanVe bắt con trỏ (setPointerCapture) từ lúc nhấn nên sự kiện `click` rơi vào <svg>, không bao giờ tới <g onClick> của lô
       const idLo = el?.closest('[data-lo]')?.getAttribute('data-lo');
-      if (idLo && idLo !== lo?.id) { chonLo(idLo); chon([], null); datCanhChon(null); return; }
+      const loBam = idLo ? pa.lo.find((q) => q.id === idLo) : undefined;
+      if (loBam && !laCaoTang(loBam)) { setLoXem(loBam.id); chon([], null); datCanhChon(null); return; }
+      if (idLo && idLo !== lo?.id) { setLoXem(null); chonLo(idLo); chon([], null); datCanhChon(null); return; }
+      if (loXem) setLoXem(null);
     }
     if (tc.do) {
       const q = batDiem(p, dinhBat(), (buocM * 0.12));
@@ -492,7 +501,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
           const loai = loaiDat(l), caoTang = loai === 'o_cao_tang', chonL = l.id === lo?.id;
           const [nen, vien] = MAU_DAT[loai];
           return (
-            <g key={l.id} data-lo={caoTang ? l.id : undefined} onClick={() => !tc.do && caoTang && !chonL && (chonLo(l.id), chon([], null))} style={{ cursor: caoTang ? 'pointer' : 'default' }}>
+            <g key={l.id} data-lo={l.id} onClick={() => !tc.do && caoTang && !chonL && (setLoXem(null), chonLo(l.id), chon([], null))} style={{ cursor: 'pointer' }}>
               <polygon points={sPoly(l.ranh)} fill={chonL ? 'var(--soft)' : caoTang ? 'var(--panel)' : nen} stroke={chonL ? 'var(--green)' : vien}
                 stroke-width={chonL ? 2.5 : caoTang ? 1.6 : 1} vector-effect="non-scaling-stroke" />
               {caoTang && l.chiGioi && <polygon points={sPoly(l.chiGioi)} fill="none" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="8 5" vector-effect="non-scaling-stroke" />}
@@ -502,7 +511,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         <NhanCanhLo dsLo={pa.lo.filter(laCaoTang)} loChon={lo} coChu={coChu} />
         {tv && pa.lo.map((l) => {
           const ts = toaCoMau.filter((x) => x.loId === l.id);
-          const de = khoiDe(ts.map((x) => chanToa(mauToa(tv, x)!, x)), ts.map((x) => x.deOffset));
+          const de = khoiDeLo(l, ts.map((x) => chanToa(mauToa(tv, x)!, x)), ts.map((x) => x.deOffset)).vung;
           return de.length ? <path key={`de${l.id}`} d={duongPath(de)} fill="var(--secondary)" fill-opacity="0.25" fill-rule="nonzero" stroke="var(--secondary)" stroke-width="1" vector-effect="non-scaling-stroke" /> : null;
         })}
         {tv && toaCoMau.map((x) => {
@@ -612,6 +621,22 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         <HopHangLoat pa={pa} tv={tv} sua={sua} chiXem={chiXem} luat={luat} />
         {tc.do && <p class="tmb-goi-y">{diemDo.length === 2 ? `${t('tmb.do.ketQua')} ${m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1]))} · Δx ${m1(Math.abs(diemDo[1][0] - diemDo[0][0]))} · Δy ${m1(Math.abs(diemDo[1][1] - diemDo[0][1]))}` : t('tmb.do.huongDan')}</p>}
         {hien?.chan && <p class="tmb-goi-y canh">{t('tmb.chanCG')}</p>}
+        {(loXem ? pa.lo.find((q) => q.id === loXem) ?? lo : lo) && !tc.do && (() => {
+          const loThe = (loXem ? pa.lo.find((q) => q.id === loXem) : undefined) ?? lo!;
+          const m = moTaLo(loThe);
+          return (
+            <div class="the-lo-chon" role="status" aria-label={t('xep.the.tieuDe')}>
+              <b>{m.kyHieu}</b>
+              <span>{t(`cn.${m.chucNang}`)}</span>
+              <span>{fmtSo(m.dtM2, { donVi: 'm²' })}</span>
+              <span>{t('xep.the.mdxd')} {fmtSo(m.mdxdMax, { thapPhan: 1, donVi: '%' })}</span>
+              <span>{t('xep.hssdd')} {fmtSo(m.hssddMax, { thapPhan: 2 })}</span>
+              <span>{fmtSo(m.tangCaoMax, { donVi: t('xep.the.tang') })}</span>
+              <span>{t('xep.the.danSo')} {fmtSo(m.danSoMax)}</span>
+              {!laCaoTang(loThe) && <i class="muted">{t('xep.the.khongXep')}</i>}
+            </div>
+          );
+        })()}
         <ChuGiaiView pa={pa} tv={tv} />
         <HopNangGioCho pa={pa} tv={tv} sua={sua} chiXem={chiXem} />
       </div>

@@ -67,6 +67,14 @@ export function nhanDangVN2000(ranhLo: Diem[]): Diem | null {
   return trongDai && rong <= 3e4 ? [cx, cy] : null;
 }
 
+/**
+ * Bản vẽ ghi toạ độ ĐẢO TRỤC (x ~ Bắc 0,6–2,6·10⁶, y ~ Đông 1,5–8,5·10⁵)? Trục như vậy là bản vẽ lật gương so với bản đồ — không đổi được bằng
+ * xoay + dời, nên app KHÔNG tự đặt vị trí; chỉ nhận ra để báo người dùng (sửa trục trong CAD hoặc dùng tìm địa điểm).
+ */
+export function nhanDangDaoTruc(ranhLo: Diem[]): boolean {
+  return nhanDangVN2000(ranhLo.map(([x, y]): Diem => [y, x])) !== null && nhanDangVN2000(ranhLo) === null;
+}
+
 /** Vị trí đặt từ bản vẽ VN-2000: điểm neo = tâm khung bao, kinh vĩ của nó, góc Bắc = hội tụ lưới (trục y bản vẽ = Bắc lưới). */
 export function viTriTuVN2000(ranhLo: Diem[], ktt: number): { lat: number; lng: number; neo: Diem; gocBac: number } | null {
   const tam = nhanDangVN2000(ranhLo);

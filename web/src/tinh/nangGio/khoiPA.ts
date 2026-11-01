@@ -3,7 +3,8 @@
  * đế từ 0,2 m tới 0,2 + số tầng đế × cao tầng đế; tháp từ đỉnh đế tới + số tầng điển hình × cao tầng.
  */
 import { mauToa } from '../canThem';
-import { chanToa, khoiDe } from '../hinhHoc';
+import { khoiDeLo } from '../deLo';
+import { chanToa } from '../hinhHoc';
 import type { Diem, ThuVien, TrangThaiPA } from '../kieu';
 import type { KhoiLang } from './gioNang';
 
@@ -14,7 +15,7 @@ export function khoiPA(pa: TrangThaiPA, tv: ThuVien): KhoiLang[] {
     if (!ts.length) continue;
     const chans = ts.map((x) => chanToa(mauToa(tv, x)!, x));
     const hDe = Math.max(0, ...ts.map((x) => x.soTangDe * x.caoDe));
-    if (hDe > 0) for (const p of khoiDe(chans, ts.map((x) => x.deOffset))) if (p.length >= 3) kq.push({ chan: p, z0: 0, z1: 0.2 + hDe });
+    if (hDe > 0) for (const p of khoiDeLo(l, chans, ts.map((x) => x.deOffset)).vung) if (p.length >= 3) kq.push({ chan: p, z0: 0, z1: 0.2 + hDe });
     ts.forEach((x, i) => {
       const z0 = 0.2 + x.soTangDe * x.caoDe, h = x.soTangDH * x.caoDH;
       if (h > 0) kq.push({ chan: chans[i], z0, z1: z0 + h });

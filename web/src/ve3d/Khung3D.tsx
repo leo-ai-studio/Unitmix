@@ -645,6 +645,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
             if (canh.nen) {
               const dat = new T.Mesh(new T.PlaneGeometry(canh.coCanh * 8, canh.coCanh * 8), canh.nenTrongSuot ? matDatTrong : matDat);
               dat.rotation.x = -Math.PI / 2; dat.position.set(x, -0.05, z); dat.receiveShadow = true;
+              dat.userData.nenDat = true;
               if (canh.nenLop) dat.userData.vlTheoLop = { lop: canh.nenLop, vl: matDatTrong, vlThuong: matDat };
               goc.add(dat);
             }

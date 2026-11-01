@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KINH_TUYEN_TRUC, nhanDangVN2000, tinhTuTen, tmNghich, viTriTuVN2000 } from './vn2000';
+import { KINH_TUYEN_TRUC, nhanDangDaoTruc, nhanDangVN2000, tinhTuTen, tmNghich, viTriTuVN2000 } from './vn2000';
 
 // Giá trị đối chiếu: proj4 (+proj=tmerc +k=0.9999 +x_0=500000 +ellps=WGS84), thuận từ kinh vĩ chọn sẵn
 const MAU: [string, number, number, number, number, number][] = [
@@ -43,6 +43,16 @@ describe('nhận dạng bản vẽ VN-2000', () => {
     expect(v.lat).toBeCloseTo(r.lat, 9);
     expect(v.gocBac).toBeCloseTo(r.hoiTu, 9);
     expect(viTriTuVN2000(lo(0, 0), 105)).toBeNull();
+  });
+});
+
+describe('nhận dạng đảo trục', () => {
+  const lo = (x: number, y: number) => [[x, y], [x + 300, y], [x + 300, y + 400], [x, y + 400]] as [number, number][];
+  it('x = Bắc, y = Đông → đảo trục (không tự đặt); đúng trục hoặc cục bộ → không', () => {
+    expect(nhanDangDaoTruc(lo(2326100, 588600))).toBe(true);
+    expect(nhanDangVN2000(lo(2326100, 588600))).toBeNull();
+    expect(nhanDangDaoTruc(lo(588600, 2326100))).toBe(false);
+    expect(nhanDangDaoTruc(lo(0, 0))).toBe(false);
   });
 });
 

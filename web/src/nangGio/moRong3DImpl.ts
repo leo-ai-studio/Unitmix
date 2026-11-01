@@ -119,11 +119,14 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
   let wNen: Worker | null = null, soNen = 0, texNen: THREE.Texture[] = [];
   const xoaNen = () => { wNen?.terminate(); wNen = null; texNen.forEach((x) => x.dispose()); texNen = []; gNen.traverse((o) => { const m = (o as THREE.Mesh).material as THREE.Material | undefined; if (m && (o as THREE.Mesh).isMesh) m.dispose(); }); xoaNhom(gNen); ghi.hidden = true; khoaNen = ''; };
   const ve3 = (p: Diem, y: number) => new T.Vector3(p[0], y, -p[1]);
+  /** Có ảnh vệ tinh thì TẮT mặt đất mặc định: hai mặt phẳng chồng nhau cách ~3 cm → z-fighting (nháy sọc). */
+  const anNenDat = () => scene.traverse((o) => { if (o.userData.nenDat) o.visible = !(gNen.visible && gNen.children.length > 0); });
   const dungNen = async () => {
     const s = layNG(), pa = layPA(), vt = viTriPA(pa);
     // bật / tắt tức thì: đã dựng đúng vị trí + nguồn + cảnh thì chỉ đổi visible, không tải lại
     const k = canh ? [vt.lat, vt.lng, vt.gocBac, vt.tyLe, vt.neo.join(), s.nguon, canh.tam.join(), canh.coCanh].join('|') : '';
     gNen.visible = s.banDo3D;
+    anNenDat();
     ghi.hidden = !s.banDo3D || !gNen.children.length;
     if (k === khoaNen && (gNen.children.length || wNen)) { c.ve(); return; }
     if (!s.banDo3D) { c.ve(); return; }
@@ -179,17 +182,18 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
       const op = layNG().doMo;
       // ảnh vệ tinh đã có sáng tối riêng: nâng màu ~1,35 để bù đèn cảnh (vẫn nhận bóng đổ thật)
       // ảnh vệ tinh đã mang sáng tối riêng: không qua tone mapping Neutral của cảnh (khỏi bạc màu), nâng nhẹ để bù đèn (vẫn nhận bóng đổ)
-      const vl = new T.MeshLambertMaterial({ map: tx, transparent: op < 0.999, opacity: op, depthWrite: op >= 0.999, toneMapped: false });
+      const vl = new T.MeshLambertMaterial({ map: tx, transparent: op < 0.999, opacity: op, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
       vl.color.setScalar(1.15);
       const me = new T.Mesh(g, vl);
-      me.receiveShadow = true; me.renderOrder = -2;
+      me.receiveShadow = true; me.renderOrder = xa ? -3 : -2; // vẽ trước, không ghi độ sâu: lô / đường luôn nằm trên
       me.userData.nen = true;
       // Khung3D làm nhạt cảnh khi phân tích view: ảnh nền mờ đi (về nền đất sáng), về lại khi tắt
       me.userData.lamNhat = (m: number) => {
         const o0 = layNG().doMo * (1 - 0.65 * m);
-        vl.opacity = o0; vl.transparent = o0 < 0.999; vl.depthWrite = o0 >= 0.999; vl.color.setScalar(1.15 - 0.15 * m); vl.needsUpdate = true;
+        vl.opacity = o0; vl.transparent = o0 < 0.999; vl.color.setScalar(1.15 - 0.15 * m); vl.needsUpdate = true;
       };
       gNen.add(me);
+      anNenDat();
       c.apLop();
       c.ve();
     }
@@ -197,7 +201,7 @@ export function gan(c: NguCanhMoRong, layPA: LayPA): GanMoRong {
   };
   const datDoMo = () => {
     const op = layNG().doMo;
-    gNen.traverse((o) => { const m = (o as THREE.Mesh).material as THREE.MeshLambertMaterial | undefined; if (m && (o as THREE.Mesh).isMesh) { m.opacity = op; m.transparent = op < 0.999; m.depthWrite = op >= 0.999; m.needsUpdate = true; } });
+    gNen.traverse((o) => { const m = (o as THREE.Mesh).material as THREE.MeshLambertMaterial | undefined; if (m && (o as THREE.Mesh).isMesh) { m.opacity = op; m.transparent = op < 0.999; m.needsUpdate = true; } });
     c.apLop(); // đang phân tích view thì làm nhạt lại theo độ đậm mới
     c.ve();
   };

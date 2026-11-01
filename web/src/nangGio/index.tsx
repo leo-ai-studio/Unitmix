@@ -49,7 +49,7 @@ export function HopNangGioCho(p: PropsHop) {
 
 /** Nút trong danh sách Lớp (GocBanVe) của TMB: ảnh nền 2D + mở hộp Vị trí · Nắng · Gió. */
 export function useNutNangGio(ctx?: { pa: TrangThaiPA; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; tenDuAn: string }): NutHienThi[] {
-  const s = useNG((x) => ({ b: x.banDo2D, m: x.moHop }));
+  const s = useNG((x) => ({ b: x.banDo2D, m: x.moHop, n: x.lop === 'nang', g: x.lop === 'gio' }));
   // bật ảnh vệ tinh: đã có toạ độ → hiện ngay; chưa có → tự đặt từ bản vẽ (tỉnh đoán từ tên dự án, không thì Hà Nội) — hộp Vị trí chỉ mở khi
   // không tự đặt được hoặc để người dùng kiểm tra tỉnh; không bắt nhập toạ độ.
   const bam = () => {
@@ -66,6 +66,8 @@ export function useNutNangGio(ctx?: { pa: TrangThaiPA; sua: (fn: (p: TrangThaiPA
   };
   return [
     { khoa: 'banDo', nhan: t('ng.lop.banDo'), bat: s.b, onClick: bam },
+    { khoa: 'lopNang', nhan: t('ng.lop.nang2d'), bat: s.n, onClick: chuyenLopNang },
+    { khoa: 'lopGio', nhan: t('ng.lop.gio2d'), bat: s.g, onClick: chuyenGio },
     { khoa: 'nangGio', nhan: t('ng.lop.nangGio'), bat: s.m, onClick: () => datNG({ moHop: !layNG().moHop }) },
   ];
 }
@@ -82,10 +84,17 @@ export function useNutNangGio3D(): NutHienThi[] {
  * bấm mở hộp tab Gió để chạy phân tích (chưa có gì để hiện).
  */
 export const chuyenNang = () => datNG({ duongMT: !layNG().duongMT });
+/** Lớp giờ nắng (kết quả phân tích) — 2D / 3D; chưa chạy phân tích thì mở hộp tab Nắng. */
+export function chuyenLopNang() {
+  const g = layNG();
+  if (g.lop === 'nang') datNG({ lop: null });
+  else if (g.nang.kq) datNG({ lop: 'nang', hien2D: true, hien3D: true });
+  else datNG({ moHop: true, tab: 'nang' });
+}
 export function chuyenGio() {
   const g = layNG();
   if (g.lop === 'gio') datNG({ lop: null });
-  else if (g.gio.kq) datNG({ lop: 'gio', hien3D: true, dongGio: true });
+  else if (g.gio.kq) datNG({ lop: 'gio', hien2D: true, hien3D: true, dongGio: true });
   else datNG({ moHop: true, tab: 'gio' });
 }
 

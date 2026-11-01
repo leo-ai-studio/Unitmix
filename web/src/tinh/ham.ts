@@ -6,7 +6,8 @@
 import { thongTinLoi } from './doiCan';
 import type { MucDo } from './chiTieu';
 import { demCan } from './coCau';
-import { chanToa, khoiDe, trongTam, xoayTinhTien } from './hinhHoc';
+import { khoiDeLo } from './deLo';
+import { chanToa, trongTam, xoayTinhTien } from './hinhHoc';
 import { vungDat } from './hopLo';
 import type { Diem, KhuXeDien, LoaiRam, Lo, RamHam, ThuVien, TrangThaiPA } from './kieu';
 import { chuanHoaHam, type HAM_MAC_DINH } from './macDinh';
@@ -557,7 +558,7 @@ export function raiHamTinh(pa: TrangThaiPA, tv: ThuVien | null, lo: Lo): KetQuaH
 
   // Đế (tầng 1) để tránh miệng gió.
   const coDe = toaLo.filter((x) => x.t.soTangDe > 0);
-  const de = coDe.length ? khoiDe(coDe.map((x) => x.chan), coDe.map((x) => x.t.deOffset ?? 0)) : [];
+  const de = coDe.length ? khoiDeLo(lo, coDe.map((x) => x.chan), coDe.map((x) => x.t.deOffset ?? 0)).vung : [];
   const treTren = [...chanDs, ...de];
 
   // Cụm quạt + hộp gió mỗi khoang (cùng vị trí mọi tầng), sát tường ngoài, không dưới chân tháp / đế.

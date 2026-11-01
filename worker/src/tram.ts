@@ -9,7 +9,8 @@
  *   GET  /api/tram/cau   (Upgrade: websocket)  → cầu nối vào phòng; mỗi phòng một cầu (cầu mới đá cầu cũ)
  *   POST /api/tram/hoi   {duong: "/suc-khoe" | "/v1/messages", than}  → {ma_http, than, loai} khi xong trong 25 s, hoặc {ma} chờ tiếp
  *   GET  /api/tram/kq?ma=…  → {ma_http, than, loai} · 204 = còn đang chạy (hỏi lại) · 404 = không có / hết hạn
- *   cầu → trạm (tin WebSocket): {ma, ma_http, than, loai}   ·   trạm → cầu: {ma, duong, than}   ·   "ping" → "pong" (không đánh thức)
+ *   POST /api/tram/huy?ma=… → 204: điện thoại bấm Dừng — báo cầu giết lượt đang chạy, người chờ nhận lỗi 499 (`hoi` nhận `ma` do điện thoại tự sinh để huỷ được ngay cả khi chưa có kết quả)
+ *   cầu → trạm (tin WebSocket): {ma, ma_http, than, loai}   ·   trạm → cầu: {ma, duong, than} hoặc {huy: ma}   ·   "ping" → "pong" (không đánh thức)
  *
  * Durable Object dùng WebSocket ngủ đông: lúc không ai hỏi, phòng ngủ, không tính thời gian chạy. Kết quả lưu storage (ngủ đông xoá
  * bộ nhớ), xoá khi điện thoại đã lấy hoặc quá 15 phút. `than` của /v1/messages là luồng SSE đã gom đủ (cầu trả sau khi Claude xong).
@@ -69,13 +70,14 @@ export class Tram extends DurableObject<EnvTram> {
     }
     if (u.pathname === '/api/tram/hoi' && req.method === 'POST') return this.hoi(req);
     if (u.pathname === '/api/tram/kq' && req.method === 'GET') return this.kq(u.searchParams.get('ma') ?? '');
+    if (u.pathname === '/api/tram/huy' && req.method === 'POST') return this.huy(u.searchParams.get('ma') ?? '');
     return json({ loi: 'không có' }, 404);
   }
 
   private async hoi(req: Request): Promise<Response> {
     const tho = await req.text();
     if (tho.length > TRAN_THAN) return json({ loi: 'câu hỏi quá lớn (ảnh?)', ma: 'qua_lon' }, 413);
-    let d: { duong?: string; than?: unknown };
+    let d: { duong?: string; than?: unknown; ma?: string };
     try { d = JSON.parse(tho); } catch { return json({ loi: 'JSON hỏng' }, 400); }
     if (!d.duong || !DUONG_OK.has(d.duong)) return json({ loi: 'không có' }, 404);
     const ws = this.cau();
@@ -87,7 +89,7 @@ export class Tram extends DurableObject<EnvTram> {
       dem.push(bay);
       await this.ctx.storage.put('dem', dem);
     }
-    const ma = crypto.randomUUID();
+    const ma = typeof d.ma === 'string' && /^[0-9a-f-]{36}$/.test(d.ma) ? d.ma : crypto.randomUUID();
     await this.ctx.storage.put('dang:' + ma, Date.now());
     await this.hen();
     try { ws.send(JSON.stringify({ ma, duong: d.duong, than: d.than == null ? null : String(d.than) })); } catch {
@@ -95,6 +97,21 @@ export class Tram extends DurableObject<EnvTram> {
       return json({ loi: 'Máy tính vừa mất nối — thử lại', ma: 'may_tat' }, 503);
     }
     return this.doi(ma, true);
+  }
+
+  /** Điện thoại bấm Dừng: báo cầu giết lượt, người đang chờ nhận lỗi 499, kết quả về sau bị bỏ. */
+  private async huy(ma: string): Promise<Response> {
+    if (!/^[0-9a-f-]{36}$/.test(ma)) return json({ loi: 'không có' }, 404);
+    if (await this.ctx.storage.get('dang:' + ma)) {
+      await this.ctx.storage.delete('dang:' + ma);
+      try { this.cau()?.send(JSON.stringify({ huy: ma })); } catch { /* cầu rớt: lượt tự dừng */ }
+    }
+    await this.ctx.storage.delete('kq:' + ma);
+    const ds = this.cho.get(ma);
+    this.cho.delete(ma);
+    const kq: Kq = { ma_http: 499, than: JSON.stringify({ type: 'error', error: { type: 'da_huy', message: 'Đã dừng.' } }), loai: 'application/json', t: Date.now() };
+    ds?.forEach((x) => x(kq));
+    return new Response(null, { status: 204 });
   }
 
   private kq(ma: string): Promise<Response> | Response {

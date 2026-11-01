@@ -19,6 +19,17 @@ THAN = {"model": "claude-sonnet-5-5", "max_tokens": 100, "stream": True, "system
         "tools": CONG_CU, "output_config": {"effort": "low"}, "messages": [{"role": "user", "content": "xem dự án"}]}
 
 
+def _het_tien_trinh_gia(toi_da=8):
+    """Chờ (tối đa vài giây) tới khi không còn claude giả nào chạy — giết tiến trình cần chút thời gian."""
+    import subprocess
+    t0 = time.time()
+    while time.time() - t0 < toi_da:
+        if subprocess.run(["pgrep", "-f", "fake_claude.py"], capture_output=True, text=True).stdout.strip() == "":
+            return True
+        time.sleep(0.25)
+    return False
+
+
 @pytest.fixture
 def may(monkeypatch, tmp_path):
     monkeypatch.setenv("FAKE_GHI", str(tmp_path / "ghi.jsonl"))
@@ -52,7 +63,8 @@ def test_luong_chu_dung_thu_tu_sse(may, monkeypatch):
     assert "".join(e[1]["delta"]["text"] for e in ev if e[0] == "content_block_delta") == "Xin chào " * 20
     md = [e for e in ev if e[0] == "message_delta"][0][1]
     assert md["delta"]["stop_reason"] == "end_turn" and md["usage"]["output_tokens"] == 7
-    assert ev[0][1]["message"]["usage"]["cache_read_input_tokens"] == 50 and ev[0][1]["message"]["model"] == "claude-sonnet-5-5"
+    # luồng chữ chạy dần: dùng lượng chỉ biết lúc xong → nằm ở message_delta (message_start để 0)
+    assert md["usage"]["cache_read_input_tokens"] == 50 and ev[0][1]["message"]["model"] == "claude-sonnet-5-5"
 
 
 def test_goi_cong_cu_thanh_tool_use_va_bo_ten_la(may, monkeypatch):
@@ -154,7 +166,79 @@ def test_dung_giua_chung_giet_tien_trinh(may, monkeypatch):
     while not (ghi.exists() and ghi.read_text()) and time.time() - t0 < 15:
         time.sleep(0.1)
     s.close()   # như SDK khi bấm Dừng
-    time.sleep(1.5)
-    import subprocess
-    ps = subprocess.run(["pgrep", "-f", "fake_claude.py"], capture_output=True, text=True).stdout.strip()
-    assert ps == ""   # tiến trình giả đang ngủ 60 s phải đã bị giết
+    assert _het_tien_trinh_gia()   # tiến trình giả đang ngủ 60 s phải đã bị giết
+
+
+def test_huy_viec_tu_tram_giet_tien_trinh(may, monkeypatch):
+    """Điện thoại bấm Dừng → trạm báo {huy: ma} → huy_viec đóng kết nối → máy phục vụ giết claude -p đang chạy."""
+    cong, ghi = may
+    monkeypatch.setenv("FAKE_KICH_BAN", "treo")
+    gui = []
+    class WsGia:
+        def gui(self, chu, op=1):
+            gui.append(chu)
+    ma = "11111111-2222-3333-4444-555555555555"
+    th = threading.Thread(target=cau.xu_ly_viec, args=(WsGia(), {"ma": ma, "duong": "/v1/messages", "than": json.dumps(THAN)}, "http://localhost", cong), daemon=True)
+    th.start()
+    t0 = time.time()
+    while not (ghi.exists() and ghi.read_text()) and time.time() - t0 < 15:
+        time.sleep(0.1)
+    assert ma in cau.VIEC           # đang chờ cầu trả lời
+    assert cau.huy_viec(ma) is True
+    th.join(10)
+    assert not th.is_alive()
+    assert _het_tien_trinh_gia()
+    assert cau.huy_viec(ma) is False  # đã gỡ
+    assert gui and json.loads(gui[0])["ma"] == ma
+
+
+
+# ---------------------------------------------------------------- chữ chạy dần (stream-json)
+def test_trich_chu_cat_o_bat_ky_cho_nao():
+    """Rút "chu" đúng dù JSON bị cắt ở MỌI vị trí (thoát chuỗi, \\uXXXX, cặp thay thế emoji nằm giữa hai mảnh)."""
+    goc = 'Dòng 1\n"trích dẫn" \\ gạch · é 😀 hết'
+    j = json.dumps({"chu": goc, "goi": [{"ten": "x", "dau_vao": {"chu": "KHÔNG LẤY"}}]}, ensure_ascii=True)
+    for buoc in (1, 2, 3, 5, 7):
+        t, ra = cau.TrichChu(), ""
+        for i in range(0, len(j), buoc):
+            ra += t.nap(j[i:i + buoc])
+        assert ra == goc, (buoc, ra)
+        assert t.xong
+    assert cau.TrichChu().nap('{"goi": []') == ""      # chưa tới "chu"
+
+
+def test_luong_chu_dan_dan_roi_tool_use(may, monkeypatch):
+    cong, _ = may
+    monkeypatch.setenv("FAKE_KICH_BAN", "goi")
+    ev = sse(goi(cong, "/v1/messages", THAN)[2])
+    ten = [e[0] for e in ev]
+    assert ten[0] == "message_start" and ten[-2:] == ["message_delta", "message_stop"]
+    manh = [e[1]["delta"]["text"] for e in ev if e[1].get("delta", {}).get("type") == "text_delta"]
+    assert len(manh) > 2                                  # chữ đến thành NHIỀU mảnh, không một cục
+    assert manh[0].startswith("Đ") and "khong_co" in "".join(manh)   # ghi chú công cụ lạ nối ở cuối khối chữ
+    bat_dau = [e[1] for e in ev if e[0] == "content_block_start"]
+    assert [b["index"] for b in bat_dau] == [0, 1] and bat_dau[1]["content_block"]["name"] == "get_state"
+    assert json.loads("".join(e[1]["delta"]["partial_json"] for e in ev if e[1].get("delta", {}).get("type") == "input_json_delta")) == {"x": 1}
+    assert [e for e in ev if e[0] == "message_delta"][0][1]["delta"]["stop_reason"] == "tool_use"
+
+
+def test_luong_chi_goi_cong_cu_khong_co_chu(may, monkeypatch):
+    cong, _ = may
+    monkeypatch.setenv("FAKE_KICH_BAN", "chi_goi")
+    ev = sse(goi(cong, "/v1/messages", THAN)[2])          # không có chữ nào để chạy dần → đường gom cũ
+    bd = [e[1]["content_block"]["type"] for e in ev if e[0] == "content_block_start"]
+    assert bd == ["tool_use"] and [e for e in ev if e[0] == "message_delta"][0][1]["delta"]["stop_reason"] == "tool_use"
+
+
+def test_loi_truoc_khi_co_chu_van_ra_ma_http(may, monkeypatch):
+    cong, _ = may
+    monkeypatch.setenv("FAKE_KICH_BAN", "han_muc")
+    assert goi(cong, "/v1/messages", THAN)[0] == 429       # chưa phát chữ nào nên còn đổi được mã HTTP
+
+
+def test_loi_giua_luong_thanh_su_kien_error(may, monkeypatch):
+    cong, _ = may
+    monkeypatch.setenv("FAKE_KICH_BAN", "loi_giua_luong")
+    ma, kieu, chu = goi(cong, "/v1/messages", THAN)
+    ev = sse(chu)
+    assert ma == 200 and ev[-1][0] == "error" and ev[-1][1]["error"]["type"] == "rate_limit_error"

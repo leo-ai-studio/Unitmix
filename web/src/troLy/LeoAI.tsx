@@ -463,7 +463,7 @@ export function LeoAI(p: PropsLeo) {
           <section class="leo-muc">
             <b>{t('leo.cau.tieuDe')}</b>
             <p class="muted">{t('leo.cau.giaiThich')}</p>
-            <p class="leo-cau-tt" role="status">
+            <p class={`leo-cau-tt chip ${cauTT === undefined ? '' : cauTT && cauTT.ok && cauTT.dangNhap !== false ? 'ok' : 'canh'}`} role="status">
               {cauTT === undefined ? '…'
                 : !cauTT ? t(maGhepLuu ? 'leo.ghep.mayTat' : 'leo.cau.khongThay')
                 : !cauTT.ok ? t('leo.cau.chuaCaiClaude')
@@ -498,7 +498,7 @@ export function LeoAI(p: PropsLeo) {
                 <p class="muted">{ghep.tram ? t('leo.ghep.giaiThich') : t('leo.ghep.chuaKhaiTram')}</p>
                 {ghep.tram && (
                   <>
-                    <p class="leo-cau-tt" role="status">{ghep.noi === 'da_noi' ? t('leo.ghep.daNoi') : t('leo.ghep.chuaNoi')}</p>
+                    <p class={`leo-cau-tt chip ${ghep.noi === 'da_noi' ? 'ok' : 'canh'}`} role="status">{ghep.noi === 'da_noi' ? t('leo.ghep.daNoi') : t('leo.ghep.chuaNoi')}</p>
                     <div class="leo-hang">
                       <button type="button" class="nut-chinh" onClick={() => { void navigator.clipboard?.writeText(linkGhep(ghep.khoa, ghep.tram)).then(() => { setDaChep(true); setTimeout(() => setDaChep(false), 2500); }); }}>{daChep ? t('leo.ghep.daChep') : t('leo.ghep.chepLink')}</button>
                       {'share' in navigator && <button type="button" class="nut-phu" onClick={() => { void navigator.share({ title: 'LEO Unitmix', url: linkGhep(ghep.khoa, ghep.tram) }).catch(() => undefined); }}>{t('leo.ghep.chia')}</button>}

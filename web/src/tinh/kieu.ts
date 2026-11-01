@@ -60,7 +60,16 @@ export type TemDat = {
  * (m) để tra khoảng lùi LO-01 · QCVN 01:2021 Bảng 2.7; null = không giáp đường (lô bên cạnh, cây xanh…) — lùi 0 như app cũ (`lo.canh`,
  * `lui_ben` mặc định 0). Chưa khai (hoặc số cạnh không khớp ranh) thì mọi cạnh coi là giáp đường 12 m (hành vi cũ, `tm_rong`).
  */
-export type Lo = { id: string; temDat: TemDat; ranh: Diem[]; chiGioi: Diem[] | null; xungQuanh: Diem[][]; canhDuong?: (number | null)[] };
+export type Lo = { id: string; temDat: TemDat; ranh: Diem[]; chiGioi: Diem[] | null; xungQuanh: Diem[][]; canhDuong?: (number | null)[]; de?: DeLo };
+
+/**
+ * Khối đế của lô (tinh/deLo.ts). Thiếu = 'tuDong': hợp chân các tòa nở `ToaDat.deOffset` (hành vi cũ).
+ * 'theoDT' = tự nở đều tới DTXD đế `dtM2` (m²); 'maxQH' = tự nở tới MĐXD đế tối đa của QH × DT lô; 'tay' = đế tự do `ranh` (các vòng,
+ * toạ độ TMB m; vòng ngoài ngược chiều kim đồng hồ) do kéo / đẩy từng mặt như Forma. Mọi chế độ chỉ giữ phần trong chỉ giới xây dựng
+ * (trừ 'tuDong') và luôn chứa chân tháp.
+ */
+export type CheDoDe = 'tuDong' | 'theoDT' | 'maxQH' | 'tay';
+export type DeLo = { che: CheDoDe; dtM2?: number; ranh?: Diem[][] };
 
 /**
  * Tỷ lệ (0–1) DT từng hạng mục được tính vào DT sàn tính HSSDĐ (QCVN 01:2021/BXD 1.4.21: tổng DT sàn gồm cả tầng hầm,
