@@ -243,6 +243,26 @@ export function doiLoaiThangTay(toa: ToaDat, khoa: string, loai: LoaiThangBo, c:
   return { ok: true, toa: { ...sua, matBang: datLoai(toa.matBang), ...(tangRieng ? { tangRieng } : {}) }, chan: [] };
 }
 
+/**
+ * Lật gương thang bộ (⇄): giữ nguyên ô 3.000 mm và chỗ đứng, đảo hướng `sx` — cửa / buồng đệm và chiều vế thang đổi sang bên kia.
+ * Chụp tập thang thành thang đặt tay (như dời / xoá) rồi đổi `sx` của thang đó; mọi tầng đổi theo (thang liền suốt chiều cao).
+ */
+export function latThangTay(toa: ToaDat, khoa: string, c: Ctx): KetQuaTay {
+  const mau = mauToa(c.tv, toa) as ToaMB;
+  const t = matBangCua(toa, mau, c.dl).thangBo.find((x) => x.khoa === khoa);
+  if (!t) return { ok: false, lyDo: 'khong_doi' };
+  const tt = thangTayCua(toa, c);
+  const e = tt.them.find((x) => x.khoa === khoa);
+  if (!e) return { ok: false, lyDo: 'khong_doi' };
+  e.sx = t.sx === 1 ? -1 : 1;
+  const r = chotSua(toa, { ...toa, thangTay: tt }, [null], c);
+  if (!r.ok) return r;
+  const sau = matBangCua(r.toa, mauToa(c.tv, r.toa) as ToaMB, c.dl).thangBo.find((x) => x.khoa === khoa);
+  if (!sau) return { ok: false, lyDo: 'khong_dat_thang' };
+  if (sau.sx === t.sx) return { ok: false, lyDo: 'khong_doi' };
+  return r;
+}
+
 /** Dời thang bộ (kéo thang thả lên ô khác): thang đứng ngay sau ô `sau`. */
 export function doiThangTay(toa: ToaDat, khoa: string, mat: number, sau: string, c: Ctx): KetQuaTay {
   if (khoa === sau) return { ok: false, lyDo: 'khong_doi' };

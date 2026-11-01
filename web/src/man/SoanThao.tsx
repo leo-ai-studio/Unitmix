@@ -126,7 +126,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const [moTl, setMoTl] = useState<'pdf' | '3d' | null>(null); // hộp xuất PDF / 3D · BIM
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
-  const chungXep = { ...chung, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); },
+  const chungXep = { ...chung, tenDuAn: da.ten, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); },
     // căn sát mốc dải dân số → màn Tầng của tòa, chọn ô dùng mẫu căn đó
     moCan: (id: string, canId: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (!x) return; setLoId(x.loId); setToaId(id); setCanKhoa(tv ? oDungCan(tv, x, canId) : null); setBuoc('tang'); } };
   const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };

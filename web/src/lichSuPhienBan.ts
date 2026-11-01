@@ -6,6 +6,21 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.6', ngay: '2026-11-01',
+    vi: [
+      'Màn Tầng: menu ô căn có thêm tab Đổi căn — danh sách mẫu cùng nhóm / vị trí, bấm xem mặt bằng nhỏ (kéo dời được) rồi chọn',
+      'Màn Tầng: sắp xếp / đổi căn không còn tự thu ra xa; lật gương được thang bộ; nội thất hiện mặc định',
+      'Nhãn gọn: thang bộ ghi N2 / N3, lõi ghi số thang máy (3TM); bật ảnh vệ tinh tự đặt vị trí, khỏi nhập toạ độ',
+      'Leo AI trên điện thoại: khung chat không còn bị đẩy lên khi mở bàn phím',
+    ],
+    en: [
+      'Floor view: unit menu gets a Change unit tab — same-group types, tap for a small draggable plan preview, then choose',
+      'Floor view: rearranging / swapping units no longer zooms out; stairs can be mirrored; furniture shown by default',
+      'Cleaner labels: stairs show N2 / N3, cores show elevator count (3TM); satellite layer places itself, no coordinates needed',
+      'Leo AI on phones: the chat box no longer jumps up when the keyboard opens',
+    ],
+  },
+  {
     v: '0.4.5', ngay: '2026-11-01',
     vi: [
       'Leo AI: đính kèm thêm tệp Word (.docx) và văn bản (.txt, .md, .json, .dxf…), tối đa 6 tệp, PDF tới 8 MB',

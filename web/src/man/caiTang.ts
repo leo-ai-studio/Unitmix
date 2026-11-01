@@ -5,7 +5,7 @@ import { docKieuMb, ghiKieuMb, type KieuMb } from '../ve/kieuMb';
 export type CaiTang = { kieu: KieuMb; noiThat: boolean; hienTem: boolean; chamMau: boolean; suaNhieu: boolean };
 
 // Nội thất tắt sẵn: vào màn Tầng chỉ ~9 request / 0,35 MB (đề xuất hiệu năng mục 8); bật ở nút Lớp góc bản vẽ khi cần.
-let cai: CaiTang = { kieu: docKieuMb(), noiThat: false, hienTem: true, chamMau: true, suaNhieu: true };
+let cai: CaiTang = { kieu: docKieuMb(), noiThat: true, hienTem: true, chamMau: true, suaNhieu: true };
 const nghe = new Set<() => void>();
 
 export function datCaiTang(p: Partial<CaiTang>): void {

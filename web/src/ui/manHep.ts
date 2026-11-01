@@ -35,6 +35,23 @@ export function theoDoiKhungNhin(): void {
   cap();
   vv.addEventListener('resize', doi);
   vv.addEventListener('scroll', doi);
+  // iOS: khi bàn phím mở, Safari cuộn khung nhìn SAU sự kiện resize và đôi khi không bắn `scroll` của visualViewport →
+  // --vv-y cũ, hộp cố định bị đẩy lên trên. Đo lại khi cuộn cửa sổ / focus, và cứ 120 ms một lần trong lúc đang gõ.
+  window.addEventListener('scroll', doi, { passive: true });
+  let nhip = 0;
+  const dungNhip = () => { if (nhip) { clearInterval(nhip); nhip = 0; } };
+  const batNhip = () => {
+    doi();
+    dungNhip();
+    let con = 0;
+    nhip = window.setInterval(() => {
+      cap();
+      const dangGo = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName ?? '');
+      if (!dangGo && ++con > 12) dungNhip(); // bỏ focus: đo thêm ~1,5 s cho bàn phím thu xuống rồi dừng
+    }, 120);
+  };
+  document.addEventListener('focusin', batNhip);
+  document.addEventListener('focusout', batNhip);
 }
 
 const khop = (q: string) => typeof matchMedia === 'function' && matchMedia(q).matches;

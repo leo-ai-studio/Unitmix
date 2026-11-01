@@ -11,7 +11,7 @@ import type { DuLieuMB, LoaiThangBo } from './loiThang';
 import type { ThuVien, ToaDat } from './kieu';
 import type { ViTriCan } from './matBang';
 import { phanTichPCCCTang, type DauVaoPCCCTang } from './pcccTang';
-import { doiChoTay, doiLoaiThangTay, doiThangTay, hanhLangTuDong, keoHanhLangTay, latTay, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from './thaoTacTay';
+import { doiChoTay, doiLoaiThangTay, doiThangTay, hanhLangTuDong, keoHanhLangTay, latTay, latThangTay, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from './thaoTacTay';
 
 type Tangs = number[] | null;
 /** Bảng thao tác được chạy nền (tên → hàm thuần, ctx đứng đầu). Đối số phải chép được qua structuredClone. */
@@ -25,6 +25,7 @@ export const BANG_TAY = {
   themThangTay: (c: Ctx, toa: ToaDat, mat: number, sau: string) => themThangTay(toa, mat, sau, c),
   xoaThangTay: (c: Ctx, toa: ToaDat, khoa: string) => xoaThangTay(toa, khoa, c),
   doiLoaiThangTay: (c: Ctx, toa: ToaDat, khoa: string, loai: LoaiThangBo) => doiLoaiThangTay(toa, khoa, loai, c),
+  latThangTay: (c: Ctx, toa: ToaDat, khoa: string) => latThangTay(toa, khoa, c),
   doiThangTay: (c: Ctx, toa: ToaDat, khoa: string, mat: number, sau: string) => doiThangTay(toa, khoa, mat, sau, c),
   keoHanhLangTay: (c: Ctx, toa: ToaDat, i: number, dau: 0 | 1, d: number) => keoHanhLangTay(toa, i, dau, d, c),
   hanhLangTuDong: (c: Ctx, toa: ToaDat) => hanhLangTuDong(toa, c),

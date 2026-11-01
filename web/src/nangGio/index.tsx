@@ -15,6 +15,8 @@ import type { NutHienThi } from '../ui/ThanhHienThi';
 import type { MoRong3D } from '../ve3d/moRong3D';
 import { datNG, layNG, useNG } from './kho';
 import { taoMoRongNangGio } from './moRongVo';
+import { KINH_TUYEN_TRUC } from '../tinh/nangGio/vn2000';
+import { apDungTuBanVe, viecNutViTri } from './viTriTuDong';
 
 type Lop2D = typeof import('./LopNangGio2D').LopNangGio2D;
 let Lop2DDaNap: Lop2D | null = null;
@@ -46,10 +48,24 @@ export function HopNangGioCho(p: PropsHop) {
 }
 
 /** Nút trong danh sách Lớp (GocBanVe) của TMB: ảnh nền 2D + mở hộp Vị trí · Nắng · Gió. */
-export function useNutNangGio(): NutHienThi[] {
+export function useNutNangGio(ctx?: { pa: TrangThaiPA; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; tenDuAn: string }): NutHienThi[] {
   const s = useNG((x) => ({ b: x.banDo2D, m: x.moHop }));
+  // bật ảnh vệ tinh: đã có toạ độ → hiện ngay; chưa có → tự đặt từ bản vẽ (tỉnh đoán từ tên dự án, không thì Hà Nội) — hộp Vị trí chỉ mở khi
+  // không tự đặt được hoặc để người dùng kiểm tra tỉnh; không bắt nhập toạ độ.
+  const bam = () => {
+    if (layNG().banDo2D) { datNG({ banDo2D: false }); return; }
+    if (!ctx) { datNG({ banDo2D: true, moHop: true, tab: 'viTri' as const }); return; }
+    const r = viecNutViTri(ctx.pa, false, ctx.tenDuAn, ctx.chiXem);
+    if (r.viec === 'bat') datNG({ banDo2D: true });
+    else if (r.viec === 'tuDat') { ctx.sua(() => r.pa); datNG({ banDo2D: true, banDo3D: true }); }
+    else {
+      const moi = ctx.chiXem ? null : apDungTuBanVe(ctx.pa, KINH_TUYEN_TRUC[0].ktt);
+      if (moi) { ctx.sua(() => moi); datNG({ banDo2D: true, banDo3D: true, moHop: true, tab: 'viTri' as const }); }
+      else datNG({ banDo2D: true, moHop: true, tab: 'viTri' as const });
+    }
+  };
   return [
-    { khoa: 'banDo', nhan: t('ng.lop.banDo'), bat: s.b, onClick: () => datNG({ banDo2D: !layNG().banDo2D, ...(layNG().banDo2D ? {} : { moHop: true, tab: 'viTri' as const }) }) },
+    { khoa: 'banDo', nhan: t('ng.lop.banDo'), bat: s.b, onClick: bam },
     { khoa: 'nangGio', nhan: t('ng.lop.nangGio'), bat: s.m, onClick: () => datNG({ moHop: !layNG().moHop }) },
   ];
 }

@@ -34,6 +34,11 @@ type Props = {
    * `onXong(a, b, them)` nhận hai góc theo mét; `them` = giữ Shift / Ctrl (thêm vào lựa chọn).
    */
   chonKhung?: { bat: boolean; onXong: (a: Diem, b: Diem, them: boolean) => void };
+  /**
+   * Danh tính nội dung đang xem (vd. tòa + tầng). Có thì khung nhìn CHỈ tự vừa lại khi danh tính đổi; khung bao đổi nhẹ do người dùng sắp xếp
+   * / đổi căn (cùng danh tính) thì giữ nguyên chỗ đang xem — không tự thu ra xa. Không truyền: vừa lại mỗi khi khung bao đổi.
+   */
+  nhanDang?: string;
 };
 
 type CuChi =
@@ -63,7 +68,7 @@ function phatChuot(loai: 'dblclick' | 'contextmenu', x: number, y: number) {
  * quanh điểm giữa hai ngón (bám tay 1:1: mỗi frame đổi viewBox, mọi frame đúng hình — không phóng ảnh bằng CSS transform); chạm = bấm, chạm hai lần = bấm đúp
  * (dblclick), nhấn giữ = menu ngữ cảnh (contextmenu) — phát lên phần tử dưới ngón để con (tòa, lô, ô căn) dùng lại handler chuột.
  */
-export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen, chonKhung }: Props) {
+export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen, chonKhung, nhanDang }: Props) {
   const goc = khung ?? [0, 0, 100, 60];
   const hop = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -81,7 +86,7 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
   const troi = useRef(0); // rAF quán tính
   const rafV = useRef(0), chuaV = useRef<NhinThay | null>(null);
   const mau = useRef<{ x: number; y: number; t: number }[]>([]); // vài điểm kéo cuối để tính vận tốc
-  const khoaTruoc = useRef('');
+  const khoaTruoc = useRef(''), nhanDangTruoc = useRef<string | undefined>(undefined);
   const [hcn, setHcn] = useState<[number, number, number, number] | null>(null); // khung chọn đang kéo (px trong ô chứa)
   const batDauNen = useRef<{ x: number; y: number; xa: number } | null>(null); // điểm bấm nền + quãng đã đi xa nhất (px) để nhận "bấm"
   /** Điểm px trong ô chứa → mét (y lên) theo khung nhìn hiện tại. */
@@ -141,9 +146,11 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
   useEffect(() => () => { huyDong(); cancelAnimationFrame(rafV.current); }, []);
   useEffect(() => {
     if (!daDo) return;
-    if (khoaTruoc.current && khoaTruoc.current !== khoa) bayToi(vuaKhung()); else ganV(vuaKhung()); // lần đầu có khung thì nhảy thẳng
+    const giu = nhanDang !== undefined && nhanDang === nhanDangTruoc.current && !!khoaTruoc.current; // cùng nội dung, chỉ khung bao nhúc nhích: giữ chỗ đang xem
+    if (!giu) { if (khoaTruoc.current && khoaTruoc.current !== khoa) bayToi(vuaKhung()); else ganV(vuaKhung()); } // lần đầu có khung thì nhảy thẳng
     khoaTruoc.current = khoa;
-  }, [khoa, daDo]);
+    nhanDangTruoc.current = nhanDang;
+  }, [khoa, daDo, nhanDang]);
 
   /** Lăn chuột: phóng / thu ngay quanh con trỏ (bám tay, không hoạt ảnh). */
   const zoomQuanh = (k: number, px: number, py: number) => {
