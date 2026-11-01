@@ -11,3 +11,28 @@
 .lop-st-bao button { flex: 0 0 auto; border: 0; background: transparent; color: inherit; font-size: 16px; line-height: 1; cursor: pointer; padding: 0 2px; }
 @keyframes st-bao-vao { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @media (prefers-reduced-motion: reduce) { .lop-st-bao { animation: none; } }
+
+/* Căn đang chọn (panel phải màn Tầng): đầu thẻ, ô số liệu, khối công năng / STRETCH / đổi mẫu gọn, dễ nhìn */
+.can-chon-dau { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 2px 12px 0; }
+.can-chon-ten { font-size: 18px; font-weight: 700; color: var(--green); }
+.can-chon-phu { font-size: 12px; color: var(--muted-text); }
+.can-chon-so { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 12px; }
+.can-chon-so > div { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.can-chon-so > div:empty { display: none; }
+.can-chon-so small { font-size: 11px; color: var(--muted-text); }
+.can-chon-so b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.can-chon-khoi { display: flex; flex-direction: column; gap: 6px; margin: 4px 12px 0; padding: 8px 0 8px; border-top: 1px solid var(--line); }
+.can-chon-nhan { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.can-chon-nhan > span { font-size: 13px; font-weight: 700; }
+.can-chon-nhan > small { font-size: 11px; color: var(--muted-text); text-align: right; }
+.can-chon-chip { display: flex; flex-wrap: wrap; gap: 4px; }
+.can-chon-khoi.khoi-st { flex-wrap: nowrap; }
+.st-hang { display: flex; align-items: center; gap: 6px; }
+.st-hang .st-muc { flex: 1; text-align: center; font-size: 20px; font-variant-numeric: tabular-nums; }
+.st-hang .st-muc small { font-size: 12px; font-weight: 400; color: var(--muted-text); }
+.st-hang .nut-st { min-width: 48px; min-height: 36px; font-size: 13px; font-weight: 700; }
+.can-chon-mau { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); text-align: left; cursor: pointer; }
+.can-chon-mau:hover:not(:disabled) { background: var(--selected); }
+.can-chon-mau:disabled { opacity: .5; cursor: default; }
+.can-chon-mau b { font-size: 13px; }
+.can-chon-mau span { font-size: 12px; color: var(--muted-text); font-variant-numeric: tabular-nums; white-space: nowrap; }

@@ -6,6 +6,19 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.7', ngay: '2026-11-01',
+    vi: [
+      'Màn Tầng: mục Áp dụng sửa cho — chép phép sửa cơ cấu căn sang mọi tòa cùng mẫu trong lô hoặc cả dự án (một bước hoàn tác)',
+      'Màn Tầng: phần Căn đang chọn + STRETCH trình bày lại gọn, dễ nhìn (ô số liệu, nút −100 / +100 lớn, nhóm đổi mẫu)',
+      'Điện thoại: chặn zoom trang bằng chạm hai lần / khi chọn ô nhập; khoá cuộn trang khi bàn phím mở để khung Leo AI không nhảy lên',
+    ],
+    en: [
+      'Floor view: Apply edits to — copy unit-mix edits to all same-type towers in the plot or whole project (one undo)',
+      'Floor view: selected-unit + STRETCH panel redesigned (stat tiles, large −100 / +100, grouped swap lists)',
+      'Phones: no page zoom on double-tap / input focus; page scroll locked while the keyboard is open so the Leo AI box stays put',
+    ],
+  },
+  {
     v: '0.4.6', ngay: '2026-11-01',
     vi: [
       'Màn Tầng: menu ô căn có thêm tab Đổi căn — danh sách mẫu cùng nhóm / vị trí, bấm xem mặt bằng nhỏ (kéo dời được) rồi chọn',

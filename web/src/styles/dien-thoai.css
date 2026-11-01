@@ -14,7 +14,10 @@
     --an-t: env(safe-area-inset-top, 0px); --an-b: env(safe-area-inset-bottom, 0px);
     --an-l: env(safe-area-inset-left, 0px); --an-r: env(safe-area-inset-right, 0px);
   }
-  html, body { overflow-x: hidden; }
+  html, body { overflow-x: hidden; touch-action: manipulation; } /* manipulation: không phóng trang bằng chạm hai lần; phóng chỉ bằng hai ngón trên bản vẽ */
+  /* bàn phím ảo mở: khoá cuộn trang để iOS không cuộn lớp cố định (hộp Leo AI) lên khỏi màn hình khi focus ô nhập */
+  html.ban-phim, html.ban-phim body { overflow: hidden; overscroll-behavior: none; }
+  html.ban-phim body { position: fixed; inset: 0; width: 100%; }
   /* màn soạn cố định theo cửa sổ (huỷ bố cục xếp chồng ≤ 960 px cũ); trang không phóng khi chụm — bản vẽ tự phóng */
   .khung-soan, .khung-soan.hep { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; touch-action: pan-x pan-y; overscroll-behavior: none; }
   .khung-soan .khung-than { flex: 1 1 0; flex-wrap: nowrap; min-height: 0; padding: 0 var(--an-r) 0 var(--an-l); }

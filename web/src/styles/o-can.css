@@ -27,6 +27,10 @@
   position: fixed; z-index: 30; min-width: 200px; max-width: 260px; padding: 4px 0;
   background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .14); font-size: 12px; color: var(--ink);
 }
+.pham-vi-sua { display: flex; flex-direction: column; gap: 2px; }
+.pham-vi-sua label { display: flex; align-items: center; gap: 8px; padding: 5px 2px; font-size: 13px; cursor: pointer; }
+.pham-vi-sua label.tat { opacity: .5; cursor: default; }
+.pham-vi-sua input { accent-color: var(--green); margin: 0; }
 .menu-o-tab { display: flex; gap: 2px; padding: 4px 6px 0; border-bottom: 1px solid var(--line); }
 .menu-o > .menu-o-tab > button, .menu-o-tab > button { flex: 1; padding: 6px 4px; border: 0; border-bottom: 2px solid transparent; background: transparent; font-size: 12px; color: var(--muted-text); cursor: pointer; }
 .menu-o-tab > button.chon { color: var(--green); font-weight: 700; border-bottom-color: var(--green); }

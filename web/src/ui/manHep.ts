@@ -30,6 +30,7 @@ export function theoDoiKhungNhin(): void {
     goc.style.setProperty('--vv-y', `${Math.round(vv.offsetTop)}px`);
     goc.style.setProperty('--vv-duoi', `${duoi}px`);
     goc.classList.toggle('ban-phim', duoi >= 120);
+    if (duoi >= 120 && (window.scrollY || window.scrollX)) window.scrollTo(0, 0); // iOS cuộn trang khi focus ô nhập: kéo về 0 (hộp cố định bám theo)
   };
   const doi = () => { if (!hen) hen = requestAnimationFrame(cap); };
   cap();
