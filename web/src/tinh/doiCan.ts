@@ -1,4 +1,4 @@
-import type { BoCucTang, CongNangO, LoaiCan, ThongTinLoi, ToaDat } from './kieu';
+import { LOAI_CAN, type BoCucTang, type CanMau, type CongNangO, type LoaiCan, type ThongTinLoi, type ThuVien, type ToaDat } from './kieu';
 import { boCucTang, canDangDung, congNangTai, type BoCucToa, type ViTriCan } from './matBang';
 import { duocDatVaoO } from './quyTacViTriCan';
 
@@ -177,3 +177,18 @@ export const thongTinLoi = (toa: Pick<ToaDat, 'loi'>, khoa: string): ThongTinLoi
   return l ? { ...LOI_MAC_DINH, ...l, thangBo: { ...LOI_MAC_DINH.thangBo, ...l.thangBo }, thangMay: { ...LOI_MAC_DINH.thangMay, ...l.thangMay }, hopKT: { ...LOI_MAC_DINH.hopKT, ...l.hopKT } } : LOI_MAC_DINH;
 };
 export const datLoi = <T extends Pick<ToaDat, 'loi'>>(toa: T, khoa: string, l: ThongTinLoi): T => ({ ...toa, loi: { ...(toa.loi ?? {}), [khoa]: l } });
+
+/** Nhãn ngắn của mẫu căn khi chọn đổi: `2pn-m2-8500x6000` (loại · mã vị trí · sâu × rộng, mm). */
+export const nhanMauCan = (c: Pick<CanMau, 'loai' | 'vi_tri_ma' | 'sau_mm' | 'rong_mm'>): string => `${c.loai}-${c.vi_tri_ma}-${c.sau_mm}x${c.rong_mm}`;
+
+/**
+ * Mẫu căn đổi được cho ô đang dùng mẫu gốc `canGocId`: CÙNG nhóm tòa (NOTM / NOXH), CÙNG vị trí (giữa M / góc G), cùng chiều sâu và
+ * đặt được vào loại ô đó (căn V / Y chỉ đổi cho nhau theo quy tắc vị trí). Không gồm biến thể STRETCH. Sắp: loại căn, rộng, mã.
+ */
+export function dsMauDoiCan(tv: ThuVien, canGocId: string): CanMau[] {
+  const cu = tv.can.get(canGocId.split('~')[0]);
+  if (!cu) return [];
+  return [...tv.can.values()]
+    .filter((x) => !x.id.includes('~') && !x.stretchGoc && x.nhom === cu.nhom && x.vi_tri === cu.vi_tri && x.sau_mm === cu.sau_mm && duocDatVaoO(cu.id, x.id))
+    .sort((a, b) => LOAI_CAN.indexOf(a.loai) - LOAI_CAN.indexOf(b.loai) || a.rong_mm - b.rong_mm || a.id.localeCompare(b.id));
+}

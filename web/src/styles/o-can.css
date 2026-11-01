@@ -27,6 +27,25 @@
   position: fixed; z-index: 30; min-width: 200px; max-width: 260px; padding: 4px 0;
   background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .14); font-size: 12px; color: var(--ink);
 }
+.pham-vi-sua { display: flex; flex-direction: column; gap: 2px; }
+.pham-vi-sua label { display: flex; align-items: center; gap: 8px; padding: 5px 2px; font-size: 13px; cursor: pointer; }
+.pham-vi-sua label.tat { opacity: .5; cursor: default; }
+.pham-vi-sua input { accent-color: var(--green); margin: 0; }
+.menu-o-tab { display: flex; gap: 2px; padding: 4px 6px 0; border-bottom: 1px solid var(--line); }
+.menu-o > .menu-o-tab > button, .menu-o-tab > button { flex: 1; padding: 6px 4px; border: 0; border-bottom: 2px solid transparent; background: transparent; font-size: 12px; color: var(--muted-text); cursor: pointer; }
+.menu-o-tab > button.chon { color: var(--green); font-weight: 700; border-bottom-color: var(--green); }
+  .menu-o-nhom { padding: 6px 12px 2px; font-size: 11px; font-weight: 700; letter-spacing: .02em; color: var(--muted-text); }
+.menu-o-ds { list-style: none; margin: 0; padding: 0 0 4px; max-height: calc(4 * 30px + 2px); overflow-y: auto; overscroll-behavior: contain; }
+.menu-o-ds button { display: flex; width: 100%; height: 30px; align-items: center; padding: 0 12px; border: 0; background: transparent; text-align: left; font: 600 14px/1 var(--font); font-variant-numeric: tabular-nums; letter-spacing: .01em; color: var(--ink); cursor: pointer; }
+.menu-o-ds button:hover, .menu-o-ds button.xem { background: var(--selected); }
+.menu-o-ds button.chon { color: var(--green); }
+.xem-mau-can { position: fixed; z-index: 40; right: 12px; top: 84px; width: min(232px, calc(100vw - 24px)); padding: 6px 8px 8px; display: flex; flex-direction: column; gap: 5px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, .24); }
+.xem-mau-dau { display: flex; align-items: center; justify-content: space-between; gap: 6px; cursor: grab; touch-action: none; user-select: none; font: 700 13px/1.2 var(--font); font-variant-numeric: tabular-nums; }
+.xem-mau-dau:active { cursor: grabbing; }
+.xem-mau-dau .nut-phu { padding: 2px 7px; }
+.xem-mau-can svg { width: 100%; max-height: 30vh; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+.xem-mau-tt { font-size: 11px; font-variant-numeric: tabular-nums; }
 .menu-o-dau { padding: 6px 12px 4px; font-weight: 700; color: var(--muted-text); }
 .menu-o > button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 12px; border: 0; background: transparent; text-align: left; font-size: 12px; color: var(--ink); cursor: pointer; }
 .menu-o > button:hover:not(:disabled), .menu-o > button:focus-visible { background: var(--selected); }

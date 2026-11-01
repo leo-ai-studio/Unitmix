@@ -12,6 +12,7 @@ import { BieuTuong } from '../ui/NutBieuTuong';
 import type { KhoaBieuTuong } from '../ui/bieuTuong';
 import { congCuTheoTen } from './congCu';
 import { tomTatTrangThai } from './congCu/doc';
+import { docChuDocx } from './docDocx';
 import type { NguCanh } from './congCu/nguCanh';
 import { batDauNghe, coDoc, coNghe, docTo, dungDoc, type LoiNghe, type PhienNghe } from './giongNoi';
 import { goiYMoHinh, type GoiYMH } from './goiYMoHinh';
@@ -123,7 +124,7 @@ function BuocCongCu({ ten, dauVao, ketQua, loi, dang }: { ten: string; dauVao?: 
   );
 }
 
-/** Đọc tệp đính kèm thành khối nội dung API: ảnh (thu ≤ 1600 px), PDF (document), Excel / CSV (đổi sang CSV chữ). */
+/** Đọc tệp đính kèm thành khối nội dung API: ảnh (thu ≤ 1600 px), PDF (document), Word / Excel / CSV / văn bản (đổi sang chữ). */
 async function docTep(f: File): Promise<DinhKem> {
   const b64 = (buf: ArrayBuffer) => { let s = ''; const a = new Uint8Array(buf); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode(...a.subarray(i, i + 0x8000)); return btoa(s); };
   if (f.type.startsWith('image/')) {
@@ -138,7 +139,7 @@ async function docTep(f: File): Promise<DinhKem> {
     return { ten: f.name || 'anh.jpg', loai: 'anh', xem: data, khoi: { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data.split(',')[1] } } };
   }
   if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
-    if (f.size > 5_000_000) throw new Error(t('leo.loi.tepLon'));
+    if (f.size > 8_000_000) throw new Error(t('leo.loi.tepLon'));
     return { ten: f.name, loai: 'pdf', khoi: { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64(await f.arrayBuffer()) }, title: f.name } };
   }
   if (/\.(xlsx|xls|csv)$/i.test(f.name)) {
@@ -146,6 +147,14 @@ async function docTep(f: File): Promise<DinhKem> {
     const wb = XLSX.read(await f.arrayBuffer());
     const chu = wb.SheetNames.slice(0, 5).map((n) => `## ${n}\n${XLSX.utils.sheet_to_csv(wb.Sheets[n]).slice(0, 30_000)}`).join('\n\n');
     return { ten: f.name, loai: 'bang', khoi: { type: 'text', text: `<tep ten="${f.name}">\n${chu}\n</tep>` } };
+  }
+  if (/\.docx$/i.test(f.name)) {
+    const chu = await docChuDocx(await f.arrayBuffer());
+    return { ten: f.name, loai: 'bang', khoi: { type: 'text', text: `<tep ten="${f.name}">\n${chu.slice(0, 60_000)}\n</tep>` } };
+  }
+  if (f.type.startsWith('text/') || /\.(txt|md|markdown|json|xml|html?|log|ya?ml|tsv|dxf|svg|ini)$/i.test(f.name)) {
+    if (f.size > 2_000_000) throw new Error(t('leo.loi.tepLon'));
+    return { ten: f.name, loai: 'bang', khoi: { type: 'text', text: `<tep ten="${f.name}">\n${(await f.text()).slice(0, 60_000)}\n</tep>` } };
   }
   throw new Error(t('leo.loi.kieuTep'));
 }
@@ -345,7 +354,7 @@ export function LeoAI(p: PropsLeo) {
   }
 
   const themTep = async (fs: FileList | File[]) => {
-    try { const r = await Promise.all([...fs].slice(0, 4).map(docTep)); setKem((k) => [...k, ...r].slice(0, 4)); } catch (e) { setLoi({ chu: e instanceof Error ? e.message : String(e) }); }
+    try { const r = await Promise.all([...fs].slice(0, 6).map(docTep)); setKem((k) => [...k, ...r].slice(0, 6)); } catch (e) { setLoi({ chu: e instanceof Error ? e.message : String(e) }); }
   };
 
   // ---------- vẽ ----------
@@ -401,13 +410,24 @@ export function LeoAI(p: PropsLeo) {
     );
   });
 
+  // dòng theo dõi luôn hiện khi đang chạy: bước công cụ đang làm + số bước đã xong trong lượt này (không nằm trong khối thu gọn)
+  const buocLuot = (() => {
+    let dau = 0;
+    for (let i = lichSu.length - 1; i >= 0; i--) if (laCauHoi(lichSu[i])) { dau = i; break; }
+    const ds: { ten: string; xong: boolean }[] = [];
+    for (const m of lichSu.slice(dau)) if (m.role === 'assistant') for (const b of (m.content ?? []) as Anthropic.Beta.BetaContentBlock[]) if (b.type === 'tool_use') ds.push({ ten: b.name, xong: ketQuaCua.has(b.id) });
+    return ds;
+  })();
+  const dangLam = buocLuot.find((b) => !b.xong);
+  const daXong = buocLuot.filter((b) => b.xong).length;
+
   const mhHien = moHinhTheoId(moHinh);
   const khacGoiY = goiY && (goiY.moHinh !== moHinh || goiY.nghi !== nghiCuoc);
 
   return (
     <aside class="leo-ai" role="dialog" aria-label={t('leo.ten')} data-lang={lang}>
       <header class="leo-dau">
-        <MarkLeo quay={chay} vuong />
+        <MarkLeo quay={false} vuong />
         <div class="leo-ten"><strong>{t('leo.ten')}</strong>{chuaNoi
           ? <button type="button" class="leo-chip canh" onClick={() => setMan('caiDat')}>{t('leo.chuaNoi')}</button>
           : <small>{t(`leo.nguon.${nguonDung === 'cau' ? 'cau' : nguonDung === 'rieng' && khoaApi ? 'rieng' : 'chung'}`)} ·{mhHien.ten.replace('Claude ', '')}</small>}</div>
@@ -551,7 +571,7 @@ export function LeoAI(p: PropsLeo) {
           {tin}
           {dang && (
             <div class="leo-tin may dang">
-              <MarkLeo quay nho vuong />
+              <MarkLeo quay={false} nho vuong />
               <div class="leo-noi-dung">
                 {dang.nghi.trim() && <details class="leo-nghi" open><summary>{t('leo.tienTrinh')}</summary><Md chu={dang.nghi} /></details>}
                 {dang.chu && <Md chu={dang.chu} />}
@@ -578,6 +598,13 @@ export function LeoAI(p: PropsLeo) {
 
       {man === 'chat' && (
         <div class="leo-soan" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer?.files.length) void themTep(e.dataTransfer.files); }}>
+          {chay && (
+            <div class="leo-theo-doi" role="status" aria-live="polite">
+              <img class="spin-o" src="/brand/leo_ai_o.png" alt="" />
+              <b>{dangLam ? (t(`leo.cc.${dangLam.ten}`) !== `leo.cc.${dangLam.ten}` ? t(`leo.cc.${dangLam.ten}`) : dangLam.ten) : t('leo.dangNghi')}</b>
+              {buocLuot.length > 0 && <span class="muted">{`${daXong}/${buocLuot.length} ${t('leo.theoDoi.buocXong')}`}</span>}
+            </div>
+          )}
           {kem.length > 0 && <div class="leo-kem">{kem.map((k, i) => (
             <span key={i} class="leo-kem-chip">{k.xem ? <img src={k.xem} alt="" /> : null}{k.ten}<button type="button" aria-label={t('leo.boKem')} onClick={() => setKem(kem.filter((_, j) => j !== i))}>×</button></span>))}</div>}
           <textarea ref={oNhap} rows={1} value={cau} placeholder={nghe ? t('leo.dangNghe') : t('leo.nhapCau')} aria-label={t('leo.nhapCau')}
@@ -592,7 +619,7 @@ export function LeoAI(p: PropsLeo) {
             </div>
           )}
           <div class="leo-soan-duoi chan-hop">
-            <input ref={tepRef} type="file" hidden multiple accept="image/*,application/pdf,.pdf,.xlsx,.xls,.csv" onChange={(e) => { const f = e.currentTarget.files; if (f?.length) void themTep(f); e.currentTarget.value = ''; }} />
+            <input ref={tepRef} type="file" hidden multiple accept="image/*,application/pdf,.pdf,.xlsx,.xls,.csv,.docx,.txt,.md,.json,.xml,.html,.log,.yml,.yaml,.tsv,.dxf" onChange={(e) => { const f = e.currentTarget.files; if (f?.length) void themTep(f); e.currentTarget.value = ''; }} />
             <NutNho k="leoKem" nhan={t('leo.dinhKem')} tat={chay} onClick={() => tepRef.current?.click()} />
             <select class="leo-chon-mh" aria-label={t('leo.moHinh')} value={`${moHinh}|${nghiCuoc}`} disabled={chay}
               onChange={(e) => { const [m, n] = e.currentTarget.value.split('|'); datMoHinhCuoc(m as MaMoHinh, n as MucNghi); }}>

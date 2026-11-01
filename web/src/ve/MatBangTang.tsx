@@ -1,3 +1,4 @@
+import { soGiengTheoTen } from '../tinh/thangMay';
 import { useMemo } from 'preact/hooks';
 import type { CongNangO, Diem, LoaiCan, ThongTinLoi, ThuVien } from '../tinh/kieu';
 import { canDangDung, canVuaModule, congNangTai, coDaGiac, hinhLogia, khungCanNet, ranhTo, soCanChuVi, veCanTaiViTri, veLoiTaiViTri, viTriCan, vungCatCan, type BoCuc, type ToaCoMat } from '../tinh/matBang';
@@ -118,7 +119,7 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTe
   );
 
   const loi = useMemo(() => {
-    const kq: { khoa: string; san: string | null; tam: Diem; nhom: (readonly [string, string])[] }[] = [];
+    const kq: { khoa: string; san: string | null; tam: Diem; tm: number; nhom: (readonly [string, string])[] }[] = [];
     mau.mat.forEach((m, mi) =>
       m.phan_tu.forEach((q, i) => {
         if (q.loai === 'can' || q.bang) return; // dải lõi chiếu lên mặt (XC-05) chỉ là mốc, lõi vẽ một lần
@@ -136,7 +137,7 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTe
           san = d(pts) + 'Z';
           tam = trongTam(pts);
         }
-        kq.push({ khoa: q.khoa ?? `${mi}:${i}`, san, tam, nhom: [...theoNhom].map(([cat, ds]) => [cat, ds.join('')] as const) });
+        kq.push({ khoa: q.khoa ?? `${mi}:${i}`, san, tam, tm: Number((g as { so_gieng?: number }).so_gieng ?? soGiengTheoTen(q.block) ?? 0), nhom: [...theoNhom].map(([cat, ds]) => [cat, ds.join('')] as const) });
       }),
     );
     return kq;
@@ -186,18 +187,11 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTe
           vector-effect="non-scaling-stroke" style={{ cursor: 'context-menu' }}
           onClick={menu('loi', l.khoa)} onContextMenu={menu('loi', l.khoa)} />
       ))}
-      {loiTT && loi.map((l) => {
-        if (!l.san) return null;
-        const tt = loiTT(l.khoa);
-        const xuong = [tt.thangBo.ham && 'B', tt.thangMay.ham && 'M', tt.hopKT.ham && 'K'].filter(Boolean).join('');
-        const len = [tt.thangBo.mai && 'B', tt.thangMay.mai && 'M', tt.hopKT.mai && 'K'].filter(Boolean).join('');
-        return (
-          <text key={`lt${l.khoa}`} x="0" y="0" class="nhan-loi" text-anchor="middle" font-size="650" pointer-events="none"
-            transform={`translate(${Math.round(l.tam[0])} ${Math.round(l.tam[1])}) scale(1 -1)`}>
-            {`${tt.cua === 'trai' ? '◀' : '▶'} ${xuong ? '↓' + xuong : ''} ${len ? '↑' + len : ''}`.trim()}
-          </text>
-        );
-      })}
+      {/* nhãn lõi: tổng số thang máy ("3TM") — thang bộ chỉ ghi loại N2 / N3 (bên dưới) */}
+      {loi.map((l) => l.san && l.tm > 0 && (
+        <text key={`lt${l.khoa}`} x="0" y="0" class="nhan-loi" text-anchor="middle" font-size="650" pointer-events="none"
+          transform={`translate(${Math.round(l.tam[0])} ${Math.round(l.tam[1])}) scale(1 -1)`}>{`${l.tm}TM`}</text>
+      ))}
       {/* tim hành lang (XC-07: liền qua góc, kéo tới cửa xa nhất) — nét mảnh, không bắt chuột */}
       {hienHanhLang && (mau.hanh_lang ?? []).map((s, i) => (
         <path key={`hl${i}`} d={d([s.p0, s.p1])} fill="none" stroke="#8a8f98" stroke-width="1" stroke-dasharray="6 4" stroke-opacity="0.7"
@@ -237,7 +231,7 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTe
         <path key={`tn${vt.khoa}`} class="can-vuot-tn" d={ranh} vector-effect="non-scaling-stroke" />
       ))}
       {lop.filter((x) => daChon.has(x.vt.khoa)).map(({ vt, ranh }) => (
-        <path key={`chon${vt.khoa}`} d={ranh} fill="var(--green)" fill-opacity="0.18" stroke="var(--green)" stroke-width="3" stroke-dasharray={vt.khoa === canKhoa ? undefined : '6 3'}
+        <path key={`chon${vt.khoa}`} d={ranh} fill="var(--green)" fill-opacity="0.07" stroke="var(--green)" stroke-width="3" stroke-dasharray={vt.khoa === canKhoa ? undefined : '6 3'}
           vector-effect="non-scaling-stroke" pointer-events="none" />
       ))}
       {/* nhãn ô đổi công năng ở tâm ô */}

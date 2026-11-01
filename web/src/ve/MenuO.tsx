@@ -1,7 +1,10 @@
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { t } from '../i18n/i18n';
-import { CONG_NANG_O, type CongNangO, type DiXuyen, type ThongTinLoi } from '../tinh/kieu';
+import { CONG_NANG_O, type CanMau, type CongNangO, type DiXuyen, type ThongTinLoi } from '../tinh/kieu';
+import { nhanMauCan } from '../tinh/doiCan';
+import type { KieuMb } from './kieuMb';
+import { XemMauCan } from './XemMauCan';
 
 /** Hộp nổi đặt tại toạ độ màn hình (position: fixed), không chiếm chỗ trong bố cục. Esc / bấm ra ngoài thì đóng. */
 export function HopNoi({ x, y, dong, nhan, children }: { x: number; y: number; dong: () => void; nhan: string; children: ComponentChildren }) {
@@ -36,12 +39,47 @@ type PropsCN = {
   phamVi: string;
   chiXem: boolean;
   chon: (cn: CongNangO) => void;
+  /** Có (đúng một ô đang là căn): thêm tab "Đổi căn" — danh sách mẫu cùng nhóm / vị trí, bấm để xem mặt bằng rồi chọn. */
+  doiCan?: { ds: CanMau[]; dangDung: string; guong: boolean; kieu: KieuMb; noiThat: boolean; doi: (id: string) => void };
 };
 
-/** Menu ngữ cảnh ô căn (L8): đổi công năng một hoặc nhiều ô. */
-export function MenuCongNang({ x, y, dong, soO, hienTai, phamVi, chiXem, chon }: PropsCN) {
+/** Menu ngữ cảnh ô căn (L8): tab Đổi công năng (một hoặc nhiều ô) · tab Đổi căn (một ô căn: đổi sang mẫu khác cùng loại). */
+export function MenuCongNang({ x, y, dong, soO, hienTai, phamVi, chiXem, chon, doiCan }: PropsCN) {
+  const [tab, setTab] = useState<'cn' | 'can'>('cn');
+  const [xem, setXem] = useState<string | null>(null);
+  const goc = doiCan?.dangDung.split('~')[0];
+  const canXem = doiCan?.ds.find((c) => c.id === xem);
   return (
     <HopNoi x={x} y={y} dong={dong} nhan={t('oc.congNang')}>
+      {doiCan && (
+        <div class="menu-o-tab" role="tablist">
+          {(['cn', 'can'] as const).map((k) => (
+            <button key={k} type="button" role="tab" aria-selected={tab === k} class={tab === k ? 'chon' : ''} onClick={() => { setTab(k); setXem(null); }}>
+              {t(k === 'cn' ? 'oc.tab.congNang' : 'oc.tab.doiCan')}
+            </button>
+          ))}
+        </div>
+      )}
+      {tab === 'can' && doiCan ? (
+        <>
+          {doiCan.ds[0] && <div class="menu-o-nhom">{t(`oc.doiCan.nhom.${doiCan.ds[0].nhom}`)}</div>}
+          <ul class="menu-o-ds" role="listbox" aria-label={t('oc.tab.doiCan')}>
+            {doiCan.ds.map((c) => (
+              <li key={c.id}>
+                <button type="button" role="option" aria-selected={xem === c.id} class={c.id === goc ? 'chon' : xem === c.id ? 'xem' : ''} onClick={() => setXem(c.id)}>
+                  {nhanMauCan(c)}{c.id === goc ? ' ✓' : ''}
+                </button>
+              </li>
+            ))}
+            {!doiCan.ds.length && <li class="muted menu-o-chu">{t('oc.doiCan.khong')}</li>}
+          </ul>
+          {canXem && (
+            <XemMauCan can={canXem} kieu={doiCan.kieu} noiThat={doiCan.noiThat} guong={doiCan.guong} dangDung={canXem.id === goc} chiXem={chiXem}
+              chon={() => { doiCan.doi(canXem.id); dong(); }} dong={() => setXem(null)} />
+          )}
+        </>
+      ) : (
+        <>
       <div class="menu-o-dau">{t('oc.congNang')} · {t('oc.soO').replace('{n}', String(soO))}</div>
       {CONG_NANG_O.map((cn) => (
         <button key={cn} type="button" role="menuitemradio" aria-checked={hienTai === cn} class={hienTai === cn ? 'chon' : ''} disabled={chiXem}
@@ -50,6 +88,8 @@ export function MenuCongNang({ x, y, dong, soO, hienTai, phamVi, chiXem, chon }:
         </button>
       ))}
       <div class="menu-o-chu">{t('oc.apCho').replace('{v}', phamVi)}</div>
+        </>
+      )}
     </HopNoi>
   );
 }

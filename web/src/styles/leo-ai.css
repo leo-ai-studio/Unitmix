@@ -111,6 +111,11 @@
 .leo-xuong { position: absolute; right: 16px; bottom: 150px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); box-shadow: 0 2px 8px rgb(0 0 0 / .12); display: grid; place-items: center; }
 .leo-xuong .bt-svg { width: 18px; height: 18px; }
 
+/* Dòng theo dõi lượt đang chạy: luôn hiện phía trên ô nhập (không nằm trong khối thu gọn) */
+.leo-theo-doi { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; padding: 5px 10px; border-radius: 8px; background: var(--selected); font-size: 12.5px; min-width: 0; }
+.leo-theo-doi .spin-o { width: 15px; height: 15px; flex: none; color: var(--green); }
+.leo-theo-doi b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.leo-theo-doi .muted { margin-left: auto; white-space: nowrap; flex: none; }
 .leo-soan { border-top: 1px solid var(--line); padding: 8px 10px calc(6px + env(safe-area-inset-bottom, 0px)); background: var(--panel); }
 .leo-soan textarea { width: 100%; box-sizing: border-box; border: 1px solid #cad6cd; border-radius: 10px; background: #fcfcf7; padding: 9px 10px; resize: none; min-height: 42px; max-height: 180px; line-height: 1.45; font-size: 14px; }
 .leo-soan textarea:focus { outline: 2px solid var(--green); outline-offset: -1px; }

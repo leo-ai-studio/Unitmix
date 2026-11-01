@@ -252,6 +252,11 @@ export function ThanhCongCuTang(p: PropsCongCu) {
     });
   };
   const lat = () => {
+    if (thangKhoa && !dsO.length) {
+      const ten = tenThang(p.mau, thangKhoa);
+      void chay(phepTay('latThangTay', toa, thangKhoa), () => t('cc.ok.latThang').replace('{th}', ten));
+      return;
+    }
     if (!dsO.length) { datBaoStretch({ loai: 'loi', chu: t('cc.chonTruoc') }); return; }
     void chay(phepTay('latTay', toa, tangs, dsO), () => t('cc.ok.lat').replace('{n}', String(dsO.length)));
   };
@@ -319,7 +324,7 @@ export function ThanhCongCuTang(p: PropsCongCu) {
           )}
         </span>
         <NutBieuTuong k="xoa" tat={chiXem || !coChon} ghiChu={ghi('xoa')} onClick={xoa} />
-        <NutBieuTuong k="lat" tat={chiXem || !dsO.length} ghiChu={ghi('lat')} onClick={lat}>{dsO.length > 1 ? <span>{dsO.length}</span> : null}</NutBieuTuong>
+        <NutBieuTuong k="lat" tat={chiXem || (!dsO.length && !thangKhoa)} ghiChu={ghi('lat')} onClick={lat}>{dsO.length > 1 ? <span>{dsO.length}</span> : null}</NutBieuTuong>
       </span>
       {thangKhoa && (loaiChon === THANG_N2 || loaiChon === THANG_N3) && (
         <span class="nhom-bt cc-loai-thang" role="group" aria-label={t('cc.loaiThang')} title={t('cc.loaiThangGt')}>

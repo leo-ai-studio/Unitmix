@@ -3,6 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, LoiApi, type DuAnApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
 import { useKho } from '../kho/kho';
+import { layCaiTang } from './caiTang';
+import { datBaoStretch } from './baoStretch';
+import { lanTruyenBoCuc } from '../tinh/lanTruyenBoCuc';
 import { ghiNhoDuAn, layMaSua, nhanMaTuLink } from '../kho/maSua';
 import { usePhimSoan } from '../kho/phimSoan';
 import type { Lo, ToaDat, TrangThaiPA } from '../tinh/kieu';
@@ -126,10 +129,16 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const [moTl, setMoTl] = useState<'pdf' | '3d' | null>(null); // hộp xuất PDF / 3D · BIM
   const [toaId, setToaId] = useState<string | null>(null);
   const chung = { pa: kho.pa, sua: kho.sua, chiXem, loId, chonLo: setLoId };
-  const chungXep = { ...chung, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); },
+  const chungXep = { ...chung, tenDuAn: da.ten, tv, toaId, chonToa: setToaId, moTang: (id: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (x) setLoId(x.loId); setToaId(id); setCanKhoa(null); setBuoc('tang'); },
     // căn sát mốc dải dân số → màn Tầng của tòa, chọn ô dùng mẫu căn đó
     moCan: (id: string, canId: string) => { const x = kho.pa.toa.find((q) => q.id === id); if (!x) return; setLoId(x.loId); setToaId(id); setCanKhoa(tv ? oDungCan(tv, x, canId) : null); setBuoc('tang'); } };
-  const chungTang = { ...chungXep, canKhoa, chonCan: setCanKhoa };
+  // màn Tầng: phép sửa bố cục của MỘT tòa chép sang các tòa cùng mẫu theo phạm vi đã chọn (chung một bước hoàn tác)
+  const suaTang: typeof kho.sua = (fn) => kho.sua((p) => {
+    const q = fn(p), r = lanTruyenBoCuc(p, q, layCaiTang().phamViSua);
+    if (r.them) datBaoStretch({ loai: 'ok', chu: t('tang.phamVi.da').replace('{n}', String(r.them)) });
+    return r.pa;
+  });
+  const chungTang = { ...chungXep, sua: suaTang, canKhoa, chonCan: setCanKhoa };
   const chungHam = { ...chung, tv, tangHam, chonTangHam: setTangHam };
   // chọn trong 3D đi qua đúng state chọn của 2D; bấm đúp tòa → mặt bằng tầng (như bấm đúp ở TMB) và về khung 2D
   const [xemGiua, setXemGiua] = useState<CheDoXem>('mat_bang');

@@ -11,7 +11,8 @@ import { apMatBang, chupThangTay, cungThang, doDeKhe, matBangCua, matBangTang, t
 import { boCucTang, matDaDon, viTriCan } from './matBang';
 import { tinhCuaCan } from './pccc';
 import { themBienThe } from './stretch';
-import { doiChoTay, doiThangTay, latTay, mauThem, themCanTay, themThangTay, xoaCanTay, xoaThangTay, type KetQuaTay } from './thaoTacTay';
+import { dsMauDoiCan, nhanMauCan } from './doiCan';
+import { doiChoTay, doiThangTay, latTay, latThangTay, mauThem, themCanTay, themThangTay, xoaCanTay, xoaThangTay, type KetQuaTay } from './thaoTacTay';
 import { demCan } from './coCau';
 import { duocDatVaoO } from './quyTacViTriCan';
 
@@ -69,6 +70,30 @@ describe('Công cụ tay màn Tầng — mẫu thật', () => {
     // chạy lại tự chỉnh (vd sau đổi căn khác) vẫn giữ thang tay đúng chỗ
     const t2 = tuChinhToa(t1, mauGoc('tm-l1'), tv, dl);
     for (const t of h1.mb.thangBo) expect(matBangCua(t2, mauGoc('tm-l1'), dl).thangBo.some((u) => cungThang(u, t))).toBe(true);
+  });
+
+  it('Lật gương thang bộ: sx đảo, số thang / vị trí ô giữ nguyên; lật lại về như cũ', () => {
+    for (const id of ['tm-i1', 'tm-l1']) {
+      const t0 = toaThu(id), th = hien(t0).mb.thangBo[0];
+      const t1 = ok(latThangTay(t0, th.khoa, c)), h1 = hien(t1), s1 = h1.mb.thangBo.find((x) => x.khoa === th.khoa)!;
+      expect(s1.sx, id).toBe(-th.sx);
+      expect(h1.mb.thangBo.length, id).toBe(hien(t0).mb.thangBo.length);
+      expect(Math.abs(s1.a0 - th.a0), id).toBeLessThan(1);
+      const s2 = hien(ok(latThangTay(t1, th.khoa, c))).mb.thangBo.find((x) => x.khoa === th.khoa)!;
+      expect(s2.sx, id).toBe(th.sx);
+    }
+    expect(latThangTay(toaThu('tm-i1'), 'khong-co', c).ok).toBe(false);
+  });
+
+  it('Đổi căn: mẫu cùng nhóm / vị trí / chiều sâu, nhãn ngắn loại-mã-sâuxrộng', () => {
+    const m2 = tv.can.get('tm-1pn-m2')!;
+    expect(nhanMauCan(m2)).toBe('1pn-m2-8500x6000');
+    const ds = dsMauDoiCan(tv, 'tm-1pn-m2');
+    expect(ds.length).toBeGreaterThan(2);
+    expect(ds.some((x) => x.id === 'tm-2pn-m2')).toBe(true);
+    for (const x of ds) { expect(x.nhom).toBe('tm'); expect(x.vi_tri).toBe('giua'); expect(x.sau_mm).toBe(m2.sau_mm); expect(x.id.includes('~')).toBe(false); }
+    expect(ds.some((x) => x.id.startsWith('xh-') || x.vi_tri === 'goc')).toBe(false);
+    expect(dsMauDoiCan(tv, 'khong-co')).toEqual([]);
   });
 
   it('Xoá thang bộ: giữ ≥ 2 thang như app cũ — còn 2 thì chặn', () => {

@@ -162,8 +162,8 @@ export const CONG_CU_TANG: CongCu[] = [
   },
   {
     ten: 'stairs', nhom: 'tang', sua: true,
-    moTa: 'Thang bộ (áp MỌI tầng): add (thêm thang ngay sau ô after_cell; tối đa 3), delete (stair_key; tối thiểu 2), move (stair_key tới ngay sau after_cell), set_type (stair_key → N2/N3; luôn giữ ít nhất một N2 và một N3, đổi N2 duy nhất thì thang gần nhất đổi sang N2), reset_auto (thang về tự động PC-11, bỏ thang đặt tay). Quy tắc: mặc định 2 thang (một N2 + một N3), tối đa 3.',
-    schema: S.doiTuong({ tower_id: S.chu(), action: S.chon(['add', 'delete', 'move', 'set_type', 'reset_auto']), stair_key: S.chu('key thang từ get_floor_plan'), after_cell: oSchema, type: S.chon(['N2', 'N3']) }, ['tower_id', 'action']),
+    moTa: 'Thang bộ (áp MỌI tầng): add (thêm thang ngay sau ô after_cell; tối đa 3), delete (stair_key; tối thiểu 2), mirror (stair_key; lật gương thang), move (stair_key tới ngay sau after_cell), set_type (stair_key → N2/N3; luôn giữ ít nhất một N2 và một N3, đổi N2 duy nhất thì thang gần nhất đổi sang N2), reset_auto (thang về tự động PC-11, bỏ thang đặt tay). Quy tắc: mặc định 2 thang (một N2 + một N3), tối đa 3.',
+    schema: S.doiTuong({ tower_id: S.chu(), action: S.chon(['add', 'delete', 'mirror', 'move', 'set_type', 'reset_auto']), stair_key: S.chu('key thang từ get_floor_plan'), after_cell: oSchema, type: S.chon(['N2', 'N3']) }, ['tower_id', 'action']),
     chay: async (v, ng) => {
       const c = await chuanBi(ng, { ...v, floors: undefined });
       const thang = () => { const k = v.stair_key as string; const x = c.tang.thang.find((q) => q.khoa === k); if (!x) throw new LoiCongCu(`Không có thang "${k ?? ''}". Thang hiện có: ${c.tang.thang.map((q) => `${q.khoa} (${q.loai})`).join(', ')}.`); return x; };
@@ -172,6 +172,7 @@ export const CONG_CU_TANG: CongCu[] = [
       switch (v.action) {
         case 'add': { const o = sau(); ph = phepTay('themThangTay', c.toa, o.vt.matIdx, o.vt.khoa); break; }
         case 'delete': ph = phepTay('xoaThangTay', c.toa, thang().khoa); break;
+        case 'mirror': ph = phepTay('latThangTay', c.toa, thang().khoa); break;
         case 'move': { const th = thang(), o = sau(); ph = phepTay('doiThangTay', c.toa, th.khoa, o.vt.matIdx, o.vt.khoa); break; }
         case 'set_type': { if (!v.type) throw new LoiCongCu('Thiếu type (N2 / N3).'); ph = phepTay('doiLoaiThangTay', c.toa, thang().khoa, v.type === 'N2' ? THANG_N2 : THANG_N3); break; }
         default: ph = phepTay('thangTuDongLai', c.toa);

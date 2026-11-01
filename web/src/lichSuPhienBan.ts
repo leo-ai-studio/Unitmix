@@ -6,6 +6,76 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.7', ngay: '2026-11-01',
+    vi: [
+      'Màn Tầng: mục Áp dụng sửa cho — chép phép sửa cơ cấu căn sang mọi tòa cùng mẫu trong lô hoặc cả dự án (một bước hoàn tác)',
+      'Màn Tầng: phần Căn đang chọn + STRETCH trình bày lại gọn, dễ nhìn (ô số liệu, nút −100 / +100 lớn, nhóm đổi mẫu)',
+      'Điện thoại: chặn zoom trang bằng chạm hai lần / khi chọn ô nhập; khoá cuộn trang khi bàn phím mở để khung Leo AI không nhảy lên',
+    ],
+    en: [
+      'Floor view: Apply edits to — copy unit-mix edits to all same-type towers in the plot or whole project (one undo)',
+      'Floor view: selected-unit + STRETCH panel redesigned (stat tiles, large −100 / +100, grouped swap lists)',
+      'Phones: no page zoom on double-tap / input focus; page scroll locked while the keyboard is open so the Leo AI box stays put',
+    ],
+  },
+  {
+    v: '0.4.6', ngay: '2026-11-01',
+    vi: [
+      'Màn Tầng: menu ô căn có thêm tab Đổi căn — danh sách mẫu cùng nhóm / vị trí, bấm xem mặt bằng nhỏ (kéo dời được) rồi chọn',
+      'Màn Tầng: sắp xếp / đổi căn không còn tự thu ra xa; lật gương được thang bộ; nội thất hiện mặc định',
+      'Nhãn gọn: thang bộ ghi N2 / N3, lõi ghi số thang máy (3TM); bật ảnh vệ tinh tự đặt vị trí, khỏi nhập toạ độ',
+      'Leo AI trên điện thoại: khung chat không còn bị đẩy lên khi mở bàn phím',
+    ],
+    en: [
+      'Floor view: unit menu gets a Change unit tab — same-group types, tap for a small draggable plan preview, then choose',
+      'Floor view: rearranging / swapping units no longer zooms out; stairs can be mirrored; furniture shown by default',
+      'Cleaner labels: stairs show N2 / N3, cores show elevator count (3TM); satellite layer places itself, no coordinates needed',
+      'Leo AI on phones: the chat box no longer jumps up when the keyboard opens',
+    ],
+  },
+  {
+    v: '0.4.5', ngay: '2026-11-01',
+    vi: [
+      'Leo AI: đính kèm thêm tệp Word (.docx) và văn bản (.txt, .md, .json, .dxf…), tối đa 6 tệp, PDF tới 8 MB',
+      'Leo AI: dòng theo dõi luôn hiện khi đang chạy (bước đang làm, số bước đã xong); chỉ còn vòng tròn trong khung chat quay khi suy nghĩ',
+    ],
+    en: [
+      'Leo AI: attach Word (.docx) and text files (.txt, .md, .json, .dxf…), up to 6 files, PDF up to 8 MB',
+      'Leo AI: a live progress line is always visible while running (current step, steps done); only the spinner in the chat rotates while thinking',
+    ],
+  },
+  {
+    v: '0.4.4', ngay: '2026-11-01',
+    vi: [
+      'Mặt bằng Tầng: nét nội thất (giường, bàn, bếp) đậm và rõ hơn, dễ thấy trong các căn 1PN, 2PN, 3PN',
+    ],
+    en: [
+      'Floor plan: furniture lines (beds, tables, kitchens) are darker and clearer in 1PN, 2PN and 3PN units',
+    ],
+  },
+  {
+    v: '0.4.3', ngay: '2026-11-01',
+    vi: [
+      'Leo AI trên điện thoại: dán link / mã ghép ngay trong Cài đặt; báo đúng khi máy tính chưa nối',
+      'Ô căn đang chọn trên mặt bằng Tầng nhạt hơn, thấy rõ nội thất',
+    ],
+    en: [
+      'Leo AI on phones: paste the pairing link / code right in Settings; clear message when the computer is not connected',
+      'Selected unit on the floor plan is lighter so the furniture stays visible',
+    ],
+  },
+  {
+    v: '0.4.2', ngay: '2026-10-31',
+    vi: [
+      'Quy tắc vị trí căn: căn góc chỉ ở góc, căn giữa chỉ ở giữa, căn V / Y khoá đúng chỗ cạnh lõi thang máy',
+      'Thanh 3D: nút Vị trí · Hướng nắng · Hướng gió; đặt vị trí từ toạ độ VN-2000 của bản vẽ hoặc tìm địa điểm, khỏi dán link',
+    ],
+    en: [
+      'Unit placement rule: corner units only at corners, middle units only in the middle, V / Y units locked beside the lift core',
+      '3D bar: Location · Sun direction · Wind direction buttons; set location from VN-2000 coordinates in the drawing or place search, no link pasting',
+    ],
+  },
+  {
     v: '0.4.1', ngay: '2026-10-31',
     vi: [
       'Danh sách dự án: mỗi dự án mặc định thu gọn, bấm mũi tên để xổ bảng phương án',

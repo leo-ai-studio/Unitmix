@@ -40,6 +40,8 @@ type Chung = {
   loId: string | null;
   chonLo: (id: string) => void;
   tv: ThuVien | null;
+  /** Tên dự án: đoán tỉnh để tự đặt vị trí ảnh vệ tinh nền (khỏi nhập toạ độ). */
+  tenDuAn?: string;
   toaId: string | null;
   chonToa: (id: string | null) => void;
   /** Mở mặt bằng tầng của tòa để làm tiếp (bấm đúp tòa trên TMB / nút ở Thông số tòa). */
@@ -208,7 +210,7 @@ type LuotKeo = {
 type HienKeo = { loai: LuotKeo['loai']; ids: string[]; dx: number; dy: number; dGoc: number; tam: Diem; dan: MucBat[]; gocTheo: number | null; chan: boolean };
 
 /** Bản vẽ màn Xếp tòa: lô, chỉ giới, khối đế, chân tháp; chọn / kéo / xoay / nhân bản / đo tòa, cảnh báo LO-01 · LO-02 · LO-05. */
-export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moTang }: Chung) {
+export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moTang, tenDuAn }: Chung) {
   const [dk, setDk] = useState<DieuKhienVe | null>(null);
   const [hien, setHien] = useState<HienKeo | null>(null);
   const [diemDo, setDiemDo] = useState<Diem[]>([]);
@@ -220,7 +222,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   const tc = useTuyChon();
   const luat = useLuatTMB();
   useLopView(); // nút Lớp › Điểm view vẽ lại khi bật / tắt
-  const nutNG = useNutNangGio(); // nút Lớp › Ảnh vệ tinh, Vị trí · Nắng · Gió
+  const nutNG = useNutNangGio({ pa, sua, chiXem, tenDuAn: tenDuAn ?? '' }); // nút Lớp › Ảnh vệ tinh, Vị trí · Nắng · Gió
   const lo = loDangXep(pa, loId);
   const sel = luaChon(pa, dsNhieu, toaId);
   const toaChon = pa.toa.filter((x) => sel.includes(x.id));
