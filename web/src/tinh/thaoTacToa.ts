@@ -47,22 +47,48 @@ export function trongDaGiac(p: Diem, P: Diem[]): boolean {
 export const namTrongNhanh = (F: Diem[], V: Diem[]): boolean =>
   V.length >= 3 && F.every((p) => trongDaGiac(p, V)) && !F.some((p, i) => V.some((q, j) => catNhau(p, F[(i + 1) % F.length], q, V[(j + 1) % V.length])));
 
-/** Cặp điểm gần nhất giữa hai đường bao (coi là đường gấp khúc kín, KHÔNG xét chứa nhau). 0 khi cắt nhau. */
+/**
+ * Cặp điểm gần nhất giữa hai đường bao (coi là đường gấp khúc kín, KHÔNG xét chứa nhau). 0 khi cắt nhau.
+ * Chạy mỗi frame khi kéo tòa (mọi cặp tòa + mọi cạnh lô) nên viết không cấp phát mảng trong vòng lặp, và bỏ qua cặp cạnh có hộp
+ * bao cách nhau ≥ khoảng cách tốt nhất đã có (cạnh đó không thể cho kết quả nhỏ hơn).
+ */
 export function capGanBien(P: Diem[], Q: Diem[]): { kc: number; a: Diem; b: Diem } {
-  let tot = { kc: Infinity, a: P[0], b: Q[0] };
-  for (let i = 0; i < P.length; i++) {
-    const a1 = P[i], a2 = P[(i + 1) % P.length];
-    for (let j = 0; j < Q.length; j++) {
-      const b1 = Q[j], b2 = Q[(j + 1) % Q.length];
+  const np = P.length, nq = Q.length;
+  let tot2 = Infinity, ta = P[0], tb = Q[0];
+  const qx0 = new Float64Array(nq), qx1 = new Float64Array(nq), qy0 = new Float64Array(nq), qy1 = new Float64Array(nq);
+  for (let j = 0; j < nq; j++) {
+    const u = Q[j], v = Q[(j + 1) % nq];
+    qx0[j] = Math.min(u[0], v[0]); qx1[j] = Math.max(u[0], v[0]); qy0[j] = Math.min(u[1], v[1]); qy1[j] = Math.max(u[1], v[1]);
+  }
+  // điểm p tới đoạn s–e: bình phương khoảng cách; cải thiện thì ghi lại cặp (đảo = điểm của Q là p)
+  const thu = (p: Diem, s: Diem, e: Diem, dao: boolean) => {
+    const dx = e[0] - s[0], dy = e[1] - s[1], L = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((p[0] - s[0]) * dx + (p[1] - s[1]) * dy) / L));
+    const cx = s[0] + t * dx, cy = s[1] + t * dy, ex = p[0] - cx, ey = p[1] - cy, k2 = ex * ex + ey * ey;
+    if (k2 < tot2) { tot2 = k2; if (dao) { ta = [cx, cy]; tb = p; } else { ta = p; tb = [cx, cy]; } }
+  };
+  for (let i = 0; i < np; i++) {
+    const a1 = P[i], a2 = P[(i + 1) % np];
+    const ax0 = Math.min(a1[0], a2[0]), ax1 = Math.max(a1[0], a2[0]), ay0 = Math.min(a1[1], a2[1]), ay1 = Math.max(a1[1], a2[1]);
+    for (let j = 0; j < nq; j++) {
+      const gx = Math.max(0, ax0 - qx1[j], qx0[j] - ax1), gy = Math.max(0, ay0 - qy1[j], qy0[j] - ay1);
+      if (gx * gx + gy * gy >= tot2) continue;
+      const b1 = Q[j], b2 = Q[(j + 1) % nq];
       if (catNhau(a1, a2, b1, b2)) return { kc: 0, a: a1, b: a1 };
-      for (const [p, s, e, dao] of [[a1, b1, b2, false], [a2, b1, b2, false], [b1, a1, a2, true], [b2, a1, a2, true]] as [Diem, Diem, Diem, boolean][]) {
-        const c = chieuDoan(p, s, e), k = dai(tru(p, c));
-        if (k < tot.kc) tot = dao ? { kc: k, a: c, b: p } : { kc: k, a: p, b: c };
-      }
+      thu(a1, b1, b2, false); thu(a2, b1, b2, false); thu(b1, a1, a2, true); thu(b2, a1, a2, true);
     }
   }
-  return tot;
+  return { kc: Math.sqrt(tot2), a: ta, b: tb };
 }
+
+type HopBao = [number, number, number, number];
+const hopBao = (P: Diem[]): HopBao => {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const [x, y] of P) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return [x0, y0, x1, y1];
+};
+/** Cận dưới của khoảng cách hai hình theo hộp bao. */
+const khoangHopBao = (a: HopBao, b: HopBao): number => Math.hypot(Math.max(0, a[0] - b[2], b[0] - a[2]), Math.max(0, a[1] - b[3], b[1] - a[3]));
 
 /** Khoảng cách hai tòa (0 khi chồng / chứa nhau) kèm cặp điểm để vẽ. */
 export function capGanToa(P: Diem[], Q: Diem[]): { kc: number; a: Diem; b: Diem } {
@@ -275,9 +301,11 @@ export function kiemViPham(pa: TrangThaiPA, hinh: ToaHinh[], luat: LuatTMB | nul
     }
   }
   if (luat) {
+    const hop = hinh.map((h) => hopBao(h.F));
     for (let i = 0; i < hinh.length; i++) for (let j = i + 1; j < hinh.length; j++) {
       const A = hinh[i], B = hinh[j];
       const k = kcToa261(luat.lo02, Math.max(A.H, B.H));
+      if (khoangHopBao(hop[i], hop[j]) >= k.dai) continue; // hộp bao đã cách ≥ mức cạnh dài thì khoảng cách thật cũng vậy
       const c = capGanToa(A.F, B.F);
       if (c.kc >= k.dai - 1e-6) continue;
       const muc = c.kc < k.hoi - 1e-6 ? 'loi' : 'canh';

@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.8', ngay: '2026-11-02',
+    vi: [
+      'Hiệu năng: kéo tòa trên Tổng mặt bằng mượt lại (dự án 14 tòa: từ ~10 lên ~60 khung/giây) — tính chỉ tiêu và kiểm khoảng cách nhanh hơn nhiều lần, nhớ kết quả khối đế của lô không đổi',
+    ],
+    en: [
+      'Performance: dragging towers on the site plan is smooth again (14-tower project: ~10 → ~60 fps) — indicator maths and distance checks are many times faster, and unchanged plots reuse their podium result',
+    ],
+  },
+  {
     v: '0.4.7', ngay: '2026-11-01',
     vi: [
       'Màn Tầng: mục Áp dụng sửa cho — chép phép sửa cơ cấu căn sang mọi tòa cùng mẫu trong lô hoặc cả dự án (một bước hoàn tác)',

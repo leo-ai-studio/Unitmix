@@ -167,3 +167,38 @@ describe('nhân bản, chọn khung, đo', () => {
     expect(dichNhom([toa('a', 1, 1)], 0.1234, -1)[0]).toMatchObject({ x: 1.12, y: 0 });
   });
 });
+
+describe('capGanBien · khớp cách tính vét cạn', () => {
+  const doan = (p: Diem, a: Diem, b: Diem) => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L));
+    return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+  };
+  const cat = (a: Diem, b: Diem, c: Diem, d: Diem) => {
+    const o = (p: Diem, q: Diem, r: Diem) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+    return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
+  };
+  const vetCan = (P: Diem[], Q: Diem[]) => {
+    let kc = Infinity;
+    for (let i = 0; i < P.length; i++) for (let j = 0; j < Q.length; j++) {
+      const a1 = P[i], a2 = P[(i + 1) % P.length], b1 = Q[j], b2 = Q[(j + 1) % Q.length];
+      if (cat(a1, a2, b1, b2)) return 0;
+      kc = Math.min(kc, doan(a1, b1, b2), doan(a2, b1, b2), doan(b1, a1, a2), doan(b2, a1, a2));
+    }
+    return kc;
+  };
+  it('hình ngẫu nhiên: cùng khoảng cách, cặp điểm đúng khoảng cách đó', () => {
+    let x = 12345;
+    const rnd = () => ((x = (x * 1103515245 + 12345) % 2147483648) / 2147483648);
+    const hinh = (cx: number, cy: number): Diem[] => { const n = 4 + Math.floor(rnd() * 8); return Array.from({ length: n }, (_, i) => {
+      const g = (i / n) * Math.PI * 2, r = 4 + rnd() * 10;
+      return [cx + r * Math.cos(g), cy + r * Math.sin(g)] as Diem;
+    }); };
+    for (let k = 0; k < 200; k++) {
+      const P = hinh(rnd() * 40, rnd() * 40), Q = hinh(rnd() * 40, rnd() * 40);
+      const c = capGanBien(P, Q), ref = vetCan(P, Q);
+      expect(c.kc).toBeCloseTo(ref, 9);
+      if (c.kc > 0) expect(Math.hypot(c.a[0] - c.b[0], c.a[1] - c.b[1])).toBeCloseTo(c.kc, 9);
+    }
+  });
+});
