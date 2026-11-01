@@ -21,23 +21,23 @@ export type BangKieu = {
 export const KIEU_MB: Record<KieuMb, BangKieu> = {
   leo: {
     u: { stu: 'var(--u-stu)', '1pn': 'var(--u-1pn)', '2pn': 'var(--u-2pn)', '2pnp': 'var(--u-2pnp)', '3pn': 'var(--u-3pn)' },
-    doDac: 0.6, tuong: '#292D2D', thietBi: '#8A9494', duongDan: '#174F52', sanTrang: false, sanMau: '#E9EDF2', loiMau: '#F6F8FA',
+    doDac: 0.6, tuong: '#292D2D', thietBi: '#56625F', duongDan: '#174F52', sanTrang: false, sanMau: '#E9EDF2', loiMau: '#F6F8FA',
   },
   hd_mb: {
     u: { stu: 'var(--u-stu)', '1pn': 'var(--u-1pn)', '2pn': 'var(--u-2pn)', '2pnp': 'var(--u-2pnp)', '3pn': 'var(--u-3pn)' },
-    doDac: 0.3, tuong: '#1F3F45', thietBi: '#8A9494', duongDan: '#174F52', sanTrang: false, sanMau: '#E9EDF2', loiMau: '#F6F8FA',
+    doDac: 0.3, tuong: '#1F3F45', thietBi: '#56625F', duongDan: '#174F52', sanTrang: false, sanMau: '#E9EDF2', loiMau: '#F6F8FA',
   },
   sk_galia: {
     u: { stu: '#DEEFEA', '1pn': '#F2E4DE', '2pn': '#DDDDDC', '2pnp': '#CDDEC0', '3pn': '#EBE0C9' },
-    doDac: 1, tuong: '#231F20', thietBi: '#8E8F92', duongDan: '#555558', sanTrang: true, sanMau: '#FFFFFF', loiMau: '#FFFFFF',
+    doDac: 1, tuong: '#231F20', thietBi: '#68696C', duongDan: '#555558', sanTrang: true, sanMau: '#FFFFFF', loiMau: '#FFFFFF',
   },
   sk_hh1: {
     u: { stu: '#CBE9E7', '1pn': '#FDE7D7', '2pn': '#EBE8DE', '2pnp': '#DCD6C6', '3pn': '#E8D9B5' },
-    doDac: 1, tuong: '#2B3F3E', thietBi: '#7A8F8E', duongDan: '#2B3F3E', sanTrang: true, sanMau: '#FFFFFF', loiMau: '#FFFFFF',
+    doDac: 1, tuong: '#2B3F3E', thietBi: '#566B6A', duongDan: '#2B3F3E', sanTrang: true, sanMau: '#FFFFFF', loiMau: '#FFFFFF',
   },
   sk_rivea: {
     u: { stu: '#F2E3E0', '1pn': '#E2DACE', '2pn': '#C6D1DA', '2pnp': '#FEECD7', '3pn': '#E9C9AC' },
-    doDac: 1, tuong: '#635B5A', thietBi: '#9A8F8A', duongDan: '#655954', sanTrang: true, sanMau: '#FFFFFF', loiMau: '#FFFFFF',
+    doDac: 1, tuong: '#635B5A', thietBi: '#706560', duongDan: '#655954', sanTrang: true, sanMau: '#FFFFFF', loiMau: '#FFFFFF',
   },
 };
 
@@ -46,9 +46,9 @@ export const NET: Record<string, { w: number; o: number; d?: string; mau: 'tuong
   wall: { w: 1.9, o: 1, mau: 'tuong' },
   door: { w: 0.9, o: 0.7, mau: 'tuong' },
   rail: { w: 0.9, o: 0.6, mau: 'tuong' },
-  equip: { w: 0.7, o: 0.85, mau: 'thietBi' },
-  furn: { w: 0.7, o: 0.85, d: '3 2', mau: 'thietBi' },
-  hidd: { w: 0.7, o: 0.85, d: '3 2', mau: 'thietBi' },
+  equip: { w: 1, o: 1, mau: 'thietBi' },
+  furn: { w: 1, o: 1, d: '3 2', mau: 'thietBi' },
+  hidd: { w: 0.9, o: 0.9, d: '3 2', mau: 'thietBi' },
   detail: { w: 0.6, o: 0.65, mau: 'thietBi' },
 };
 /** Nhóm nét thuộc lớp nội thất (tắt được). */
