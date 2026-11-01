@@ -31,15 +31,36 @@ if kb == "tam_thoi" and dem:
         sys.exit(0)
 
 usage = {"input_tokens": 3, "output_tokens": 7, "cache_creation_input_tokens": 100, "cache_read_input_tokens": 50}
+luong = a[a.index("--output-format") + 1] == "stream-json" if "--output-format" in a else False
+
+
+def phat(kq_cau_truc):
+    """stream-json: chia JSON thành mảnh NHỎ (cắt ngang cả thoát chuỗi) như input_json_delta thật, rồi dòng result."""
+    if luong:
+        j = json.dumps(kq_cau_truc, ensure_ascii=True)
+        print(json.dumps({"type": "stream_event", "event": {"type": "message_start"}}), flush=True)
+        print(json.dumps({"type": "stream_event", "event": {"type": "content_block_start", "content_block": {"type": "tool_use", "name": "StructuredOutput"}}}), flush=True)
+        for i in range(0, len(j), 5):
+            print(json.dumps({"type": "stream_event", "event": {"type": "content_block_delta", "delta": {"type": "input_json_delta", "partial_json": j[i:i + 5]}}}), flush=True)
+    print(json.dumps({"type": "result", "is_error": False, "usage": usage, "structured_output": kq_cau_truc}), flush=True)
+
+
 if kb == "chua_dang_nhap":
     print(json.dumps({"type": "result", "is_error": True, "result": "Invalid API key · Please run /login"}))
 elif kb == "han_muc":
     print(json.dumps({"type": "result", "is_error": True, "result": "Claude usage limit reached. Your limit will reset at 5pm."}))
 elif kb == "goi":
-    print(json.dumps({"type": "result", "is_error": False, "usage": usage, "structured_output": {
-        "chu": "Đang xem.", "goi": [{"ten": "get_state", "dau_vao": {"x": 1}}, {"ten": "khong_co", "dau_vao": {}}]}}))
+    phat({"chu": "Đang xem.", "goi": [{"ten": "get_state", "dau_vao": {"x": 1}}, {"ten": "khong_co", "dau_vao": {}}]})
+elif kb == "chi_goi":
+    phat({"chu": "", "goi": [{"ten": "get_state", "dau_vao": {"x": 2}}]})
+elif kb == "loi_giua_luong":
+    print(json.dumps({"type": "stream_event", "event": {"type": "content_block_start", "content_block": {"type": "tool_use"}}}), flush=True)
+    j = json.dumps({"chu": "Bắt đầu viết rồi"}, ensure_ascii=True)
+    for i in range(0, len(j) - 3, 5):
+        print(json.dumps({"type": "stream_event", "event": {"type": "content_block_delta", "delta": {"type": "input_json_delta", "partial_json": j[i:i + 5]}}}), flush=True)
+    print(json.dumps({"type": "result", "is_error": True, "result": "Claude usage limit reached."}), flush=True)
 elif kb == "treo":
     import time
     time.sleep(60)
 else:
-    print(json.dumps({"type": "result", "is_error": False, "usage": usage, "structured_output": {"chu": "Xin chào " * 20, "goi": []}}))
+    phat({"chu": "Xin chào " * 20, "goi": []})
