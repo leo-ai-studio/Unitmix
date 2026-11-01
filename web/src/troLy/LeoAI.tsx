@@ -197,6 +197,8 @@ export function LeoAI(p: PropsLeo) {
   const chay = !!dang;
   const nguonDung: NguonKhoa = chonNguon(cai.nguon, { khoaRieng: !!khoaApi, cau: cauDungDuoc(cauTT ?? null) || (!cauTT && !!maGhepLuu) }); // đã ghép mà máy tính chưa trả lời: vẫn đi đường cầu để báo "máy tính chưa nối", không rơi sang khoá chung
 
+  // chưa nối được nguồn nào: đang đi đường khoá chung mà máy chủ không có khoá (hoặc đã ghép mà chưa kiểm xong thì không báo)
+  const chuaNoi = nguonDung === 'chung' && chungCo === false && cauTT !== undefined;
   useEffect(() => { p.khiChay?.(chay); }, [chay]);
   useEffect(() => () => { huy.current?.abort(); dungDoc(); p.khiChay?.(false); }, []);
   // chip xác nhận cho công cụ (xoá PA, tải tệp, bấm nút nhạy cảm)
@@ -206,7 +208,7 @@ export function LeoAI(p: PropsLeo) {
   useEffect(() => { void doCau(); const h = setInterval(doCau, 20_000); return () => clearInterval(h); }, []);
   useEffect(() => { if (man === 'caiDat') void doCau(); }, [man]);
   useEffect(() => { if (man === 'caiDat' && cauTT?.qua === 'may') void docGhepCuaMay().then(setGhep); }, [man, cauTT?.qua]);
-  useEffect(() => { if (man === 'caiDat' && chungCo === null) fetch('/api/ai/trang-thai').then((r) => r.json()).then((j: { coKhoaChung?: boolean }) => setChungCo(!!j.coKhoaChung), () => setChungCo(false)); }, [man]);
+  useEffect(() => { if (chungCo === null) fetch('/api/ai/trang-thai').then((r) => r.json()).then((j: { coKhoaChung?: boolean }) => setChungCo(!!j.coKhoaChung), () => setChungCo(false)); }, []);
   // Esc đóng (khi không đang hỏi)
   useEffect(() => {
     const f = (e: KeyboardEvent) => { if (e.key === 'Escape' && !hoi) { if (man !== 'chat') setMan('chat'); else p.dong(); } };
@@ -406,7 +408,9 @@ export function LeoAI(p: PropsLeo) {
     <aside class="leo-ai" role="dialog" aria-label={t('leo.ten')} data-lang={lang}>
       <header class="leo-dau">
         <MarkLeo quay={chay} vuong />
-        <div class="leo-ten"><strong>{t('leo.ten')}</strong><small>{t(`leo.nguon.${nguonDung === 'cau' ? 'cau' : nguonDung === 'rieng' && khoaApi ? 'rieng' : 'chung'}`)} ·{mhHien.ten.replace('Claude ', '')}</small></div>
+        <div class="leo-ten"><strong>{t('leo.ten')}</strong>{chuaNoi
+          ? <button type="button" class="leo-chip canh" onClick={() => setMan('caiDat')}>{t('leo.chuaNoi')}</button>
+          : <small>{t(`leo.nguon.${nguonDung === 'cau' ? 'cau' : nguonDung === 'rieng' && khoaApi ? 'rieng' : 'chung'}`)} ·{mhHien.ten.replace('Claude ', '')}</small>}</div>
         <span class="gian" />
         <NutNho k="leoLichSu" nhan={t('leo.lichSu')} bat={man === 'lichSu'} onClick={() => setMan(man === 'lichSu' ? 'chat' : 'lichSu')} />
         <NutNho k="leoMoi" nhan={t('leo.cuocMoi')} tat={chay} onClick={cuocMoi} />
@@ -487,14 +491,15 @@ export function LeoAI(p: PropsLeo) {
             {cauTT?.qua === 'tram' && (
               <div class="leo-hang"><span class="muted">{t('leo.ghep.dangDung')}</span><button type="button" class="nut-phu" onClick={() => { ghiMaGhep(null); setCauTT(null); }}>{t('leo.ghep.huyGhep')}</button></div>
             )}
+          </section>
+          <details class="leo-muc leo-nang-cao">
+            <summary>{t('leo.nangCao')}</summary>
             <label class="leo-chon-nguon">
               <span>{t('leo.nguon.tieuDe')}</span>
               <select value={cai.nguon} onChange={(e) => datCai({ nguon: e.currentTarget.value as typeof cai.nguon })}>
                 {DS_NGUON.map((k) => <option key={k} value={k}>{t(`leo.nguon.chon.${k}`)}</option>)}
               </select>
             </label>
-          </section>
-          <section class="leo-muc">
             <b>{t('leo.khoa.tieuDe')}</b>
             <p class="muted">{t('leo.khoa.giaiThich')}</p>
             {khoaApi ? (
@@ -506,7 +511,7 @@ export function LeoAI(p: PropsLeo) {
               </form>
             )}
             <p class="muted">{khoaApi ? t('leo.khoa.dangDungRieng') : chungCo === null ? '…' : chungCo ? t('leo.khoa.coChung') : t('leo.khoa.khongChung')}</p>
-          </section>
+          </details>
           <section class="leo-muc">
             <b>{t('leo.moHinh')}</b>
             <label class="leo-chon"><input type="radio" name="leo-mh" checked={cai.moHinh === 'tu_chon'} onChange={() => datCai({ moHinh: 'tu_chon' })} /><span><b>{t('leo.tuChon')}</b><small>{t('leo.tuChonGiai')}</small></span></label>
@@ -533,7 +538,14 @@ export function LeoAI(p: PropsLeo) {
               <MarkLeo quay={false} />
               <h2>{t('leo.chao')}</h2>
               <p>{t('leo.chaoGiai')}</p>
-              <div class="leo-goi-y-mo">{goiYMo.map((k) => <button key={k} type="button" onClick={() => void guiCau(t(k))}>{t(k)}</button>)}</div>
+              {chuaNoi && (
+                <div class="leo-the-noi" role="alert">
+                  <b>{t('leo.chuaNoiTieuDe')}</b>
+                  <p>{t(laDienThoai() ? 'leo.chuaNoiDt' : 'leo.chuaNoiMay')}</p>
+                  <button type="button" class="nut-chinh" onClick={() => setMan('caiDat')}>{t('leo.noiNgay')}</button>
+                </div>
+              )}
+              <div class="leo-goi-y-mo" hidden={chuaNoi}>{goiYMo.map((k) => <button key={k} type="button" onClick={() => void guiCau(t(k))}>{t(k)}</button>)}</div>
             </div>
           )}
           {tin}

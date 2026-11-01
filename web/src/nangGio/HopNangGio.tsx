@@ -15,6 +15,7 @@ import { KINH_TUYEN_TRUC, tinhTuTen } from '../tinh/nangGio/vn2000';
 import { docLienKet, ganViTri, khopHaiDiem, viTriPA, datSangLl, type LatLng } from '../tinh/viTri';
 import { fmtSo } from '../ui/so';
 import { useNgheChange } from '../ui/ngheChange';
+import { useManHep } from '../ui/manHep';
 import { ThangMau } from '../ui/ThangMau';
 import { chayGio, huyGio, taiHoaGio, xemHuong } from './chayGio';
 import { chayNang, huyNang } from './chayNang';
@@ -71,9 +72,11 @@ function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Pr
     const xs = ds.map((p) => p[0]), ys = ds.map((p) => p[1]);
     return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2] as [number, number];
   }, [pa.lo]);
+  const hep = useManHep();
   const datToaDo = (ll: LatLng, cach: 'lienKet' | 'tay' | 'timKiem') => {
     sua((p) => ganViTri(p, { lat: ll.lat, lng: ll.lng, neo: tam, cachDat: cach }));
     if (!layNG().banDo2D && !layNG().banDo3D) datNG({ banDo2D: true, banDo3D: true });
+    if (hep) datNG({ moHop: false }); // màn hẹp: thu hộp để thấy ngay ảnh vệ tinh (mở lại để chỉnh góc Bắc)
   };
   const datTuBanVe = () => {
     const k = tinhId === 'khac' ? Number(ktt) : KINH_TUYEN_TRUC.find((x) => x.id === tinhId)?.ktt ?? NaN;
@@ -82,6 +85,7 @@ function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Pr
     const v = viTriPA(moi);
     sua((p) => apDungTuBanVe(p, k) ?? p);
     if (!layNG().banDo2D && !layNG().banDo3D) datNG({ banDo2D: true, banDo3D: true });
+    if (hep) datNG({ moHop: false });
     setBao(t('ng.vt.tuBanVeXong').replace('{lat}', v.lat.toFixed(6)).replace('{lng}', v.lng.toFixed(6)).replace('{goc}', fmtSo(v.gocBac, { thapPhan: 2 })));
   };
   const tim = async () => {
@@ -124,6 +128,7 @@ function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Pr
   const tat = chiXem;
   return (
     <div class="hng-muc">
+      {tat && <p class="hng-trang canh" role="note">{t('soan.chiXem')}</p>}
       <p class={vt.coToaDo ? 'hng-trang ok' : 'hng-trang canh'}>
         {vt.coToaDo ? `${so(vt.lat)}, ${so(vt.lng)} · ${t('ng.vt.gocBac')} ${fmtSo(vt.gocBac, { thapPhan: 1 })}°` : t('ng.vt.chuaDat')}
       </p>
@@ -165,6 +170,8 @@ function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Pr
       </label>
       <p class="hng-goi-y">{t('ng.vt.goiYDan')}</p>
       </details>
+      {vt.coToaDo && (
+        <>
       <div class="hng-luoi2">
         <label><span>{t('ng.vt.viDo')}</span><input type="number" step="0.000001" disabled={tat} value={vt.coToaDo ? so(vt.lat) : ''} onChange={(e) => { const v = +e.currentTarget.value; if (Math.abs(v) <= 90) datToaDo({ lat: v, lng: vt.coToaDo ? vt.lng : 105.85 }, 'tay'); }} /></label>
         <label><span>{t('ng.vt.kinhDo')}</span><input type="number" step="0.000001" disabled={tat} value={vt.coToaDo ? so(vt.lng) : ''} onChange={(e) => { const v = +e.currentTarget.value; if (Math.abs(v) <= 180) datToaDo({ lat: vt.lat, lng: v }, 'tay'); }} /></label>
@@ -203,12 +210,12 @@ function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Pr
           <button type="button" class="nut-chinh" disabled={tat} onClick={khop}>{t('ng.vt.khopNut')}</button>
         </details>
       )}
+        </>
+      )}
       {bao && <p class="hng-bao" role="status">{bao}</p>}
+      {vt.coToaDo && (
+        <>
       <h4>{t('ng.nen.tieuDe')}</h4>
-      <div class="hng-hang">
-        <label class="o-tg"><input type="checkbox" checked={s.banDo2D} onChange={(e) => datNG({ banDo2D: e.currentTarget.checked })} /> <span>{t('ng.nen.2d')}</span></label>
-        <label class="o-tg"><input type="checkbox" checked={s.banDo3D} onChange={(e) => datNG({ banDo3D: e.currentTarget.checked })} /> <span>{t('ng.nen.3d')}</span></label>
-      </div>
       <label class="hng-o"><span>{t('ng.nen.nguon')}</span>
         <select value={s.nguon} onChange={(e) => datNG({ nguon: e.currentTarget.value as NguonBanDo })}>
           <option value="esri">{t('ng.nen.esri')}</option>
@@ -219,6 +226,8 @@ function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Pr
       <label class="hng-o"><span>{t('ng.nen.doMo')} {Math.round(s.doMo * 100)} %</span>
         <input type="range" min="0.1" max="1" step="0.05" value={s.doMo} onInput={(e) => datNG({ doMo: +e.currentTarget.value })} />
       </label>
+        </>
+      )}
       {vt.coToaDo && (
         <p class="hng-hang">
           <a class="nut-phu" href={`https://www.google.com/maps/@${vt.lat.toFixed(6)},${vt.lng.toFixed(6)},18z/data=!3m1!1e3`} target="_blank" rel="noopener noreferrer">{t('ng.vt.moGoogle')}</a>

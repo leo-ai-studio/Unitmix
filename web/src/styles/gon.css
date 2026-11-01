@@ -84,6 +84,12 @@
   .thanh-3d .nut-bt .mui-menu { display: none; }
   /* Hầm đã có trong menu Lớp (góc phải dưới) → bỏ khỏi thanh trên điện thoại để thanh vừa 390 px cùng nút Nắng · Gió */
   .thanh-3d .nut-bt.an-dt { display: none; }
+  /* Thanh 3D: dư chỗ thì xuống dòng thứ hai (nhóm Phân tích · Vị trí · Nắng · Gió) thay vì cắt nút ở mép phải — người dùng không phải đoán là vuốt ngang được */
+  .noi-tren > .thanh-3d { flex-wrap: wrap; overflow: visible; row-gap: 6px; touch-action: auto; }
+}
+/* Thông báo nổi (vd. "Đang xem chỉ đọc") xuống đáy giữa khung: trước đây nằm đè lên hàng nút Vị trí / Nắng / Gió ở đỉnh */
+@media (min-width: 601px) {
+  .lop-thong-bao { top: auto; bottom: 14px; }
 }
 
 /* ---------- Panel trái: hàng nút nhập, thẻ mẫu tòa, preset ---------- */
