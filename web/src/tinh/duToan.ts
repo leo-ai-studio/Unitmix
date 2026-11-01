@@ -6,7 +6,8 @@
  */
 import { coCauRong, congCoCau, demCan } from './coCau';
 import { raiHam, type KetQuaHam } from './ham';
-import { chanToa, dienTich, dtVung, khoiDe } from './hinhHoc';
+import { khoiDeLo } from './deLo';
+import { chanToa, dienTich } from './hinhHoc';
 import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiPhiPA, type Diem, type KhoaDongDuToan, type LoaiCan, type Lo, type NhomChiPhi, type ThuVien, type TrangThaiPA } from './kieu';
 import { CHI_PHI_MAC_DINH, chuanHoaHam } from './macDinh';
 import { canCaToa } from './matBang';
@@ -97,8 +98,9 @@ export function tinhKhoiLuong(
     const dtLo = lo.ranh.length >= 3 ? dienTich(lo.ranh) : 0;
     const toaLo = pa.toa.filter((t) => t.loId === lo.id && tv.toa.has(t.mauId));
     const chan = toaLo.map((t) => chanToa(mauToa(tv, t)!, t));
-    const de = khoiDe(chan, toaLo.map((t) => t.deOffset));
-    const dtChiemDat = toaLo.length ? dtVung(de) : 0;
+    const kqDe = khoiDeLo(lo, chan, toaLo.map((t) => t.deOffset));
+    const de = kqDe.vung;
+    const dtChiemDat = toaLo.length ? kqDe.dt : 0;
     const tongChan = chan.reduce((a, p) => a + dienTich(p), 0);
     const caoDe = toaLo.length ? Math.max(...toaLo.map((t) => t.soTangDe * t.caoDe)) : 0;
     const chuViDe = caoDe > 0 ? de.reduce((a, p) => a + chuVi(p), 0) : 0;

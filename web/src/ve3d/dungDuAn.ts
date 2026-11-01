@@ -7,12 +7,13 @@
 import type * as THREE from 'three';
 import { khoiHam, ranhHam } from '../tinh/ham';
 import { dieuPhoiHam } from '../tinh/hamNen';
-import { chanToa, khoiDe, trongTam } from '../tinh/hinhHoc';
+import { khoiDeLo } from '../tinh/deLo';
+import { chanToa, trongTam } from '../tinh/hinhHoc';
 import type { Diem, ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang, loaiDat, MAU_DAT, type LoaiDat } from '../tinh/loaiDat';
 import { chuanHoaHam } from '../tinh/macDinh';
 import { hinhDaiCua, type KieuVe3D, type T3, type VatLieu3D } from './dungCan';
-import { cayDocDuong, daiDuong, diemCayTrong, dungCay, dungTrucThang, gopHinh, hinhDun, hinhTam } from './lop3d';
+import { cayDocDuong, daiDuong, dungCay, dungTrucThang, gopHinh, hinhDun, hinhTam } from './lop3d';
 import { THONG_SO_CAP, type CapDo3D } from './khungVe';
 import { CAO_TUM_MM } from './dungToa';
 import type { DoiTuong3D, ToaTrenDe } from './chon3d';
@@ -159,7 +160,7 @@ export function* dungDuAnTung(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuV
     chanTat.push(...chans);
     const hDe = Math.max(0, ...ts.map((x) => x.soTangDe * x.caoDe));
     if (hDe > 0) {
-      const de = khoiDe(chans, ts.map((x) => x.deOffset)).filter((p) => p.length >= 3);
+      const de = khoiDeLo(l, chans, ts.map((x) => x.deOffset)).vung.filter((p) => p.length >= 3);
       // khối đế chọn được: bấm phần đế → tòa đứng trên phần đế đó (gần điểm chạm nhất), tô cùng tòa đang chọn / rê
       const dDe: DoiTuong3D = { loai: 'de', id: l.id, toaIds: ts.map((x) => x.id) };
       const deToa: ToaTrenDe[] = ts.map((x, i) => ({ id: x.id, loId: l.id, chan: chans[i] }));
@@ -195,7 +196,7 @@ export function* dungDuAnTung(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuV
   // --- cây: cây xanh trên lô CX, cây dọc đường (vỉa hè), cây sân trong lô cao tầng (ngoài chân tòa / đế, cách ≥ 4 m); trần theo bậc thiết bị ---
   const tranh = [...chanTat, ...deTat];
   const caySan: Diem[] = [];
-  for (const l of pa.lo) if (laCaoTang(l) && l.ranh.length >= 3) { caySan.push(...diemCayTrong(l.ranh, 11, 160, 3, tranh, 4)); yield; }
+  // Không trồng cây trong lô cao tầng (lọt vào đế / hầm / sân kỹ thuật): cây chỉ ở lô CX và dọc đường.
   // bỏ cây rơi vào chân tòa / đế: thử khung bao trước (cùng kết quả, đỡ thử mọi đa giác cho từng cây)
   const baoTranh = tranh.map((c) => { const xs = c.map((p) => p[0]), ys = c.map((p) => p[1]); return { c, a: Math.min(...xs), b: Math.max(...xs), d: Math.min(...ys), e: Math.max(...ys) }; });
   const cayO = [...cay, ...cayDuong, ...caySan].filter((p) => !baoTranh.some((q) => p[0] >= q.a && p[0] <= q.b && p[1] >= q.d && p[1] <= q.e && trong(p, q.c))).slice(0, TS.cayToiDa);

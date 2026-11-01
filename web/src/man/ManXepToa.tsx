@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { KetQuaChiTieu } from '../tinh/chiTieu';
 import { demCan, diemLechCoCau, dtTbTheoLoai } from '../tinh/coCau';
-import { chanToa, dienTich, khoiDe } from '../tinh/hinhHoc';
+import { khoiDeLo } from '../tinh/deLo';
+import { chanToa, dienTich } from '../tinh/hinhHoc';
 import { hopLo, taoToaTrenLo, vungDat } from '../tinh/hopLo';
 import { LOAI_CAN, type Diem, type Lo, type LoaiCan, type ThuVien, type ToaDat, type ToaMau, type TrangThaiPA } from '../tinh/kieu';
 import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
@@ -510,7 +511,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         <NhanCanhLo dsLo={pa.lo.filter(laCaoTang)} loChon={lo} coChu={coChu} />
         {tv && pa.lo.map((l) => {
           const ts = toaCoMau.filter((x) => x.loId === l.id);
-          const de = khoiDe(ts.map((x) => chanToa(mauToa(tv, x)!, x)), ts.map((x) => x.deOffset));
+          const de = khoiDeLo(l, ts.map((x) => chanToa(mauToa(tv, x)!, x)), ts.map((x) => x.deOffset)).vung;
           return de.length ? <path key={`de${l.id}`} d={duongPath(de)} fill="var(--secondary)" fill-opacity="0.25" fill-rule="nonzero" stroke="var(--secondary)" stroke-width="1" vector-effect="non-scaling-stroke" /> : null;
         })}
         {tv && toaCoMau.map((x) => {

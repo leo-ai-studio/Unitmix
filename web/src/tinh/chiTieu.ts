@@ -1,7 +1,8 @@
 import { congCoCau, demCan, phanTram } from './coCau';
 import { dtCongNangToa } from './congNang';
 import { canCaToa, ghiDeTang, nhomTang } from './matBang';
-import { chanToa, dienTich, dtVung, hopDienTich, khoiDe } from './hinhHoc';
+import { khoiDeLo } from './deLo';
+import { chanToa, dienTich, hopDienTich } from './hinhHoc';
 import { PHAN_HAM_MAC_DINH, type LoaiCan, type ThuVien, type TrangThaiPA } from './kieu';
 import { mauToa } from './canThem';
 import { danSoLo } from './danSo';
@@ -56,8 +57,7 @@ export function tinhChiTieu(pa: TrangThaiPA, tv: ThuVien): KetQuaChiTieu {
     const dtLo = lo.ranh.length >= 3 ? dienTich(lo.ranh) : 0;
     const toaLo = pa.toa.filter((t) => t.loId === lo.id && tv.toa.has(t.mauId));
     const chan = toaLo.map((t) => chanToa(mauToa(tv, t)!, t));
-    const de = khoiDe(chan, toaLo.map((t) => t.deOffset));
-    const dtDe = dtVung(de);
+    const dtDe = khoiDeLo(lo, chan, toaLo.map((t) => t.deOffset)).dt;
 
     const ct0: DTSanChiTiet = { thap: 0, de: 0, apMai: 0, hamTinh: 0, hamTru: 0, oKyThuat: 0 };
     for (let i = 0; i < toaLo.length; i++) {
