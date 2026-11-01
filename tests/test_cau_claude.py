@@ -19,6 +19,17 @@ THAN = {"model": "claude-sonnet-5-5", "max_tokens": 100, "stream": True, "system
         "tools": CONG_CU, "output_config": {"effort": "low"}, "messages": [{"role": "user", "content": "xem dự án"}]}
 
 
+def _het_tien_trinh_gia(toi_da=8):
+    """Chờ (tối đa vài giây) tới khi không còn claude giả nào chạy — giết tiến trình cần chút thời gian."""
+    import subprocess
+    t0 = time.time()
+    while time.time() - t0 < toi_da:
+        if subprocess.run(["pgrep", "-f", "fake_claude.py"], capture_output=True, text=True).stdout.strip() == "":
+            return True
+        time.sleep(0.25)
+    return False
+
+
 @pytest.fixture
 def may(monkeypatch, tmp_path):
     monkeypatch.setenv("FAKE_GHI", str(tmp_path / "ghi.jsonl"))
@@ -154,7 +165,28 @@ def test_dung_giua_chung_giet_tien_trinh(may, monkeypatch):
     while not (ghi.exists() and ghi.read_text()) and time.time() - t0 < 15:
         time.sleep(0.1)
     s.close()   # như SDK khi bấm Dừng
-    time.sleep(1.5)
-    import subprocess
-    ps = subprocess.run(["pgrep", "-f", "fake_claude.py"], capture_output=True, text=True).stdout.strip()
-    assert ps == ""   # tiến trình giả đang ngủ 60 s phải đã bị giết
+    assert _het_tien_trinh_gia()   # tiến trình giả đang ngủ 60 s phải đã bị giết
+
+
+def test_huy_viec_tu_tram_giet_tien_trinh(may, monkeypatch):
+    """Điện thoại bấm Dừng → trạm báo {huy: ma} → huy_viec đóng kết nối → máy phục vụ giết claude -p đang chạy."""
+    cong, ghi = may
+    monkeypatch.setenv("FAKE_KICH_BAN", "treo")
+    gui = []
+    class WsGia:
+        def gui(self, chu, op=1):
+            gui.append(chu)
+    ma = "11111111-2222-3333-4444-555555555555"
+    th = threading.Thread(target=cau.xu_ly_viec, args=(WsGia(), {"ma": ma, "duong": "/v1/messages", "than": json.dumps(THAN)}, "http://localhost", cong), daemon=True)
+    th.start()
+    t0 = time.time()
+    while not (ghi.exists() and ghi.read_text()) and time.time() - t0 < 15:
+        time.sleep(0.1)
+    assert ma in cau.VIEC           # đang chờ cầu trả lời
+    assert cau.huy_viec(ma) is True
+    th.join(10)
+    assert not th.is_alive()
+    assert _het_tien_trinh_gia()
+    assert cau.huy_viec(ma) is False  # đã gỡ
+    assert gui and json.loads(gui[0])["ma"] == ma
+

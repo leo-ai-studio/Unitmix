@@ -30,6 +30,7 @@ cau_claude.json / biến LEO_CAU_NGUON (bản app trên Cloudflare) — trang l�
 thư mục tạm riêng (không nạp CLAUDE.md), không MCP, không Bash / Edit / Write / Web; chỉ có `Read` khi có ảnh / PDF đính kèm.
 """
 import base64
+import http.client
 import json
 import os
 import re
@@ -356,6 +357,7 @@ _KHOA_GUI = threading.Lock()
 _NOI_LAI = threading.Event()
 HIEN_WS = [None]    # nối đang mở — /doi-ma đóng ngay để nối lại bằng mã mới
 DUONG_TRAM_OK = {("GET", "/suc-khoe"), ("POST", "/v1/messages")}
+VIEC = {}           # mã lượt → kết nối đang chờ cầu trả lời (đóng kết nối = bấm Dừng → con_song() thấy EOF → giết claude -p)
 CONG_HIEN_TAI = [0]
 
 
@@ -459,25 +461,45 @@ class WS:
                 pass
 
 
+def huy_viec(ma):
+    """Điện thoại bấm Dừng: đóng kết nối của lượt đó → máy phục vụ thấy ngắt nối và giết `claude -p`."""
+    c = VIEC.pop(ma, None)
+    if c is None:
+        return False
+    try:
+        if c.sock:
+            c.sock.shutdown(socket.SHUT_RDWR)
+    except OSError:
+        pass
+    try:
+        c.close()
+    except OSError:
+        pass
+    return True
+
+
 def xu_ly_viec(ws, v, tram, cong):
     """Một yêu cầu từ điện thoại: gọi chính cầu này ở 127.0.0.1 (đủ kiểm tra như máy tính), gửi kết quả lên trạm."""
     ma_http, than, loai = 502, json.dumps({"type": "error", "error": {"type": "api_error", "message": "cầu lỗi khi chuyển"}}), "application/json"
+    ma = v.get("ma")
     try:
         duong, la_hoi = v.get("duong"), v.get("duong") == "/v1/messages"
         if (("POST" if la_hoi else "GET"), duong) not in DUONG_TRAM_OK:
             raise ValueError("đường lạ")
-        rq = urllib.request.Request("http://127.0.0.1:%d%s" % (cong, duong), data=(v.get("than") or "{}").encode("utf-8") if la_hoi else None,
-                                    method="POST" if la_hoi else "GET",
-                                    headers={"Content-Type": "application/json", "Origin": tram, "X-Leo-Qua-Tram": "1"})
+        c = http.client.HTTPConnection("127.0.0.1", cong, timeout=GIOI_HAN_GIAY + 60)
+        VIEC[ma] = c
         try:
-            with urllib.request.urlopen(rq, timeout=GIOI_HAN_GIAY + 60) as r:
-                ma_http, than, loai = r.status, r.read().decode("utf-8", "replace"), r.headers.get("Content-Type", "application/json")
-        except urllib.error.HTTPError as e:
-            ma_http, than, loai = e.code, e.read().decode("utf-8", "replace"), e.headers.get("Content-Type", "application/json")
+            c.request("POST" if la_hoi else "GET", duong, body=(v.get("than") or "{}").encode("utf-8") if la_hoi else None,
+                      headers={"Content-Type": "application/json", "Origin": tram, "X-Leo-Qua-Tram": "1"})
+            r = c.getresponse()
+            ma_http, than, loai = r.status, r.read().decode("utf-8", "replace"), r.getheader("Content-Type", "application/json")
+        finally:
+            VIEC.pop(ma, None)
+            c.close()
     except Exception as e:
         than = json.dumps({"type": "error", "error": {"type": "api_error", "message": "cầu lỗi khi chuyển: %s" % e}}, ensure_ascii=False)
     try:
-        ws.gui(json.dumps({"ma": v.get("ma"), "ma_http": ma_http, "than": than, "loai": loai}, ensure_ascii=False))
+        ws.gui(json.dumps({"ma": ma, "ma_http": ma_http, "than": than, "loai": loai}, ensure_ascii=False))
     except OSError:
         pass
 
@@ -512,6 +534,9 @@ def chay_tram(tram, cong, khoa_ham=doc_khoa):
                 try:
                     v = json.loads(t)
                 except ValueError:
+                    continue
+                if v.get("huy"):
+                    huy_viec(v["huy"])
                     continue
                 threading.Thread(target=xu_ly_viec, args=(ws, v, tram, cong), daemon=True).start()
             NOI.update(trang_thai="dang_noi", loi="trạm đóng nối")

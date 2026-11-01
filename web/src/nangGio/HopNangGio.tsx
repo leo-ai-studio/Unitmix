@@ -11,7 +11,7 @@ import { mocLan, muiGioTheoKinhDo, NGAY_DONG_CHI, NGAY_HA_CHI } from '../tinh/ma
 import { huongChuDao, SO_HUONG } from '../tinh/nangGio/gio';
 import { thongKeGio } from '../tinh/nangGio/gioNang';
 import { buocChay, docGio, gioPhut, kepGio } from '../tinh/nangGio/dongHo';
-import { KINH_TUYEN_TRUC, tinhTuTen } from '../tinh/nangGio/vn2000';
+import { KINH_TUYEN_TRUC, nhanDangDaoTruc, tinhTuTen } from '../tinh/nangGio/vn2000';
 import { docLienKet, ganViTri, khopHaiDiem, viTriPA, datSangLl, type LatLng } from '../tinh/viTri';
 import { fmtSo } from '../ui/so';
 import { useNgheChange } from '../ui/ngheChange';
@@ -62,6 +62,7 @@ function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Pr
   const [coGoogle, setCoGoogle] = useState(false);
   // đặt vị trí khỏi dán link: (1) từ toạ độ thật của bản vẽ quy hoạch, (2) tìm theo tên địa điểm
   const coThat = useMemo(() => coToaDoThat(pa), [pa.lo]);
+  const daoTruc = useMemo(() => nhanDangDaoTruc(pa.lo.flatMap((l) => l.ranh)), [pa.lo]);
   const [tinhId, setTinhId] = useState(() => tinhTuTen(diaDiem ?? '')?.id ?? KINH_TUYEN_TRUC[0].id);
   const [ktt, setKtt] = useState('105');
   const [q, setQ] = useState(''), [kqTim, setKqTim] = useState<DiaDiem[] | null>(null), [dangTim, setDangTim] = useState(false);
@@ -132,6 +133,7 @@ function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Pr
       <p class={vt.coToaDo ? 'hng-trang ok' : 'hng-trang canh'}>
         {vt.coToaDo ? `${so(vt.lat)}, ${so(vt.lng)} · ${t('ng.vt.gocBac')} ${fmtSo(vt.gocBac, { thapPhan: 1 })}°` : t('ng.vt.chuaDat')}
       </p>
+      {daoTruc && <p class="hng-trang canh" role="note">{t('ng.vt.daoTruc')}</p>}
       {coThat && (
         <div class="hng-tu-ban-ve">
           <h4>{t('ng.vt.tuBanVe')}</h4>

@@ -11,3 +11,8 @@
 .goi-y-so { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 10px; color: var(--muted-text); }
 .goi-y-cb { margin: 0; font-size: 11px; }
 .goi-y-the .nut-phu { align-self: flex-start; padding: 4px 10px; }
+
+/* Thẻ thông số lô đang chọn (man/theLo.ts): một hàng chữ nhỏ dưới thanh công cụ TMB, bấm lô trên bản vẽ là đổi theo */
+.the-lo-chon { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin: 6px 8px 0; padding: 5px 10px; max-width: min(640px, calc(100% - 80px)); font-size: 12px; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--panel) 94%, transparent); font-variant-numeric: tabular-nums; }
+.the-lo-chon b { color: var(--green); font-size: 13px; }
+

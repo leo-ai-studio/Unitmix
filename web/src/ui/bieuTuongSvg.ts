@@ -83,6 +83,8 @@ export const SVG_BT: Record<string, string> = {
   nangCat: '<path d="M3 15h18"/><path d="M7 15a5 5 0 0110 0"/><path d="M12 5v2M5.6 8.6l1.4 1.4M18.4 8.6L17 10"/><path d="M5 19h14" stroke-dasharray="2.5 2"/>',
   ham3d: '<path d="M3 11h18"/><path d="M6 11V5h12v6"/><path d="M6 11v8h12v-8" stroke-dasharray="2.5 2"/>',
   khac: '<circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/>',
+  ngayGio: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.2 2"/>',
+  thietLap: '<circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/><circle cx="12" cy="12" r="6.5"/>',
   viTri: '<path d="M12 21s-6-5.6-6-10.5a6 6 0 0112 0C18 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2"/>',
   nang: '<circle cx="12" cy="12" r="3.5"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>',
   gio: '<path d="M3 9h11a3 3 0 10-3-3"/><path d="M3 14h15a3 3 0 11-3 3"/><path d="M3 19h6"/>',

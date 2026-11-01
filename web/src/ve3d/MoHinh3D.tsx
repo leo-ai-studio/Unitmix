@@ -31,6 +31,9 @@ import { khoi3dTheoId } from './stretch3d';
 import { chuyenGio, chuyenNang, HopNangGioCho, useMoRongNangGio } from '../nangGio';
 import { viecNutViTri } from '../nangGio/viTriTuDong';
 import { datNG, layNG, useNG } from '../nangGio/kho';
+import { mocLan, NGAY_DONG_CHI, NGAY_HA_CHI } from '../tinh/matTroi';
+import { docGio, gioPhut, kepGio } from '../tinh/nangGio/dongHo';
+import { MenuNut } from '../ui/MenuNut';
 import { viTriPA } from '../tinh/viTri'; // vị trí · ảnh nền · nắng · gió (gói riêng, cắm qua moRong) // góc Bắc dự án (TMB › Điểm view › Cài đặt): mặt trời 3D cả dự án quay theo
 
 type Nap = { khoi3d: Map<string, Khoi3d | null>; loi: Map<string, LoiHinh>; xong: boolean };
@@ -79,6 +82,27 @@ function NutViTri({ pa, sua, chiXem, tenDuAn }: { pa: TrangThaiPA; sua: (fn: (p:
   };
   return <NutBieuTuong k="viTri" bat={bat} onClick={bam} />;
 }
+/** Thanh 3D › Ngày · giờ nắng: thẻ nổi chọn nhanh ngày (Đông chí / Hạ chí / Xuân phân / hôm nay) + giờ — cùng kho `nangGio/kho` với hộp Nắng. */
+function NutNgayGio({ pa }: { pa: TrangThaiPA }) {
+  const s = useNG((x) => ({ ngay: x.ngay, luc: x.luc }));
+  const vt = viTriPA(pa);
+  const ml = mocLan(vt.lat, vt.lng, s.ngay);
+  const g0 = ml ? Math.ceil(ml.moc * 4) / 4 : 6, g1 = ml ? Math.floor(ml.lan * 4) / 4 : 18;
+  const nhanh = [[NGAY_DONG_CHI(), 'ng.nang.dongChi'], [NGAY_HA_CHI(), 'ng.nang.haChi'], [`${new Date().getFullYear()}-03-21`, 'ng.nang.xuanPhan'], [new Date().toLocaleDateString('sv-SE'), 'ng.nang.homNay']] as const;
+  const nhapGio = (e: Event) => {
+    const g = docGio((e.currentTarget as HTMLInputElement).value);
+    if (g !== null && g !== layNG().luc) datNG({ luc: kepGio(g, g0, g1) });
+  };
+  return (
+    <MenuNut k="ngayGio" nhan={`${t('bt.ngayGio')}: ${s.ngay} · ${gioPhut(s.luc)}`} dongKhiChon={false} lop="menu-nang-3d">
+      <div class="menu-nut-nhom">{t('ng.nang.ngay')}</div>
+      <div class="hng-hang hng-boc">
+        {nhanh.map(([d, k]) => <button key={k} type="button" class="nut-phu" aria-pressed={s.ngay === d} onClick={() => datNG({ ngay: d })}>{t(k)}</button>)}
+      </div>
+      <label class="menu-nut-truot"><span>{t('ng.nang.gio')}</span><input type="range" min={g0} max={g1} step="0.05" value={kepGio(s.luc, g0, g1)} aria-valuetext={gioPhut(s.luc)} onInput={nhapGio} /><b>{gioPhut(s.luc)}</b></label>
+    </MenuNut>
+  );
+}
 /** Thanh 3D › Nắng: bật / tắt hướng nắng (đường mặt trời). */
 function NutNang() {
   const bat = useNG((x) => x.duongMT);
@@ -92,7 +116,7 @@ function NutGio() {
 
 function NutNangGio() {
   const mo = useNG((x) => x.moHop);
-  return <NutBieuTuong k="nangGio" nhan={t('ng.tieuDe')} bat={mo} onClick={() => datNG({ moHop: !layNG().moHop, tab: layNG().tab === 'viTri' ? 'nang' : layNG().tab })} />;
+  return <NutBieuTuong k="thietLap" nhan={t('ng.tieuDe')} bat={mo} onClick={() => datNG({ moHop: !layNG().moHop, tab: layNG().tab === 'viTri' ? 'nang' : layNG().tab })} />;
 }
 
 /** Chú giải lớp phân tích 3D: tiêu đề + thang màu (lọc được) + số ô, gợi ý rê chuột. */
@@ -303,7 +327,7 @@ export function MoHinhChinh({ pa, tv, sua, chiXem, toa, mau, mauTang, tenDuAn, c
   // tòa đang xem không vào khoá: đổi tòa (kể cả bấm chọn trong 3D) chỉ dựng lại nhẹ, giữ góc nhìn (góc "Cận tòa chọn" theo tòa mới)
   const khoa = ['du_an', pa.lo.length, pa.toa.map((x) => [x.id, x.mauId, x.x, x.y, x.gocDo, x.lat ? 1 : 0, x.soTangDe, x.soTangDH, x.deOffset].join(',')).join(';')].join('|');
   return (<>
-    <Khung3D khoa={khoa} moRong={moRong} khoaNhe={toa?.id ?? ''} phan={phan} toaNguyen dauThanh={nut} nutPhanTich={<>{nutHam}<NutPhanTich /><NutViTri pa={pa} sua={sua} chiXem={chiXem} tenDuAn={tenDuAn} /><NutNang /><NutGio /><NutNangGio /></>} gioNgoai {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
+    <Khung3D khoa={khoa} moRong={moRong} khoaNhe={toa?.id ?? ''} phan={phan} toaNguyen dauThanh={nut} nutPhanTich={<>{nutHam}<NutPhanTich /><NutViTri pa={pa} sua={sua} chiXem={chiXem} tenDuAn={tenDuAn} /><NutNang /><NutNgayGio pa={pa} /><NutGio /><NutNangGio /></>} gioNgoai {...luu} tieuDe={tenDuAn} tenAnh={`Unitmix-${tenDuAn}`} phanTich={phanTich}
       chon={chon3d?.chon} onChon={chon3d?.onChon} onMo={chon3d?.onMo}
       lop={nutLop(['tum', 'ham', 'thang', 'gio', 'cay', 'duong', 'ranh'], lopAn, doiLop)} lopAn={lopAn}
       gocBac={vtDA.gocBac} viDo={vtDA.lat} dung={({ T, goc, M, kieu, capDo }) => dungDuAnTung(T, goc, M, kieu, pa, tv, toa?.id ?? null, { capDo, tumToa, tach: true })} />

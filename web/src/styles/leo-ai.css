@@ -192,4 +192,8 @@ html.ban-phim .leo-soan { padding-bottom: 6px; }
 .leo-the-noi p { margin: 0; font-size: 13px; }
 .leo-nang-cao { display: grid; gap: 8px; }
 .leo-nang-cao > summary { display: flex; align-items: center; min-height: 44px; font-weight: 600; cursor: pointer; }
+/* Trạng thái cầu AI: chip màu — xanh = đã nối, vàng = cần làm gì đó */
+.leo-cau-tt.chip { display: inline-block; align-self: flex-start; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; font-weight: 600; line-height: 1.4; }
+.leo-cau-tt.chip.ok { border-color: var(--green); background: var(--soft); color: var(--green); }
+.leo-cau-tt.chip.canh { border-color: #e2c9a3; background: #fbf6ee; color: var(--warn); }
 

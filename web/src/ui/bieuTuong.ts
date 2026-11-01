@@ -88,6 +88,8 @@ export const BIEU_TUONG = {
   khac: '…', // menu thêm (xuất ảnh, prompt render, tham số)
   xuatAnh: '⇩',
   nangGio: '☁︎', // Vị trí · Nắng · Gió (nangGio/*)
+  ngayGio: '◷', // chọn ngày · giờ nắng ngay trên thanh 3D
+  thietLap: '⛭', // thiết lập vị trí · nắng · gió (mở hộp)
   viTri: '⌲', // bật / tắt ảnh nền theo vị trí dự án
   nang: '☀', // bật / tắt hướng nắng (đường mặt trời)
   gio: '≋', // bật / tắt lớp gió
