@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.5', ngay: '2026-11-01',
+    vi: [
+      'Leo AI: đính kèm thêm tệp Word (.docx) và văn bản (.txt, .md, .json, .dxf…), tối đa 6 tệp, PDF tới 8 MB',
+      'Leo AI: dòng theo dõi luôn hiện khi đang chạy (bước đang làm, số bước đã xong); chỉ còn vòng tròn trong khung chat quay khi suy nghĩ',
+    ],
+    en: [
+      'Leo AI: attach Word (.docx) and text files (.txt, .md, .json, .dxf…), up to 6 files, PDF up to 8 MB',
+      'Leo AI: a live progress line is always visible while running (current step, steps done); only the spinner in the chat rotates while thinking',
+    ],
+  },
+  {
     v: '0.4.4', ngay: '2026-11-01',
     vi: [
       'Mặt bằng Tầng: nét nội thất (giường, bàn, bếp) đậm và rõ hơn, dễ thấy trong các căn 1PN, 2PN, 3PN',
