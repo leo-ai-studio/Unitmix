@@ -160,7 +160,7 @@ describe('nhân bản dự án và người sửa', () => {
 describe('đăng nhập công ty (Cloudflare Access)', () => {
   it('chưa cấu hình Access: /api/toi báo không yêu cầu, ai cũng tạo được dự án', async () => {
     const r = await goi('/api/toi');
-    expect(await r.json()).toEqual({ yeuCau: false, email: null, duocTao: true, dangNhap: '/api/dang-nhap' });
+    expect(await r.json()).toEqual({ yeuCau: false, email: null, duocTao: true, trangThai: null, lyDo: null, laQuanTri: false, soCho: 0, dangNhap: '/api/dang-nhap' });
     await taoDuAn();
   });
   it('/api/dang-nhap chỉ quay về đường nội bộ', async () => {

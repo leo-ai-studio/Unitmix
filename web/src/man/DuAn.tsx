@@ -137,10 +137,12 @@ export function DuAn() {
   const [toi, setToi] = useState<Toi | null>(null);
   useEffect(() => { api.toi().then(setToi, () => {}); }, []);
   const diDangNhap = () => { location.href = `${toi?.dangNhap ?? '/api/dang-nhap'}?quay=${encodeURIComponent(location.pathname + location.search)}`; };
+  /** Lý do chưa được tạo dự án (chờ duyệt / bị từ chối / sai miền) bằng chữ. */
+  const lyDoChan = (x: Toi) => t(x.trangThai === 'cho' ? 'duAn.choDuyet' : x.trangThai === 'tu_choi' ? 'duAn.biTuChoi' : 'duAn.saiMien').replace('{mail}', x.email ?? '');
   /** Chặn thao tác tạo khi cần đăng nhập: chưa đăng nhập thì chuyển sang đăng nhập, sai miền thì báo. Trả true nếu được tiếp tục. */
   const duocTao = () => {
     if (!toi || !toi.yeuCau || toi.duocTao) return true;
-    if (toi.email) baoNho({ chu: t('duAn.saiMien').replace('{mail}', toi.email) });
+    if (toi.email) baoNho({ chu: lyDoChan(toi) });
     else diDangNhap();
     return false;
   };
@@ -211,7 +213,8 @@ export function DuAn() {
       await napLai(r.ma);
     } catch (e) {
       if (e instanceof LoiApi && e.trangThai === 401) diDangNhap();
-      else baoNho({ chu: e instanceof LoiApi && e.trangThai === 403 ? t('duAn.saiMien').replace('{mail}', toi?.email ?? '') : t('soan.loiMang') });
+      else if (e instanceof LoiApi && e.trangThai === 403) api.toi().then((x) => { setToi(x); baoNho({ chu: lyDoChan(x) }); }, () => baoNho({ chu: t('soan.loiMang') }));
+      else baoNho({ chu: t('soan.loiMang') });
     }
   }
 
@@ -275,6 +278,7 @@ export function DuAn() {
         <ThuongHieu anBan />
         <span class="gian" />
         <TacGiaBan />
+        {toi?.laQuanTri && <a class="nut-phu nut-qt" href="/quan-tri">{t('qt.vao')}{toi.soCho > 0 ? ` (${toi.soCho})` : ''}</a>}
         {toi?.yeuCau && toi.email && <span class="mail-dn" title={t('duAn.daDangNhap')}>{toi.email}</span>}
         <ChonLang />
       </header>
@@ -312,6 +316,7 @@ export function DuAn() {
           </form>
         </div>
         {loiLink && <p class="vuot" role="alert" style={{ margin: 0 }}>{t('duAn.linkSai')}</p>}
+        {toi?.yeuCau && toi.email && !toi.duocTao && <p class="canh-bao cho-duyet" role="status" style={{ margin: 0 }}>{lyDoChan(toi)}</p>}
 
         {!dong.length && <p class="trong">{t('duAn.trong')}</p>}
         {dong.length > 0 && !hien.length && <p class="trong">{t('duAn.khongKhop').replace('{tu}', tim.trim())}</p>}

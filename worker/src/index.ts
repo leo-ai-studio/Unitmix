@@ -3,11 +3,12 @@ import { bam, bangNhau, chuoiNgauNhien, taoMaDuAn, taoMaSua } from './maSua';
 import { tuyenAI, type EnvAI } from './ai';
 import { cauHinhBanDo, type EnvBanDo } from './banDo';
 import { xuLyTram, type EnvTram } from './tram';
-import { docDanhTinh, thuocMien, type EnvDanhTinh } from './danhTinh';
+import { docDanhTinh, type EnvDanhTinh } from './danhTinh';
+import { datTrangThai, docTrangThai, ghiNhanYeuCau, laQuanTri, lietKeQuanTri, quyetDinhTao, type TrangThai } from './nguoiDung';
 
 export { Tram } from './tram';
 
-type Env = { Bindings: EnvAI & EnvBanDo & EnvTram & EnvDanhTinh };
+type Env = { Bindings: EnvAI & EnvBanDo & EnvTram & EnvDanhTinh & { MAIL_QUAN_TRI?: string } };
 const app = new Hono<Env>();
 const GIOI_HAN_BODY = 2_000_000; // byte
 
@@ -35,20 +36,61 @@ const tenNguoi = (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 60) 
 /** Mail đã đăng nhập (qua Cloudflare Access) — null nếu chưa đăng nhập hoặc chưa bật Access. */
 const emailDangNhap = (c: Context<Env>) => docDanhTinh(c.req.raw, c.env);
 
-/** Tạo / nhân bản dự án: khi đặt `MIEN_TAO_DA` thì phải đăng nhập bằng mail thuộc miền đó (401 chưa đăng nhập, 403 sai miền). */
-async function choPhepTao(c: Context<Env>): Promise<{ email: string | null } | Response> {
+/**
+ * Quyền tạo dự án của người đang gọi. Khi đặt `MIEN_TAO_DA`: mail công ty đăng nhập lần đầu được ghi "chờ duyệt", quản trị duyệt mới tạo được
+ * (quản trị = `MAIL_QUAN_TRI`, luôn được tạo).
+ */
+async function quyenTao(c: Context<Env>) {
   const email = await emailDangNhap(c);
-  if (thuocMien(email, c.env.MIEN_TAO_DA)) return { email };
-  return c.json({ loi: email ? 'sai_mien' : 'chua_dang_nhap' }, email ? 403 : 401);
+  let tt = email && c.env.MIEN_TAO_DA ? await docTrangThai(c.env.DB, email) : null;
+  const q = quyetDinhTao({ email, mien: c.env.MIEN_TAO_DA, mailQuanTri: c.env.MAIL_QUAN_TRI, trangThai: tt });
+  if (email && c.env.MIEN_TAO_DA && !q.laQuanTri && tt === null && q.lyDo !== 'sai_mien') { await ghiNhanYeuCau(c.env.DB, email, bayGio()); tt = 'cho'; }
+  return { email, ...q, trangThai: q.trangThai ?? tt };
+}
+
+/** Tạo / nhân bản dự án: chưa đăng nhập 401; sai miền / chờ duyệt / bị từ chối 403 (mã lỗi nêu lý do). */
+async function choPhepTao(c: Context<Env>): Promise<{ email: string | null } | Response> {
+  const q = await quyenTao(c);
+  if (q.duocTao) return { email: q.email };
+  return c.json({ loi: q.lyDo }, q.lyDo === 'chua_dang_nhap' ? 401 : 403);
+}
+
+/** Chỉ quản trị (mail `MAIL_QUAN_TRI` đã đăng nhập Access) — 401 chưa đăng nhập, 403 không phải quản trị. */
+async function choPhepQuanTri(c: Context<Env>): Promise<{ email: string } | Response> {
+  const email = await emailDangNhap(c);
+  if (!email) return c.json({ loi: 'chua_dang_nhap' }, 401);
+  if (!laQuanTri(email, c.env.MAIL_QUAN_TRI)) return c.json({ loi: 'khong_phai_quan_tri' }, 403);
+  return { email };
 }
 
 /** Người sửa ghi vào PA: đã đăng nhập thì lấy mail thật (không giả được), chưa thì tên tự khai. */
 const nguoiSua = (email: string | null, khai: unknown) => email ?? tenNguoi(khai);
 
-/** Cho giao diện biết: có yêu cầu đăng nhập để tạo dự án không, đã đăng nhập chưa, có được tạo không. */
+/** Cho giao diện biết: có yêu cầu đăng nhập không, đã đăng nhập chưa, được tạo chưa (hoặc đang chờ duyệt), có phải quản trị không. */
 app.get('/api/toi', async (c) => {
-  const email = await emailDangNhap(c);
-  return c.json({ yeuCau: !!c.env.MIEN_TAO_DA, email, duocTao: thuocMien(email, c.env.MIEN_TAO_DA), dangNhap: '/api/dang-nhap' });
+  const q = await quyenTao(c);
+  const soCho = q.laQuanTri ? (await lietKeQuanTri(c.env.DB)).nguoi.filter((n) => n.trang_thai === 'cho').length : 0;
+  return c.json({ yeuCau: !!c.env.MIEN_TAO_DA, email: q.email, duocTao: q.duocTao, trangThai: q.trangThai, lyDo: q.lyDo, laQuanTri: q.laQuanTri, soCho, dangNhap: '/api/dang-nhap' });
+});
+
+/** Trang quản trị: danh sách người dùng + dự án kèm người tạo. */
+app.get('/api/quan-tri', async (c) => {
+  const q = await choPhepQuanTri(c);
+  if (q instanceof Response) return q;
+  return c.json(await lietKeQuanTri(c.env.DB));
+});
+
+/** Duyệt / từ chối / thu hồi (đặt về chờ) một mail; mail chưa có thì thêm mới (duyệt trước). */
+app.post('/api/quan-tri/duyet', async (c) => {
+  const q = await choPhepQuanTri(c);
+  if (q instanceof Response) return q;
+  const b = await docBody<{ email?: string; trang_thai?: string }>(c);
+  if (!b) return c.json({ loi: 'qua_lon' }, 413);
+  const email = (b.email ?? '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return c.json({ loi: 'mail_sai' }, 400);
+  if (b.trang_thai !== 'duyet' && b.trang_thai !== 'tu_choi' && b.trang_thai !== 'cho') return c.json({ loi: 'trang_thai_sai' }, 400);
+  await datTrangThai(c.env.DB, email, b.trang_thai as TrangThai, q.email, bayGio());
+  return c.json({ ok: true });
 });
 
 /** Đích đăng nhập: Cloudflare Access chặn đường này; qua được là đã có cookie → quay về trang cũ (chỉ đường nội bộ). */
@@ -64,8 +106,8 @@ app.post('/api/du-an', async (c) => {
   if (!b) return c.json({ loi: 'qua_lon' }, 413);
   const ma = taoMaDuAn();
   const maSua = taoMaSua();
-  await c.env.DB.prepare('INSERT INTO du_an (ma, ten, dia_diem, bam_ma_sua, tao_luc) VALUES (?, ?, ?, ?, ?)')
-    .bind(ma, (b.ten ?? '').trim() || 'Dự án mới', (b.dia_diem ?? '').trim(), await bam(maSua), bayGio())
+  await c.env.DB.prepare('INSERT INTO du_an (ma, ten, dia_diem, bam_ma_sua, tao_luc, tao_boi) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(ma, (b.ten ?? '').trim() || 'Dự án mới', (b.dia_diem ?? '').trim(), await bam(maSua), bayGio(), quyen.email ?? '')
     .run();
   return c.json({ ma, ma_sua: maSua }, 201);
 });
@@ -183,8 +225,8 @@ app.post('/api/du-an/:ma/nhan-ban', async (c) => {
     .bind(da.ma)
     .all<{ id: string; ten: string; trang_thai: string; tom_tat: string }>();
   await c.env.DB.batch([
-    c.env.DB.prepare('INSERT INTO du_an (ma, ten, dia_diem, bam_ma_sua, tao_luc) VALUES (?, ?, ?, ?, ?)')
-      .bind(ma, (b.ten ?? '').trim() || `${da.ten} (bản sao)`, da.dia_diem, await bam(maSua), bay),
+    c.env.DB.prepare('INSERT INTO du_an (ma, ten, dia_diem, bam_ma_sua, tao_luc, tao_boi) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(ma, (b.ten ?? '').trim() || `${da.ten} (bản sao)`, da.dia_diem, await bam(maSua), bay, quyen.email ?? ''),
     ...results.map((r) =>
       c.env.DB.prepare('INSERT INTO phuong_an (id, du_an_ma, ten, trang_thai, tom_tat, sua_luc, sua_boi) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .bind(r.id, ma, r.ten, r.trang_thai, r.tom_tat, bay, nguoi)),

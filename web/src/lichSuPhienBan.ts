@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.9', ngay: '2026-11-02',
+    vi: [
+      'Đăng nhập mail công ty (Cloudflare Access): mail công ty đăng nhập lần đầu ở trạng thái chờ duyệt; quản trị duyệt / từ chối / thu hồi ở trang Quản trị, duyệt trước được cả mail chưa đăng nhập; mỗi dự án ghi người tạo',
+    ],
+    en: [
+      'Company-email sign-in (Cloudflare Access): a company email signing in for the first time is pending; the admin approves / rejects / revokes on the Admin page and can pre-approve any email; every project records its creator',
+    ],
+  },
+  {
     v: '0.5.8', ngay: '2026-11-02',
     vi: ['Hộp Vị trí: thêm nút "Mở Google Earth 3D" (bay tới đúng toạ độ, hướng theo góc Bắc) và "Xuất KML" (ranh lô, chỉ giới, khối tòa đùn theo chiều cao) để kéo vào Google Earth'],
     en: ['Location box: new "Open in Google Earth 3D" (flies to the set coordinates, heading from the north angle) and "Export KML" (lot boundaries, setback lines, tower volumes extruded to height) to drop into Google Earth'],
