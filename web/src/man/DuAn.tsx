@@ -323,10 +323,13 @@ export function DuAn() {
               </select>
             </>
           )}
-          <label class="o-ten-ban" title={t('duAn.tenBanGt')}>
-            <span>{t('duAn.tenBan')}</span>
-            <input value={tenBan} maxLength={60} onInput={(e) => { setTenBan(e.currentTarget.value); luuTenNguoi(e.currentTarget.value); }} />
-          </label>
+          {/* đã đăng nhập bằng mail công ty thì người sửa ghi mail thật — không cần ô tự khai tên */}
+          {!toi?.email && (
+            <label class="o-ten-ban" title={t('duAn.tenBanGt')}>
+              <span>{t('duAn.tenBan')}</span>
+              <input value={tenBan} maxLength={60} onInput={(e) => { setTenBan(e.currentTarget.value); luuTenNguoi(e.currentTarget.value); }} />
+            </label>
+          )}
           <form class="mo-link" onSubmit={moLink}>
             <input aria-label={t('duAn.danLink')} placeholder={t('duAn.danLink')} value={link}
               onInput={(e) => { setLink(e.currentTarget.value); setLoiLink(false); }} />
