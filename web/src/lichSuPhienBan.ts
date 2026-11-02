@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.3', ngay: '2026-11-02',
+    vi: [
+      'Menu chuột phải ô › Đổi căn: chỉ đổi đúng những ô đang chọn (trước đây đổi luôn mọi căn cùng mẫu); chọn nhiều căn cùng mẫu thì đổi cả nhóm; "Sửa nhiều căn" mặc định tắt',
+    ],
+    en: [
+      'Cell right-click › Change unit: only the selected cells change (it used to change every unit of the same type); several selected same-type units change together; "Edit many units" is now off by default',
+    ],
+  },
+  {
     v: '0.5.2', ngay: '2026-11-02',
     vi: [
       'Màn Tầng: "Căn đang chọn" gọn hơn và đặt ngay sau bảng chỉ tiêu tầng — tên mẫu, 3 ô số liệu, STRETCH một hàng; bỏ nhóm Công năng ô và danh sách đổi mẫu (đổi công năng vẫn ở menu chuột phải ô)',

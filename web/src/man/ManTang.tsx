@@ -285,10 +285,11 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
     return [Math.min(k[0] - 6, h?.[0] ?? Infinity), Math.min(k[1] - 6, h?.[1] ?? Infinity), Math.max(k[2] + 6, h?.[2] ?? -Infinity), Math.max(k[3] + 6, h?.[3] ?? -Infinity)] as [number, number, number, number];
   }, [mau, hopTem]);
   const dsO = oDangChon(canKhoa, co.ds);
-  // tab "Đổi căn" của menu ô: đúng một ô đang chọn và ô đó là căn
-  const oMenu = dsO.length === 1 ? sl.can.find((c) => c.vt.khoa === dsO[0]) : undefined;
-  const doiO = (vt: (typeof sl.can)[number]['vt'], canMoi: string) => suaTuChinh(p.sua, tv, toa.id, { baoChan: baoChanDoiCho(tv, sl.can) })((q) => doiToa(q, toa.id, (x) =>
-    co.tangs ? doiCanTheoTang(x, co.tangs, vt, canMoi, sl.vts, cai.suaNhieu) : doiCanTaiViTri(x, vt, canMoi, sl.vts, cai.suaNhieu)));
+  // tab "Đổi căn" của menu ô: mọi ô đang chọn đều là căn cùng mẫu gốc — đổi ĐÚNG những ô đang chọn (trừ khi bật "Sửa nhiều căn")
+  const canChonO = dsO.map((k) => sl.can.find((c) => c.vt.khoa === k));
+  const oMenu = canChonO.length && canChonO.every((c) => c && c.cn === 'can' && c.vt.canGocId === canChonO[0]!.vt.canGocId) ? canChonO[0] : undefined;
+  const doiO = (canMoi: string) => suaTuChinh(p.sua, tv, toa.id, { baoChan: baoChanDoiCho(tv, sl.can) })((q) => doiToa(q, toa.id, (x0) =>
+    canChonO.reduce((x, c) => (!c ? x : co.tangs ? doiCanTheoTang(x, co.tangs, c.vt, canMoi, sl.vts, cai.suaNhieu) : doiCanTaiViTri(x, c.vt, canMoi, sl.vts, cai.suaNhieu)), x0)));
   /** Chuột phải → chọn mọi căn cùng mẫu gốc với căn đang chọn (trong tầng đang xem); STRETCH sau đó áp cho cả nhóm. */
   const canChinh = sl.can.find((c) => c.vt.khoa === canKhoa && c.cn === 'can');
   const cungMau = canChinh ? sl.can.filter((c) => c.cn === 'can' && c.vt.canGocId === canChinh.vt.canGocId).map((c) => c.vt.khoa) : [];
@@ -409,7 +410,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         <MenuCongNang x={menu.x} y={menu.y} dong={dongMenu} soO={dsO.length} hienTai={cnChon.length === 1 ? cnChon[0] : null} phamVi={phamVi} chiXem={chiXem}
           cungMau={cungMau.length > 1 ? { n: cungMau.length, chon: chonCungMau } : undefined}
           chon={(cn) => suaCongNang(p, toa, co.tangs, dsO, cn)}
-          doiCan={oMenu && oMenu.cn === 'can' ? { ds: dsMauDoiCan(tv, oMenu.vt.canGocId), dangDung: oMenu.canId, guong: oMenu.vt.guong, kieu: cai.kieu, noiThat: cai.noiThat, doi: (id) => doiO(oMenu.vt, id) } : undefined} />
+          doiCan={oMenu && oMenu.cn === 'can' ? { ds: dsMauDoiCan(tv, oMenu.vt.canGocId), dangDung: oMenu.canId, guong: oMenu.vt.guong, kieu: cai.kieu, noiThat: cai.noiThat, doi: (id) => doiO(id) } : undefined} />
       )}
       {menu?.loai === 'loi' && (
         <MenuLoi x={menu.x} y={menu.y} dong={dongMenu} tt={thongTinLoi(toa, menu.khoa)} chiXem={chiXem}
