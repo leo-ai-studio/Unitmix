@@ -117,7 +117,7 @@ const NHAN_TS: [keyof ThamSo3D, string][] = [['cuaDi', 'm3d.cuaDi'], ['cuaTruot'
 const NEN: Record<KieuVe3D, { troi: number; dat: number; hemi: [number, number] }> = {
   vatlieu: { troi: 0xf1f0ea, dat: 0xd8cfba, hemi: [0xeef1ef, 0xc2b59b] }, // trời trắng ấm hơi lạnh / đất be phản xạ; đất ngà brand đậm hơn nền một bậc
   brand: { troi: 0xf1f0ea, dat: 0xe4e6dd, hemi: [0xfffef6, 0x9aa79d] },
-  trang: { troi: 0xffffff, dat: 0xf4f4f2, hemi: [0xffffff, 0xb9bdba] },
+  trang: { troi: 0xf1f0ea, dat: 0xe4e6dd, hemi: [0xffffff, 0xb9bdba] }, // mô hình trắng: chỉ khối nhà trắng, nền / trời ngà (không trắng) để tách khối
 };
 
 /** Góc đề xuất mặc định từ tâm / cỡ cảnh: chim bay hai hướng, mắt người, từ trên. */

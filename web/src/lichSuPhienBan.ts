@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.14', ngay: '2026-11-03',
+    vi: [
+      'Mô hình trắng 3D: chỉ khối nhà màu trắng; ô đất, mặt nước, đường, cây giữ màu (cây xanh), nền và trời không còn trắng',
+    ],
+    en: [
+      '3D white model: only the building masses are white; plots, water, roads and trees keep their colours (green trees), and the ground and sky are no longer white',
+    ],
+  },
+  {
     v: '0.5.13', ngay: '2026-11-03',
     vi: [
       '3D hết nhấp nháy: nền luôn thấp hơn mọi ô đất và đường, các ô đất chồng nhau không còn cùng mặt phẳng, mặt cắt gần của camera tăng theo khoảng cách; nét viền khối (tầng, góc) không còn đứt đoạn khi xoay / zoom',

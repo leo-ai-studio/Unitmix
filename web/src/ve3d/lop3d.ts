@@ -168,7 +168,6 @@ export function dungTrucThang(T: T3, goc: THREE.Object3D, ds: { pts: Diem[]; tha
  */
 export function dungCay(T: T3, goc: THREE.Object3D, diem: Diem[], kieu: KieuVe3D, bong: boolean, y0 = 0): void {
   if (!diem.length) return;
-  const trang = kieu === 'trang';
   const dang = [
     { g: new T.IcosahedronGeometry(2.4, 1), cao: 3.7, sy: 1.05 },
     { g: new T.ConeGeometry(1.9, 5.2, 7), cao: 4.6, sy: 1 },
@@ -178,7 +177,7 @@ export function dungCay(T: T3, goc: THREE.Object3D, diem: Diem[], kieu: KieuVe3D
   diem.forEach((p) => { const r = nhieu(p[0] * 0.37, p[1] * 0.41); theo[r < 0.55 ? 0 : r < 0.8 ? 1 : 2].push(p); });
   const xanh = [0x6f8f5a, 0x7e9c63, 0x5f7f52, 0x8aa46c], c = new T.Color(), O = new T.Object3D();
   const vlTan = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true });
-  const than = new T.InstancedMesh(new T.CylinderGeometry(0.16, 0.24, 3, 6), new T.MeshStandardMaterial({ color: trang ? 0xdcdcd8 : 0x7a6a55, roughness: 1 }), diem.length);
+  const than = new T.InstancedMesh(new T.CylinderGeometry(0.16, 0.24, 3, 6), new T.MeshStandardMaterial({ color: 0x7a6a55, roughness: 1 }), diem.length);
   let k = 0;
   theo.forEach((ds, i) => {
     if (!ds.length) return;
@@ -187,7 +186,7 @@ export function dungCay(T: T3, goc: THREE.Object3D, diem: Diem[], kieu: KieuVe3D
       const s = 0.8 + nhieu(p[0], p[1]) * 0.6;
       O.position.set(p[0], y0 + d.cao * s, -p[1]); O.scale.set(s, s * d.sy, s); O.rotation.set(0, nhieu(p[1], p[0]) * 6.28, 0); O.updateMatrix();
       tan.setMatrixAt(j, O.matrix);
-      c.setHex(trang ? 0xf0f2ef : xanh[Math.floor(nhieu(p[0] * 1.7, p[1] * 2.3) * xanh.length) % xanh.length]);
+      c.setHex(xanh[Math.floor(nhieu(p[0] * 1.7, p[1] * 2.3) * xanh.length) % xanh.length]);
       tan.setColorAt(j, c);
       O.position.set(p[0], y0 + 1.5 * s, -p[1]); O.scale.set(s, s, s); O.updateMatrix();
       than.setMatrixAt(k++, O.matrix);

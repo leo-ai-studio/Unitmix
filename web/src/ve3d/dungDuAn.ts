@@ -104,7 +104,8 @@ export function* dungDuAnTung(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuV
     if (!m) {
       // Vật liệu: lô cao tầng sân lát đá be sáng, cây xanh cỏ, mặt nước xanh lam sẫm phản chiếu trời; nền khung ngà (#F1F0EA)
       const VL_DAT: Partial<Record<LoaiDat, string>> = { o_cao_tang: '#ece6d7', cay_xanh: '#93ab74', mat_nuoc: '#4f7d8a', ha_tang: '#b9b8b1' };
-      const mau = trang ? (l === 'mat_nuoc' ? '#e6eef0' : l === 'cay_xanh' ? '#eef1ec' : '#f7f7f5') : vatLieu ? VL_DAT[l] ?? MAU_DAT[l][0] : MAU_DAT[l][0];
+      // Mô hình trắng: chỉ KHỐI NHÀ trắng; ô đất, mặt nước, cây giữ màu như kiểu Brand để đọc được quy hoạch (nền không trắng)
+      const mau = vatLieu ? VL_DAT[l] ?? MAU_DAT[l][0] : MAU_DAT[l][0];
       m = new T.MeshStandardMaterial({ color: mau, roughness: l === 'mat_nuoc' ? (vatLieu ? 0.05 : 0.15) : 0.95, metalness: l === 'mat_nuoc' ? 0.1 : 0, envMapIntensity: l === 'mat_nuoc' ? (vatLieu ? 1.4 : 1) : 0.5 });
       matDat.set(l, m);
     }
@@ -145,7 +146,7 @@ export function* dungDuAnTung(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuV
   }
   const gDuong = gopHinh(T, hinhDuong);
   if (gDuong) {
-    const me = new T.Mesh(gDuong, new T.MeshStandardMaterial({ color: trang ? 0xeeeeec : vatLieu ? 0x8b8c88 : 0xd9dbd6, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+    const me = new T.Mesh(gDuong, new T.MeshStandardMaterial({ color: vatLieu ? 0x8b8c88 : 0xd9dbd6, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
     me.receiveShadow = true; me.userData.lop = 'duong';
     goc.add(me);
   }
