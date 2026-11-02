@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.17', ngay: '2026-11-03',
+    vi: [
+      '3D khối đế: kính vách trong suốt (nhìn xuyên thấy cột, vách lõi, mép sàn), cột chu vi 600 và vách lõi xám bê tông đậm hơn dầm / sàn nên đọc rõ sau kính',
+    ],
+    en: [
+      '3D podium: transparent curtain-wall glass (columns, core walls and slab edges show through); 600 mm perimeter columns and core walls in a darker concrete grey so they read clearly behind the glass',
+    ],
+  },
+  {
     v: '0.5.16', ngay: '2026-11-03',
     vi: [
       '3D khối đế dựng chi tiết: sàn dày 150, dầm biên cao 700, giữa là vách kính 3.150 chia đố (đố đứng nhịp 1,2 m, một đố ngang ở cao 2,4 m); cột chu vi và vách lõi cắm thẳng từ khối tháp xuống chân đế; áp cho mọi tầng đế (4 m mỗi tầng); dầm nhô 15 mm để không trùng mặt với sàn tháp',

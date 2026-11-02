@@ -22,7 +22,7 @@ describe('khối đế: sàn · dầm · vách kính chia đố · cột vách',
 
   it('chiều cao: sàn 150 + kính 3.150 + dầm 700 = 4.000 mỗi tầng', () => {
     expect(SAN_DE_MM + (CAO_TANG_DE_MM - SAN_DE_MM - DAM_DE_MM) + DAM_DE_MM).toBe(CAO_TANG_DE_MM);
-    const kinh = theoVL(g, M.kinh);
+    const kinh = theoVL(g, M.kinhDe);
     expect(kinh).toHaveLength(2 * 4); // 2 tầng × 4 cạnh
     kinh.forEach((k) => expect(cao(k)).toBe(3150));
     const sans = theoVL(g, M.san);
@@ -33,7 +33,7 @@ describe('khối đế: sàn · dầm · vách kính chia đố · cột vách',
   });
 
   it('vách kính cao tới mặt dưới dầm; đố ngang nằm cao 2,4 m trên mặt sàn', () => {
-    const kinh = theoVL(g, M.kinh)[0];
+    const kinh = theoVL(g, M.kinhDe)[0];
     const tam = kinh.position.y * 1000, nua = 3150 / 2;
     expect(Math.round(tam - nua)).toBe(150); // chân kính = mặt sàn tầng 1
     expect(Math.round(tam + nua)).toBe(CAO_TANG_DE_MM - DAM_DE_MM); // đỉnh kính = đáy dầm
@@ -47,7 +47,7 @@ describe('khối đế: sàn · dầm · vách kính chia đố · cột vách',
   });
 
   it('cột chu vi và vách lõi cao suốt khối đế (2 × 4 m = 8 m)', () => {
-    const cotVach = theoVL(g, M.de).filter((m) => cao(m) === 2 * CAO_TANG_DE_MM);
+    const cotVach = theoVL(g, M.lov).filter((m) => cao(m) === 2 * CAO_TANG_DE_MM);
     // cột: 4 góc + cạnh 20 m chia 3 nhịp (2 cột giữa) × 2 + cạnh 12 m chia 2 nhịp (1 cột giữa) × 2 = 4 + 4 + 2 = 10; + 1 vách lõi
     expect(cotVach).toHaveLength(10 + 1);
   });

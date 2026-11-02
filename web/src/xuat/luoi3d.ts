@@ -12,7 +12,7 @@ export type LuoiVL = { khoa: string; ten: string; mau: number; doDuc: number; P:
 /** Tên tiếng Việt không dấu của vật liệu trong bảng `taoVatLieu` (dùng làm tên vật liệu trong tệp xuất). */
 const TEN_VL: Record<string, string> = {
   tuong: 'Tuong', san: 'San', top: 'San-mo', khung: 'Khung-nhom', go: 'Go', khung2: 'Loi-tum', de: 'Khoi-de', tum: 'Tum',
-  kinh: 'Kinh', kinhDai: 'Kinh-dai', lc: 'Lan-can', lov: 'Lover',
+  kinh: 'Kinh', kinhDai: 'Kinh-dai', kinhDe: 'Kinh-de', lc: 'Lan-can', lov: 'Lover',
 };
 
 /** Biến đổi thêm trên toạ độ Z-lên (m) — dời / xoay / lật tòa về đúng chỗ trên lô. Phép lật (det < 0) đảo chiều mặt tự động. */

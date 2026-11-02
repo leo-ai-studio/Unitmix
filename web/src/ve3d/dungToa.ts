@@ -24,9 +24,9 @@ export const SAN_DE_MM = 150;
 export const DAM_DE_MM = 700;
 export const NHIP_DO_DUNG_MM = 1200;
 export const CAO_DO_NGANG_MM = 2400;
-const DAM_NHO_MM = 15, DO_RONG_DAM_MM = 300, DO_RONG_DO_MM = 60, DO_SAU_DO_MM = 120, COT_DE_MM = 500, NHIP_COT_TOI_DA_MM = 8400;
+const DAM_NHO_MM = 15, DO_RONG_DAM_MM = 300, DO_RONG_DO_MM = 60, DO_SAU_DO_MM = 120, COT_DE_MM = 600, NHIP_COT_TOI_DA_MM = 8400;
 
-/** Dựng khối đế chi tiết vào `ngoai` (vật liệu: sàn `san`, dầm / cột / vách `de`, đố `khung`, kính `kinh`). Trả số mảnh để kiểm thử. */
+/** Dựng khối đế chi tiết vào `ngoai` (vật liệu: sàn `san`, dầm `de`, cột / vách lõi `lov` (xám bê tông), đố `khung`, kính trong `kinhDe`). Trả số mảnh để kiểm thử. */
 export function dungKhoiDe(T: T3, ngoai: THREE.Object3D, M: VatLieu3D, foot: Diem[], soDe: number, loi: Diem[][], khoiDac: (pts: Diem[], h: number, m: THREE.Material, z0: number) => THREE.Mesh): number {
   let dem = 0;
   const hop = (m: THREE.Material, mx: number, my: number, yc: number, dai: number, cao: number, sau: number, goc: number) => {
@@ -53,7 +53,7 @@ export function dungKhoiDe(T: T3, ngoai: THREE.Object3D, M: VatLieu3D, foot: Die
       // tấm kính + đố ngang (một đố ở 2,4 m trên mặt sàn)
       const [kx, ky] = vao(DO_SAU_DO_MM / 2);
       const yKinh0 = y0 + SAN_DE_MM;
-      hop(M.kinh, kx, ky, yKinh0 + hKinh / 2, L, hKinh, 20, goc);
+      hop(M.kinhDe, kx, ky, yKinh0 + hKinh / 2, L, hKinh, 20, goc);
       hop(M.khung, kx, ky, yKinh0 + CAO_DO_NGANG_MM, L, DO_RONG_DO_MM, DO_SAU_DO_MM, goc);
       hop(M.khung, kx, ky, yKinh0 + DO_RONG_DO_MM / 2, L, DO_RONG_DO_MM, DO_SAU_DO_MM, goc);
       // đố đứng: chia đều quanh 1,2 m (không để mẩu lẻ cuối cạnh)
@@ -68,7 +68,7 @@ export function dungKhoiDe(T: T3, ngoai: THREE.Object3D, M: VatLieu3D, foot: Die
   const hDe = soDe * tang;
   const cot = (px: number, py: number) => {
     const vx = cx - px, vy = cy - py, l = Math.hypot(vx, vy) || 1, d = COT_DE_MM * 0.75;
-    hop(M.de, px + (vx / l) * d, py + (vy / l) * d, hDe / 2, COT_DE_MM, hDe, COT_DE_MM, 0);
+    hop(M.lov, px + (vx / l) * d, py + (vy / l) * d, hDe / 2, COT_DE_MM, hDe, COT_DE_MM, 0); // bê tông xám đậm hơn dầm / sàn để cột đọc rõ sau kính
   };
   foot.forEach((p, i) => {
     cot(p[0], p[1]);
@@ -76,7 +76,7 @@ export function dungKhoiDe(T: T3, ngoai: THREE.Object3D, M: VatLieu3D, foot: Die
     for (let j = 1; j < n; j++) cot(p[0] + ((q[0] - p[0]) * j) / n, p[1] + ((q[1] - p[1]) * j) / n);
   });
   // vách lõi: đúng ranh lõi của tầng điển hình, kéo thẳng xuống chân đế
-  loi.forEach((r) => { khoiDac(r, hDe, M.de, 0); dem++; });
+  loi.forEach((r) => { khoiDac(r, hDe, M.lov, 0); dem++; });
   return dem;
 }
 

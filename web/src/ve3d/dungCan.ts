@@ -39,7 +39,7 @@ export const THAM_SO_MAC: ThamSo3D = {
   cuaDi: 2200, cuaTruot: 2400, bauSo: 600, caoSo: 1800, doNgang: 1400, lat: 800, lanCan: 1400, bauLC: 150, dam: 600, san: 130, tang: 3300, kieuLC: 'thep',
 };
 
-export type VatLieu3D = Record<'tuong' | 'san' | 'dam' | 'top' | 'khung' | 'go' | 'khung2' | 'de' | 'tum' | 'kinh' | 'lc' | 'lov' | 'kinhDai', THREE.Material> & {
+export type VatLieu3D = Record<'tuong' | 'san' | 'dam' | 'top' | 'khung' | 'go' | 'khung2' | 'de' | 'tum' | 'kinh' | 'lc' | 'lov' | 'kinhDai' | 'kinhDe', THREE.Material> & {
   line: THREE.LineBasicMaterial;
   mol: THREE.LineBasicMaterial;
 };
@@ -97,6 +97,10 @@ export function taoVatLieu(T: T3, cat: THREE.Plane[] | CatY, kieu: KieuVe3D = 'b
     kinhDai: vl
       ? kinhVL(B.kinhDai, { roughness: 0.08, envMapIntensity: 1.3, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
       : mt(B.kinhDai, { roughness: 0.3, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+    // kính vách khối đế: trong (độ đục ~0,3) để nhìn xuyên thấy cột, vách lõi, mép sàn phía sau; vẫn phản chiếu nhẹ
+    kinhDe: vl
+      ? kinhVL(0x9cc7ea, { transparent: true, opacity: 0.3, roughness: 0.05, envMapIntensity: 1.2, depthWrite: false })
+      : mt(B.kinh, { transparent: true, opacity: 0.3, roughness: 0.1, metalness: 0.1, depthWrite: false, side: T.DoubleSide }),
     lc: vl ? mt(B.lc, { roughness: 0.35, metalness: 0.8 }) : mt(B.lc, { roughness: 0.5, metalness: 0.3 }),
     lov: mt(B.lov, vl ? { roughness: 0.45, metalness: 0.6 } : { roughness: 0.6, metalness: 0.2 }),
     // viền: Vật liệu nhạt hơn (đỡ "nét CAD", khối đọc bằng ánh sáng + bóng); vẫn đủ để đọc tầng / góc
