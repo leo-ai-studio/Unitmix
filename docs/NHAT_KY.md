@@ -2,6 +2,14 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-02 · DXF Long Biên → app: ô nền chìm, bảng chỉ tiêu đủ cột, v0.4.8 · Claude Code (Sonnet 5.5)
+
+Người dùng: DXF phương án SDĐ Long Biên đưa vào app thì mọi lô giống nhau; muốn cây xanh nền xanh, đất khác tô màu theo loại và chìm, chỉ ô đất ở cao tầng (NOTM / NOXH / TĐC, layer `2_QHSDD_DAT_DD_Nhom o`) chọn được kèm chỉ tiêu.
+- **App** (`dxf/napDxf.ts › taoLoTuDxf`): chế độ lớp ranh, ký hiệu `CX|GD|CC|TMDV|HTKT|DT|QP|CN-…` → chức năng `khac` (nền, tô màu theo `tinh/loaiDat.ts`); còn lại như cũ. Test ở `dxf/napDxf.test.ts`.
+- **Công cụ** `scripts/boc_cad/lo_cao_tang.py <dxf> <xlsx> <ra.dxf>`: gom MỌI lô vào MỘT layer `LB-RANH` (app chỉ nhận một lớp ranh), nhãn `LB-TEM` đặt trong ô, đường `LB-DUONG / BOVIA / TIMDUONG` đủ, ranh QH `LB-RANHQH`; ra thêm `.xlsx` (sheet `Chi tieu QH` đúng tên cột app nhận + DTXD đế / tháp, tổng DTXD, tổng sàn, HSSDĐ). `lam_nhe_dxf.py`: làm nhẹ DXF giữ mọi lớp.
+- **Chốt với người dùng:** chỉ tiêu và DT theo Excel (sheet `Chi tiet Dat O doi TDC`), ranh theo CAD; 22 lô cao tầng; NOTM-2.1 / 2.2 / 2.3 / 2.4 thấp tầng bỏ ra.
+- **Còn dở:** ranh lô trong CAD không chia hết như bảng (NOTM-2.4 không có ô; nhãn TĐC-7.2 đè lên ô NOTM-6.2; NOXH-7.2 CAD 12.117 m² so bảng 38.068 m²); NOTM-2.6 thiếu MĐXD, NOXH-7.2 thiếu MĐXD tháp trong Excel. Tầng đế = 1, tầng cao = tháp + 1, HSSDĐ = (DTXD đế + sàn tháp) / DT đất là quy ước của người làm công cụ, chưa được xác nhận.
+
 ## 2026-10-30 · Thanh giờ nắng 3D "giật lùi": một nguồn giờ, không ghi ngược · agent Opus
 
 Người dùng: kéo / ▶ thanh giờ nắng 3D thì giờ thỉnh thoảng nhảy lùi, bóng chỉ đổi cách một bước; đặt giá trị bằng mã (phát `change`) không tới app.

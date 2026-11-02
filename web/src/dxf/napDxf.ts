@@ -265,6 +265,9 @@ function ranhVaTen(ban: BanDxf, chon: ChonLop): { ranh: Diem[]; kyHieu?: string;
   return ds.map(({ ranh, tienTo, chucNang }) => ({ ranh, kyHieu: `${tienTo}-${(dem[tienTo] = (dem[tienTo] ?? 0) + 1)}`, chucNang }));
 }
 
+/** Ký hiệu đất không phải nhà ở (cây xanh, giáo dục, công cộng, TMDV, HTKT, di tích, quốc phòng, công nghiệp): làm nền, không xếp tòa. */
+const KY_HIEU_KHONG_O = /^(CX|GD|CC|TMDV|HTKT|DT|QP|CN)-/;
+
 /** Mỗi đa giác kín trên lớp ranh (hoặc mỗi ô hatch khi chọn RANH_HATCH) thành một lô; tem đất và chỉ giới gán cho lô chứa chúng. */
 export function taoLoTuDxf(ban: BanDxf, chon: ChonLop): Lo[] {
   const chiGioi = chon.chiGioi ? ban.polyKin(chon.chiGioi) : [];
@@ -274,7 +277,7 @@ export function taoLoTuDxf(ban: BanDxf, chon: ChonLop): Lo[] {
   const xq = [...lopNen].flatMap((l) => ban.duong(l));
   return ranhVaTen(ban, chon).map(({ ranh, kyHieu: tenTuDat, chucNang }, i) => {
     const kyHieu = tem.find((c) => trongDaGiac(c.diem, ranh))?.noiDung ?? tenTuDat ?? `Lô ${i + 1}`;
-    const lo = taoLo(`lo-${i + 1}`, kyHieu, chucNang ?? (/XH/i.test(kyHieu) ? 'xh' : 'tm'), ranh);
+    const lo = taoLo(`lo-${i + 1}`, kyHieu, chucNang ?? (KY_HIEU_KHONG_O.test(kyHieu.trim().toUpperCase().normalize('NFC')) ? 'khac' : /XH/i.test(kyHieu) ? 'xh' : 'tm'), ranh);
     lo.chiGioi = chiGioi.find((c) => trongDaGiac(trongTam(c), ranh)) ?? null;
     if (i === 0) lo.xungQuanh = xq;
     return lo;

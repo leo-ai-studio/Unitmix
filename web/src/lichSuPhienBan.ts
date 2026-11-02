@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.8', ngay: '2026-11-02',
+    vi: [
+      'Nạp DXF theo lớp ranh: lô mang ký hiệu CX / GD / CC / TMDV / HTKT / DT / QP / CN thành ô nền (tô màu theo loại đất, chìm xuống, không chọn được); chỉ NOTM / NOXH / TĐC… là ô đất ở làm việc',
+    ],
+    en: [
+      'DXF import by boundary layer: plots labelled CX / GD / CC / TMDV / HTKT / DT / QP / CN become background plots (tinted by land type, muted, not selectable); only NOTM / NOXH / TĐC… stay as working residential plots',
+    ],
+  },
+  {
     v: '0.4.7', ngay: '2026-11-01',
     vi: [
       'Màn Tầng: mục Áp dụng sửa cho — chép phép sửa cơ cấu căn sang mọi tòa cùng mẫu trong lô hoặc cả dự án (một bước hoàn tác)',

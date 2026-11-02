@@ -31,7 +31,7 @@ describe('đọc DXF', () => {
   it('mỗi đa giác kín là một lô; tem đất và chỉ giới gán vào lô chứa nó', () => {
     const lo = taoLoTuDxf(napDxf(mau), { ranh: 'QH-RANH-LO', chiGioi: 'QH-CGXD', tem: 'QH-TEM', xungQuanh: 'HT-NHA' });
     expect(lo.map((l) => l.temDat.kyHieu)).toEqual(['CC-02', 'NOXH-01']);
-    expect(lo.map((l) => l.temDat.chucNang)).toEqual(['tm', 'xh']);
+    expect(lo.map((l) => l.temDat.chucNang)).toEqual(['khac', 'xh']);
     expect(dienTich(lo[1].chiGioi!)).toBeCloseTo(48 * 48, 0);
     expect(lo[0].xungQuanh).toHaveLength(1);
   });
@@ -75,5 +75,12 @@ describe('đoán lớp công trình xung quanh', () => {
     expect(doanLopXungQuanh(m7)).toBe('');
     expect(doanLopXungQuanh(['QH-CGXD', 'HT-NHA', 'QH-TEM'])).toBe('HT-NHA');
     expect(doanLopXungQuanh(['A', 'Hiện trạng công trình'])).toBe('Hiện trạng công trình');
+  });
+
+  it('chế độ lớp ranh: ký hiệu CX / GD / CC / TMDV… thành lô nền (khac), NOTM / NOXH / TĐC vẫn là nhà ở', () => {
+    const d = napDxf(mau);
+    const lo = taoLoTuDxf(d, { ranh: 'QH-RANH-LO', tem: 'QH-TEM' });
+    expect(lo.find((l) => l.temDat.kyHieu === 'NOXH-01')?.temDat.chucNang).toBe('xh');
+    expect(lo.find((l) => l.temDat.kyHieu === 'CC-02')?.temDat.chucNang).toBe('khac');
   });
 });
