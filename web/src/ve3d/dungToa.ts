@@ -26,8 +26,39 @@ export const NHIP_DO_DUNG_MM = 1200;
 export const CAO_DO_NGANG_MM = 2400;
 const DAM_NHO_MM = 15, DO_RONG_DAM_MM = 300, DO_RONG_DO_MM = 60, DO_SAU_DO_MM = 120, COT_DE_MM = 600, NHIP_COT_TOI_DA_MM = 8400;
 
+/**
+ * Cột khối đế suy từ MẶT BẰNG CĂN HỘ của tầng điển hình: vách ngăn giữa hai căn kề nhau và các vách ngang hành lang gặp nhau ở góc các căn,
+ * nên cột / vách đặt đúng ở các góc căn (4 góc mỗi căn, gộp góc trùng của căn kề). Góc nằm sát đường bao tòa thì lùi vào trong mép kính
+ * (mặt ngoài cột cách đường bao 130 mm = bề dày đố + khe) để cột đứng sau vách kính; góc ở trong (phía hành lang) giữ nguyên.
+ * Trả toạ độ tâm cột (mm). Rỗng khi không có căn (dùng lưới chia đều thay thế).
+ */
+export function cotTheoMatBang(foot: Diem[], gocCan: Diem[][], canhCot = COT_DE_MM): Diem[] {
+  const GOP = 300, SAT = 500;
+  const cum: Diem[] = [];
+  for (const g of gocCan) for (const p of g) if (!cum.some((c) => Math.hypot(c[0] - p[0], c[1] - p[1]) < GOP)) cum.push([p[0], p[1]]);
+  let dt = 0; foot.forEach((p, i) => { const q = foot[(i + 1) % foot.length]; dt += p[0] * q[1] - q[0] * p[1]; });
+  const dau = dt >= 0 ? 1 : -1;
+  const kq: Diem[] = [];
+  const lui = 130 + canhCot / 2;
+  for (const p of cum) {
+    // mỗi cạnh bao ở gần (< SAT): đẩy cột vào trong sao cho cách cạnh đó đúng `lui`; góc tòa sát hai cạnh thì lùi theo cả hai
+    let x = p[0], y = p[1];
+    foot.forEach((a, i) => {
+      const b = foot[(i + 1) % foot.length], dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
+      if (L2 < 1) return;
+      const L = Math.sqrt(L2), t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L2, nx = (-dy / L) * dau, ny = (dx / L) * dau;
+      const tc = Math.max(0, Math.min(1, t)), d = Math.hypot(p[0] - (a[0] + tc * dx), p[1] - (a[1] + tc * dy));
+      if (d >= SAT) return;
+      const sd = (p[0] - a[0]) * nx + (p[1] - a[1]) * ny; // khoảng cách có dấu vào trong
+      x += nx * (lui - sd); y += ny * (lui - sd);
+    });
+    kq.push([x, y]);
+  }
+  return kq;
+}
+
 /** Dựng khối đế chi tiết vào `ngoai` (vật liệu: sàn `san`, dầm `de`, cột / vách lõi `lov` (xám bê tông), đố `khung`, kính trong `kinhDe`). Trả số mảnh để kiểm thử. */
-export function dungKhoiDe(T: T3, ngoai: THREE.Object3D, M: VatLieu3D, foot: Diem[], soDe: number, loi: Diem[][], khoiDac: (pts: Diem[], h: number, m: THREE.Material, z0: number) => THREE.Mesh): number {
+export function dungKhoiDe(T: T3, ngoai: THREE.Object3D, M: VatLieu3D, foot: Diem[], soDe: number, loi: Diem[][], cotMb: Diem[], khoiDac: (pts: Diem[], h: number, m: THREE.Material, z0: number) => THREE.Mesh): number {
   let dem = 0;
   const hop = (m: THREE.Material, mx: number, my: number, yc: number, dai: number, cao: number, sau: number, goc: number) => {
     const me = new T.Mesh(new T.BoxGeometry(dai * K, cao * K, sau * K), m);
@@ -64,13 +95,15 @@ export function dungKhoiDe(T: T3, ngoai: THREE.Object3D, M: VatLieu3D, foot: Die
       }
     });
   }
-  // cột chu vi: ở các góc và chia đều cạnh dài (nhịp ≤ 8,4 m) — cao suốt khối đế, nằm trong đường bao
+  // cột: theo mặt bằng căn hộ của tháp (`cotMb`, xem cotTheoMatBang) — cao suốt khối đế, nằm trong đường bao
   const hDe = soDe * tang;
   const cot = (px: number, py: number) => {
     const vx = cx - px, vy = cy - py, l = Math.hypot(vx, vy) || 1, d = COT_DE_MM * 0.75;
     hop(M.lov, px + (vx / l) * d, py + (vy / l) * d, hDe / 2, COT_DE_MM, hDe, COT_DE_MM, 0); // bê tông xám đậm hơn dầm / sàn để cột đọc rõ sau kính
   };
-  foot.forEach((p, i) => {
+  const hopCot = (px: number, py: number) => hop(M.lov, px, py, hDe / 2, COT_DE_MM, hDe, COT_DE_MM, 0); // bê tông xám đậm hơn dầm / sàn để cột đọc rõ sau kính
+  if (cotMb.length) cotMb.forEach((c) => hopCot(c[0], c[1]));
+  else foot.forEach((p, i) => { // không có mặt bằng căn: lưới chia đều (góc + nhịp ≤ 8,4 m)
     cot(p[0], p[1]);
     const q = foot[(i + 1) % foot.length], L = Math.hypot(q[0] - p[0], q[1] - p[1]), n = Math.ceil(L / NHIP_COT_TOI_DA_MM);
     for (let j = 1; j < n; j++) cot(p[0] + ((q[0] - p[0]) * j) / n, p[1] + ((q[1] - p[1]) * j) / n);
@@ -534,10 +567,11 @@ export function* dungToaTung(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien,
   const soCan = chung.so;
 
   // --- khối đế, thân, mái, tum (gộp theo vật liệu, nhớ theo hình) ---
-  const kNgoai = JSON.stringify([foot, soDe, H, tums, P.san]);
+  const cotMb = hDe > 0 ? cotTheoMatBang(foot, viTriCan(mau, tv, { canTheo: du.toa.canTheo, canViTri: du.toa.canViTri, latO: undefined }).map((v) => v.goc)) : [];
+  const kNgoai = JSON.stringify([foot, soDe, H, tums, P.san, cotMb]);
   const rN = layNho(nhoNgoai, kNgoai, () => {
     const ngoai = new T.Group();
-    if (hDe > 0) dungKhoiDe(T, ngoai, M, foot, soDe, tums, (pts, h, m, z0) => khoi(pts, h, m, z0, false, ngoai));
+    if (hDe > 0) dungKhoiDe(T, ngoai, M, foot, soDe, tums, cotMb, (pts, h, m, z0) => khoi(pts, h, m, z0, false, ngoai));
     khoi(foot, P.san, M.san, H, false, ngoai);
     tums.forEach((r) => { khoi(r, CAO_TUM_MM, M.tum, H + P.san, true, ngoai); khoi(r, P.san, M.san, H + P.san + CAO_TUM_MM, false, ngoai); });
     foot.forEach((p, i) => { // thành chắn mái

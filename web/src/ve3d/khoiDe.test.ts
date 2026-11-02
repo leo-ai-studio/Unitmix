@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import type { Diem } from '../tinh/kieu';
 import { taoVatLieu } from './dungCan';
-import { CAO_DO_NGANG_MM, CAO_TANG_DE_MM, DAM_DE_MM, dungKhoiDe, SAN_DE_MM } from './dungToa';
+import { CAO_DO_NGANG_MM, CAO_TANG_DE_MM, cotTheoMatBang, DAM_DE_MM, dungKhoiDe, SAN_DE_MM } from './dungToa';
 
 const M = taoVatLieu(THREE as never, [], 'vatlieu');
 const foot: Diem[] = [[0, 0], [20000, 0], [20000, 12000], [0, 12000]];
@@ -18,7 +18,7 @@ const theoVL = (g: THREE.Object3D, m: THREE.Material) => g.children.filter((o): 
 
 describe('khối đế: sàn · dầm · vách kính chia đố · cột vách', () => {
   const g = new THREE.Group();
-  dungKhoiDe(THREE as never, g, M, foot, 2, loi, khoiDac(g));
+  dungKhoiDe(THREE as never, g, M, foot, 2, loi, [], khoiDac(g));
 
   it('chiều cao: sàn 150 + kính 3.150 + dầm 700 = 4.000 mỗi tầng', () => {
     expect(SAN_DE_MM + (CAO_TANG_DE_MM - SAN_DE_MM - DAM_DE_MM) + DAM_DE_MM).toBe(CAO_TANG_DE_MM);
@@ -50,5 +50,27 @@ describe('khối đế: sàn · dầm · vách kính chia đố · cột vách',
     const cotVach = theoVL(g, M.lov).filter((m) => cao(m) === 2 * CAO_TANG_DE_MM);
     // cột: 4 góc + cạnh 20 m chia 3 nhịp (2 cột giữa) × 2 + cạnh 12 m chia 2 nhịp (1 cột giữa) × 2 = 4 + 4 + 2 = 10; + 1 vách lõi
     expect(cotVach).toHaveLength(10 + 1);
+  });
+});
+
+describe('cột suy từ mặt bằng căn hộ', () => {
+  // hai căn 10 m × 8,5 m kề nhau dọc trục: 6 góc khác nhau (góc chung của hai căn gộp một)
+  const can: Diem[][] = [[[0, 0], [10000, 0], [10000, 8500], [0, 8500]], [[10000, 0], [20000, 0], [20000, 8500], [10000, 8500]]];
+  const bao: Diem[] = [[0, 0], [20000, 0], [20000, 8500], [0, 8500]];
+  const cot = cotTheoMatBang(bao, can);
+  it('mỗi góc căn một cột, góc chung của hai căn kề gộp lại', () => {
+    expect(cot).toHaveLength(6);
+  });
+  it('mọi cột nằm trong đường bao; cột sát mép lùi vào cho mặt ngoài cách đường bao 130 mm', () => {
+    cot.forEach(([x, y]) => { expect(x).toBeGreaterThan(0); expect(x).toBeLessThan(20000); expect(y).toBeGreaterThan(0); expect(y).toBeLessThan(8500); });
+    const gocTrai = cot.filter(([x, y]) => x < 1000 && y < 1000);
+    expect(gocTrai).toHaveLength(1);
+    // góc (0,0) nằm trên hai cạnh bao: gần cạnh nào thì lùi theo cạnh đó, mặt ngoài cách mép 130
+    const [x, y] = gocTrai[0];
+    expect(x - 300).toBeCloseTo(130, 0);
+    expect(y - 300).toBeCloseTo(130, 0);
+  });
+  it('không có căn thì trả rỗng (khối đế dùng lưới chia đều)', () => {
+    expect(cotTheoMatBang(bao, [])).toEqual([]);
   });
 });

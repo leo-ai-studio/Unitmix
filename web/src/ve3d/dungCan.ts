@@ -59,7 +59,7 @@ type KhoaMau = 'tuong' | 'san' | 'khung' | 'go' | 'khung2' | 'de' | 'tum' | 'kin
 export const BANG_MAU: Record<KieuVe3D, Record<KhoaMau, number>> = {
   // v3 (thực tế hơn): sơn be kem, mép sàn / ban công xám be đậm hơn, nhôm anode xám bạc, kính xanh xám sẫm (phản chiếu trời), đế đá ốp
   // v5 (như app cũ, rõ ràng): tường ghi sáng · dải mép sàn trắng ngà để tầng đọc rõ · kính xanh lam · khung nhôm / lan can / lam xám than nổi trên tường sáng · đế ghi đậm hơn thân
-  vatlieu: { tuong: 0xd6d7d4, san: 0xf0f0ee, khung: 0x3d4448, go: 0x8a6a49, khung2: 0xe8e8e6, de: 0xb4b5b2, tum: 0xe0e1de, kinh: 0x4f8ac2, lc: 0x2d3338, lov: 0x70767a, line: 0x4a5560, mol: 0xc7aa76, kinhDai: 0x6ba3d2 },
+  vatlieu: { tuong: 0xd6d7d4, san: 0xf0f0ee, khung: 0x3d4448, go: 0x8a6a49, khung2: 0xe8e8e6, de: 0xb4b5b2, tum: 0xe0e1de, kinh: 0x7fb0dc, lc: 0x2d3338, lov: 0x70767a, line: 0x4a5560, mol: 0xc7aa76, kinhDai: 0x6ba3d2 },
   brand: { tuong: 0xfbfaf4, san: 0xdfe3dc, khung: 0x174f52, go: 0xa7835a, khung2: 0xe9ece5, de: 0xd5e2da, tum: 0xe5eeea, kinh: 0x7fa9a3, lc: 0x174f52, lov: 0x3e6f70, line: 0x174f52, mol: 0xc7aa76, kinhDai: 0x7fa9a3 },
   trang: { tuong: 0xffffff, san: 0xf2f2f0, khung: 0xd9dcda, go: 0xe8e6e1, khung2: 0xf7f7f5, de: 0xf4f4f2, tum: 0xf7f7f5, kinh: 0xcfd8d6, lc: 0xc5cac7, lov: 0xd0d4d2, line: 0x8f9894, mol: 0xb8b0a3, kinhDai: 0xdfe5e3 },
 };
@@ -90,7 +90,7 @@ export function taoVatLieu(T: T3, cat: THREE.Plane[] | CatY, kieu: KieuVe3D = 'b
     tum: son(mt(B.tum, { roughness: vl ? 0.9 : 0.8, side: T.DoubleSide }), 'tum'),
     // kính xanh xám hơi trong, phản chiếu nhẹ (môi trường RoomEnvironment ở khung 3D, chỉ kiểu Vật liệu)
     kinh: vl
-      ? kinhVL(B.kinh, { transparent: true, opacity: 0.86, depthWrite: false })
+      ? kinhVL(B.kinh, { transparent: true, opacity: 0.42, depthWrite: false })
       : mt(B.kinh, { transparent: true, opacity: kieu === 'trang' ? 0.5 : 0.42, roughness: 0.1, metalness: 0.1, depthWrite: false, side: T.DoubleSide }),
     // dải cửa khi nhìn xa: kính đặc (không trong suốt) để không lộ tường sau, vẫn phản chiếu
     // polygonOffset: dải nằm sát mặt tường, nhìn xa không nhấp nháy (z-fighting)

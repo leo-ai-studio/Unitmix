@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.18', ngay: '2026-11-03',
+    vi: [
+      '3D: kính cửa sổ khối tháp trong hơn (xanh nhạt, nhìn xuyên thấy nội thất)',
+      '3D khối đế: cột / vách đặt theo mặt bằng căn hộ của tầng điển hình — mỗi góc căn một cột, góc chung của hai căn kề gộp một; góc sát đường bao lùi vào sau vách kính',
+    ],
+    en: [
+      '3D: tower window glass is clearer (light blue, interiors show through)',
+      '3D podium: columns / walls follow the typical-floor apartment plan — one column per unit corner, shared corners of neighbouring units merged; corners on the outer edge sit behind the curtain wall',
+    ],
+  },
+  {
     v: '0.5.17', ngay: '2026-11-03',
     vi: [
       '3D khối đế: kính vách trong suốt (nhìn xuyên thấy cột, vách lõi, mép sàn), cột chu vi 600 và vách lõi xám bê tông đậm hơn dầm / sàn nên đọc rõ sau kính',
