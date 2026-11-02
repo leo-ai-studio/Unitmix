@@ -26,6 +26,7 @@ import { docCauHinh } from './nguonBanDo';
 import { TEN_LOP_GIO } from './hienThi';
 import { timDiaDiem, type DiaDiem } from './timDiaDiem';
 import { apDungTuBanVe, coToaDoThat } from './viTriTuDong';
+import { taiKml } from '../xuat/xuatKml';
 
 type Props = { pa: TrangThaiPA; tv: ThuVien | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; /** đang ở 3D (ẩn chọn điểm trên bản vẽ) */ la3D?: boolean; /** tên / địa điểm dự án: đoán tỉnh để đặt vị trí từ toạ độ bản vẽ */ diaDiem?: string };
 
@@ -45,7 +46,7 @@ export default function HopNangGio({ pa, tv, sua, chiXem, la3D, diaDiem }: Props
         <button type="button" class="hng-dong" aria-label={t('ng.dong')} title={t('ng.dong')} onClick={() => datNG({ moHop: false, chonDiem: null })}>✕</button>
       </header>
       <div class="hng-than">
-        {s.tab === 'viTri' && <TabViTri pa={pa} sua={sua} chiXem={chiXem} la3D={la3D} diaDiem={diaDiem} />}
+        {s.tab === 'viTri' && <TabViTri pa={pa} tv={tv} sua={sua} chiXem={chiXem} la3D={la3D} diaDiem={diaDiem} />}
         {s.tab === 'nang' && <TabNang pa={pa} tv={tv} la3D={la3D} />}
         {s.tab === 'gio' && <TabGio pa={pa} tv={tv} la3D={la3D} />}
       </div>
@@ -53,7 +54,7 @@ export default function HopNangGio({ pa, tv, sua, chiXem, la3D, diaDiem }: Props
   );
 }
 
-function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Props['sua']; chiXem: boolean; la3D?: boolean; diaDiem?: string }) {
+function TabViTri({ pa, tv, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; tv: ThuVien | null; sua: Props['sua']; chiXem: boolean; la3D?: boolean; diaDiem?: string }) {
   const vt = viTriPA(pa);
   const s = useNG((x) => ({ banDo2D: x.banDo2D, banDo3D: x.banDo3D, doMo: x.doMo, nguon: x.nguon, A: x.diemA, B: x.diemB, chon: x.chonDiem }));
   const [dan, setDan] = useState('');
@@ -233,6 +234,8 @@ function TabViTri({ pa, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; sua: Pr
       {vt.coToaDo && (
         <p class="hng-hang">
           <a class="nut-phu" href={`https://www.google.com/maps/@${vt.lat.toFixed(6)},${vt.lng.toFixed(6)},18z/data=!3m1!1e3`} target="_blank" rel="noopener noreferrer">{t('ng.vt.moGoogle')}</a>
+          <a class="nut-phu" href={`https://earth.google.com/web/@${vt.lat.toFixed(6)},${vt.lng.toFixed(6)},10a,500d,35y,${Math.round(vt.gocBac)}h,60t,0r`} target="_blank" rel="noopener noreferrer">{t('ng.vt.moEarth')}</a>
+          <button type="button" class="nut-phu" title={t('ng.vt.xuatKmlGoiY')} onClick={() => taiKml(pa, tv, diaDiem || 'Unitmix')}>{t('ng.vt.xuatKml')}</button>
           {!tat && <button type="button" class="nut-phu" onClick={() => sua((p) => ganViTri(p, null))}>{t('ng.vt.xoa')}</button>}
         </p>
       )}
