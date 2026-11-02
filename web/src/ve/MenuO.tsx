@@ -39,12 +39,14 @@ type PropsCN = {
   phamVi: string;
   chiXem: boolean;
   chon: (cn: CongNangO) => void;
+  /** Có (ô chính là căn và còn căn khác cùng mẫu): nút chọn mọi căn cùng mẫu để STRETCH / đổi công năng cả nhóm. */
+  cungMau?: { n: number; chon: () => void };
   /** Có (đúng một ô đang là căn): thêm tab "Đổi căn" — danh sách mẫu cùng nhóm / vị trí, bấm để xem mặt bằng rồi chọn. */
   doiCan?: { ds: CanMau[]; dangDung: string; guong: boolean; kieu: KieuMb; noiThat: boolean; doi: (id: string) => void };
 };
 
 /** Menu ngữ cảnh ô căn (L8): tab Đổi công năng (một hoặc nhiều ô) · tab Đổi căn (một ô căn: đổi sang mẫu khác cùng loại). */
-export function MenuCongNang({ x, y, dong, soO, hienTai, phamVi, chiXem, chon, doiCan }: PropsCN) {
+export function MenuCongNang({ x, y, dong, soO, hienTai, phamVi, chiXem, chon, cungMau, doiCan }: PropsCN) {
   const [tab, setTab] = useState<'cn' | 'can'>('cn');
   const [xem, setXem] = useState<string | null>(null);
   const goc = doiCan?.dangDung.split('~')[0];
@@ -87,6 +89,7 @@ export function MenuCongNang({ x, y, dong, soO, hienTai, phamVi, chiXem, chon, d
           <i class={`o-mau-cn o-mau-${cn}`} aria-hidden="true" /> {t(`oc.${cn}`)}
         </button>
       ))}
+      {cungMau && <button type="button" role="menuitem" class="menu-o-cung-mau" onClick={() => { cungMau.chon(); dong(); }}>{t('oc.chonCungMau').replace('{n}', String(cungMau.n))}</button>}
       <div class="menu-o-chu">{t('oc.apCho').replace('{v}', phamVi)}</div>
         </>
       )}

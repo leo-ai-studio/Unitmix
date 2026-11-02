@@ -130,6 +130,33 @@ export function stretchTay(mau: ToaCoMat & { duong_bao?: Diem[] }, bc: BoCuc, tv
   return (khongBu && daiRa(mau, vts, bc, tv, i0, a.id, d, opt.choDaiRa ?? true)) || { ok: false, lyDo: khongBu ? 'khongBu' : 'khongKhit' };
 }
 
+export type KetQuaStretchNhieu =
+  | { ok: true; doi: [string, string][]; mm: number }
+  | { ok: false; lyDo: LyDoStretch; chiTiet?: string; khoa: string };
+
+/**
+ * STRETCH nhiều căn, KHÔNG bù ngược: mỗi căn trong `khoas` kéo `d` mm so với mẫu đang dùng của nó (±ST_BUOC, tổng ≤ ±ST_MAX), căn
+ * khác không bị đổi ở đây. Dãy khít lại theo quy tắc tự chỉnh (tuChinhSauSua: giãn / đổi căn kề, dài ra ở đầu cánh tự do) khi phép
+ * đổi được ghi qua suaTuChinh; không khít được thì suaTuChinh chặn và báo. Một căn không kéo được thì cả lượt không kéo căn nào.
+ */
+export function stretchKhongBu(mau: ToaCoMat, bc: BoCuc, tv: ThuVien, khoas: string[], d: number): KetQuaStretchNhieu {
+  const vts = viTriCan(mau, tv);
+  const doi: [string, string][] = [];
+  for (const khoa of khoas) {
+    const v = vts.find((x) => x.khoa === khoa);
+    if (!v || congNangTai(khoa, bc) !== 'can') return { ok: false, lyDo: 'khongPhaiCan', khoa };
+    if (!d || d % ST_BUOC) return { ok: false, lyDo: 'khongKeoDuoc', khoa };
+    const { goc, st } = tachMa(canDangDung(v, bc));
+    if (!tv.can.get(goc)?.stretch) return { ok: false, lyDo: 'khongKeoDuoc', khoa };
+    const st2 = st + d;
+    if (Math.abs(st2) > ST_MAX) return { ok: false, lyDo: 'vuotGioiHan', chiTiet: `±${ST_MAX}`, khoa };
+    const id = maBienThe(goc, st2);
+    if (!tv.can.has(id)) return { ok: false, lyDo: 'khongKeoDuoc', khoa };
+    doi.push([khoa, id]);
+  }
+  return { ok: true, doi, mm: d };
+}
+
 const trongDaGiac = (p: Diem, P: Diem[]) => {
   let c = false;
   for (let i = 0, j = P.length - 1; i < P.length; j = i++) {

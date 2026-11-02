@@ -55,6 +55,7 @@
 .menu-o-hang > span { flex: 1 0 90px; }
 .menu-o-hang label { display: flex; flex-direction: row; align-items: center; gap: 4px; font-size: 12px; color: var(--ink); }
 .menu-o-hang input { min-width: 0; width: auto; padding: 0; margin: 0; flex: none; accent-color: var(--green); }
+.menu-o-cung-mau { display: block; width: 100%; text-align: left; padding: 6px 12px; margin-top: 4px; border-top: 1px solid var(--line); }
 .menu-o-chu { padding: 6px 12px 4px; color: var(--muted-text); border-top: 1px solid var(--line); margin-top: 4px; font-size: 11px; }
 
 .o-mau-cn { display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--line); vertical-align: -2px; flex: none;

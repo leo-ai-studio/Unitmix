@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.0', ngay: '2026-11-02',
+    vi: [
+      'STRETCH căn: bỏ bù ngược sang căn kề — chỉ căn đã chọn đổi, dãy tự dồn khít theo quy tắc (không khít thì báo, giữ nguyên)',
+      'Chuột phải ô căn: "Chọn mọi căn cùng mẫu"; STRETCH áp cho mọi căn đang chọn; "Áp dụng sửa cho" chép sang các tòa cùng mẫu',
+    ],
+    en: [
+      'Unit STRETCH: no more compensation on the neighbouring unit — only the selected units change and the run re-fits by rule (if it cannot, it says so and keeps the layout)',
+      'Right-click a unit: "Select all units of this type"; STRETCH applies to every selected unit; "Apply edits to" copies to same-type towers',
+    ],
+  },
+  {
     v: '0.4.11', ngay: '2026-11-02',
     vi: [
       'Cổng window.unitmixTools (mở trang với ?congCu=1): Claude Code / trình duyệt nhúng gọi thẳng bộ công cụ Leo AI trên kho thật, không qua vòng AI — ít token, vẫn một bước hoàn tác',

@@ -5,7 +5,7 @@ import { dtCongNangToa, kiemShcd } from '../tinh/congNang';
 import { apDoiViTri, apDoiViTriTang, boTangRieng, datCoCauTang, datLoi, doiCanTaiViTri, doiCanTheoTang, doiCongNang, dsMauDoiCan, thongTinLoi, veMauGoc } from '../tinh/doiCan';
 import { LOAI_CAN, type BaoCaoTuChinh, type CongNangO, type Lo, type LoaiCan, type ThuVien, type ToaDat, type TrangThaiPA } from '../tinh/kieu';
 import { laCanKhoa } from '../tinh/quyTacViTriCan';
-import { boCucTang, coCauRiengTang, coMat, ghiDeTang, tangCoRieng, ungVienDoi, ungVienKhacRong, viTriCan, type BoCuc } from '../tinh/matBang';
+import { boCucTang, canDangDung, coCauRiengTang, coMat, ghiDeTang, tangCoRieng, ungVienDoi, ungVienKhacRong, viTriCan, type BoCuc } from '../tinh/matBang';
 import { dtHanhLangTang, phanChungPhanBo } from '../tinh/phanChung';
 import { toiUuCoCau } from '../tinh/toiUu';
 import { BanVe, khungBao, type DieuKhienVe } from '../ve/BanVe';
@@ -28,7 +28,7 @@ import { datBaoStretch, useBaoStretch } from './baoStretch';
 import { mauCuaToa, suaTuChinh, useDuLieuMB } from './tuChinhTang';
 import { daGiacCacLoi, matBangRiengTang, type ChanSua, type ToaMB } from '../tinh/loiThang';
 import { datTemCan, hopCacTem } from '../tinh/temCan';
-import { ST_BUOC, stretchTay, tachMa } from '../tinh/stretch';
+import { ST_BUOC, stretchKhongBu, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
 import { ThanhCongCuTang, useKeoHanhLang, useKeoTay, useToaTam, type ChoSang, type PropsCongCu } from './CongCuTang';
 import { TayHanhLang } from '../ve/TayHanhLang';
@@ -290,6 +290,13 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   const oMenu = dsO.length === 1 ? sl.can.find((c) => c.vt.khoa === dsO[0]) : undefined;
   const doiO = (vt: (typeof sl.can)[number]['vt'], canMoi: string) => suaTuChinh(p.sua, tv, toa.id, { baoChan: baoChanDoiCho(tv, sl.can) })((q) => doiToa(q, toa.id, (x) =>
     co.tangs ? doiCanTheoTang(x, co.tangs, vt, canMoi, sl.vts, cai.suaNhieu) : doiCanTaiViTri(x, vt, canMoi, sl.vts, cai.suaNhieu)));
+  /** Chuột phải → chọn mọi căn cùng mẫu gốc với căn đang chọn (trong tầng đang xem); STRETCH sau đó áp cho cả nhóm. */
+  const canChinh = sl.can.find((c) => c.vt.khoa === canKhoa && c.cn === 'can');
+  const cungMau = canChinh ? sl.can.filter((c) => c.cn === 'can' && c.vt.canGocId === canChinh.vt.canGocId).map((c) => c.vt.khoa) : [];
+  const chonCungMau = () => {
+    chonCan(cungMau[0] ?? null);
+    datChonToa(toa, { ds: cungMau.slice(1), menu: null, thang: null });
+  };
   const soCanTang = sl.can.filter((c) => c.cn === 'can').length;
   const phamVi = nhanPhamVi(co.tangs, toa.soTangDe);
   const baoSt = useBaoStretch();
@@ -401,6 +408,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
       )}
       {menu?.loai === 'o' && (
         <MenuCongNang x={menu.x} y={menu.y} dong={dongMenu} soO={dsO.length} hienTai={cnChon.length === 1 ? cnChon[0] : null} phamVi={phamVi} chiXem={chiXem}
+          cungMau={cungMau.length > 1 ? { n: cungMau.length, chon: chonCungMau } : undefined}
           chon={(cn) => suaCongNang(p, toa, co.tangs, dsO, cn)}
           doiCan={oMenu && oMenu.cn === 'can' ? { ds: dsMauDoiCan(tv, oMenu.vt.canGocId), dangDung: oMenu.canId, guong: oMenu.vt.guong, kieu: cai.kieu, noiThat: cai.noiThat, doi: (id) => doiO(oMenu.vt, id) } : undefined} />
       )}
@@ -530,25 +538,35 @@ export function TangPhai(p: ChungTang) {
   const dsO = oDangChon(canKhoa, co.ds);
   /** Căn vừa chọn tay không đặt vừa ô (khít đoạn kẹp): phép đổi ở ô đó đã bị chặn, giữ căn cũ — báo bằng lớp phủ trên bản vẽ. */
   const baoChanDoi = baoChanDoiCho(tv, sl.can);
-  /** STRETCH tay (DC-04 · QT-81): kéo căn đang chọn `d` mm, căn kề bù ngược; không bù được thì chặn và báo bằng lớp phủ. */
+  /**
+   * STRETCH tay (DC-04 · QT-81): kéo mọi căn đang chọn `d` mm (không bù ngược sang căn kề); dãy tự dồn khít theo quy tắc tự chỉnh
+   * (suaTuChinh), không khít thì chặn và báo bằng lớp phủ. Áp sang tòa cùng mẫu theo "Áp dụng sửa cho" (phamViSua).
+   */
   const keoTay = (d: number) => {
     if (!chon) return;
+    const khoas = dsO.filter((k) => sl.can.some((c) => c.vt.khoa === k && c.cn === 'can'));
     const ks = co.tangs ?? [null];
-    const kqs = ks.map((k) => ({ k, r: stretchTay(mau, boCucTang(toa, k), tv, chon.vt.khoa, d, { choDaiRa: k === null }) }));
+    const kqs = ks.map((k) => ({ k, r: stretchKhongBu(mau, boCucTang(toa, k), tv, khoas, d) }));
     const hong = kqs.find((x) => !x.r.ok);
     if (hong && !hong.r.ok) {
-      datBaoStretch({ loai: 'loi', chu: t(`st.loi.${hong.r.lyDo}`).replace('{v}', hong.r.chiTiet ?? '').replace('{n}', String(chon.no).padStart(2, '0')) });
+      const h = hong.r, no = sl.can.find((c) => c.vt.khoa === h.khoa)?.no ?? chon.no;
+      datBaoStretch({ loai: 'loi', chu: t(`st.loi.${h.lyDo}`).replace('{v}', h.chiTiet ?? '').replace('{n}', String(no).padStart(2, '0')) });
       return;
     }
     const vtOf = (kh: string) => sl.vts.find((v) => v.khoa === kh)!;
-    suaTuChinh(sua, tv, toa.id, { baoChan: baoChanDoi })((q) => doiToa(q, toa.id, (x0) => kqs.reduce((x, { k, r }) => (!r.ok ? x : r.doi.reduce((a, [kh, id]) =>
-      (k === null ? doiCanTaiViTri(a, vtOf(kh), id, sl.vts, false) : doiCanTheoTang(a, [k], vtOf(kh), id, sl.vts, false)), x)), x0)));
-    const r0 = kqs[0].r;
-    const bu = r0.ok ? sl.can.find((c) => c.vt.khoa === r0.doi[1][0])?.no : undefined;
-    const cc = (n: number | undefined) => String(n ?? 0).padStart(2, '0');
     const dau = (v: number) => `${v > 0 ? '+' : ''}${v}`;
-    if (r0.ok && r0.daiRa) { datBaoStretch({ loai: 'ok', chu: t('st.daiRa').replace('{a}', cc(chon.no)).replace('{d}', dau(d)) }); return; }
-    datBaoStretch({ loai: 'ok', chu: t('st.ok').replace('{a}', cc(chon.no)).replace('{d}', dau(d)).replace('{b}', cc(bu)).replace('{e}', dau(-d)) });
+    // sau tự chỉnh: căn nào không còn đúng mẫu đã kéo là do dãy phải khít lại (không đủ chỗ) — báo rõ, không im lặng
+    const ketQua = (sau: ToaDat) => {
+      const yeuCau = kqs.flatMap(({ k, r }) => (r.ok ? r.doi.map(([kh, id]) => ({ k, kh, id })) : []));
+      const dung = yeuCau.filter(({ k, kh, id }) => canDangDung(vtOf(kh), boCucTang(sau, k)) === id).length;
+      if (!dung) { datBaoStretch({ loai: 'loi', chu: t('st.loi.khongKhit') }); return; }
+      if (dung < yeuCau.length) { datBaoStretch({ loai: 'ok', chu: t('st.okMotPhan').replace('{a}', String(dung)).replace('{b}', String(yeuCau.length)).replace('{d}', dau(d)) }); return; }
+      datBaoStretch({ loai: 'ok', chu: khoas.length > 1
+        ? t('st.okNhieu').replace('{n}', String(khoas.length)).replace('{d}', dau(d))
+        : t('st.okMot').replace('{a}', String(chon.no).padStart(2, '0')).replace('{d}', dau(d)) });
+    };
+    suaTuChinh(sua, tv, toa.id, { baoChan: baoChanDoi, ketQua })((q) => doiToa(q, toa.id, (x0) => kqs.reduce((x, { k, r }) => (!r.ok ? x : r.doi.reduce((a, [kh, id]) =>
+      (k === null ? doiCanTaiViTri(a, vtOf(kh), id, sl.vts, false) : doiCanTheoTang(a, [k], vtOf(kh), id, sl.vts, false)), x)), x0)));
   };
   const dongSh =(nhan: string, k: typeof shToa) => (
     <div class="dong"><span>{nhan}</span><b class={k.m2MoiCan === null ? '' : LOP_MUC[k.muc]}>{k.m2MoiCan === null ? '—' : fmtSo(k.m2MoiCan, { thapPhan: 2, donVi: t('oc.sh.donVi') })}</b></div>
