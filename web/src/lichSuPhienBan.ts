@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.5', ngay: '2026-11-02',
+    vi: [
+      'Công cụ: cập nhật chỉ tiêu Long Biên theo sheet VTK_Tháp (17) và ghi chú sửa PA hàng loạt qua cổng công cụ (không đổi giao diện).',
+    ],
+    en: [
+      'Tooling: Long Bien targets updated from the VTK_Tháp (17) sheet and notes on bulk PA edits via the tool gateway (no UI change).',
+    ],
+  },
+  {
     v: '0.5.4', ngay: '2026-11-02',
     vi: [
       'Màn Tầng: nút "Reset mặt bằng về mẫu gốc" — bỏ mọi sửa tay của tòa (đổi căn, công năng ô, lật ô, tầng riêng, thang / căn / hành lang đặt tay, STRETCH, tủ PCCC) rồi tự chỉnh lại từ mẫu gốc của app; hoàn tác được',

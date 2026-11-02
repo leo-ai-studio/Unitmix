@@ -2,6 +2,14 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-02 · Long Biên: chỉ tiêu theo VTK_Tháp (17), dựng lại 79 tòa theo Excel, xếp tòa theo LO-01 / LO-02 / LO-05, v0.5.5 · Claude Code (Sonnet 5.5)
+
+Người dùng: cập nhật chỉ tiêu `LB_o_cao_tang_261102_v2.xlsx` theo sheet `VTK_Tháp  (17)`, rồi đưa số tòa / mẫu tòa / cơ cấu căn đó vào PA Long Biên.
+- **Excel**: `scripts/boc_cad/cap_nhat_vtk17.py` → `LB_o_cao_tang_261102_v3.xlsx` (cột xếp tháp VTK, số tòa, tầng; 22 ô cao tầng; cột QH giữ nguyên).
+- **PA** `PA 1 - xếp tòa theo VTK17` (`pa-kuefox`, nhân bản PA 1; PA 1 giữ nguyên): 79 tòa đúng số tòa và mẫu theo sheet 17. Căn / tầng theo Excel: L2 · Z5 · Z6 = 21, Y2 = 23, V4 = 18, i2 = 10, V2 = 19. 2 thang (Y2 3 theo mẫu gốc), căn G giữ ở góc, hai dãy cân. Vị trí theo LO-01 / LO-02 / LO-05: 73 / 79 tòa sạch theo bộ kiểm của app.
+- **Cách làm + bẫy** (xóa căn mất căn G, `change_units` tự thêm thang, máy chủ lưu chậm, app treo…): `docs/ghi_chu_sua_pa_hang_loat.md`.
+- **Còn dở**: V2 còn 3PN 2 (Excel 1) vì căn góc V cạnh lõi không đổi được; DTXD 1 sàn lệch Excel 0,3 – 7 % (Z6 +32, i2 +60, Z5 −71 m²); NOXH-7.2 hai tòa chồng nhau (ranh CAD 12.117 m² so bảng 38.068 m²), TĐC-7.1 lùi thiếu ≤ 1,4 m; chưa kiểm PCCC / thoát nạn các tầng mới; chỉ tiêu cả dự án vẫn vượt ngưỡng QH (số căn 37.485 so với 35.217); hướng view chưa tối ưu.
+
 ## 2026-11-02 · DXF Long Biên → app: ô nền chìm, bảng chỉ tiêu đủ cột, v0.4.8 · Claude Code (Sonnet 5.5)
 
 Người dùng: DXF phương án SDĐ Long Biên đưa vào app thì mọi lô giống nhau; muốn cây xanh nền xanh, đất khác tô màu theo loại và chìm, chỉ ô đất ở cao tầng (NOTM / NOXH / TĐC, layer `2_QHSDD_DAT_DD_Nhom o`) chọn được kèm chỉ tiêu.
