@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.11', ngay: '2026-11-02',
+    vi: [
+      'Màn chờ đăng nhập / đăng ký phủ lên trang chủ: Đăng nhập · Đăng ký tài khoản mới (họ tên, mail công ty, phòng, ghi chú) · Đã gửi yêu cầu · Chờ duyệt; trang Quản trị hiện hồ sơ từng người',
+    ],
+    en: [
+      'Sign-in / registration screen over the home page: Sign in · Register a new account (name, company email, team, note) · Request sent · Pending approval; the Admin page shows each person\'s profile',
+    ],
+  },
+  {
     v: '0.5.10', ngay: '2026-11-02',
     vi: [
       'Xoá dự án có hộp xác nhận; dự án bị xoá vào thùng rác 30 ngày, quản trị khôi phục được rồi mới xoá hẳn (dọn tự động mỗi ngày)',

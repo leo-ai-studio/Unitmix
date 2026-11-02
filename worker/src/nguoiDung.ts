@@ -5,7 +5,7 @@
 import { thuocMien } from './danhTinh';
 
 export type TrangThai = 'cho' | 'duyet' | 'tu_choi';
-export type NguoiDung = { email: string; trang_thai: TrangThai; yeu_cau_luc: string; duyet_luc: string | null; duyet_boi: string | null };
+export type NguoiDung = { email: string; trang_thai: TrangThai; yeu_cau_luc: string; duyet_luc: string | null; duyet_boi: string | null; ho_ten: string; phong: string; ghi_chu: string };
 export type LyDo = 'chua_dang_nhap' | 'sai_mien' | 'cho_duyet' | 'tu_choi';
 export type QuyetDinh = { duocTao: boolean; laQuanTri: boolean; trangThai: TrangThai | null; lyDo: LyDo | null };
 
@@ -31,6 +31,21 @@ export const docTrangThai = async (db: D1Database, email: string): Promise<Trang
 export const ghiNhanYeuCau = (db: D1Database, email: string, bay: string) =>
   db.prepare("INSERT OR IGNORE INTO nguoi_dung (email, trang_thai, yeu_cau_luc) VALUES (?, 'cho', ?)").bind(chuanMail(email), bay).run();
 
+export type HoSo = { ho_ten: string; phong: string; ghi_chu: string };
+const cat = (v: unknown, n: number) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, n) : '');
+/** Làm sạch hồ sơ đăng ký do người dùng nhập (cắt độ dài, gộp khoảng trắng). */
+export const lamSachHoSo = (b: Partial<Record<keyof HoSo, unknown>>): HoSo => ({ ho_ten: cat(b.ho_ten, 80), phong: cat(b.phong, 120), ghi_chu: cat(b.ghi_chu, 500) });
+
+/** Đăng ký / cập nhật hồ sơ. Mail mới → "chờ duyệt"; mail đã có thì chỉ cập nhật hồ sơ, KHÔNG đổi trạng thái (không tự duyệt lại được). */
+export const ghiHoSo = (db: D1Database, email: string, h: HoSo, bay: string) =>
+  db.prepare(
+    `INSERT INTO nguoi_dung (email, trang_thai, yeu_cau_luc, ho_ten, phong, ghi_chu) VALUES (?, 'cho', ?, ?, ?, ?)
+     ON CONFLICT (email) DO UPDATE SET ho_ten = excluded.ho_ten, phong = excluded.phong, ghi_chu = excluded.ghi_chu`,
+  ).bind(chuanMail(email), bay, h.ho_ten, h.phong, h.ghi_chu).run();
+
+export const docHoTen = async (db: D1Database, email: string): Promise<string> =>
+  (await db.prepare('SELECT ho_ten FROM nguoi_dung WHERE email = ?').bind(chuanMail(email)).first<{ ho_ten: string }>())?.ho_ten ?? '';
+
 /** Quản trị đặt trạng thái (thêm mới nếu mail chưa có — duyệt trước cả mail chưa đăng nhập lần nào). */
 export const datTrangThai = (db: D1Database, email: string, tt: TrangThai, boi: string, bay: string) =>
   db.prepare(
@@ -41,7 +56,7 @@ export const datTrangThai = (db: D1Database, email: string, tt: TrangThai, boi: 
 /** Dữ liệu trang quản trị: người dùng (chờ duyệt lên đầu) kèm số dự án đã tạo, và các dự án kèm người tạo. */
 export async function lietKeQuanTri(db: D1Database) {
   const nguoi = await db.prepare(
-    `SELECT n.email, n.trang_thai, n.yeu_cau_luc, n.duyet_luc, n.duyet_boi,
+    `SELECT n.email, n.trang_thai, n.yeu_cau_luc, n.duyet_luc, n.duyet_boi, n.ho_ten, n.phong, n.ghi_chu,
             (SELECT COUNT(*) FROM du_an d WHERE d.tao_boi = n.email AND d.xoa_luc IS NULL) AS so_du_an
      FROM nguoi_dung n
      ORDER BY CASE n.trang_thai WHEN 'cho' THEN 0 WHEN 'duyet' THEN 1 ELSE 2 END, n.yeu_cau_luc DESC`,

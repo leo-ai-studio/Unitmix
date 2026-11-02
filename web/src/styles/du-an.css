@@ -183,3 +183,6 @@
   .qt-an-hep { display: none; }
   .qt-nut { margin-left: 0; }
 }
+.qt-mail small { margin-left: 4px; font-weight: 400; color: var(--muted-text); }
+.qt-mail .qt-ghi { display: block; margin: 0; overflow: hidden; text-overflow: ellipsis; }
+.qt-mail { white-space: normal; max-height: 3.2em; }

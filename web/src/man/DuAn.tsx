@@ -12,6 +12,7 @@ import { ChonLang, TacGiaBan, ThuongHieu } from '../ui/ThanhTren';
 import { BieuTuong, NutBieuTuong } from '../ui/NutBieuTuong';
 import { fmtSo } from '../ui/so';
 import { luoi } from '../ui/Luoi';
+import { ChaoDangNhap } from './ChaoDangNhap';
 import { locDuAn, sapDuAn, type CachSap, type DongDuAn } from './locDuAn';
 
 // So sánh PA (kèm tính chi phí): chunk riêng, tải khi mở hộp.
@@ -135,7 +136,8 @@ export function DuAn() {
   const [tenBan, setTenBan] = useState(layTenNguoi);
   /** Đăng nhập công ty (Cloudflare Access): chỉ khi máy chủ bật yêu cầu thì nút Tạo / Nhân bản mới đòi đăng nhập. */
   const [toi, setToi] = useState<Toi | null>(null);
-  useEffect(() => { api.toi().then(setToi, () => {}); }, []);
+  const napToi = () => api.toi().then(setToi, () => {});
+  useEffect(() => { napToi(); }, []);
   const diDangNhap = () => { location.href = `${toi?.dangNhap ?? '/api/dang-nhap'}?quay=${encodeURIComponent(location.pathname + location.search)}`; };
   /** Lý do chưa được tạo dự án (chờ duyệt / bị từ chối / sai miền) bằng chữ. */
   const lyDoChan = (x: Toi) => t(x.trangThai === 'cho' ? 'duAn.choDuyet' : x.trangThai === 'tu_choi' ? 'duAn.biTuChoi' : 'duAn.saiMien').replace('{mail}', x.email ?? '');
@@ -433,6 +435,7 @@ export function DuAn() {
           {bao.hoanTac && <button type="button" onClick={bao.hoanTac}>{t('duAn.hoanTac')}</button>}
         </div>
       )}
+      {toi?.yeuCau && !toi.laQuanTri && !toi.duocTao && <ChaoDangNhap toi={toi} napLai={napToi} />}
       {moTao && <HopTaoDuAn dong={() => setMoTao(false)} />}
       {soSanh && dong.find((x) => x.ma === soSanh)?.da && <SoSanhPA ma={soSanh} da={dong.find((x) => x.ma === soSanh)!.da!} dong={() => setSoSanh(null)} />}
     </div>

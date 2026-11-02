@@ -56,7 +56,10 @@ export function QuanTri() {
               {!ds.nguoi.length && <p class="qt-trong">{t('qt.chuaCo')}</p>}
               {ds.nguoi.map((n) => (
                 <div class="qt-hang" key={n.email}>
-                  <span class="qt-mail" title={n.email}>{n.email}</span>
+                  <span class="qt-mail" title={[n.ho_ten, n.email, n.phong, n.ghi_chu].filter(Boolean).join(' · ')}>
+                    {n.ho_ten ? <>{n.ho_ten} <small>{n.email}</small></> : n.email}
+                    {(n.phong || n.ghi_chu) && <small class="qt-ghi">{[n.phong, n.ghi_chu].filter(Boolean).join(' · ')}</small>}
+                  </span>
                   <span class={`qt-nhan qt-nhan-${n.trang_thai}`}>{t(`qt.tt.${n.trang_thai}`)}</span>
                   <span class="qt-phu">{t('qt.soDuAn').replace('{n}', String(n.so_du_an))}</span>
                   <span class="qt-phu qt-an-hep" title={ngayGio(n.yeu_cau_luc)}>{ngay(n.yeu_cau_luc)}</span>

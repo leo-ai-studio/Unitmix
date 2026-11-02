@@ -1,6 +1,6 @@
 import { env, SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import { datTrangThai, docTrangThai, ghiNhanYeuCau, lietKeQuanTri, quyetDinhTao } from '../src/nguoiDung';
+import { datTrangThai, docHoTen, docTrangThai, ghiHoSo, ghiNhanYeuCau, lamSachHoSo, lietKeQuanTri, quyetDinhTao } from '../src/nguoiDung';
 
 const MIEN = 'meygroup.vn', QT = 'nghiavt.ai1@gmail.com';
 const q = (email: string | null, trangThai: 'cho' | 'duyet' | 'tu_choi' | null = null, mien: string | undefined = MIEN) =>
@@ -51,5 +51,26 @@ describe('API quản trị', () => {
     expect((await SELF.fetch('https://unitmix.leo-ai.dev/api/quan-tri')).status).toBe(401);
     const r = await SELF.fetch('https://unitmix.leo-ai.dev/api/quan-tri/duyet', { method: 'POST', body: JSON.stringify({ email: 'a@meygroup.vn', trang_thai: 'duyet' }) });
     expect(r.status).toBe(401);
+  });
+});
+
+describe('đăng ký hồ sơ', () => {
+  it('làm sạch: gộp khoảng trắng, cắt độ dài, bỏ giá trị không phải chuỗi', () => {
+    expect(lamSachHoSo({ ho_ten: '  Nguyễn   Văn  A ', phong: 5, ghi_chu: 'x'.repeat(600) })).toEqual({ ho_ten: 'Nguyễn Văn A', phong: '', ghi_chu: 'x'.repeat(500) });
+  });
+  it('mail mới → chờ duyệt kèm hồ sơ; đăng ký lại chỉ cập nhật hồ sơ, KHÔNG đổi trạng thái đã duyệt', async () => {
+    const bay = '2026-11-02T12:00:00.000Z';
+    await ghiHoSo(env.DB, 'Moi@MeyGroup.vn', { ho_ten: 'Mới', phong: 'TK', ghi_chu: '' }, bay);
+    expect(await docTrangThai(env.DB, 'moi@meygroup.vn')).toBe('cho');
+    expect(await docHoTen(env.DB, 'moi@meygroup.vn')).toBe('Mới');
+    await datTrangThai(env.DB, 'moi@meygroup.vn', 'duyet', QT, bay);
+    await ghiHoSo(env.DB, 'moi@meygroup.vn', { ho_ten: 'Mới 2', phong: 'KD', ghi_chu: 'ghi' }, bay);
+    expect(await docTrangThai(env.DB, 'moi@meygroup.vn')).toBe('duyet');
+    const n = (await lietKeQuanTri(env.DB)).nguoi.find((x) => x.email === 'moi@meygroup.vn')!;
+    expect([n.ho_ten, n.phong, n.ghi_chu]).toEqual(['Mới 2', 'KD', 'ghi']);
+  });
+  it('/api/dang-ky khi chưa bật đăng nhập công ty → 400', async () => {
+    const r = await SELF.fetch('https://unitmix.leo-ai.dev/api/dang-ky', { method: 'POST', body: JSON.stringify({ email: 'a@meygroup.vn', ho_ten: 'A' }) });
+    expect(r.status).toBe(400);
   });
 });

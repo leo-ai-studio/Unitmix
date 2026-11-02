@@ -23,9 +23,10 @@ async function goi<T>(duong: string, init: RequestInit = {}, maSua?: string | nu
 export type Toi = {
   yeuCau: boolean; email: string | null; duocTao: boolean; dangNhap: string;
   trangThai: 'cho' | 'duyet' | 'tu_choi' | null; lyDo: string | null; laQuanTri: boolean; soCho: number;
+  hoTen: string; daDangKy: boolean; mien: string;
 };
 export type QuanTriApi = {
-  nguoi: { email: string; trang_thai: 'cho' | 'duyet' | 'tu_choi'; yeu_cau_luc: string; duyet_luc: string | null; duyet_boi: string | null; so_du_an: number }[];
+  nguoi: { email: string; trang_thai: 'cho' | 'duyet' | 'tu_choi'; yeu_cau_luc: string; duyet_luc: string | null; duyet_boi: string | null; so_du_an: number; ho_ten: string; phong: string; ghi_chu: string }[];
   du_an: { ma: string; ten: string; tao_boi: string; tao_luc: string; so_pa: number }[];
   thung_rac: { ma: string; ten: string; tao_boi: string; xoa_luc: string; xoa_boi: string; so_pa: number; con_lai_ngay: number }[];
   ngay_giu: number;
@@ -34,6 +35,9 @@ export type QuanTriApi = {
 export const api = {
   /** Ai đang dùng: có yêu cầu đăng nhập (mail công ty) để tạo dự án không, đã đăng nhập chưa. */
   toi: () => goi<Toi>('/api/toi'),
+  /** Đăng ký tài khoản mới (không cần đăng nhập): hồ sơ gửi quản trị duyệt. */
+  dangKy: (b: { email: string; ho_ten: string; phong: string; ghi_chu: string }) =>
+    goi<{ ok: true; trang_thai: string }>('/api/dang-ky', { method: 'POST', body: JSON.stringify(b) }),
   quanTri: () => goi<QuanTriApi>('/api/quan-tri'),
   quanTriXoa: (ma: string) => goi<{ ok: true }>('/api/quan-tri/xoa', { method: 'POST', body: JSON.stringify({ ma }) }),
   khoiPhuc: (ma: string) => goi<{ ok: true }>('/api/quan-tri/khoi-phuc', { method: 'POST', body: JSON.stringify({ ma }) }),

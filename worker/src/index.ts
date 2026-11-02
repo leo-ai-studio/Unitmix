@@ -3,9 +3,9 @@ import { bam, bangNhau, chuoiNgauNhien, taoMaDuAn, taoMaSua } from './maSua';
 import { tuyenAI, type EnvAI } from './ai';
 import { cauHinhBanDo, type EnvBanDo } from './banDo';
 import { xuLyTram, type EnvTram } from './tram';
-import { docDanhTinh, type EnvDanhTinh } from './danhTinh';
+import { docDanhTinh, thuocMien, type EnvDanhTinh } from './danhTinh';
 import { dsThungRac, donThungRac, khoiPhuc, ngayGiu, xoaMem } from './thungRac';
-import { datTrangThai, docTrangThai, ghiNhanYeuCau, laQuanTri, lietKeQuanTri, quyetDinhTao, type TrangThai } from './nguoiDung';
+import { datTrangThai, docHoTen, docTrangThai, ghiHoSo, ghiNhanYeuCau, lamSachHoSo, laQuanTri, lietKeQuanTri, quyetDinhTao, type TrangThai } from './nguoiDung';
 
 export { Tram } from './tram';
 
@@ -70,8 +70,26 @@ const nguoiSua = (email: string | null, khai: unknown) => email ?? tenNguoi(khai
 /** Cho giao diện biết: có yêu cầu đăng nhập không, đã đăng nhập chưa, được tạo chưa (hoặc đang chờ duyệt), có phải quản trị không. */
 app.get('/api/toi', async (c) => {
   const q = await quyenTao(c);
+  const hoTen = q.email && c.env.MIEN_TAO_DA ? await docHoTen(c.env.DB, q.email) : '';
   const soCho = q.laQuanTri ? (await lietKeQuanTri(c.env.DB)).nguoi.filter((n) => n.trang_thai === 'cho').length : 0;
-  return c.json({ yeuCau: !!c.env.MIEN_TAO_DA, email: q.email, duocTao: q.duocTao, trangThai: q.trangThai, lyDo: q.lyDo, laQuanTri: q.laQuanTri, soCho, dangNhap: '/api/dang-nhap' });
+  return c.json({ yeuCau: !!c.env.MIEN_TAO_DA, email: q.email, duocTao: q.duocTao, trangThai: q.trangThai, lyDo: q.lyDo, laQuanTri: q.laQuanTri, soCho, hoTen, daDangKy: !!hoTen, mien: c.env.MIEN_TAO_DA ?? '', dangNhap: '/api/dang-nhap' });
+});
+
+/**
+ * Đăng ký tài khoản mới (không cần đăng nhập): gửi họ tên / mail công ty / phòng / ghi chú cho quản trị. Chỉ nhận mail thuộc `MIEN_TAO_DA`;
+ * đã đăng nhập thì lấy mail từ phiên (không tin mail trong body). Mail đã có chỉ cập nhật hồ sơ, không đổi trạng thái duyệt.
+ */
+app.post('/api/dang-ky', async (c) => {
+  if (!c.env.MIEN_TAO_DA) return c.json({ loi: 'khong_bat' }, 400);
+  const b = await docBody<{ email?: string; ho_ten?: string; phong?: string; ghi_chu?: string }>(c);
+  if (!b) return c.json({ loi: 'qua_lon' }, 413);
+  const email = ((await emailDangNhap(c)) ?? (b.email ?? '')).trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return c.json({ loi: 'mail_sai' }, 400);
+  if (!thuocMien(email, c.env.MIEN_TAO_DA)) return c.json({ loi: 'sai_mien' }, 403);
+  const h = lamSachHoSo(b);
+  if (!h.ho_ten) return c.json({ loi: 'thieu_ho_ten' }, 400);
+  await ghiHoSo(c.env.DB, email, h, bayGio());
+  return c.json({ ok: true, trang_thai: (await docTrangThai(c.env.DB, email)) ?? 'cho' }, 201);
 });
 
 /** Trang quản trị: danh sách người dùng + dự án kèm người tạo. */
