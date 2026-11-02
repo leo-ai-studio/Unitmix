@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.4', ngay: '2026-11-02',
+    vi: [
+      'Màn Tầng: nút "Reset mặt bằng về mẫu gốc" — bỏ mọi sửa tay của tòa (đổi căn, công năng ô, lật ô, tầng riêng, thang / căn / hành lang đặt tay, STRETCH, tủ PCCC) rồi tự chỉnh lại từ mẫu gốc của app; hoàn tác được',
+    ],
+    en: [
+      'Floor screen: "Reset floor plan to original template" button — drops every manual edit of the tower (unit swaps, cell functions, flipped cells, per-floor layouts, hand-placed stairs / units / corridor ends, STRETCH, hose cabinets) and re-runs auto-adjust from the original app template; undo available',
+    ],
+  },
+  {
     v: '0.5.3', ngay: '2026-11-02',
     vi: [
       'Menu chuột phải ô › Đổi căn: chỉ đổi đúng những ô đang chọn (trước đây đổi luôn mọi căn cùng mẫu); chọn nhiều căn cùng mẫu thì đổi cả nhóm; "Sửa nhiều căn" mặc định tắt',

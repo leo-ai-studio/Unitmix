@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { demCan, diemLechCoCau, phanTram } from '../tinh/coCau';
 import { dtCongNangToa, kiemShcd } from '../tinh/congNang';
-import { apDoiViTri, apDoiViTriTang, boTangRieng, datCoCauTang, datLoi, doiCanTaiViTri, doiCanTheoTang, doiCongNang, dsMauDoiCan, thongTinLoi, veMauGoc } from '../tinh/doiCan';
+import { apDoiViTri, apDoiViTriTang, boTangRieng, datCoCauTang, datLoi, doiCanTaiViTri, doiCanTheoTang, doiCongNang, dsMauDoiCan, thongTinLoi, veMauGoc, veMauGocMB } from '../tinh/doiCan';
 import { LOAI_CAN, type BaoCaoTuChinh, type CongNangO, type Lo, type LoaiCan, type ThuVien, type ToaDat, type TrangThaiPA } from '../tinh/kieu';
 import { boCucTang, canDangDung, coCauRiengTang, coMat, ghiDeTang, tangCoRieng, viTriCan, type BoCuc } from '../tinh/matBang';
 import { dtHanhLangTang, phanChungPhanBo } from '../tinh/phanChung';
@@ -203,6 +203,8 @@ export function TangTrai(p: ChungTang) {
           <label class="o-tg" title={t('gt.tang.doiRong')}><input type="checkbox" disabled={chiXem} checked={doiRong} onChange={(e) => setDoiRong(e.currentTarget.checked)} /><span>{t('tang.doiRong')}</span></label>
           <button type="button" class="nut-phu" title={chiXem ? t('soan.chiXem') : t('gt.tang.veGoc')} disabled={chiXem || !coDoiCan}
             onClick={() => { suaTuChinh(sua, tv, toa.id, { tay: false })((q) => doiToa(q, toa.id, veMauGoc)); setGhiChu(''); }}>{t('tang.veGoc')}</button>
+          <button type="button" class="nut-phu" title={chiXem ? t('soan.chiXem') : t('gt.tang.veGocMB')} disabled={chiXem}
+            onClick={() => { suaTuChinh(sua, tv, toa.id, { tay: false })((q) => doiToa(q, toa.id, veMauGocMB)); setGhiChu(t('tang.daVeGocMB')); }}>{t('tang.veGocMB')}</button>
         </div>
         {ghiChu && <p class="dong canh-bao" role="status" style={{ margin: 0 }}>{ghiChu}</p>}
       </MucGap>
