@@ -31,8 +31,63 @@ function cotTheoTieuDe(luoi: Luoi): { hang: number; tyLe?: number; soCan?: numbe
   return { hang: -1 };
 }
 
+type KhoiMaTran = { dt: boolean; cot: (LoaiCan | null)[]; hang: { nhan: string; v: (number | null)[] }[] };
+
+/**
+ * Bảng ma trận kiểu VTK: mỗi dòng một mẫu tháp, mỗi CỘT một loại căn (STU, 1PN+, 2PN-N, 2PN+_G, 3PN…). Khối "số lượng căn / tầng"
+ * cho số căn, khối "diện tích" cho DT căn; DT mỗi loại = trung bình có trọng số số căn. Cột không phải loại căn (Duplex…) bỏ qua.
+ */
+function khoiMaTran(luoi: Luoi): KhoiMaTran[] {
+  const kq: KhoiMaTran[] = [];
+  for (let r = 0; r < luoi.length; r++) {
+    const cot = (luoi[r] ?? []).map((o, i) => (i === 0 || typeof o !== 'string' ? null : loaiTheoNhan(o)));
+    if (new Set(cot.filter((x) => x)).size < 3) continue;
+    const ngu = [luoi[r - 2], luoi[r - 1], luoi[r]].flatMap((h) => (h ?? []).map((o) => boDau(chuTrongO(o)))).join('|');
+    const dt = !/so luong|so can/.test(ngu) && /dien tich/.test(ngu);
+    const hang: KhoiMaTran['hang'] = [];
+    let q = r + 1;
+    for (; q < luoi.length; q++) {
+      const nhan = chuTrongO((luoi[q] ?? [])[0] ?? null);
+      const v = cot.map((c, i) => (c ? soTrongO((luoi[q] ?? [])[i] ?? null) : null));
+      if (!nhan || !v.some((x) => x !== null)) break;
+      hang.push({ nhan, v });
+    }
+    if (hang.length) kq.push({ dt, cot, hang });
+    r = q;
+  }
+  return kq;
+}
+
+function docMaTran(luoi: Luoi): DeBaiDoc | null {
+  const khoi = khoiMaTran(luoi);
+  const dem = khoi.find((k) => !k.dt);
+  if (!dem) return null;
+  const dtKhoi = khoi.find((k) => k.dt && k.cot.length === dem.cot.length);
+  const sc = new Map<LoaiCan, number>(), tdt = new Map<LoaiCan, number>(), mauSo = new Map<LoaiCan, number>();
+  for (const h of dem.hang) {
+    const dtHang = dtKhoi?.hang.find((x) => boDau(x.nhan) === boDau(h.nhan));
+    h.v.forEach((n, i) => {
+      const loai = dem.cot[i];
+      if (!loai || !n) return;
+      sc.set(loai, (sc.get(loai) ?? 0) + n);
+      const d = dtHang?.v[i];
+      if (d) { tdt.set(loai, (tdt.get(loai) ?? 0) + n * d); mauSo.set(loai, (mauSo.get(loai) ?? 0) + n); }
+    });
+  }
+  const tong = [...sc.values()].reduce((a, b) => a + b, 0);
+  if (!tong) return null;
+  const dong: DongDeBai[] = LOAI_CAN.filter((k) => sc.has(k)).map((k) => ({
+    loai: k, nhan: k, tyLe: (sc.get(k)! / tong) * 100, soCan: sc.get(k)!,
+    dtCan: mauSo.get(k) ? Math.round((tdt.get(k)! / mauSo.get(k)!) * 10) / 10 : null,
+  }));
+  const coCau = Object.fromEntries(LOAI_CAN.map((k) => [k, Math.round(((sc.get(k) ?? 0) / tong) * 1000) / 10])) as Record<LoaiCan, number>;
+  return { dong, coCau, canhBao: [`bảng ma trận: gộp ${dem.hang.length} mẫu tháp (${dem.hang.map((h) => h.nhan).join(', ')}), mỗi mẫu 1 tầng điển hình`] };
+}
+
 /** Đọc lưới (sheet Excel hoặc bảng dán). Dòng nào nhận được loại căn thì lấy; cột số lấy theo tiêu đề, không có tiêu đề thì đoán. */
 export function docDeBai(luoi: Luoi): DeBaiDoc {
+  const maTran = docMaTran(luoi);
+  if (maTran) return maTran;
   const cot = cotTheoTieuDe(luoi);
   const canhBao: string[] = [];
   const gop = new Map<LoaiCan, DongDeBai>();

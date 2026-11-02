@@ -28,4 +28,20 @@ describe('đề bài unitmix của kinh doanh', () => {
     expect(docDeBai([['Loại', 'Tỷ lệ'], ['1PN', 30]]).canhBao).toEqual(['tổng tỷ lệ 30.0 % (khác 100 %)']);
     expect(docDeBai([['abc']]).canhBao).toEqual(['không nhận được dòng loại căn nào']);
   });
+  it('bảng ma trận VTK: dòng = mẫu tháp, cột = loại căn; số căn gộp, DT trung bình theo số căn', () => {
+    const luoi = [
+      ['DIỆN TÍCH CĂN HỘ / 1 TẦNG ĐIỂN HÌNH'],
+      ['Mẫu tháp', 'STU', '1PN+', '2PN-N', '2PN+', '3PN', 'Duplex'],
+      ['A', 30, 45, 60, 70, 90, 200],
+      ['B', 30, 45, 70, 70, 90, 200],
+      [],
+      ['(A) SỐ LƯỢNG CĂN HỘ / 1 TẦNG ĐIỂN HÌNH'],
+      ['Mẫu tháp', 'STU', '1PN+', '2PN-N', '2PN+', '3PN', 'Duplex'],
+      ['A', 1, 3, 9, 3, 1, 12],
+      ['B', 1, 1, 3, 2, 1, 7],
+    ];
+    const d = docDeBai(luoi);
+    expect(d.dong.map((x) => [x.loai, x.soCan, x.dtCan])).toEqual([['stu', 2, 30], ['1pn', 4, 45], ['2pn', 12, 62.5], ['2pnp', 5, 70], ['3pn', 2, 90]]);
+    expect(d.coCau['2pn']).toBe(48);
+  });
 });

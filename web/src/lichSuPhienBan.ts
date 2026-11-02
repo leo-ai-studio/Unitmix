@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.10', ngay: '2026-11-02',
+    vi: [
+      'Đề bài KD: đọc được bảng ma trận kiểu VTK (dòng = mẫu tháp, cột = loại căn STU / 1PN+ / 2PN-N / 2PN+…): gộp số căn các mẫu, tính tỷ lệ cơ cấu và DT căn trung bình',
+    ],
+    en: [
+      'Sales brief: reads VTK-style matrix tables (rows = tower templates, columns = unit types): sums unit counts, derives the mix and the weighted average unit area',
+    ],
+  },
+  {
     v: '0.4.9', ngay: '2026-11-02',
     vi: [
       'Tổng mặt bằng: tên lô co theo bề rộng lô, nhỏ hơn trước — không còn che khối tháp đã xếp',
