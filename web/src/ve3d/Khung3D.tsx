@@ -198,8 +198,8 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
         scene.background = new T.Color(N.troi);
         const vatLieu = kieuVe === 'vatlieu';
         // Vật liệu: ánh xạ tông Khronos PBR Neutral (giữ đúng màu brand / be hơn ACES, vẫn nén vùng sáng của nắng + phản chiếu) + sRGB ra
-        if (vatLieu) { R.toneMapping = T.NeutralToneMapping; R.toneMappingExposure = 1.05; }
-        scene.add(new T.HemisphereLight(N.hemi[0], N.hemi[1], kieuVe === 'trang' ? 2.4 : vatLieu ? 1.15 : 2.1));
+        if (vatLieu) { R.toneMapping = T.NeutralToneMapping; R.toneMappingExposure = 1.12; }
+        scene.add(new T.HemisphereLight(N.hemi[0], N.hemi[1], kieuVe === 'trang' ? 2.4 : vatLieu ? 1.35 : 2.1));
         const sun = new T.DirectionalLight(vatLieu ? 0xfff0da : 0xfff6e8, vatLieu ? 2.6 : 2.6);
         sun.castShadow = true; sun.shadow.mapSize.setScalar(TS.bong); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
         // Vật liệu: bóng đổ dịu (trời nhiều ánh sáng tán xạ). Môi trường (bầu trời thủ tục lọc PMREM) tạo SAU frame đầu, không chặn (batDau)
@@ -402,7 +402,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
           if (pha === 0) return false;
           // mặt cắt gần (near) theo khoảng cách tới điểm nhìn: độ chính xác bộ đệm sâu ∝ d² / near, near cố định 0,1 m thì ở xa vài trăm mét
           // các mặt cách nhau vài cm (nền, ô đất, đường) bị nhấp nháy — near tăng theo khoảng cách (≤ 20 m) giữ sai số dưới ~1 cm
-          const kc = cam.position.distanceTo(ctl.target), near = Math.min(20, Math.max(0.1, kc * 0.02));
+          const kc = cam.position.distanceTo(ctl.target), near = Math.min(40, Math.max(0.5, kc * 0.02)); // sàn 0,5 m như bản cũ (MDI Unitmix: near = max(0,5, D / 400)) — xoay / zoom không nhấp nháy
           if (Math.abs(near - cam.near) > cam.near * 0.15) { cam.near = near; cam.updateProjectionMatrix(); }
           if (pha === 1) { scene.overrideMaterial = vlXem; try { R.render(scene, cam); } finally { scene.overrideMaterial = null; } return true; }
           const moi = thieuDich(scene, daDich).filter((x) => !choDich.has(x.m));

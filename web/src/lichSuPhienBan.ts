@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.15', ngay: '2026-11-03',
+    vi: [
+      '3D kiểu Vật liệu như app cũ: tường ghi sáng, dải mép sàn trắng ngà, kính xanh lam, khung / lan can xám than; nét viền mảnh và nhạt hơn',
+      'Xoay / zoom 3D không còn giật, nháy: mặt cắt gần của camera tối thiểu 0,5 m và tăng theo khoảng cách (như app cũ)',
+    ],
+    en: [
+      '3D Material style like the old app: light-grey walls, ivory slab bands, blue glass, charcoal frames / railings; thinner, lighter edge lines',
+      'No more stutter or flicker when rotating / zooming 3D: camera near plane is at least 0.5 m and grows with distance (as in the old app)',
+    ],
+  },
+  {
     v: '0.5.14', ngay: '2026-11-03',
     vi: [
       'Mô hình trắng 3D: chỉ khối nhà màu trắng; ô đất, mặt nước, đường, cây giữ màu (cây xanh), nền và trời không còn trắng',
