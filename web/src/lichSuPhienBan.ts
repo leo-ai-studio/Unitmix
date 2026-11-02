@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.8', ngay: '2026-11-02',
+    vi: [
+      'Cổng window.unitmixTools (mở trang với ?congCu=1): Claude Code / trình duyệt nhúng gọi thẳng bộ công cụ Leo AI trên kho thật, không qua vòng AI — ít token, vẫn một bước hoàn tác',
+      'Màn Tầng, 3D: hết nháy sọc khi bật ảnh vệ tinh (tắt mặt đất nền); không còn cây trong lô cao tầng',
+    ],
+    en: [
+      'window.unitmixTools gate (open with ?congCu=1): Claude Code / embedded browser call the Leo AI tools directly on the real store — no AI loop, fewer tokens, still one undo step',
+      '3D: no more flicker with satellite imagery (base ground hidden); no trees inside high-rise lots',
+    ],
+  },
+  {
     v: '0.4.7', ngay: '2026-11-01',
     vi: [
       'Màn Tầng: mục Áp dụng sửa cho — chép phép sửa cơ cấu căn sang mọi tòa cùng mẫu trong lô hoặc cả dự án (một bước hoàn tác)',
