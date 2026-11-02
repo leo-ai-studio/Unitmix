@@ -29,7 +29,7 @@ new_sqlite_classes = ["Tram"]
 # Đăng nhập mail công ty để tạo dự án (docs/dang_nhap_cloudflare.md).
 [vars]
 CF_ACCESS_TEAM = "lively-darkness-9f3f"
-CF_ACCESS_AUD = "26f6ed019fd63a0ee4172e9474f4904b4516f644fd7f2473a19ad86c4fb88faf"
+CF_ACCESS_AUD = "4d124f9e2934c0c65bf5f48db809e4b4082c00409ff5238b3d62b2e7c22d053e"
 MIEN_TAO_DA = "meygroup.vn"
 MAIL_QUAN_TRI = "nghiavt.ai1@gmail.com"
 
