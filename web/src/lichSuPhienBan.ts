@@ -6,6 +6,11 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.8', ngay: '2026-11-02',
+    vi: ['Hộp Vị trí: thêm nút "Mở Google Earth 3D" (bay tới đúng toạ độ, hướng theo góc Bắc) và "Xuất KML" (ranh lô, chỉ giới, khối tòa đùn theo chiều cao) để kéo vào Google Earth'],
+    en: ['Location box: new "Open in Google Earth 3D" (flies to the set coordinates, heading from the north angle) and "Export KML" (lot boundaries, setback lines, tower volumes extruded to height) to drop into Google Earth'],
+  },
+  {
     v: '0.5.7', ngay: '2026-11-02',
     vi: [
       'Danh sách dự án: nhân bản cả dự án (mã + mã sửa mới); thêm cột Dân số; số căn mỗi loại kèm tỉ lệ % (vd 814 (10%)); cột Sửa lúc có cả giờ và tên người sửa gần nhất (tự khai, hỏi một lần khi sửa, đổi ở ô "Tên bạn")',
