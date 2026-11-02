@@ -310,22 +310,9 @@ function DongKiem({ k }: { k: KiemHam }) {
       <span>
         {t(`ham.k.${k.khoa}`)}
         {k.duThao && <i class="nhan-du-thao">{t('ham.duThao')}</i>}
-        <small>{canCu}</small>
       </span>
       <span class={lop(k)}>{dat}</span>
       <span>{k.mucTieu === null ? '—' : `${k.chieu === '<=' ? '≤' : '≥'} ${fmtSo(k.mucTieu, dv)}`}</span>
-    </div>
-  );
-}
-
-/** Một dòng có / yêu cầu (số đếm): thiếu thì đỏ (dự thảo: cam). */
-function DongCo({ nhan, co, can, duThao }: { nhan: string; co: number | null | undefined; can: number | null | undefined; duThao?: boolean }) {
-  const lopCo = co == null || can == null ? '' : co >= can ? 'ok' : duThao ? 'canh-bao' : 'vuot';
-  return (
-    <div class="ham-kiem">
-      <span>{nhan}{duThao && <i class="nhan-du-thao">{t('ham.duThao')}</i>}</span>
-      <span class={lopCo}>{fmtSo(co ?? null)}</span>
-      <span>{can == null ? '—' : `≥ ${fmtSo(can)}`}</span>
     </div>
   );
 }
@@ -423,6 +410,7 @@ function BangT1({ kq, cayXanhMin }: { kq: KetQuaHam; cayXanhMin: number | null }
 export function HamPhai({ pa, sua, chiXem, loId, tv }: ChungHam) {
   const lo = loDangXep(pa, loId);
   const { kq, dangCho } = useRaiHam('ham.phai', pa, tv, lo);
+  const [chiLoi, setChiLoi] = useState(false);
   if (!lo) return null;
   if (kq === undefined) return <p class="ham-ghi-chu" role="status"><VongRai nho />{t('ham.dangRai')}</p>;
   if (!kq) return <p class="ham-ghi-chu">{t('ham.ranhRong')}</p>;
@@ -430,31 +418,29 @@ export function HamPhai({ pa, sua, chiXem, loId, tv }: ChungHam) {
   const m2 = { donVi: 'm²' };
   const pct = (v: number) => fmtSo(v * 100, { thapPhan: 1, donVi: '%' });
   const dangDung = pa.phanHam ?? PHAN_HAM_MAC_DINH;
-  const kiem = kq.kiem.filter((k) => !k.duThao), duThao = kq.kiem.filter((k) => k.duThao);
+  /** mục chưa đạt lên đầu; bật "chỉ hiện chưa đạt" thì ẩn mục đạt (panel Hầm dài ~4.400 px) */
+  const hong = (k: KiemHam) => (k.dat !== null && k.mucTieu !== null && k.muc !== 'ok' ? 0 : 1);
+  const sapXep = (ds: KiemHam[]) => [...ds].sort((a, b) => hong(a) - hong(b));
+  const kiem = sapXep(kq.kiem.filter((k) => !k.duThao)), duThao = sapXep(kq.kiem.filter((k) => k.duThao));
+  const soHong = kq.kiem.filter((k) => hong(k) === 0).length;
+  const hienKiem = (ds: KiemHam[]) => (chiLoi ? ds.filter((k) => hong(k) === 0) : ds);
   return (
     <>
       {dangCho && <p class="ham-ghi-chu" role="status"><VongRai nho />{t('ham.dangRai')}</p>}
       <MucGap tieuDe={`${t('ham.mucKiem')} · ${lo.temDat.kyHieu}`} mo>
         <div class="ham-kiem dau"><span>{t('ct.chiTieu')}</span><span>{t('ct.dat')}</span><span>{t('ham.yeuCau')}</span></div>
-        {kiem.map((k) => <DongKiem key={k.khoa} k={k} />)}
+        <label class="ham-chi-loi"><input type="checkbox" checked={chiLoi} onChange={(e) => setChiLoi(e.currentTarget.checked)} /> {t('ham.chiChuaDat')} ({soHong})</label>
+        {hienKiem(kiem).map((k) => <DongKiem key={k.khoa} k={k} />)}
         {soCan === 0 && <p class="ham-ghi-chu">{t('ham.chuaCoCan')}</p>}
         {kq.noxh && <p class="ham-ghi-chu">{t('ham.noxh60')}</p>}
+        {(tong.soCutDuong ?? 0) > 0 && <p class="ham-ghi-chu vuot">{t('ham.cutDuongGhi').replace('{n}', String(tong.soCutDuong))}</p>}
       </MucGap>
       {duThao.length > 0 && (
         <MucGap tieuDe={t('ham.mucXeDienKiem')} giaiThich={t('ham.xeDienGiaiThich')} mo>
-          {duThao.map((k) => <DongKiem key={k.khoa} k={k} />)}
+          {hienKiem(duThao).map((k) => <DongKiem key={k.khoa} k={k} />)}
           <p class="ham-ghi-chu">{t('ham.xeDienGiaiThich')}</p>
         </MucGap>
       )}
-      <MucGap tieuDe={t('ham.mucDoXe')} giaiThich={t('ham.doXeThuTu')} mo>
-        <div class="ham-kiem dau"><span /><span>{t('ct.dat')}</span><span>{t('ham.yeuCau')}</span></div>
-        <DongCo nhan={t('ham.choOto')} co={tong.soCho} can={kq.yeuCauCho?.oto} />
-        <DongCo nhan={t('ham.xeMayCho')} co={tong.soXeMay} can={kq.yeuCauCho?.xeMay} />
-        <DongCo nhan={t('ham.choSacNgan')} co={kq.ts.xeDien.bat ? tong.soSac : null} can={kq.yeuCauCho?.sac} duThao />
-        <DongCo nhan={t('ham.choXeLanNgan')} co={tong.soXeLan} can={kq.yeuCauCho?.xeLan} />
-        <p class="ham-ghi-chu">{t('ham.doXeThuTu')}</p>
-        {(tong.soCutDuong ?? 0) > 0 && <p class="ham-ghi-chu vuot">{t('ham.cutDuongGhi').replace('{n}', String(tong.soCutDuong))}</p>}
-      </MucGap>
       <BangPhong kq={kq} sua={sua} chiXem={chiXem} />
       <BangKhoang kq={kq} />
       <BangT1 kq={kq} cayXanhMin={lo.temDat.chiTieu.cayXanhMin ?? null} />

@@ -1160,6 +1160,7 @@
   "ham.xdKhoangCach": "Khoảng cách giữa các khu",
   "ham.xdTuong": "Có tường / vách không cháy cao ≥ 2 m",
   "ham.xdDoiPin": "Tủ đổi pin ở tầng (trống = không có)",
+  "ham.chiChuaDat": "Chỉ hiện mục chưa đạt",
   "ham.mucKiem": "Hầm · kiểm tra",
   "ham.mucXeDienKiem": "Khu xe điện · cảnh báo theo dự thảo",
   "ham.yeuCau": "Yêu cầu",

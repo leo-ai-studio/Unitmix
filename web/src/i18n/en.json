@@ -1160,6 +1160,7 @@
   "ham.xdKhoangCach": "Gap between zones",
   "ham.xdTuong": "Non-combustible wall ≥ 2 m high",
   "ham.xdDoiPin": "Battery swap at level (blank = none)",
+  "ham.chiChuaDat": "Show failing items only",
   "ham.mucKiem": "Basement · checks",
   "ham.mucXeDienKiem": "EV area · draft warnings",
   "ham.yeuCau": "Required",

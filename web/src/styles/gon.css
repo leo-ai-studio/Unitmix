@@ -149,3 +149,6 @@ label.nut-nho { display: inline-flex; flex-direction: row; align-items: center; 
 
 /* ô số: chừa cột đơn vị để mọi ô thẳng hàng (có / không có "%", "m²") */
 .o-so-nhap { min-width: 96px; justify-content: flex-start; }
+/* chip trạng thái không đè lên số: hết chỗ thì xuống dòng, số không bị cắt */
+.the-so-gt { flex-wrap: wrap; row-gap: 2px; }
+.ham-chi-loi { display: flex; align-items: center; gap: 6px; margin: 2px 0 6px; font-size: 12px; color: var(--muted-text); cursor: pointer; }
