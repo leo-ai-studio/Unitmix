@@ -29,6 +29,7 @@ import { xuatBaoCaoPA } from '../xuat/xuatXls';
 import { luoi } from '../ui/Luoi';
 import { chonTangToa, TangGiua, TangMoHinh, TangPhai, TangTrai, toaDangXem, useChonO } from './ManTang';
 import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
+import { baoCongNgoai } from '../troLy/congChayNgoai';
 import { taoNguCanhSoan, type PhuSoan } from '../troLy/nguCanhSoan';
 import { HopSoSanhMau } from '../ui/SoSanhMau';
 import { oDungCan } from '../tinh/soSanhMau';
@@ -200,6 +201,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
     moCad: xemXuat && tv ? () => setMoXuat(true) : undefined,
   };
   const ngLeo = useMemo(() => taoNguCanhSoan(phuLeo, xacNhanLeo), []);
+  useEffect(() => baoCongNgoai(ngLeo), [ngLeo]); // window.unitmixTools khi mở với ?congCu=1
   const thongBao = (
     <>
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}

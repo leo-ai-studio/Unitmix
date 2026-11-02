@@ -103,6 +103,16 @@ Cổng khoá chung (`worker/src/ai.ts`): chỉ dự án mở bằng mã sửa đ
 - Giọng nói (chỉ API trình duyệt): mic → `SpeechRecognition` (vi-VN / en-US theo ngôn ngữ app, chữ tạm hiện ngay, bấm lại để dừng), đọc to `speechSynthesis` (giọng vi-VN nếu có), chế độ rảnh tay (nghe → gửi → đọc trả lời → nghe tiếp). Không hỗ trợ / bị từ chối micro → câu báo tiếng Việt.
 - Logo LEO hai lớp, vòng O quay khi Leo AI đang chạy, dừng ở cuối vòng (giảm chuyển động: nhấp nháy). Tải dùng `img.spin-o`. Biểu tượng nét tự vẽ trong `ui/bieuTuongSvg.ts` (`leo*`).
 
+## Cổng gọi công cụ từ bên ngoài — `window.unitmixTools` (v0.4.8)
+
+Để Claude Code / trình duyệt nhúng / Playwright sắp tòa THẲNG mà không chạy vòng Leo AI (mỗi lượt gửi lại lời hệ thống + 45 định nghĩa công cụ):
+
+- Mở trang với **`?congCu=1`** (không có tham số này thì cổng không tồn tại).
+- `await unitmixTools.chay('suggest_arrangements', { lot_id: 'NOTM-1.1' })` → `{ ok, noiDung, loi, json }`; `unitmixTools.danhSach()` liệt kê công cụ + schema.
+- Chạy trên kho thật: cùng hoàn tác (mỗi công cụ sửa = một bước), cùng tự lưu, cùng kiểm Chỉ xem / mã sửa. Lệnh chạy tuần tự.
+- Hộp xác nhận (xoá PA, tải Excel) mặc định TỪ CHỐI; chỉ qua khi gọi kèm `{ dongY: true }`.
+- Mã: `web/src/troLy/congChayNgoai.ts`, test `congChayNgoai.test.ts`.
+
 ## Kiểm
 
 - `web/src/troLy/congCu/congCu.test.ts` — mỗi công cụ trên thư viện thật: đúng → PA đổi + đúng một bước hoàn tác; sai → `is_error`, PA giữ nguyên; Chỉ xem → từ chối; test "phủ đủ" bắt mọi công cụ phải có ca thử.
