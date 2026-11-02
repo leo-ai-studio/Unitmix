@@ -525,6 +525,9 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         {tv && toaCoMau.map((x) => {
           const mau = mauToa(tv, x)!;
           const chan = chanToa(mau, x);
+          // cỡ chữ tên tòa co theo cạnh ngắn của tòa (dự án dài vài km: coChu lớn hơn nhiều so với tòa nên chữ che hết bản vẽ)
+          const bx = chan.map((q) => q[0]), by = chan.map((q) => q[1]);
+          const coTen = Math.min(coChu, Math.max(0.5, Math.min(Math.max(...bx) - Math.min(...bx), Math.max(...by) - Math.min(...by)) * 0.4));
           const viPham = kiem?.muc.get(x.id);
           const daChon = sel.includes(x.id);
           const soCan = Object.values(dem[x.id] ?? {}).reduce((a, b) => a + b, 0);
@@ -558,12 +561,19 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
                 stroke={viPham ? 'var(--warn)' : daChon ? 'var(--green)' : 'var(--ink)'} stroke-width={daChon ? 3 : viPham ? 2.5 : 1.5}
                 stroke-dasharray={viPham === 'canh' ? '6 3' : undefined} vector-effect="non-scaling-stroke" />
               {daChon && viPham && <polygon points={sPoly(chan)} fill="none" stroke="var(--green)" stroke-width="1" vector-effect="non-scaling-stroke" style={{ pointerEvents: 'none' }} />}
-              <text x={x.x} y={-x.y} text-anchor="middle" font-size={coChu} font-weight="700" fill="var(--ink)" style={{ pointerEvents: 'none' }}>
-                {tenNgan(mau)}{x.khoa ? ' ⊠' : ''}{x.lat ? ' ⇋' : ''}
-              </text>
-              <text x={x.x} y={-x.y + coChu * 1.3} text-anchor="middle" font-size={coChu * 0.8} fill="var(--ink)" style={{ pointerEvents: 'none' }}>
-                {`${x.soTangDe + x.soTangDH}T · ${t('xep.tongCan').replace('{n}', String(soCan))}`}
-              </text>
+              {(tc.nhanToa || daChon) && (
+                <>
+                  <text x={x.x} y={-x.y} text-anchor="middle" font-size={coTen} font-weight="700" fill="var(--ink)" style={{ pointerEvents: 'none' }}>
+                    {tenNgan(mau)}{x.khoa ? ' ⊠' : ''}{x.lat ? ' ⇋' : ''}
+                  </text>
+                  {/* dòng "22T · 399 căn" chỉ khi tòa đủ lớn so với khung nhìn (chữ không bị co) hoặc tòa đang chọn — dự án dài, tòa nhỏ thì chữ chồng chéo */}
+                  {(daChon || coTen >= coChu - 1e-9) && (
+                    <text x={x.x} y={-x.y + coTen * 1.3} text-anchor="middle" font-size={coTen * 0.8} fill="var(--ink)" style={{ pointerEvents: 'none' }}>
+                      {`${x.soTangDe + x.soTangDH}T · ${t('xep.tongCan').replace('{n}', String(soCan))}`}
+                    </text>
+                  )}
+                </>
+              )}
             </g>
           );
         })}
@@ -652,7 +662,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         <HopNangGioCho pa={pa} tv={tv} sua={sua} chiXem={chiXem} />
       </div>
       <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null}
-        lop={[{ khoa: 'nhanVP', nhan: t('tmb.lop.nhanVP'), bat: tc.nhanVP, onClick: () => datTuyChon({ nhanVP: !tc.nhanVP }) }, nutLopView(), ...nutNG]} chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
+        lop={[{ khoa: 'nhanToa', nhan: t('tmb.lop.nhanToa'), bat: tc.nhanToa, onClick: () => datTuyChon({ nhanToa: !tc.nhanToa }) }, { khoa: 'nhanVP', nhan: t('tmb.lop.nhanVP'), bat: tc.nhanVP, onClick: () => datTuyChon({ nhanVP: !tc.nhanVP }) }, nutLopView(), ...nutNG]} chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
       {menuToa && (() => {
         const dong = () => setMenuToa(null);
         const muc = (k: string, nhan: string, tat: boolean, lam: () => void) => (

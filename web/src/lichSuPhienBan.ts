@@ -9,9 +9,11 @@ export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
     v: '0.5.2', ngay: '2026-11-02',
     vi: [
       'Màn Tầng: "Căn đang chọn" gọn hơn và đặt ngay sau bảng chỉ tiêu tầng — tên mẫu, 3 ô số liệu, STRETCH một hàng; bỏ nhóm Công năng ô và danh sách đổi mẫu (đổi công năng vẫn ở menu chuột phải ô)',
+      'Tổng mặt bằng: tên tòa co theo cỡ từng tòa (dự án dài không còn chữ to chồng chéo); dòng "22T · 399 căn" chỉ hiện ở tòa đang chọn hoặc khi phóng to; tắt tên tòa ở Lớp › Tên tòa',
     ],
     en: [
       'Floor screen: "Selected unit" is more compact and now sits right after the floor targets table — name, 3 figures, one-row STRETCH; the cell-function group and the template swap lists are removed (cell function is still in the cell right-click menu)',
+      'Site plan: building names scale with each building (no more huge overlapping text on long sites); the "22T · 399 units" line shows only for the selected building or when zoomed in; Layers › Building names turns them off',
     ],
   },
   {
