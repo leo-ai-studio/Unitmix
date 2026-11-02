@@ -400,6 +400,10 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
         };
         const veThat0 = (): boolean => {
           if (pha === 0) return false;
+          // mặt cắt gần (near) theo khoảng cách tới điểm nhìn: độ chính xác bộ đệm sâu ∝ d² / near, near cố định 0,1 m thì ở xa vài trăm mét
+          // các mặt cách nhau vài cm (nền, ô đất, đường) bị nhấp nháy — near tăng theo khoảng cách (≤ 20 m) giữ sai số dưới ~1 cm
+          const kc = cam.position.distanceTo(ctl.target), near = Math.min(20, Math.max(0.1, kc * 0.02));
+          if (Math.abs(near - cam.near) > cam.near * 0.15) { cam.near = near; cam.updateProjectionMatrix(); }
           if (pha === 1) { scene.overrideMaterial = vlXem; try { R.render(scene, cam); } finally { scene.overrideMaterial = null; } return true; }
           const moi = thieuDich(scene, daDich).filter((x) => !choDich.has(x.m));
           if (moi.length) dichThem(moi);
@@ -645,7 +649,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
             const [x, y, z] = canh.tam;
             if (canh.nen) {
               const dat = new T.Mesh(new T.PlaneGeometry(canh.coCanh * 8, canh.coCanh * 8), canh.nenTrongSuot ? matDatTrong : matDat);
-              dat.rotation.x = -Math.PI / 2; dat.position.set(x, -0.05, z); dat.receiveShadow = true;
+              dat.rotation.x = -Math.PI / 2; dat.position.set(x, -0.12, z); // nền luôn thấp hơn mọi ô đất / đường (≥ 0,17 m), không trùng mặt dat.receiveShadow = true;
               dat.userData.nenDat = true;
               if (canh.nenLop) dat.userData.vlTheoLop = { lop: canh.nenLop, vl: matDatTrong, vlThuong: matDat };
               goc.add(dat);

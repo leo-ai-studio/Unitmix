@@ -121,11 +121,13 @@ export function* dungDuAnTung(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuV
   const netCg = new T.LineBasicMaterial({ color: 0xb42318, transparent: true, opacity: 0.7 });
   for (const d of pa.lo.flatMap((l) => l.xungQuanh)) if (d.length >= 2) duong(d, 0.02, netXq).userData.lop = 'duong';
   const cay: Diem[] = [], cayDuong: Diem[] = [], hinhDuong: THREE.BufferGeometry[] = [];
+  let stt = 0;
   for (const l of pa.lo) {
     if (l.ranh.length < 3) continue;
     const loai = loaiDat(l);
     const meLo = loai === 'mat_nuoc' ? khoi(l.ranh, 0.05, vlDat(loai), -0.35)
-      : khoi(l.ranh, loai === 'o_cao_tang' ? 0.2 : 0.12, vlDat(loai), 0);
+      // ô đất không cao tầng: mỗi ô một độ cao hơi khác nhau (0,06 … 0,116 m) để hai ô chồng nhau trong bản vẽ không cùng mặt phẳng → hết nhấp nháy (z-fighting)
+      : khoi(l.ranh, loai === 'o_cao_tang' ? 0.2 : 0.06 + (stt++ % 8) * 0.008, vlDat(loai), 0);
     if (loai === 'cay_xanh') cay.push(...diemCay(l.ranh, 9, 600));
     // đường theo lộ giới từng cạnh (LO-01): dải nhựa ngoài lô + cây trên vỉa hè
     const dd = daiDuong(l.ranh, l.canhDuong);

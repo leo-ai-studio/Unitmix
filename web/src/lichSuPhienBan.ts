@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.13', ngay: '2026-11-03',
+    vi: [
+      '3D hết nhấp nháy: nền luôn thấp hơn mọi ô đất và đường, các ô đất chồng nhau không còn cùng mặt phẳng, mặt cắt gần của camera tăng theo khoảng cách; nét viền khối (tầng, góc) không còn đứt đoạn khi xoay / zoom',
+    ],
+    en: [
+      '3D no longer flickers: the ground sits below every plot and road, overlapping plots no longer share a plane, the camera near plane grows with distance; building edge lines (floors, corners) no longer break up while rotating / zooming',
+    ],
+  },
+  {
     v: '0.5.12', ngay: '2026-11-03',
     vi: [
       'Hộp hỏi riêng của app thay hộp xác nhận / nhập tên của trình duyệt (xoá, nhân bản dự án, thu hồi quyền, thay lô, lưu mẫu cài sẵn, lưu góc nhìn 3D…): cùng kiểu chữ và nút với app, nút nguy hiểm màu đỏ, Enter đồng ý, Esc huỷ',

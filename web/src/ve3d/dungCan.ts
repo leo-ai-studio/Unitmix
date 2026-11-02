@@ -69,7 +69,9 @@ export function taoVatLieu(T: T3, cat: THREE.Plane[] | CatY, kieu: KieuVe3D = 'b
   // mặt cắt ngang: đồng phục `CatY` (bản vá shader, dịch trước được — Khung3D) hoặc mảng clippingPlanes (test, nơi khác)
   const mp = Array.isArray(cat) ? cat : [];
   const cY = <M extends THREE.Material>(m: M): M => (Array.isArray(cat) ? m : catY(m, cat));
-  const mt = (c: number, o: THREE.MeshStandardMaterialParameters = {}) => cY(new T.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, clippingPlanes: mp, ...o }));
+  // polygonOffset dương: mặt khối lùi ra sau một chút → nét viền (LineSegments nằm đúng trên cạnh mặt) luôn vẽ đè lên, không bị mặt kề che từng đoạn
+  // (nét gãy / nhấp nháy khi xoay, zoom — z-fighting giữa đường và mặt). Vật liệu muốn nằm trước (kinhDai) tự ghi đè bằng offset âm.
+  const mt = (c: number, o: THREE.MeshStandardMaterialParameters = {}) => cY(new T.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0, clippingPlanes: mp, polygonOffset: true, polygonOffsetFactor: 1.5, polygonOffsetUnits: 1.5, ...o }));
   // Vật liệu: tường / đế / tum sơn có biến thiên nhẹ + tối chân công trình (moiTruong.tuongSon); kiểu khác giữ nguyên
   const son = (m: THREE.MeshStandardMaterial, k: string) => (vl ? tuongSon(m, k) : m);
   const tuong = son(mt(B.tuong, { side: T.DoubleSide, roughness: vl ? 0.92 : 0.85 }), 'tuong');
