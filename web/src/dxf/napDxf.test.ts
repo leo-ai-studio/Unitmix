@@ -83,4 +83,9 @@ describe('đoán lớp công trình xung quanh', () => {
     expect(lo.find((l) => l.temDat.kyHieu === 'NOXH-01')?.temDat.chucNang).toBe('xh');
     expect(lo.find((l) => l.temDat.kyHieu === 'CC-02')?.temDat.chucNang).toBe('khac');
   });
+
+  it('hậu tố (TT) = nhà ở thấp tầng → lô nền', () => {
+    const lo = taoLoTuDxf(napDxf(mau), { ranh: 'QH-RANH-LO', tem: 'QH-TEM' });
+    expect(lo.every((l) => (/\(TT\)$/.test(l.temDat.kyHieu) ? l.temDat.chucNang === 'khac' : true))).toBe(true);
+  });
 });

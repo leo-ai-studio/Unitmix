@@ -134,7 +134,7 @@ def main():
         thap = t in THAP_TANG
         pts = list(g.exterior.coords)[:-1]
         ms.add_lwpolyline(pts, close=True, dxfattribs={'layer': 'LB-RANH'})
-        ms.add_text(t, height=12, dxfattribs={'layer': 'LB-TEM', 'insert': (g.representative_point().x, g.representative_point().y)})
+        ms.add_text(t + (' (TT)' if thap else ''), height=12, dxfattribs={'layer': 'LB-TEM', 'insert': (g.representative_point().x, g.representative_point().y)})
         b = bang.get(t)
         lech = round(100 * (g.area - b['dt']) / b['dt'], 1) if b else ''
         gc = []

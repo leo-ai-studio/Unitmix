@@ -602,8 +602,10 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
           if (pa.toa.some((x) => x.loId === l.id)) return null;
           const caoTang = laCaoTang(l), xs = l.ranh.map((q) => q[0]), ys = l.ranh.map((q) => q[1]);
           const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+          // Cỡ chữ co theo bề rộng lô (dự án dài vài km thì coChu lớn hơn nhiều so với lô) để tên lô không che khối tháp đã xếp.
+          const rong = Math.max(...xs) - Math.min(...xs), coNhan = Math.min(coChu * (caoTang ? 0.9 : 0.6), Math.max(coChu * 0.3, rong / (l.temDat.kyHieu.length * 0.7)));
           return (
-            <text key={`n${l.id}`} x={cx} y={-cy} text-anchor="middle" font-size={coChu * (caoTang ? 1.25 : 0.85)} font-weight={caoTang ? 700 : 500}
+            <text key={`n${l.id}`} x={cx} y={-cy} text-anchor="middle" font-size={coNhan} font-weight={caoTang ? 700 : 500}
               fill={caoTang ? 'var(--green)' : MAU_DAT[loaiDat(l)][1]} style={{ pointerEvents: 'none' }}>{l.temDat.kyHieu}</text>
           );
         })}

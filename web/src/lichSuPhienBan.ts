@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.4.9', ngay: '2026-11-02',
+    vi: [
+      'Tổng mặt bằng: tên lô co theo bề rộng lô, nhỏ hơn trước — không còn che khối tháp đã xếp',
+      'Nạp DXF: ký hiệu có hậu tố "(TT)" (nhà ở thấp tầng) thành ô nền, không chọn được',
+    ],
+    en: [
+      'Site plan: plot names scale with plot width and are smaller — no longer cover placed towers',
+      'DXF import: labels ending "(TT)" (low-rise housing) become background plots, not selectable',
+    ],
+  },
+  {
     v: '0.4.8', ngay: '2026-11-02',
     vi: [
       'Nạp DXF theo lớp ranh: lô mang ký hiệu CX / GD / CC / TMDV / HTKT / DT / QP / CN thành ô nền (tô màu theo loại đất, chìm xuống, không chọn được); chỉ NOTM / NOXH / TĐC… là ô đất ở làm việc',

@@ -265,8 +265,8 @@ function ranhVaTen(ban: BanDxf, chon: ChonLop): { ranh: Diem[]; kyHieu?: string;
   return ds.map(({ ranh, tienTo, chucNang }) => ({ ranh, kyHieu: `${tienTo}-${(dem[tienTo] = (dem[tienTo] ?? 0) + 1)}`, chucNang }));
 }
 
-/** Ký hiệu đất không phải nhà ở (cây xanh, giáo dục, công cộng, TMDV, HTKT, di tích, quốc phòng, công nghiệp): làm nền, không xếp tòa. */
-const KY_HIEU_KHONG_O = /^(CX|GD|CC|TMDV|HTKT|DT|QP|CN)-/;
+/** Ký hiệu đất không phải nhà ở (cây xanh, giáo dục, công cộng, TMDV, HTKT, di tích, quốc phòng, công nghiệp; hậu tố "(TT)" = nhà ở thấp tầng): làm nền, không xếp tòa. */
+const KY_HIEU_KHONG_O = /^(CX|GD|CC|TMDV|HTKT|DT|QP|CN)-|\(TT\)$/;
 
 /** Mỗi đa giác kín trên lớp ranh (hoặc mỗi ô hatch khi chọn RANH_HATCH) thành một lô; tem đất và chỉ giới gán cho lô chứa chúng. */
 export function taoLoTuDxf(ban: BanDxf, chon: ChonLop): Lo[] {
