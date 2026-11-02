@@ -897,6 +897,7 @@
   "gt.xep.goiYHuong": "% of units with balconies facing E, SE or S (old app default good aspects).",
   "bt.view": "Unit view score",
   "view.lop": "Unit view",
+  "tmb.lop.nhanVP": "Distance violation labels (selected buildings)",
   "view.tieuDe": "Unit view score",
   "view.ngan": "View",
   "view.tot": "Good",

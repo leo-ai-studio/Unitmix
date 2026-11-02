@@ -28,8 +28,8 @@ export const luaChon = (pa: TrangThaiPA, ds: string[], toaId: string | null): st
 };
 
 // ---- tuỳ chọn công cụ (giữ suốt phiên) ----
-export type TuyChonTMB = { khung: boolean; bat: boolean; khoaCG: boolean; do: boolean; toaDo: boolean; dsCanhBao: boolean };
-let tuyChon: TuyChonTMB = { khung: false, bat: true, khoaCG: true, do: false, toaDo: false, dsCanhBao: false };
+export type TuyChonTMB = { khung: boolean; bat: boolean; khoaCG: boolean; do: boolean; toaDo: boolean; dsCanhBao: boolean; nhanVP: boolean };
+let tuyChon: TuyChonTMB = { khung: false, bat: true, khoaCG: true, do: false, toaDo: false, dsCanhBao: false, nhanVP: true };
 const ngheTC = new Set<() => void>();
 export const datTuyChon = (p: Partial<TuyChonTMB>) => { tuyChon = { ...tuyChon, ...p }; ngheTC.forEach((f) => f()); };
 export function useTuyChon(): TuyChonTMB {

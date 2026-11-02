@@ -221,6 +221,8 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   const luot = useRef<LuotKeo | null>(null);
   const hienRef = useRef<HienKeo | null>(null);
   hienRef.current = hien;
+  // hình tòa + kiểm vi phạm khi không kéo / xoay: dùng lại khi chỉ phóng / dời khung (kiemViPham quét mọi cặp tòa)
+  const nhoTinh = useRef<{ pa: typeof pa; tv: typeof tv; luat: unknown; hinh: ReturnType<typeof hinhToa>; kiem: ReturnType<typeof kiemViPham> } | null>(null);
   const dsNhieu = useChonNhieu();
   const tc = useTuyChon();
   const luat = useLuatTMB();
@@ -311,8 +313,11 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   const viTri = (x: ToaDat): ToaDat => deTam.get(x.id) ?? x;
   const toaCoMau = tv ? pa.toa.filter((x) => tv.toa.has(x.mauId)).map(viTri) : [];
   const dem = tv ? demCan(pa, tv) : {};
-  const hinh = tv ? hinhToa(pa, tv, deTam) : [];
-  const kiem = tv ? kiemViPham(pa, hinh, luat) : null;
+  const nho = nhoTinh.current;
+  const dungLai = !!tv && deTam.size === 0 && !!nho && nho.pa === pa && nho.tv === tv && nho.luat === luat;
+  const hinh = dungLai ? nho!.hinh : tv ? hinhToa(pa, tv, deTam) : [];
+  const kiem = dungLai ? nho!.kiem : tv ? kiemViPham(pa, hinh, luat) : null;
+  if (tv && kiem && deTam.size === 0 && !dungLai) nhoTinh.current = { pa, tv, luat, hinh, kiem };
   const banSao = hien?.loai === 'nhan' && tv
     ? pa.toa.filter((x) => hien.ids.includes(x.id)).map((x) => chanToa(tv.toa.get(x.mauId)!, { ...x, x: x.x + hien.dx, y: x.y + hien.dy }))
     : [];
@@ -475,13 +480,16 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   };
   const tenToa = (id: string) => { const x = pa.toa.find((q) => q.id === id); return x ? tenNgan(tv?.toa.get(x.mauId)) + ` (${x.x.toFixed(0)}, ${x.y.toFixed(0)})` : id; };
   const m1 = (v: number) => fmtSo(v, { thapPhan: 1, donVi: 'm' });
-  const nhanDoan = (a: Diem, b: Diem, chu: string, mau: string, key: string, net = true) => {
+  /** Đoạn kích thước: nét đứt + chữ; `chu` null thì chỉ vẽ nét (nhãn vi phạm ẩn); `co` = cỡ chữ. */
+  const nhanDoan = (a: Diem, b: Diem, chu: string | null, mau: string, key: string, net = true, co = chuNho) => {
     const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
     return (
       <g key={key} style={{ pointerEvents: 'none' }}>
         {net && <line x1={a[0]} y1={-a[1]} x2={b[0]} y2={-b[1]} stroke={mau} stroke-width="1.5" stroke-dasharray="5 3" vector-effect="non-scaling-stroke" />}
-        <text x={cx} y={-cy} text-anchor="middle" dominant-baseline="middle" font-size={chuNho} font-weight="700" fill={mau}
-          stroke="var(--panel)" stroke-width={chuNho * 0.25} paint-order="stroke">{chu}</text>
+        {chu !== null && (
+          <text x={cx} y={-cy} text-anchor="middle" dominant-baseline="middle" font-size={co} font-weight="700" fill={mau}
+            stroke="var(--panel)" stroke-width={co * 0.25} paint-order="stroke">{chu}</text>
+        )}
       </g>
     );
   };
@@ -563,8 +571,9 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
           <polygon key={`bs${i}`} points={sPoly(F)} fill="var(--green)" fill-opacity="0.15" stroke="var(--green)" stroke-width="2" stroke-dasharray="6 4" vector-effect="non-scaling-stroke" style={{ pointerEvents: 'none' }} />
         ))}
         {/* vi phạm trực tiếp: LO-01 thiếu lùi, LO-02 §2.6.1 giữa tòa */}
-        {kiem?.lui.map((v, i) => nhanDoan(v.a, v.b, `LO-01 c${v.canh + 1} ${m1(v.kc)} < ${m1(v.can)}`, 'var(--warn)', `lui${i}`))}
-        {kiem?.cap.map((c, i) => nhanDoan(c.pa, c.pb, `§2.6.1 ${m1(c.kc)} < ${m1(c.muc === 'loi' ? c.hoi : c.dai)}`, 'var(--warn)', `cap${i}`))}
+        {/* chữ chỉ ở tòa đang chọn (dự án nhiều tòa: chữ chồng chéo, chậm) và tắt được ở Lớp; nét đứt vẫn vẽ cho mọi vi phạm */}
+        {kiem?.lui.map((v, i) => nhanDoan(v.a, v.b, tc.nhanVP && sel.includes(v.toaId) ? `LO-01 c${v.canh + 1} ${m1(v.kc)} < ${m1(v.can)}` : null, 'var(--warn)', `lui${i}`, true, chuNho * 0.75))}
+        {kiem?.cap.map((c, i) => nhanDoan(c.pa, c.pb, tc.nhanVP && (sel.includes(c.a) || sel.includes(c.b)) ? `§2.6.1 ${m1(c.kc)} < ${m1(c.muc === 'loi' ? c.hoi : c.dai)}` : null, 'var(--warn)', `cap${i}`, true, chuNho * 0.75))}
         {/* nét bắt dính + kích thước khi kéo */}
         {hien?.dan.map((m, i) => (
           <line key={`dan${i}`} x1={m.doan[0][0]} y1={-m.doan[0][1]} x2={m.doan[1][0]} y2={-m.doan[1][1]} stroke="var(--green)" stroke-width="1.2"
@@ -643,7 +652,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         <HopNangGioCho pa={pa} tv={tv} sua={sua} chiXem={chiXem} />
       </div>
       <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null}
-        lop={[nutLopView(), ...nutNG]} chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
+        lop={[{ khoa: 'nhanVP', nhan: t('tmb.lop.nhanVP'), bat: tc.nhanVP, onClick: () => datTuyChon({ nhanVP: !tc.nhanVP }) }, nutLopView(), ...nutNG]} chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
       {menuToa && (() => {
         const dong = () => setMenuToa(null);
         const muc = (k: string, nhan: string, tat: boolean, lam: () => void) => (

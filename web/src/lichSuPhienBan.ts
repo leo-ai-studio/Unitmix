@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.1', ngay: '2026-11-02',
+    vi: [
+      'Mẫu chữ L / chữ T: đầu hành lang ở cánh dài có tay nắm co kéo và tự kéo dài tới cửa căn xa nhất (trước đây đoạn nối chồng lên trục chặn mất)',
+      'Tổng mặt bằng: nhãn khoảng cách vi phạm (LO-01, §2.6.1) nhỏ hơn, chỉ hiện ở tòa đang chọn, tắt được ở Lớp; kiểm vi phạm bỏ qua cặp tòa ở xa và dùng lại khi chỉ phóng / dời khung nên bớt lag',
+    ],
+    en: [
+      'L / T templates: the free corridor end on the long arm now has its pull handle and auto-extends to the farthest unit door (an overlapping link segment used to block it)',
+      'Site plan: distance violation labels (LO-01, §2.6.1) are smaller, shown only on selected buildings and can be switched off in Layers; the violation check skips far-apart pairs and is reused while only panning / zooming, so it lags less',
+    ],
+  },
+  {
     v: '0.5.0', ngay: '2026-11-02',
     vi: [
       'STRETCH căn: bỏ bù ngược sang căn kề — chỉ căn đã chọn đổi, dãy tự dồn khít theo quy tắc (không khít thì báo, giữ nguyên)',

@@ -275,9 +275,16 @@ export function kiemViPham(pa: TrangThaiPA, hinh: ToaHinh[], luat: LuatTMB | nul
     }
   }
   if (luat) {
+    // hộp bao từng tòa: hai tòa cách nhau ≥ khoảng yêu cầu theo hộp bao thì chắc chắn không vi phạm — bỏ qua phép đo đa giác (dự án nhiều tòa)
+    const hop = hinh.map((h) => { const xs = h.F.map((p) => p[0]), ys = h.F.map((p) => p[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; });
+    const kcTheoH = new Map<number, ReturnType<typeof kcToa261>>(); // khoảng yêu cầu chỉ phụ thuộc chiều cao: tính một lần mỗi giá trị
     for (let i = 0; i < hinh.length; i++) for (let j = i + 1; j < hinh.length; j++) {
       const A = hinh[i], B = hinh[j];
-      const k = kcToa261(luat.lo02, Math.max(A.H, B.H));
+      const hMax = Math.max(A.H, B.H);
+      let k = kcTheoH.get(hMax);
+      if (!k) kcTheoH.set(hMax, (k = kcToa261(luat.lo02, hMax)));
+      const a = hop[i], b = hop[j];
+      if (Math.hypot(Math.max(0, a[0] - b[2], b[0] - a[2]), Math.max(0, a[1] - b[3], b[1] - a[3])) >= k.dai - 1e-6) continue;
       const c = capGanToa(A.F, B.F);
       if (c.kc >= k.dai - 1e-6) continue;
       const muc = c.kc < k.hoi - 1e-6 ? 'loi' : 'canh';
