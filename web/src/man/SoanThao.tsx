@@ -120,6 +120,13 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   const [boQuaNhap, setBoQuaNhap] = useState(false);
   const [loId, setLoId] = useState<string | null>(null);
   useEffect(() => void taiThuVien().then(setTv, () => setTv(null)), []);
+  // Tóm tắt đã lưu của PA lệch bản tính mới (PA lưu trước khi có cột Dân số…): ghi bù để danh sách PA đúng mà không cần sửa PA.
+  const daLuu = da.phuong_an.find((p) => p.id === paId)?.tom_tat;
+  useEffect(() => {
+    if (!tv || !duocSua || !maSua || !daLuu) return;
+    const moi = tomTatPA(ban, tv);
+    if (JSON.stringify(moi) !== JSON.stringify(daLuu)) void api.ghiTomTat(ma, paId, maSua, moi).catch(() => {});
+  }, [tv]);
   const coNhap = duocSua && !boQuaNhap && kho.nhapCu !== null;
   const chiXem = kho.cheDo === 'chi_xem';
   usePhimSoan({ chiXem, hoanTac: kho.hoanTac, lamLai: kho.lamLai, luuNgay: kho.luuNgay, conChuaLuu: kho.conChuaLuu });

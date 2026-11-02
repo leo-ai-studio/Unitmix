@@ -218,6 +218,24 @@ export function DuAn() {
     }
   }
 
+  /**
+   * Xoá dự án = chuyển vào thùng rác (cần mã sửa). Luôn hỏi lại; quản trị khôi phục được trong số ngày giữ.
+   */
+  async function xoaDuAn(ma: string, ten: string) {
+    if (!confirm(t('duAn.xoaDAHoi').replace('{ten}', ten))) return;
+    const maSua = layMaSua(ma);
+    if (!maSua) return;
+    try {
+      await api.xoaDuAn(ma, maSua);
+      boKhoiDanhSach(ma);
+      setDong((ds) => ds.filter((x) => x.ma !== ma));
+      if (soSanh === ma) setSoSanh(null);
+      baoNho({ chu: t('duAn.daXoaDA').replace('{ten}', ten) });
+    } catch {
+      baoNho({ chu: t('soan.loiMang') });
+    }
+  }
+
   /** Chép link xem / link sửa vào bộ nhớ tạm. Link sửa chỉ dựng khi máy có mã sửa (linkChiaSe trả null nếu không). */
   async function chep(ma: string, loai: LoaiLink) {
     const l = linkChiaSe(location.origin, ma, loai, layMaSua(ma));
@@ -356,6 +374,7 @@ export function DuAn() {
                   <NutBieuTuong k="nhanBan" nhan={t('duAn.nhanBanDA')} onClick={() => nhanBanDA(ma, ten)} />
                   <NutChepLink ma={ma} coMa={coMa} chep={(l) => chep(ma, l)} />
                   <NutBieuTuong k="boDs" onClick={() => boDs(ma, ten)} />
+                  {coMa && <NutBieuTuong k="xoa" nhan={t('duAn.xoaDA')} onClick={() => xoaDuAn(ma, ten)} />}
                   <NutBieuTuong k="moDuAn" nhan={t('duAn.moDuAn')} onClick={() => route(`/du-an/${ma}`)} />
                 </div>
               </div>

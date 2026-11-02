@@ -42,13 +42,13 @@ export const datTrangThai = (db: D1Database, email: string, tt: TrangThai, boi: 
 export async function lietKeQuanTri(db: D1Database) {
   const nguoi = await db.prepare(
     `SELECT n.email, n.trang_thai, n.yeu_cau_luc, n.duyet_luc, n.duyet_boi,
-            (SELECT COUNT(*) FROM du_an d WHERE d.tao_boi = n.email) AS so_du_an
+            (SELECT COUNT(*) FROM du_an d WHERE d.tao_boi = n.email AND d.xoa_luc IS NULL) AS so_du_an
      FROM nguoi_dung n
      ORDER BY CASE n.trang_thai WHEN 'cho' THEN 0 WHEN 'duyet' THEN 1 ELSE 2 END, n.yeu_cau_luc DESC`,
   ).all<NguoiDung & { so_du_an: number }>();
   const du_an = await db.prepare(
     `SELECT d.ma, d.ten, d.tao_boi, d.tao_luc, (SELECT COUNT(*) FROM phuong_an p WHERE p.du_an_ma = d.ma) AS so_pa
-     FROM du_an d ORDER BY d.tao_luc DESC LIMIT 500`,
+     FROM du_an d WHERE d.xoa_luc IS NULL ORDER BY d.tao_luc DESC LIMIT 500`,
   ).all<{ ma: string; ten: string; tao_boi: string; tao_luc: string; so_pa: number }>();
   return { nguoi: nguoi.results, du_an: du_an.results };
 }

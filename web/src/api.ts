@@ -27,12 +27,18 @@ export type Toi = {
 export type QuanTriApi = {
   nguoi: { email: string; trang_thai: 'cho' | 'duyet' | 'tu_choi'; yeu_cau_luc: string; duyet_luc: string | null; duyet_boi: string | null; so_du_an: number }[];
   du_an: { ma: string; ten: string; tao_boi: string; tao_luc: string; so_pa: number }[];
+  thung_rac: { ma: string; ten: string; tao_boi: string; xoa_luc: string; xoa_boi: string; so_pa: number; con_lai_ngay: number }[];
+  ngay_giu: number;
 };
 
 export const api = {
   /** Ai đang dùng: có yêu cầu đăng nhập (mail công ty) để tạo dự án không, đã đăng nhập chưa. */
   toi: () => goi<Toi>('/api/toi'),
   quanTri: () => goi<QuanTriApi>('/api/quan-tri'),
+  quanTriXoa: (ma: string) => goi<{ ok: true }>('/api/quan-tri/xoa', { method: 'POST', body: JSON.stringify({ ma }) }),
+  khoiPhuc: (ma: string) => goi<{ ok: true }>('/api/quan-tri/khoi-phuc', { method: 'POST', body: JSON.stringify({ ma }) }),
+  /** Xoá dự án = chuyển vào thùng rác (cần mã sửa). */
+  xoaDuAn: (ma: string, maSua: string) => goi<void>(`/api/du-an/${ma}`, { method: 'DELETE' }, maSua),
   duyet: (email: string, trang_thai: 'cho' | 'duyet' | 'tu_choi') =>
     goi<{ ok: true }>('/api/quan-tri/duyet', { method: 'POST', body: JSON.stringify({ email, trang_thai }) }),
   taoDuAn: (ten: string, dia_diem: string) =>
@@ -42,6 +48,9 @@ export const api = {
   docPA: (ma: string, id: string) => goi<PAApi>(`/api/du-an/${ma}/pa/${id}`),
   ghiPA: (ma: string, id: string, maSua: string, ten: string, trang_thai: unknown, tom_tat: unknown) =>
     goi<{ ok: true }>(`/api/du-an/${ma}/pa/${id}`, { method: 'PUT', body: JSON.stringify({ ten, trang_thai, tom_tat, sua_boi: layTenNguoi() }) }, maSua),
+  /** Ghi bù riêng tóm tắt của PA (không đổi giờ / người sửa). */
+  ghiTomTat: (ma: string, id: string, maSua: string, tom_tat: unknown) =>
+    goi<{ ok: true }>(`/api/du-an/${ma}/pa/${id}/tom-tat`, { method: 'PUT', body: JSON.stringify({ tom_tat }) }, maSua),
   nhanBan: (ma: string, id: string, maSua: string) =>
     goi<{ id: string }>(`/api/du-an/${ma}/pa/${id}/nhan-ban`, { method: 'POST', body: JSON.stringify({ sua_boi: layTenNguoi() }) }, maSua),
   /** Nhân bản cả dự án thành dự án mới (mã + mã sửa mới). */

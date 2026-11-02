@@ -49,6 +49,19 @@ describe('API dự án và phương án', () => {
     expect((await goi(`/api/du-an/${ma}/pa/p1`, { method: 'DELETE', headers: { 'X-Ma-Sua': ma_sua } })).status).toBe(204);
   });
 
+  it('ghi bù tóm tắt: đổi tom_tat, giữ nguyên giờ + người sửa; sai mã -> 403', async () => {
+    const { ma, ma_sua } = await taoDuAn();
+    await goi(`/api/du-an/${ma}/pa/p1`, json({ ...PA, sua_boi: 'An' }, ma_sua));
+    const truoc = (await (await goi(`/api/du-an/${ma}`)).json()) as { phuong_an: { sua_luc: string; sua_boi: string }[] };
+    expect((await goi(`/api/du-an/${ma}/pa/p1/tom-tat`, json({ tom_tat: { danSo: 9 } }, 'sai'))).status).toBe(403);
+    expect((await goi(`/api/du-an/${ma}/pa/p1/tom-tat`, json({ tom_tat: { soCan: 5, danSo: 9 } }, ma_sua))).status).toBe(200);
+    expect((await goi(`/api/du-an/${ma}/pa/khong-co/tom-tat`, json({ tom_tat: { danSo: 1 } }, ma_sua))).status).toBe(404);
+    const sau = (await (await goi(`/api/du-an/${ma}`)).json()) as { phuong_an: { tom_tat: unknown; sua_luc: string; sua_boi: string }[] };
+    expect(sau.phuong_an[0].tom_tat).toEqual({ soCan: 5, danSo: 9 });
+    expect(sau.phuong_an[0].sua_luc).toBe(truoc.phuong_an[0].sua_luc);
+    expect(sau.phuong_an[0].sua_boi).toBe(truoc.phuong_an[0].sua_boi);
+  });
+
   it('dự án hoặc PA không tồn tại -> 404', async () => {
     expect((await goi('/api/du-an/khongco1')).status).toBe(404);
     const { ma } = await taoDuAn();

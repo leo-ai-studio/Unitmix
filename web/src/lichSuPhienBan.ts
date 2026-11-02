@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.10', ngay: '2026-11-02',
+    vi: [
+      'Xoá dự án có hộp xác nhận; dự án bị xoá vào thùng rác 30 ngày, quản trị khôi phục được rồi mới xoá hẳn (dọn tự động mỗi ngày)',
+      'Trang Quản trị gọn hơn: mỗi người / dự án một dòng, danh sách dự án thu gọn, có thùng rác và nút xoá / khôi phục',
+    ],
+    en: [
+      'Deleting a project asks for confirmation; deleted projects stay in the trash for 30 days so the admin can restore them before they are removed for good (daily automatic cleanup)',
+      'Tidier Admin page: one line per person / project, collapsible project list, trash with delete / restore buttons',
+    ],
+  },
+  {
     v: '0.5.9', ngay: '2026-11-02',
     vi: [
       'Đăng nhập mail công ty (Cloudflare Access): mail công ty đăng nhập lần đầu ở trạng thái chờ duyệt; quản trị duyệt / từ chối / thu hồi ở trang Quản trị, duyệt trước được cả mail chưa đăng nhập; mỗi dự án ghi người tạo',

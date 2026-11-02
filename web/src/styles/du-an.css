@@ -154,12 +154,32 @@
 .mail-dn { align-self: center; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted-text); }
 .nut-qt { align-self: center; text-decoration: none; }
 .cho-duyet { padding: 8px 12px; border-radius: 8px; background: var(--selected); }
-.qt-khoi { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
-.qt-khoi h2 { margin: 0 0 4px; font-size: 15px; }
-.qt-hang { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--line); }
-.qt-mail { flex: 1 1 220px; font-weight: 600; overflow-wrap: anywhere; }
-.qt-phu { font-size: 12px; color: var(--muted-text); }
-.qt-nhan { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; background: var(--selected); color: var(--green); }
+.qt-trang { gap: 12px; }
+.qt-khoi { padding: 10px 14px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.qt-dau { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin-bottom: 4px; }
+.qt-khoi h2 { margin: 0; font-size: 14px; }
+.qt-khoi h2 small { margin-left: 4px; font-weight: 500; color: var(--muted-text); }
+.qt-them { display: flex; gap: 6px; }
+.qt-them input { width: 240px; max-width: 100%; height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; }
+.qt-them .nut-phu { height: 32px; padding: 0 12px; }
+.qt-hang { display: flex; align-items: center; gap: 4px 12px; min-height: 36px; padding: 4px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.qt-mail { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.qt-phu { flex: none; font-size: 12px; color: var(--muted-text); white-space: nowrap; }
+.qt-nguoi { flex: 0 1 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.qt-han { color: var(--warn); }
+.qt-nhan { flex: none; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; background: var(--selected); color: var(--green); }
 .qt-nhan-cho { background: var(--gold); color: var(--ink); }
 .qt-nhan-tu_choi { background: var(--warn); color: var(--panel); }
-.qt-nut { display: inline-flex; gap: 6px; margin-left: auto; }
+.qt-nut { flex: none; display: inline-flex; gap: 6px; margin-left: auto; }
+.qt-nut button { min-height: 28px; padding: 0 10px; font-size: 12px; }
+.qt-xoa { color: var(--warn); }
+.qt-trong { margin: 6px 0; font-size: 12px; color: var(--muted-text); }
+.qt-them-nua { align-self: center; margin-top: 6px; border: 0; background: none; color: var(--green); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.qt-rac summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; list-style: none; }
+.qt-rac summary::-webkit-details-marker { display: none; }
+@media (max-width: 720px) {
+  .qt-hang { flex-wrap: wrap; }
+  .qt-mail { flex: 1 1 100%; }
+  .qt-an-hep { display: none; }
+  .qt-nut { margin-left: 0; }
+}

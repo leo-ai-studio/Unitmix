@@ -4,18 +4,19 @@ import { tuyenAI, type EnvAI } from './ai';
 import { cauHinhBanDo, type EnvBanDo } from './banDo';
 import { xuLyTram, type EnvTram } from './tram';
 import { docDanhTinh, type EnvDanhTinh } from './danhTinh';
+import { dsThungRac, donThungRac, khoiPhuc, ngayGiu, xoaMem } from './thungRac';
 import { datTrangThai, docTrangThai, ghiNhanYeuCau, laQuanTri, lietKeQuanTri, quyetDinhTao, type TrangThai } from './nguoiDung';
 
 export { Tram } from './tram';
 
-type Env = { Bindings: EnvAI & EnvBanDo & EnvTram & EnvDanhTinh & { MAIL_QUAN_TRI?: string } };
+type Env = { Bindings: EnvAI & EnvBanDo & EnvTram & EnvDanhTinh & { MAIL_QUAN_TRI?: string; NGAY_GIU_XOA?: string } };
 const app = new Hono<Env>();
 const GIOI_HAN_BODY = 2_000_000; // byte
 
 type DuAnHang = { ma: string; ten: string; dia_diem: string; bam_ma_sua: string };
 
 const docDuAn = (c: Context<Env>, ma: string) =>
-  c.env.DB.prepare('SELECT ma, ten, dia_diem, bam_ma_sua FROM du_an WHERE ma = ?').bind(ma).first<DuAnHang>();
+  c.env.DB.prepare('SELECT ma, ten, dia_diem, bam_ma_sua FROM du_an WHERE ma = ? AND xoa_luc IS NULL').bind(ma).first<DuAnHang>();
 
 async function duocSua(c: Context<Env>, da: DuAnHang): Promise<boolean> {
   const ma = c.req.header('X-Ma-Sua');
@@ -77,7 +78,26 @@ app.get('/api/toi', async (c) => {
 app.get('/api/quan-tri', async (c) => {
   const q = await choPhepQuanTri(c);
   if (q instanceof Response) return q;
-  return c.json(await lietKeQuanTri(c.env.DB));
+  const ngay = ngayGiu(c.env.NGAY_GIU_XOA);
+  return c.json({ ...(await lietKeQuanTri(c.env.DB)), thung_rac: await dsThungRac(c.env.DB, ngay), ngay_giu: ngay });
+});
+
+/** Quản trị chuyển một dự án (bất kỳ) vào thùng rác. */
+app.post('/api/quan-tri/xoa', async (c) => {
+  const q = await choPhepQuanTri(c);
+  if (q instanceof Response) return q;
+  const b = await docBody<{ ma?: string }>(c);
+  if (!b?.ma) return c.json({ loi: 'thieu_ma' }, 400);
+  return (await xoaMem(c.env.DB, b.ma, q.email, bayGio())) ? c.json({ ok: true }) : c.json({ loi: 'khong_co' }, 404);
+});
+
+/** Khôi phục dự án từ thùng rác (còn trong thời hạn giữ). */
+app.post('/api/quan-tri/khoi-phuc', async (c) => {
+  const q = await choPhepQuanTri(c);
+  if (q instanceof Response) return q;
+  const b = await docBody<{ ma?: string }>(c);
+  if (!b?.ma) return c.json({ loi: 'thieu_ma' }, 400);
+  return (await khoiPhuc(c.env.DB, b.ma)) ? c.json({ ok: true }) : c.json({ loi: 'khong_co' }, 404);
 });
 
 /** Duyệt / từ chối / thu hồi (đặt về chờ) một mail; mail chưa có thì thêm mới (duyệt trước). */
@@ -163,6 +183,19 @@ app.put('/api/du-an/:ma/pa/:id', async (c) => {
   return c.json({ ok: true });
 });
 
+/** Ghi bù riêng tóm tắt PA (PA lưu trước khi có trường mới): không đổi trạng thái, giờ sửa, người sửa. */
+app.put('/api/du-an/:ma/pa/:id/tom-tat', async (c) => {
+  const da = await choPhepGhi(c);
+  if (da instanceof Response) return da;
+  const b = await docBody<{ tom_tat?: unknown }>(c);
+  if (!b) return c.json({ loi: 'qua_lon' }, 413);
+  if (!b.tom_tat || typeof b.tom_tat !== 'object') return c.json({ loi: 'thieu_tom_tat' }, 400);
+  const r = await c.env.DB.prepare('UPDATE phuong_an SET tom_tat = ? WHERE du_an_ma = ? AND id = ?')
+    .bind(JSON.stringify(b.tom_tat), da.ma, c.req.param('id'))
+    .run();
+  return r.meta.changes ? c.json({ ok: true }) : c.json({ loi: 'khong_co' }, 404);
+});
+
 /** Đổi tên (và địa điểm) dự án. Tên rỗng thì giữ tên cũ; địa điểm không gửi thì giữ nguyên. */
 app.patch('/api/du-an/:ma', async (c) => {
   const da = await choPhepGhi(c);
@@ -234,6 +267,14 @@ app.post('/api/du-an/:ma/nhan-ban', async (c) => {
   return c.json({ ma, ma_sua: maSua, so_pa: results.length }, 201);
 });
 
+/** Xoá dự án = chuyển vào thùng rác (giữ NGAY_GIU_XOA ngày, quản trị khôi phục được). Cần mã sửa. */
+app.delete('/api/du-an/:ma', async (c) => {
+  const da = await choPhepGhi(c);
+  if (da instanceof Response) return da;
+  await xoaMem(c.env.DB, da.ma, (await emailDangNhap(c)) ?? '', bayGio());
+  return c.body(null, 204);
+});
+
 app.delete('/api/du-an/:ma/pa/:id', async (c) => {
   const da = await choPhepGhi(c);
   if (da instanceof Response) return da;
@@ -255,4 +296,10 @@ app.onError((err, c) => {
   return c.json({ loi: 'loi_may_chu' }, 500);
 });
 
-export default app;
+/** Tác vụ định kỳ (wrangler.toml [triggers]): dọn hẳn dự án nằm trong thùng rác quá NGAY_GIU_XOA ngày. */
+export default {
+  fetch: app.fetch,
+  async scheduled(_ev: ScheduledController, env: Env['Bindings']) {
+    await donThungRac(env.DB, ngayGiu(env.NGAY_GIU_XOA));
+  },
+} satisfies ExportedHandler<Env['Bindings']>;
