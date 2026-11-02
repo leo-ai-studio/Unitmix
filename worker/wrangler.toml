@@ -25,3 +25,9 @@ class_name = "Tram"
 [[migrations]]
 tag = "v1-tram"
 new_sqlite_classes = ["Tram"]
+
+# Đăng nhập mail công ty để tạo dự án (docs/dang_nhap_cloudflare.md). Bỏ comment và điền khi đã tạo ứng dụng Access:
+# [vars]
+# CF_ACCESS_TEAM = "tenteam"
+# CF_ACCESS_AUD = "<AUD tag>"
+# MIEN_TAO_DA = "meygroup.vn"

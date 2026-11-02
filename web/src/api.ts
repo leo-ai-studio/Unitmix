@@ -20,7 +20,11 @@ async function goi<T>(duong: string, init: RequestInit = {}, maSua?: string | nu
   return (r.status === 204 ? undefined : await r.json()) as T;
 }
 
+export type Toi = { yeuCau: boolean; email: string | null; duocTao: boolean; dangNhap: string };
+
 export const api = {
+  /** Ai đang dùng: có yêu cầu đăng nhập (mail công ty) để tạo dự án không, đã đăng nhập chưa. */
+  toi: () => goi<Toi>('/api/toi'),
   taoDuAn: (ten: string, dia_diem: string) =>
     goi<{ ma: string; ma_sua: string }>('/api/du-an', { method: 'POST', body: JSON.stringify({ ten, dia_diem }) }),
   docDuAn: (ma: string) => goi<DuAnApi>(`/api/du-an/${ma}`),

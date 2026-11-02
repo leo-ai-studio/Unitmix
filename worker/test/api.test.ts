@@ -156,3 +156,17 @@ describe('nhân bản dự án và người sửa', () => {
     expect(((await (await goi(`/api/du-an/${ma}/pa/p1`)).json()) as { sua_boi: string }).sua_boi).toBe('Bình');
   });
 });
+
+describe('đăng nhập công ty (Cloudflare Access)', () => {
+  it('chưa cấu hình Access: /api/toi báo không yêu cầu, ai cũng tạo được dự án', async () => {
+    const r = await goi('/api/toi');
+    expect(await r.json()).toEqual({ yeuCau: false, email: null, duocTao: true, dangNhap: '/api/dang-nhap' });
+    await taoDuAn();
+  });
+  it('/api/dang-nhap chỉ quay về đường nội bộ', async () => {
+    const quay = async (q: string) => (await goi(`/api/dang-nhap?quay=${encodeURIComponent(q)}`, { redirect: 'manual' })).headers.get('location');
+    expect(await quay('/du-an/abc')).toBe('/du-an/abc');
+    expect(await quay('//evil.com')).toBe('/');
+    expect(await quay('https://evil.com')).toBe('/');
+  });
+});

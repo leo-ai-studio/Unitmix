@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
-import { api } from '../api';
+import { api, LoiApi, type Toi } from '../api';
 import { t, useLang } from '../i18n/i18n';
 import { useDongHop } from '../ui/useDongHop';
 import {
@@ -133,6 +133,17 @@ export function DuAn() {
   const [suaPA, setSuaPA] = useState<{ ma: string; id: string; ten: string } | null>(null);
   const [loiHang, setLoiHang] = useState('');
   const [tenBan, setTenBan] = useState(layTenNguoi);
+  /** Đăng nhập công ty (Cloudflare Access): chỉ khi máy chủ bật yêu cầu thì nút Tạo / Nhân bản mới đòi đăng nhập. */
+  const [toi, setToi] = useState<Toi | null>(null);
+  useEffect(() => { api.toi().then(setToi, () => {}); }, []);
+  const diDangNhap = () => { location.href = `${toi?.dangNhap ?? '/api/dang-nhap'}?quay=${encodeURIComponent(location.pathname + location.search)}`; };
+  /** Chặn thao tác tạo khi cần đăng nhập: chưa đăng nhập thì chuyển sang đăng nhập, sai miền thì báo. Trả true nếu được tiếp tục. */
+  const duocTao = () => {
+    if (!toi || !toi.yeuCau || toi.duocTao) return true;
+    if (toi.email) baoNho({ chu: t('duAn.saiMien').replace('{mail}', toi.email) });
+    else diDangNhap();
+    return false;
+  };
   const [soSanh, setSoSanh] = useState<string | null>(null);
   const [bao, setBao] = useState<BaoNho | null>(null);
   // Mục dự án mặc định THU GỌN (chỉ hiện đầu thẻ), bấm mũi tên để xổ bảng phương án.
@@ -188,6 +199,7 @@ export function DuAn() {
 
   /** Nhân bản cả dự án thành dự án mới (kèm mã sửa mới — người gọi là chủ bản sao), đưa lên đầu danh sách. */
   async function nhanBanDA(ma: string, ten: string) {
+    if (!duocTao()) return;
     if (!confirm(t('duAn.nhanBanHoi').replace('{ten}', ten))) return;
     setLoiHang('');
     try {
@@ -197,8 +209,9 @@ export function DuAn() {
       setDong((ds) => [{ ma: r.ma, da: null, loi: false }, ...ds]);
       baoNho({ chu: t('duAn.daNhanBan').replace('{ten}', ten) });
       await napLai(r.ma);
-    } catch {
-      baoNho({ chu: t('soan.loiMang') });
+    } catch (e) {
+      if (e instanceof LoiApi && e.trangThai === 401) diDangNhap();
+      else baoNho({ chu: e instanceof LoiApi && e.trangThai === 403 ? t('duAn.saiMien').replace('{mail}', toi?.email ?? '') : t('soan.loiMang') });
     }
   }
 
@@ -262,6 +275,7 @@ export function DuAn() {
         <ThuongHieu anBan />
         <span class="gian" />
         <TacGiaBan />
+        {toi?.yeuCau && toi.email && <span class="mail-dn" title={t('duAn.daDangNhap')}>{toi.email}</span>}
         <ChonLang />
       </header>
       <main class="trang trang-du-an">
@@ -270,7 +284,7 @@ export function DuAn() {
             <h1>{t('duAn.tieuDe')}{dong.length > 0 && <span class="dem">{t('duAn.soDuAn').replace('{n}', String(dong.length))}</span>}</h1>
             <p>{t('duAn.moTaNgan')}</p>
           </div>
-          <button type="button" class="nut-chinh nut-tao" onClick={() => setMoTao(true)}>
+          <button type="button" class="nut-chinh nut-tao" onClick={() => { if (duocTao()) setMoTao(true); }}>
             <span aria-hidden="true" class="cong">+</span>{t('duAn.tao')}
           </button>
         </div>

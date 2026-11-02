@@ -1784,6 +1784,8 @@
   "duAn.tenBanGt": "Shown next to the options you edit so collaborators know who changed what. Stored on this device.",
   "duAn.hoiTen": "Enter your name to tag the options you edit (collaborators will see it):",
   "duAn.nhanBanHoi": "Duplicate the whole project “{ten}” as a new project?",
+  "duAn.saiMien": "{mail} is not a company account, so it cannot create projects. Sign in with your @meygroup.vn email.",
+  "duAn.daDangNhap": "Signed in with your company email",
   "duAn.suaLuc": "Edited",
   "duAn.soPANgan": "{n} options",
   "leo.ten": "Leo AI",

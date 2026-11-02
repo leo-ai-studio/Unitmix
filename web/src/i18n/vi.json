@@ -1784,6 +1784,8 @@
   "duAn.tenBanGt": "Tên hiện cạnh phương án bạn sửa, để người cùng dự án biết ai sửa. Lưu trên máy này.",
   "duAn.hoiTen": "Nhập tên của bạn để ghi vào các phương án bạn sửa (người cùng dự án sẽ thấy):",
   "duAn.nhanBanHoi": "Nhân bản cả dự án “{ten}” thành dự án mới?",
+  "duAn.saiMien": "Tài khoản {mail} không thuộc công ty nên không được tạo dự án. Hãy đăng nhập bằng mail @meygroup.vn.",
+  "duAn.daDangNhap": "Đã đăng nhập bằng mail công ty",
   "duAn.suaLuc": "Sửa lúc",
   "duAn.soPANgan": "{n} PA",
   "leo.ten": "Leo AI",

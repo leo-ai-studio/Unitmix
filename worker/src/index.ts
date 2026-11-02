@@ -3,10 +3,11 @@ import { bam, bangNhau, chuoiNgauNhien, taoMaDuAn, taoMaSua } from './maSua';
 import { tuyenAI, type EnvAI } from './ai';
 import { cauHinhBanDo, type EnvBanDo } from './banDo';
 import { xuLyTram, type EnvTram } from './tram';
+import { docDanhTinh, thuocMien, type EnvDanhTinh } from './danhTinh';
 
 export { Tram } from './tram';
 
-type Env = { Bindings: EnvAI & EnvBanDo & EnvTram };
+type Env = { Bindings: EnvAI & EnvBanDo & EnvTram & EnvDanhTinh };
 const app = new Hono<Env>();
 const GIOI_HAN_BODY = 2_000_000; // byte
 
@@ -31,7 +32,34 @@ const bayGio = () => new Date().toISOString();
 /** Tên người sửa tự khai: cắt khoảng trắng, tối đa 60 ký tự. */
 const tenNguoi = (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 60) : '');
 
+/** Mail đã đăng nhập (qua Cloudflare Access) — null nếu chưa đăng nhập hoặc chưa bật Access. */
+const emailDangNhap = (c: Context<Env>) => docDanhTinh(c.req.raw, c.env);
+
+/** Tạo / nhân bản dự án: khi đặt `MIEN_TAO_DA` thì phải đăng nhập bằng mail thuộc miền đó (401 chưa đăng nhập, 403 sai miền). */
+async function choPhepTao(c: Context<Env>): Promise<{ email: string | null } | Response> {
+  const email = await emailDangNhap(c);
+  if (thuocMien(email, c.env.MIEN_TAO_DA)) return { email };
+  return c.json({ loi: email ? 'sai_mien' : 'chua_dang_nhap' }, email ? 403 : 401);
+}
+
+/** Người sửa ghi vào PA: đã đăng nhập thì lấy mail thật (không giả được), chưa thì tên tự khai. */
+const nguoiSua = (email: string | null, khai: unknown) => email ?? tenNguoi(khai);
+
+/** Cho giao diện biết: có yêu cầu đăng nhập để tạo dự án không, đã đăng nhập chưa, có được tạo không. */
+app.get('/api/toi', async (c) => {
+  const email = await emailDangNhap(c);
+  return c.json({ yeuCau: !!c.env.MIEN_TAO_DA, email, duocTao: thuocMien(email, c.env.MIEN_TAO_DA), dangNhap: '/api/dang-nhap' });
+});
+
+/** Đích đăng nhập: Cloudflare Access chặn đường này; qua được là đã có cookie → quay về trang cũ (chỉ đường nội bộ). */
+app.get('/api/dang-nhap', (c) => {
+  const quay = c.req.query('quay') ?? '/';
+  return c.redirect(quay.startsWith('/') && !quay.startsWith('//') ? quay : '/', 302);
+});
+
 app.post('/api/du-an', async (c) => {
+  const quyen = await choPhepTao(c);
+  if (quyen instanceof Response) return quyen;
   const b = await docBody<{ ten?: string; dia_diem?: string }>(c);
   if (!b) return c.json({ loi: 'qua_lon' }, 413);
   const ma = taoMaDuAn();
@@ -88,7 +116,7 @@ app.put('/api/du-an/:ma/pa/:id', async (c) => {
     `INSERT INTO phuong_an (id, du_an_ma, ten, trang_thai, tom_tat, sua_luc, sua_boi) VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (du_an_ma, id) DO UPDATE SET ten = excluded.ten, trang_thai = excluded.trang_thai, tom_tat = excluded.tom_tat, sua_luc = excluded.sua_luc, sua_boi = excluded.sua_boi`,
   )
-    .bind(c.req.param('id'), da.ma, b.ten ?? 'PA', JSON.stringify(b.trang_thai), JSON.stringify(b.tom_tat ?? {}), bayGio(), tenNguoi(b.sua_boi))
+    .bind(c.req.param('id'), da.ma, b.ten ?? 'PA', JSON.stringify(b.trang_thai), JSON.stringify(b.tom_tat ?? {}), bayGio(), nguoiSua(await emailDangNhap(c), b.sua_boi))
     .run();
   return c.json({ ok: true });
 });
@@ -131,7 +159,7 @@ app.post('/api/du-an/:ma/pa/:id/nhan-ban', async (c) => {
   if (!goc) return c.json({ loi: 'khong_co' }, 404);
   const id = 'pa-' + chuoiNgauNhien(6);
   await c.env.DB.prepare('INSERT INTO phuong_an (id, du_an_ma, ten, trang_thai, tom_tat, sua_luc, sua_boi) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .bind(id, da.ma, `${goc.ten} (bản sao)`, goc.trang_thai, goc.tom_tat, bayGio(), tenNguoi(b.sua_boi))
+    .bind(id, da.ma, `${goc.ten} (bản sao)`, goc.trang_thai, goc.tom_tat, bayGio(), nguoiSua(await emailDangNhap(c), b.sua_boi))
     .run();
   return c.json({ id }, 201);
 });
@@ -141,6 +169,8 @@ app.post('/api/du-an/:ma/pa/:id/nhan-ban', async (c) => {
  * họ vốn đã đọc được toàn bộ dữ liệu; bản sao không dính gì tới mã sửa của dự án gốc.
  */
 app.post('/api/du-an/:ma/nhan-ban', async (c) => {
+  const quyen = await choPhepTao(c);
+  if (quyen instanceof Response) return quyen;
   const da = await docDuAn(c, c.req.param('ma'));
   if (!da) return c.json({ loi: 'khong_co' }, 404);
   const b = await docBody<{ ten?: string; sua_boi?: string }>(c);
@@ -148,7 +178,7 @@ app.post('/api/du-an/:ma/nhan-ban', async (c) => {
   const ma = taoMaDuAn();
   const maSua = taoMaSua();
   const bay = bayGio();
-  const nguoi = tenNguoi(b.sua_boi);
+  const nguoi = nguoiSua(quyen.email, b.sua_boi);
   const { results } = await c.env.DB.prepare('SELECT id, ten, trang_thai, tom_tat FROM phuong_an WHERE du_an_ma = ?')
     .bind(da.ma)
     .all<{ id: string; ten: string; trang_thai: string; tom_tat: string }>();
