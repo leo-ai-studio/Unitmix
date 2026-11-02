@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.12', ngay: '2026-11-03',
+    vi: [
+      'Hộp hỏi riêng của app thay hộp xác nhận / nhập tên của trình duyệt (xoá, nhân bản dự án, thu hồi quyền, thay lô, lưu mẫu cài sẵn, lưu góc nhìn 3D…): cùng kiểu chữ và nút với app, nút nguy hiểm màu đỏ, Enter đồng ý, Esc huỷ',
+    ],
+    en: [
+      'In-app dialogs replace the browser confirm / prompt boxes (delete, duplicate project, revoke rights, replace plots, save presets, save 3D views…): same type and buttons as the app, red for destructive actions, Enter confirms, Esc cancels',
+    ],
+  },
+  {
     v: '0.5.11', ngay: '2026-11-02',
     vi: [
       'Màn chờ đăng nhập / đăng ký phủ lên trang chủ: Đăng nhập · Đăng ký tài khoản mới (họ tên, mail công ty, phòng, ghi chú) · Đã gửi yêu cầu · Chờ duyệt; trang Quản trị hiện hồ sơ từng người',

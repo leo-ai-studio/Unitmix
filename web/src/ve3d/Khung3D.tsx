@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { hoiChu } from '../ui/HopHoi';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { viTriMatTroi } from '../ba_chieu/nang';
 import { t, useLang } from '../i18n/i18n';
@@ -827,10 +828,10 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
     try { await navigator.clipboard.writeText(p); setBaoChep(t('m3d.daChep')); } catch { setBaoChep(p); }
     setTimeout(() => setBaoChep(''), 4000);
   };
-  const luuGoc = () => {
+  const luuGoc = async () => {
     const g = he.current?.layGoc();
     if (!g || !onLuuGoc) return;
-    const ten = prompt(t('m3d.tenGoc'), `${t('m3d.goc')} ${(gocLuu?.length ?? 0) + 1}`);
+    const ten = await hoiChu(t('m3d.tenGoc'), `${t('m3d.goc')} ${(gocLuu?.length ?? 0) + 1}`);
     if (ten?.trim()) onLuuGoc({ ten: ten.trim(), vt: g.vt, dich: g.dich, gio: Math.round(gioDung() * 100) / 100 });
   };
 

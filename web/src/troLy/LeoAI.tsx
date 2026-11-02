@@ -4,6 +4,7 @@
  * lịch sử theo dự án (đổi tên / xoá), chép / thử lại / sửa câu cuối, đính kèm ảnh / PDF / Excel, nói (mic) + đọc to + chế độ rảnh tay,
  * chọn mô hình + mức suy nghĩ, gợi ý mô hình 0 token khi đang gõ, cài đặt khoá riêng. Logo LEO: vòng O quay khi đang chạy.
  */
+import { xacNhan } from '../ui/HopHoi';
 import type Anthropic from '@anthropic-ai/sdk';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
@@ -450,7 +451,7 @@ export function LeoAI(p: PropsLeo) {
                     onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
                   : <button type="button" class="leo-cuoc" onClick={() => { setCuocId(c.id); setMan('chat'); setLoi(null); }}><b>{c.ten}</b><small>{gio(c.sua)}</small></button>}
                 <NutNho k="leoSua" nhan={t('leo.doiTen')} onClick={() => setSapTen(c.id)} />
-                <NutNho k="leoDong" nhan={t('leo.xoaCuoc')} tat={chay && c.id === cuocId} onClick={() => { if (confirm(t('leo.xoaCuocHoi'))) { luuDs(ds.filter((x) => x.id !== c.id)); if (c.id === cuocId) setCuocId(null); } }} />
+                <NutNho k="leoDong" nhan={t('leo.xoaCuoc')} tat={chay && c.id === cuocId} onClick={() => { void xacNhan(t('leo.xoaCuocHoi'), { nguyHiem: true }).then((ok) => { if (ok) { luuDs(ds.filter((x) => x.id !== c.id)); if (c.id === cuocId) setCuocId(null); } }); }} />
               </li>
             ))}
           </ul>
@@ -502,7 +503,7 @@ export function LeoAI(p: PropsLeo) {
                     <div class="leo-hang">
                       <button type="button" class="nut-chinh" onClick={() => { void navigator.clipboard?.writeText(linkGhep(ghep.khoa, ghep.tram)).then(() => { setDaChep(true); setTimeout(() => setDaChep(false), 2500); }); }}>{daChep ? t('leo.ghep.daChep') : t('leo.ghep.chepLink')}</button>
                       {'share' in navigator && <button type="button" class="nut-phu" onClick={() => { void navigator.share({ title: 'LEO Unitmix', url: linkGhep(ghep.khoa, ghep.tram) }).catch(() => undefined); }}>{t('leo.ghep.chia')}</button>}
-                      <button type="button" class="nut-phu" onClick={() => { if (confirm(t('leo.ghep.doiMaHoi'))) void doiMaGhep().then((k) => k && setGhep({ ...ghep, khoa: k })); }}>{t('leo.ghep.doiMa')}</button>
+                      <button type="button" class="nut-phu" onClick={() => { void xacNhan(t('leo.ghep.doiMaHoi')).then((ok) => { if (ok) void doiMaGhep().then((k) => k && setGhep({ ...ghep, khoa: k })); }); }}>{t('leo.ghep.doiMa')}</button>
                     </div>
                   </>
                 )}

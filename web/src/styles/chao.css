@@ -57,3 +57,12 @@
 
 @media (max-width: 520px) { .chao-the { padding: 26px 20px 18px; border-radius: 16px; } }
 @media (prefers-reduced-motion: reduce) { .chao-the { animation: none; } .chao-nut { transition: none; } }
+
+/* Hộp hỏi riêng của app (ui/HopHoi.tsx) thay confirm() / prompt() của trình duyệt */
+.hop-hoi { z-index: 300; }
+.hop-hoi form { max-width: 420px; }
+.hop-hoi h2 { margin: 0 0 6px; font-size: 17px; }
+.hop-hoi-chu { margin: 0 0 14px; white-space: pre-line; color: var(--ink); font-size: 14px; line-height: 1.5; }
+.hop-hoi input { width: 100%; margin: 0 0 14px; }
+.nut-nguy { background: #9a3b2e; border-color: #9a3b2e; color: #fff; }
+.nut-nguy:hover:not(:disabled) { background: #7d2f24; }

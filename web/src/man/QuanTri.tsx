@@ -3,6 +3,7 @@ import { useLocation } from 'preact-iso';
 import { api, type QuanTriApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
 import { ChonLang, ThuongHieu } from '../ui/ThanhTren';
+import { xacNhan } from '../ui/HopHoi';
 
 const SO_DONG = 15;
 
@@ -28,7 +29,7 @@ export function QuanTri() {
     if (m) lam(() => api.duyet(m, 'duyet')).then(() => setMail(''));
   };
   const xoaDuAn = (ma: string, ten: string) => {
-    if (confirm(t('qt.xoaHoi').replace('{ten}', ten).replace('{n}', String(ds?.ngay_giu ?? 30)))) lam(() => api.quanTriXoa(ma));
+    xacNhan(t('qt.xoaHoi').replace('{ten}', ten).replace('{n}', String(ds?.ngay_giu ?? 30)), { nguyHiem: true, dongY: t('qt.xoa') }).then((ok) => { if (ok) void lam(() => api.quanTriXoa(ma)); });
   };
   const duAnHien = ds ? (hetDuAn ? ds.du_an : ds.du_an.slice(0, SO_DONG)) : [];
 
@@ -66,7 +67,7 @@ export function QuanTri() {
                   <span class="qt-nut">
                     {n.trang_thai !== 'duyet' && <button type="button" class="nut-chinh" onClick={() => lam(() => api.duyet(n.email, 'duyet'))}>{t('qt.duyet')}</button>}
                     {n.trang_thai === 'cho' && <button type="button" class="nut-phu" onClick={() => lam(() => api.duyet(n.email, 'tu_choi'))}>{t('qt.tuChoi')}</button>}
-                    {n.trang_thai === 'duyet' && <button type="button" class="nut-phu" onClick={() => confirm(t('qt.thuHoiHoi').replace('{mail}', n.email)) && lam(() => api.duyet(n.email, 'cho'))}>{t('qt.thuHoi')}</button>}
+                    {n.trang_thai === 'duyet' && <button type="button" class="nut-phu" onClick={() => xacNhan(t('qt.thuHoiHoi').replace('{mail}', n.email), { nguyHiem: true, dongY: t('qt.thuHoi') }).then((ok) => { if (ok) void lam(() => api.duyet(n.email, 'cho')); })}>{t('qt.thuHoi')}</button>}
                   </span>
                 </div>
               ))}

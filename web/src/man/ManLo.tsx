@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
+import { xacNhan } from '../ui/HopHoi';
 import type { BanDxf } from '../dxf/napDxf';
 import { t } from '../i18n/i18n';
 import type { DongChiTieu } from '../tinh/chiTieu';
@@ -105,9 +106,9 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
     }
   }
 
-  function taoTuDxf() {
+  async function taoTuDxf() {
     if (!ban || !chon.ranh || !modDxf) return;
-    if (pa.lo.length && !confirm(t('lo.thayLo'))) return;
+    if (pa.lo.length && !(await xacNhan(t('lo.thayLo'), { nguyHiem: true }))) return;
     const ds = modDxf.taoLoTuDxf(ban, { ranh: chon.ranh, chiGioi: chon.chiGioi || undefined, tem: chon.tem || undefined, xungQuanh: chon.xungQuanh || undefined });
     sua((p) => ({ ...p, lo: ds, toa: p.toa.filter((x) => ds.some((l) => l.id === x.loId)) }));
     setBan(null);

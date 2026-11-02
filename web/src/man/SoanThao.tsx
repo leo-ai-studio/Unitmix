@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, LoiApi, type DuAnApi } from '../api';
 import { t, useLang } from '../i18n/i18n';
 import { useKho } from '../kho/kho';
+import { hoiChu } from '../ui/HopHoi';
 import { layCaiTang } from './caiTang';
 import { datBaoStretch } from './baoStretch';
 import { lanTruyenBoCuc } from '../tinh/lanTruyenBoCuc';
@@ -113,8 +114,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
   useEffect(() => {
     if (!duocSua || layTenNguoi() || daHoiTen()) return;
     ghiDaHoiTen();
-    const ten = window.prompt(t('duAn.hoiTen'));
-    if (ten?.trim()) luuTenNguoi(ten);
+    hoiChu(t('duAn.hoiTen')).then((ten) => { if (ten?.trim()) luuTenNguoi(ten); });
   }, [duocSua]);
   const kho = useKho({ ma, paId, tenPA, maSua, duocSua, ban, tomTat: tv ? (p) => tomTatPA(p, tv) : undefined });
   const [boQuaNhap, setBoQuaNhap] = useState(false);

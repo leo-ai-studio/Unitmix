@@ -33,6 +33,7 @@ import { dangKySW } from './pwa/dangKySW';
 import { DuAn } from './man/DuAn';
 import { SoanThao } from './man/SoanThao';
 import { QuanTri } from './man/QuanTri';
+import { HopHoi } from './ui/HopHoi';
 import { theoDoiKhungNhin } from './ui/manHep';
 
 nhanMaGhepTuLink(); // mở bằng link ghép điện thoại (#ghep=…) → lưu mã, xoá khỏi thanh địa chỉ
@@ -42,6 +43,7 @@ theoDoiKhungNhin();
 function App() {
   return (
     <LocationProvider>
+      <HopHoi />
       <Router>
         <Route path="/" component={DuAn} />
         <Route path="/du-an/:ma" component={SoanThao} />

@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { hoiChu, xacNhan } from './HopHoi';
 import { t } from '../i18n/i18n';
 import { docPreset, khoTrinhDuyet, luuPreset, nhapPreset, xoaPreset, xuatPreset, type DuLieuPreset, type NhomPreset, type PhamViPreset, type Preset } from '../kho/preset';
 
@@ -22,20 +23,20 @@ export function DongPreset({ nhom, chiXem, chup, ap, chonPham = false }: Props) 
   const [tin, setTin] = useState('');
   const gt = (k: string) => t(`gt.ps.${k}`);
 
-  function luu() {
+  async function luu() {
     const du = chup();
     if (!kho || !du) return setTin(gt('khongLuuDuoc'));
-    const ten = (prompt(gt('hoiTen'), chon) ?? '').trim();
+    const ten = ((await hoiChu(gt('hoiTen'), chon)) ?? '').trim();
     if (!ten) return;
-    if (ds.some((p) => p.ten === ten) && !confirm(gt('ghiDe').replace('{n}', ten))) return;
+    if (ds.some((p) => p.ten === ten) && !(await xacNhan(gt('ghiDe').replace('{n}', ten), { nguyHiem: true }))) return;
     const moi = luuPreset(kho, nhom, ten, du);
     if (!moi) return setTin(gt('khongLuuDuoc'));
     setDs(moi);
     setChon(ten);
     setTin(gt('daLuu').replace('{n}', ten));
   }
-  function xoa() {
-    if (!kho || !chon || !confirm(gt('hoiXoa').replace('{n}', chon))) return;
+  async function xoa() {
+    if (!kho || !chon || !(await xacNhan(gt('hoiXoa').replace('{n}', chon), { nguyHiem: true }))) return;
     setDs(xoaPreset(kho, nhom, chon));
     setTin(gt('daXoa').replace('{n}', chon));
     setChon('');

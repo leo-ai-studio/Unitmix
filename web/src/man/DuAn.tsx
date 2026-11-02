@@ -13,6 +13,7 @@ import { BieuTuong, NutBieuTuong } from '../ui/NutBieuTuong';
 import { fmtSo } from '../ui/so';
 import { luoi } from '../ui/Luoi';
 import { ChaoDangNhap } from './ChaoDangNhap';
+import { xacNhan } from '../ui/HopHoi';
 import { locDuAn, sapDuAn, type CachSap, type DongDuAn } from './locDuAn';
 
 // So sánh PA (kèm tính chi phí): chunk riêng, tải khi mở hộp.
@@ -193,7 +194,7 @@ export function DuAn() {
     if (await ghi(ma, (m) => api.doiTenPA(ma, id, m, ten.trim()))) setSuaPA(null);
   }
   async function xoaPA(ma: string, id: string, ten: string) {
-    if (!confirm(t('duAn.xoaHoi').replace('{ten}', ten))) return;
+    if (!(await xacNhan(t('duAn.xoaHoi').replace('{ten}', ten), { nguyHiem: true, dongY: t('qt.xoa') }))) return;
     await ghi(ma, (m) => api.xoaPA(ma, id, m));
   }
   /** Nhân bản một phương án trong cùng dự án (cần mã sửa); lỗi thì báo, thành công thì nạp lại danh sách. */
@@ -204,7 +205,7 @@ export function DuAn() {
   /** Nhân bản cả dự án thành dự án mới (kèm mã sửa mới — người gọi là chủ bản sao), đưa lên đầu danh sách. */
   async function nhanBanDA(ma: string, ten: string) {
     if (!duocTao()) return;
-    if (!confirm(t('duAn.nhanBanHoi').replace('{ten}', ten))) return;
+    if (!(await xacNhan(t('duAn.nhanBanHoi').replace('{ten}', ten), { dongY: t('duAn.nhanBanDA') }))) return;
     setLoiHang('');
     try {
       const r = await api.nhanBanDuAn(ma, `${ten} (bản sao)`);
@@ -224,7 +225,7 @@ export function DuAn() {
    * Xoá dự án = chuyển vào thùng rác (cần mã sửa). Luôn hỏi lại; quản trị khôi phục được trong số ngày giữ.
    */
   async function xoaDuAn(ma: string, ten: string) {
-    if (!confirm(t('duAn.xoaDAHoi').replace('{ten}', ten))) return;
+    if (!(await xacNhan(t('duAn.xoaDAHoi').replace('{ten}', ten), { nguyHiem: true, dongY: t('duAn.xoaDA') }))) return;
     const maSua = layMaSua(ma);
     if (!maSua) return;
     try {
@@ -254,8 +255,8 @@ export function DuAn() {
    * Bỏ khỏi danh sách — chỉ trên máy này, KHÔNG xoá dự án trên server (không có API xoá dự án; mã sửa giữ nguyên).
    * Dự án sửa được thì hỏi lại trước; mọi trường hợp đều có Hoàn tác trong báo nhỏ.
    */
-  function boDs(ma: string, ten: string) {
-    if (layMaSua(ma) && !confirm(t('duAn.boHoiSua').replace('{ten}', ten))) return;
+  async function boDs(ma: string, ten: string) {
+    if (layMaSua(ma) && !(await xacNhan(t('duAn.boHoiSua').replace('{ten}', ten), { nguyHiem: true }))) return;
     const r = boKhoiDanhSach(ma);
     const cu = dong;
     setDong((ds) => ds.filter((x) => x.ma !== ma));
