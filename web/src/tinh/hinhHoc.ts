@@ -11,7 +11,7 @@ let OX = 0;
 let OY = 0;
 const datGoc = (p?: Diem[]) => { OX = p?.length ? Math.round(p[0][0]) : 0; OY = p?.length ? Math.round(p[0][1]) : 0; };
 const toPath = (p: Diem[]): Path => p.map(([x, y]) => ({ X: Math.round((x - OX) * TL), Y: Math.round((y - OY) * TL) }));
-const toDiem = (p: Path): Diem[] => p.map((q) => [q.X / TL + OX, q.Y / TL + OY]);
+const toDiem = (p: Path): Diem[] => p.map((q) => [(q.X + OX * TL) / TL, (q.Y + OY * TL) / TL]);
 
 /** Diện tích đa giác (shoelace), luôn dương. */
 export function dienTich(poly: Diem[]): number {

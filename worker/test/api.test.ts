@@ -123,3 +123,36 @@ describe('nhân bản phương án', () => {
   });
 });
 
+
+describe('nhân bản dự án và người sửa', () => {
+  it('nhân bản cả dự án: mã + mã sửa mới, đủ PA; bản gốc không đổi; mã sửa gốc không dùng được cho bản sao', async () => {
+    const { ma, ma_sua } = await taoDuAn();
+    await goi(`/api/du-an/${ma}/pa/p1`, json({ ...PA, tom_tat: { soCan: 50 } }, ma_sua));
+    await goi(`/api/du-an/${ma}/pa/p2`, json({ ...PA, ten: 'PA 2' }, ma_sua));
+    const r = await goi(`/api/du-an/${ma}/nhan-ban`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sua_boi: ' An ' }) });
+    expect(r.status).toBe(201);
+    const b = (await r.json()) as { ma: string; ma_sua: string; so_pa: number };
+    expect(b.ma).not.toBe(ma);
+    expect(b.so_pa).toBe(2);
+    const da = (await (await goi(`/api/du-an/${b.ma}`)).json()) as { ten: string; dia_diem: string; phuong_an: { id: string; sua_boi: string; tom_tat: unknown }[] };
+    expect(da.ten).toBe('Lô CC-02 (bản sao)');
+    expect(da.dia_diem).toBe('Hà Đông');
+    expect(da.phuong_an.map((p) => p.id).sort()).toEqual(['p1', 'p2']);
+    expect(da.phuong_an.every((p) => p.sua_boi === 'An')).toBe(true);
+    expect(((await (await goi(`/api/du-an/${b.ma}/kiem-ma`, { headers: { "X-Ma-Sua": b.ma_sua } })).json()) as { duocSua: boolean }).duocSua).toBe(true);
+    expect(((await (await goi(`/api/du-an/${b.ma}/kiem-ma`, { headers: { 'X-Ma-Sua': ma_sua } })).json()) as { duocSua: boolean }).duocSua).toBe(false);
+    expect(((await (await goi(`/api/du-an/${ma}`)).json()) as { phuong_an: unknown[] }).phuong_an).toHaveLength(2);
+    expect((await goi('/api/du-an/khongco1/nhan-ban', { method: 'POST' })).status).toBe(404);
+  });
+
+  it('lưu tên người sửa theo từng PA (mỗi người một PA), cắt khoảng trắng', async () => {
+    const { ma, ma_sua } = await taoDuAn();
+    await goi(`/api/du-an/${ma}/pa/p1`, json({ ...PA, sua_boi: '  Bình ' }, ma_sua));
+    await goi(`/api/du-an/${ma}/pa/p2`, json({ ...PA, ten: 'PA 2', sua_boi: 'Châu' }, ma_sua));
+    await goi(`/api/du-an/${ma}/pa/p3`, json({ ...PA, ten: 'PA 3' }, ma_sua));
+    const ds = (await (await goi(`/api/du-an/${ma}`)).json()) as { phuong_an: { id: string; sua_boi: string }[] };
+    const theo = Object.fromEntries(ds.phuong_an.map((p) => [p.id, p.sua_boi]));
+    expect(theo).toEqual({ p1: 'Bình', p2: 'Châu', p3: '' });
+    expect(((await (await goi(`/api/du-an/${ma}/pa/p1`)).json()) as { sua_boi: string }).sua_boi).toBe('Bình');
+  });
+});

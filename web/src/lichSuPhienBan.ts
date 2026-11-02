@@ -6,6 +6,19 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.7', ngay: '2026-11-02',
+    vi: [
+      'Danh sách dự án: nhân bản cả dự án (mã + mã sửa mới); thêm cột Dân số; số căn mỗi loại kèm tỉ lệ % (vd 814 (10%)); cột Sửa lúc có cả giờ và tên người sửa gần nhất (tự khai, hỏi một lần khi sửa, đổi ở ô "Tên bạn")',
+      'Kéo tòa mượt hơn nhiều (dời gốc toạ độ cho Clipper, nhớ khối đế, đo khoảng cách có lọc hộp bao)',
+      'Rà soát nút và panel: thanh trên gọn, thanh công cụ TMB gộp Ràng buộc / Công cụ, "?" một nút, Nhập liệu gộp; panel Tầng bỏ trùng, Hầm có lọc "chỉ hiện mục chưa đạt", TMB trái gộp Thiết lập dự án',
+    ],
+    en: [
+      'Project list: duplicate a whole project (new code + edit code); new Population column; unit counts show their % share (e.g. 814 (10%)); the Edited column shows time and the last editor (self-declared, asked once when editing, change it in "Your name")',
+      'Much smoother tower dragging (Clipper origin shift, memoised base footprints, bbox-pruned distance checks)',
+      'Buttons and panels audit: slimmer top bar, TMB toolbar menus, single "?" button, merged Import menu; Floor panel de-duplicated, Basement "failing items only" filter, TMB left merged into Project settings',
+    ],
+  },
+  {
     v: '0.5.6', ngay: '2026-11-02',
     vi: [
       'Màn Tầng · kéo căn: thả căn lên căn ở DÃY KHÁC thì chuyển căn sang dãy đó (chèn trước / sau theo phía con trỏ, dãy gốc co lại, dãy đích dài ra); thả cùng dãy hoặc giữ Alt vẫn đổi chỗ (XC-15)',

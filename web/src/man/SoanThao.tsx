@@ -6,7 +6,7 @@ import { useKho } from '../kho/kho';
 import { layCaiTang } from './caiTang';
 import { datBaoStretch } from './baoStretch';
 import { lanTruyenBoCuc } from '../tinh/lanTruyenBoCuc';
-import { ghiNhoDuAn, layMaSua, nhanMaTuLink } from '../kho/maSua';
+import { daHoiTen, ghiDaHoiTen, ghiNhoDuAn, layMaSua, layTenNguoi, luuTenNguoi, nhanMaTuLink } from '../kho/maSua';
 import { usePhimSoan } from '../kho/phimSoan';
 import type { Lo, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { chuanHoaPA, taoPAMoi } from '../tinh/macDinh';
@@ -109,6 +109,13 @@ export function SoanThao({ ma }: { ma: string }) {
 function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: string }) {
   useLang();
   const [tv, setTv] = useState<ThuVien | null>(null);
+  // Người sửa chưa khai tên: hỏi một lần duy nhất (sửa lại ở trang Dự án của tôi) để danh sách PA ghi được ai sửa.
+  useEffect(() => {
+    if (!duocSua || layTenNguoi() || daHoiTen()) return;
+    ghiDaHoiTen();
+    const ten = window.prompt(t('duAn.hoiTen'));
+    if (ten?.trim()) luuTenNguoi(ten);
+  }, [duocSua]);
   const kho = useKho({ ma, paId, tenPA, maSua, duocSua, ban, tomTat: tv ? (p) => tomTatPA(p, tv) : undefined });
   const [boQuaNhap, setBoQuaNhap] = useState(false);
   const [loId, setLoId] = useState<string | null>(null);

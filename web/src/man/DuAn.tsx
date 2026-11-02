@@ -4,7 +4,7 @@ import { api } from '../api';
 import { t, useLang } from '../i18n/i18n';
 import { useDongHop } from '../ui/useDongHop';
 import {
-  boKhoiDanhSach, dsDuAnDaMo, ghiNhoDuAn, hoanTacBo, layMaSua, linkChiaSe, linkSua, linkXem, luuMaSua, phanTichLink, type LoaiLink,
+  boKhoiDanhSach, dsDuAnDaMo, ghiNhoDuAn, hoanTacBo, layMaSua, layTenNguoi, luuTenNguoi, linkChiaSe, linkSua, linkXem, luuMaSua, phanTichLink, type LoaiLink,
 } from '../kho/maSua';
 import { taoPAMoi } from '../tinh/macDinh';
 import { LOAI_CAN } from '../tinh/kieu';
@@ -132,6 +132,7 @@ export function DuAn() {
   const [suaDa, setSuaDa] = useState<{ ma: string; ten: string; diaDiem: string } | null>(null);
   const [suaPA, setSuaPA] = useState<{ ma: string; id: string; ten: string } | null>(null);
   const [loiHang, setLoiHang] = useState('');
+  const [tenBan, setTenBan] = useState(layTenNguoi);
   const [soSanh, setSoSanh] = useState<string | null>(null);
   const [bao, setBao] = useState<BaoNho | null>(null);
   // Mục dự án mặc định THU GỌN (chỉ hiện đầu thẻ), bấm mũi tên để xổ bảng phương án.
@@ -185,6 +186,22 @@ export function DuAn() {
     await ghi(ma, (m) => api.nhanBan(ma, id, m));
   }
 
+  /** Nhân bản cả dự án thành dự án mới (kèm mã sửa mới — người gọi là chủ bản sao), đưa lên đầu danh sách. */
+  async function nhanBanDA(ma: string, ten: string) {
+    if (!confirm(t('duAn.nhanBanHoi').replace('{ten}', ten))) return;
+    setLoiHang('');
+    try {
+      const r = await api.nhanBanDuAn(ma, `${ten} (bản sao)`);
+      luuMaSua(r.ma, r.ma_sua);
+      ghiNhoDuAn(r.ma, `${ten} (bản sao)`);
+      setDong((ds) => [{ ma: r.ma, da: null, loi: false }, ...ds]);
+      baoNho({ chu: t('duAn.daNhanBan').replace('{ten}', ten) });
+      await napLai(r.ma);
+    } catch {
+      baoNho({ chu: t('soan.loiMang') });
+    }
+  }
+
   /** Chép link xem / link sửa vào bộ nhớ tạm. Link sửa chỉ dựng khi máy có mã sửa (linkChiaSe trả null nếu không). */
   async function chep(ma: string, loai: LoaiLink) {
     const l = linkChiaSe(location.origin, ma, loai, layMaSua(ma));
@@ -230,7 +247,13 @@ export function DuAn() {
     route(`/du-an/${r.ma}`);
   }
 
-  const ngay = (s: string) => new Date(s).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-GB');
+  const loc = lang === 'vi' ? 'vi-VN' : 'en-GB';
+  const ngay = (s: string) => new Date(s).toLocaleDateString(loc);
+  const gio = (s: string) => new Date(s).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
+  /** Số căn (tỉ lệ % trên tổng căn của PA). */
+  const kemPhanTram = (n: number | undefined, tong: number | undefined) => (
+    n == null ? '—' : <>{fmtSo(n)}{tong ? <small class="pt"> ({fmtSo((n / tong) * 100, { thapPhan: 0 })}%)</small> : null}</>
+  );
   const hien = sapDuAn(locDuAn(dong, tim), sap, lang);
 
   return (
@@ -264,6 +287,10 @@ export function DuAn() {
               </select>
             </>
           )}
+          <label class="o-ten-ban" title={t('duAn.tenBanGt')}>
+            <span>{t('duAn.tenBan')}</span>
+            <input value={tenBan} maxLength={60} onInput={(e) => { setTenBan(e.currentTarget.value); luuTenNguoi(e.currentTarget.value); }} />
+          </label>
           <form class="mo-link" onSubmit={moLink}>
             <input aria-label={t('duAn.danLink')} placeholder={t('duAn.danLink')} value={link}
               onInput={(e) => { setLink(e.currentTarget.value); setLoiLink(false); }} />
@@ -307,6 +334,7 @@ export function DuAn() {
                 <div class="the-nut">
                   {da && da.phuong_an.length >= 2 && <NutBieuTuong k="soSanh" onClick={() => setSoSanh(ma)} />}
                   {coMa && da && <NutBieuTuong k="doiTen" nhan={t('duAn.doiTenDA')} onClick={() => { setSuaPA(null); setSuaDa({ ma, ten: da.ten, diaDiem: da.dia_diem }); }} />}
+                  <NutBieuTuong k="nhanBan" nhan={t('duAn.nhanBanDA')} onClick={() => nhanBanDA(ma, ten)} />
                   <NutChepLink ma={ma} coMa={coMa} chep={(l) => chep(ma, l)} />
                   <NutBieuTuong k="boDs" onClick={() => boDs(ma, ten)} />
                   <NutBieuTuong k="moDuAn" nhan={t('duAn.moDuAn')} onClick={() => route(`/du-an/${ma}`)} />
@@ -319,7 +347,7 @@ export function DuAn() {
                   <div class="hang-pa dau" aria-hidden="true">
                     <span>{t('duAn.soPA')}</span><span>{t('duAn.suaLuc')}</span>
                     {LOAI_CAN.map((l) => <span class="so" key={l}>{t(`loai.${l}`)}</span>)}
-                    <span class="so">{t('duAn.tongCan')}</span><span class="so">{t('duAn.dtSan')}</span><span />
+                    <span class="so">{t('duAn.tongCan')}</span><span class="so">{t('duAn.danSo')}</span><span class="so">{t('duAn.dtSan')}</span><span />
                   </div>
                   {da.phuong_an.map((p) => (
                     <div class={`hang-pa${suaPA?.ma === ma && suaPA.id === p.id ? ' dang-sua' : ''}`} key={p.id}>
@@ -332,11 +360,15 @@ export function DuAn() {
                       ) : (
                         <>
                           <a class="ten-pa" href={`/du-an/${ma}?pa=${p.id}`}>{p.ten}</a>
-                          <span class="ngay">{ngay(p.sua_luc)}</span>
+                          <span class="ngay" title={p.sua_boi ? `${p.sua_boi} · ${ngay(p.sua_luc)} ${gio(p.sua_luc)}` : undefined}>
+                            {ngay(p.sua_luc)} <b>{gio(p.sua_luc)}</b>
+                            {p.sua_boi && <i class="nguoi-sua">{p.sua_boi}</i>}
+                          </span>
                           {LOAI_CAN.map((l) => (
-                            <span class="so" key={l} data-nhan={t(`loai.${l}`)}>{fmtSo(p.tom_tat.coCau?.[l] ?? null)}</span>
+                            <span class="so" key={l} data-nhan={t(`loai.${l}`)}>{kemPhanTram(p.tom_tat.coCau?.[l], p.tom_tat.soCan)}</span>
                           ))}
                           <span class="so tong" data-nhan={t('duAn.tongCan')}>{fmtSo(p.tom_tat.soCan ?? null)}</span>
+                          <span class="so" data-nhan={t('duAn.danSo')}>{fmtSo(p.tom_tat.danSo ?? null)}</span>
                           <span class="so" data-nhan={t('duAn.dtSan')}>{fmtSo(p.tom_tat.dtSan ?? null, { donVi: 'm²' })}</span>
                           <span class="nut-pa">
                             {coMa && <NutBieuTuong k="doiTen" nhan={t('duAn.doiTenPA')} onClick={() => { setSuaDa(null); setSuaPA({ ma, id: p.id, ten: p.ten }); }} />}

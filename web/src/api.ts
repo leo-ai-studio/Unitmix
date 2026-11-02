@@ -1,3 +1,5 @@
+import { layTenNguoi } from './kho/maSua';
+
 /** Gọi API Unitmix (cùng tên miền, đường /api). Lỗi HTTP ném LoiApi có mã trạng thái. */
 export class LoiApi extends Error {
   constructor(public trangThai: number) {
@@ -5,10 +7,10 @@ export class LoiApi extends Error {
   }
 }
 
-export type TomTatPA = { soCan?: number; coCau?: Record<string, number>; dtSan?: number; dtHam?: number };
-export type PAtrongDuAn = { id: string; ten: string; tom_tat: TomTatPA; sua_luc: string };
+export type TomTatPA = { soCan?: number; coCau?: Record<string, number>; dtSan?: number; dtHam?: number; danSo?: number };
+export type PAtrongDuAn = { id: string; ten: string; tom_tat: TomTatPA; sua_luc: string; sua_boi?: string };
 export type DuAnApi = { ma: string; ten: string; dia_diem: string; phuong_an: PAtrongDuAn[] };
-export type PAApi = { id: string; ten: string; trang_thai: unknown; sua_luc: string };
+export type PAApi = { id: string; ten: string; trang_thai: unknown; sua_luc: string; sua_boi?: string };
 
 async function goi<T>(duong: string, init: RequestInit = {}, maSua?: string | null): Promise<T> {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
@@ -25,9 +27,12 @@ export const api = {
   kiemMa: (ma: string, maSua: string | null) => goi<{ duocSua: boolean }>(`/api/du-an/${ma}/kiem-ma`, {}, maSua),
   docPA: (ma: string, id: string) => goi<PAApi>(`/api/du-an/${ma}/pa/${id}`),
   ghiPA: (ma: string, id: string, maSua: string, ten: string, trang_thai: unknown, tom_tat: unknown) =>
-    goi<{ ok: true }>(`/api/du-an/${ma}/pa/${id}`, { method: 'PUT', body: JSON.stringify({ ten, trang_thai, tom_tat }) }, maSua),
+    goi<{ ok: true }>(`/api/du-an/${ma}/pa/${id}`, { method: 'PUT', body: JSON.stringify({ ten, trang_thai, tom_tat, sua_boi: layTenNguoi() }) }, maSua),
   nhanBan: (ma: string, id: string, maSua: string) =>
-    goi<{ id: string }>(`/api/du-an/${ma}/pa/${id}/nhan-ban`, { method: 'POST' }, maSua),
+    goi<{ id: string }>(`/api/du-an/${ma}/pa/${id}/nhan-ban`, { method: 'POST', body: JSON.stringify({ sua_boi: layTenNguoi() }) }, maSua),
+  /** Nhân bản cả dự án thành dự án mới (mã + mã sửa mới). */
+  nhanBanDuAn: (ma: string, ten?: string) =>
+    goi<{ ma: string; ma_sua: string; so_pa: number }>(`/api/du-an/${ma}/nhan-ban`, { method: 'POST', body: JSON.stringify({ ten, sua_boi: layTenNguoi() }) }),
   doiTenDuAn: (ma: string, maSua: string, ten: string, dia_diem: string) =>
     goi<{ ok: true }>(`/api/du-an/${ma}`, { method: 'PATCH', body: JSON.stringify({ ten, dia_diem }) }, maSua),
   doiTenPA: (ma: string, id: string, maSua: string, ten: string) =>

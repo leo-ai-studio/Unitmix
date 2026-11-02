@@ -81,7 +81,7 @@
 /* ---- bảng phương án: một lưới chung cho hàng tiêu đề + các hàng ---- */
 .bang-pa { border-top: 1px solid var(--line); }
 .hang-pa { display: grid; align-items: center; gap: 0 12px; padding: 4px 10px 4px 16px; min-height: 40px; box-sizing: border-box;
-  grid-template-columns: minmax(160px, 1fr) 84px repeat(5, minmax(44px, 58px)) minmax(56px, 70px) minmax(84px, 104px) 168px;
+  grid-template-columns: minmax(150px, 1fr) 128px repeat(5, minmax(62px, 78px)) minmax(60px, 72px) minmax(60px, 72px) minmax(84px, 104px) 168px;
   border-top: 1px solid var(--line); font-size: 13px; line-height: 1.3; }
 .hang-pa:first-child { border-top: 0; }
 .hang-pa:hover:not(.dau) { background: #faf8f2; }
@@ -107,7 +107,7 @@
 
 /* máy tính bảng: bảng PA bớt cột rộng */
 @media (max-width: 1100px) {
-  .hang-pa { grid-template-columns: minmax(140px, 1fr) 80px repeat(5, minmax(36px, 48px)) minmax(48px, 60px) minmax(76px, 92px) 168px; gap: 0 8px; }
+  .hang-pa { grid-template-columns: minmax(130px, 1fr) 118px repeat(5, minmax(54px, 66px)) minmax(52px, 62px) minmax(52px, 62px) minmax(76px, 92px) 168px; gap: 0 8px; }
 }
 
 /* điện thoại / máy tính bảng dọc: thẻ xếp dọc, hàng PA thành khối (tên + ngày · số kèm nhãn · nút), không cuộn ngang */
@@ -146,3 +146,8 @@
 @media (prefers-reduced-motion: reduce) { .menu-link, .bao-nho { animation: none; } }
 /* màn chạm cỡ bất kỳ (máy tính bảng): nút người tạo · phiên bản đủ 40 px */
 @media (pointer: coarse) { .tac-gia-ban { min-height: 40px; } }
+.hang-pa .ngay b { font-weight: 600; color: var(--ink); }
+.hang-pa .ngay .nguoi-sua { display: block; font-style: normal; font-size: 11px; color: var(--green); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hang-pa .so .pt { font-size: 10.5px; font-weight: 400; color: var(--muted-text); }
+.o-ten-ban { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-text); }
+.o-ten-ban input { width: 130px; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit; }

@@ -19,6 +19,14 @@ const ghi = (k: string, v: string): void => {
   }
 };
 
+const KHOA_TEN = 'unitmix.tenNguoiSua';
+/** Tên người sửa tự khai (lưu trên máy này, gửi kèm mỗi lần lưu PA để danh sách biết ai sửa). */
+export const layTenNguoi = (): string => (doc(KHOA_TEN) ?? '').trim().slice(0, 60);
+export const luuTenNguoi = (ten: string): void => ghi(KHOA_TEN, ten.trim().slice(0, 60));
+/** Đã hỏi tên một lần (không hỏi lại mỗi lần mở PA). */
+export const daHoiTen = (): boolean => doc('unitmix.daHoiTen') === '1';
+export const ghiDaHoiTen = (): void => ghi('unitmix.daHoiTen', '1');
+
 export const layMaSua = (ma: string): string | null => doc(KHOA_MA(ma));
 export const luuMaSua = (ma: string, maSua: string): void => ghi(KHOA_MA(ma), maSua);
 
