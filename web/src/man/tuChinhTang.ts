@@ -79,12 +79,12 @@ export const mauCuaToa = <T extends ToaMB>(toa: ToaDat, mau: T, tang?: number | 
  * gọi `baoChan`. Bộ tối ưu tự động / về mẫu gốc truyền `tay: false` (khít vẫn được đổi loại).
  */
 export const suaTuChinh = (sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void, tv: ThuVien, toaId: string,
-  tuy: { tay?: boolean; baoChan?: (ds: ChanSua[]) => void } = {}) =>
+  tuy: { tay?: boolean; baoChan?: (ds: ChanSua[]) => void; /** Tòa sau tự chỉnh (gọi đồng bộ, sau khi PA đã đổi; không gọi khi chặn). */ ketQua?: (toa: ToaDat) => void } = {}) =>
   (fn: (p: TrangThaiPA) => TrangThaiPA) => {
-    let chan: ChanSua[] = [];
+    let chan: ChanSua[] = [], sau: ToaDat | undefined;
     sua((q) => {
       const p = fn(q);
-      chan = [];
+      chan = []; sau = undefined;
       const dl = layDuLieuMB();
       return { ...p, toa: p.toa.map((x) => {
         if (x.id !== toaId || !dl) return x;
@@ -93,9 +93,10 @@ export const suaTuChinh = (sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void, t
         const truoc = q.toa.find((o) => o.id === toaId);
         if (!truoc) return tuChinhToa(x, mau, tv, dl);
         const r = tuChinhSauSua(truoc, x, mau, tv, dl);
-        chan = r.chan;
+        chan = r.chan; sau = r.toa;
         return r.toa;
       }) };
     });
     if (chan.length) tuy.baoChan?.(chan);
+    else if (sau) tuy.ketQua?.(sau);
   };

@@ -6,14 +6,112 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
-    v: '0.4.8', ngay: '2026-11-02',
+    v: '0.5.6', ngay: '2026-11-02',
     vi: [
-      'Hiệu năng: kéo tòa trên Tổng mặt bằng mượt lại (dự án 14 tòa: từ ~10 lên ~60 khung/giây) — tính chỉ tiêu và kiểm khoảng cách nhanh hơn nhiều lần, nhớ kết quả khối đế của lô không đổi',
-      'Rà soát nút: thanh trên gọn hơn (bỏ ô Tòa / Căn / Cốt trùng chức năng, Chi phí chuyển sang nhóm TMB · Tầng · Hầm, số phiên bản vào menu ⋯); thanh công cụ TMB gộp Ràng buộc (bắt dính + giữ trong chỉ giới) và Công cụ (tọa độ + xếp hàng loạt), 5 nút thao tác tòa chỉ hiện khi đã chọn tòa; Chú giải + Hướng dẫn thành một nút ?; Nhập liệu gom DXF · Bảng QH · Đề bài KD · thêm lô; điện thoại không còn bị cắt nút Cảnh báo',
+      'Màn Tầng · kéo căn: thả căn lên căn ở DÃY KHÁC thì chuyển căn sang dãy đó (chèn trước / sau theo phía con trỏ, dãy gốc co lại, dãy đích dài ra); thả cùng dãy hoặc giữ Alt vẫn đổi chỗ (XC-15)',
     ],
     en: [
-      'Performance: dragging towers on the site plan is smooth again (14-tower project: ~10 → ~60 fps) — indicator maths and distance checks are many times faster, and unchanged plots reuse their podium result',
-      'Button review: slimmer top bar (removed duplicate Tower / Unit / Level pickers, Cost moved next to Site · Floor · Basement, version moved into the ⋯ menu); site-plan toolbar merges Constraints (snap + keep inside) and Tools (coordinates + batch), tower actions appear only with a selection; Legend + Help are one ? button; Import groups DXF · Planning table · Brief · add plot; phones no longer cut off the Warnings button',
+      'Floor screen · drag units: dropping a unit on a unit of ANOTHER row now moves it there (inserted before / after by the pointer side, the source row shrinks, the target row grows); dropping on the same row, or holding Alt, still swaps (XC-15)',
+    ],
+  },
+  {
+    v: '0.5.5', ngay: '2026-11-02',
+    vi: [
+      'Công cụ: cập nhật chỉ tiêu Long Biên theo sheet VTK_Tháp (17) và ghi chú sửa PA hàng loạt qua cổng công cụ (không đổi giao diện).',
+    ],
+    en: [
+      'Tooling: Long Bien targets updated from the VTK_Tháp (17) sheet and notes on bulk PA edits via the tool gateway (no UI change).',
+    ],
+  },
+  {
+    v: '0.5.4', ngay: '2026-11-02',
+    vi: [
+      'Màn Tầng: nút "Reset mặt bằng về mẫu gốc" — bỏ mọi sửa tay của tòa (đổi căn, công năng ô, lật ô, tầng riêng, thang / căn / hành lang đặt tay, STRETCH, tủ PCCC) rồi tự chỉnh lại từ mẫu gốc của app; hoàn tác được',
+    ],
+    en: [
+      'Floor screen: "Reset floor plan to original template" button — drops every manual edit of the tower (unit swaps, cell functions, flipped cells, per-floor layouts, hand-placed stairs / units / corridor ends, STRETCH, hose cabinets) and re-runs auto-adjust from the original app template; undo available',
+    ],
+  },
+  {
+    v: '0.5.3', ngay: '2026-11-02',
+    vi: [
+      'Menu chuột phải ô › Đổi căn: chỉ đổi đúng những ô đang chọn (trước đây đổi luôn mọi căn cùng mẫu); chọn nhiều căn cùng mẫu thì đổi cả nhóm; "Sửa nhiều căn" mặc định tắt',
+    ],
+    en: [
+      'Cell right-click › Change unit: only the selected cells change (it used to change every unit of the same type); several selected same-type units change together; "Edit many units" is now off by default',
+    ],
+  },
+  {
+    v: '0.5.2', ngay: '2026-11-02',
+    vi: [
+      'Màn Tầng: "Căn đang chọn" gọn hơn và đặt ngay sau bảng chỉ tiêu tầng — tên mẫu, 3 ô số liệu, STRETCH một hàng; bỏ nhóm Công năng ô và danh sách đổi mẫu (đổi công năng vẫn ở menu chuột phải ô)',
+      'Tổng mặt bằng: tên tòa co theo cỡ từng tòa (dự án dài không còn chữ to chồng chéo); dòng "22T · 399 căn" chỉ hiện ở tòa đang chọn hoặc khi phóng to; tắt tên tòa ở Lớp › Tên tòa',
+    ],
+    en: [
+      'Floor screen: "Selected unit" is more compact and now sits right after the floor targets table — name, 3 figures, one-row STRETCH; the cell-function group and the template swap lists are removed (cell function is still in the cell right-click menu)',
+      'Site plan: building names scale with each building (no more huge overlapping text on long sites); the "22T · 399 units" line shows only for the selected building or when zoomed in; Layers › Building names turns them off',
+    ],
+  },
+  {
+    v: '0.5.1', ngay: '2026-11-02',
+    vi: [
+      'Mẫu chữ L / chữ T: đầu hành lang ở cánh dài có tay nắm co kéo và tự kéo dài tới cửa căn xa nhất (trước đây đoạn nối chồng lên trục chặn mất)',
+      'Tổng mặt bằng: nhãn khoảng cách vi phạm (LO-01, §2.6.1) nhỏ hơn, chỉ hiện ở tòa đang chọn, tắt được ở Lớp; kiểm vi phạm bỏ qua cặp tòa ở xa và dùng lại khi chỉ phóng / dời khung nên bớt lag',
+    ],
+    en: [
+      'L / T templates: the free corridor end on the long arm now has its pull handle and auto-extends to the farthest unit door (an overlapping link segment used to block it)',
+      'Site plan: distance violation labels (LO-01, §2.6.1) are smaller, shown only on selected buildings and can be switched off in Layers; the violation check skips far-apart pairs and is reused while only panning / zooming, so it lags less',
+    ],
+  },
+  {
+    v: '0.5.0', ngay: '2026-11-02',
+    vi: [
+      'STRETCH căn: bỏ bù ngược sang căn kề — chỉ căn đã chọn đổi, dãy tự dồn khít theo quy tắc (không khít thì báo, giữ nguyên)',
+      'Chuột phải ô căn: "Chọn mọi căn cùng mẫu"; STRETCH áp cho mọi căn đang chọn; "Áp dụng sửa cho" chép sang các tòa cùng mẫu',
+    ],
+    en: [
+      'Unit STRETCH: no more compensation on the neighbouring unit — only the selected units change and the run re-fits by rule (if it cannot, it says so and keeps the layout)',
+      'Right-click a unit: "Select all units of this type"; STRETCH applies to every selected unit; "Apply edits to" copies to same-type towers',
+    ],
+  },
+  {
+    v: '0.4.11', ngay: '2026-11-02',
+    vi: [
+      'Cổng window.unitmixTools (mở trang với ?congCu=1): Claude Code / trình duyệt nhúng gọi thẳng bộ công cụ Leo AI trên kho thật, không qua vòng AI — ít token, vẫn một bước hoàn tác',
+      'Màn Tầng, 3D: hết nháy sọc khi bật ảnh vệ tinh (tắt mặt đất nền); không còn cây trong lô cao tầng',
+    ],
+    en: [
+      'window.unitmixTools gate (open with ?congCu=1): Claude Code / embedded browser call the Leo AI tools directly on the real store — no AI loop, fewer tokens, still one undo step',
+      '3D: no more flicker with satellite imagery (base ground hidden); no trees inside high-rise lots',
+    ],
+  },
+  {
+    v: '0.4.10', ngay: '2026-11-02',
+    vi: [
+      'Đề bài KD: đọc được bảng ma trận kiểu VTK (dòng = mẫu tháp, cột = loại căn STU / 1PN+ / 2PN-N / 2PN+…): gộp số căn các mẫu, tính tỷ lệ cơ cấu và DT căn trung bình',
+    ],
+    en: [
+      'Sales brief: reads VTK-style matrix tables (rows = tower templates, columns = unit types): sums unit counts, derives the mix and the weighted average unit area',
+    ],
+  },
+  {
+    v: '0.4.9', ngay: '2026-11-02',
+    vi: [
+      'Tổng mặt bằng: tên lô co theo bề rộng lô, nhỏ hơn trước — không còn che khối tháp đã xếp',
+      'Nạp DXF: ký hiệu có hậu tố "(TT)" (nhà ở thấp tầng) thành ô nền, không chọn được',
+    ],
+    en: [
+      'Site plan: plot names scale with plot width and are smaller — no longer cover placed towers',
+      'DXF import: labels ending "(TT)" (low-rise housing) become background plots, not selectable',
+    ],
+  },
+  {
+    v: '0.4.8', ngay: '2026-11-02',
+    vi: [
+      'Nạp DXF theo lớp ranh: lô mang ký hiệu CX / GD / CC / TMDV / HTKT / DT / QP / CN thành ô nền (tô màu theo loại đất, chìm xuống, không chọn được); chỉ NOTM / NOXH / TĐC… là ô đất ở làm việc',
+    ],
+    en: [
+      'DXF import by boundary layer: plots labelled CX / GD / CC / TMDV / HTKT / DT / QP / CN become background plots (tinted by land type, muted, not selectable); only NOTM / NOXH / TĐC… stay as working residential plots',
     ],
   },
   {

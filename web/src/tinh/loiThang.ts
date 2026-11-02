@@ -1640,7 +1640,7 @@ function hanhLangToiCua(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefi
     const { s, t, L } = tot2;
     const dau = t < 0 ? 'p0' : 'p1', dauMut = s[dau];
     // chỉ kéo đầu cụt (không có đoạn khác chạm đầu đó)
-    if (mb.hanhLang.some((o) => o !== s && (kc(o.p0, dauMut) < 400 || kc(o.p1, dauMut) < 400))) continue;
+    if (mb.hanhLang.some((o) => o !== s && !nenTruc(o, s) && (kc(o.p0, dauMut) < 400 || kc(o.p1, dauMut) < 400))) continue;
     const v: Diem = [(s.p1[0] - s.p0[0]) / L, (s.p1[1] - s.p0[1]) / L];
     const moi: Diem = t < 0 ? [s.p0[0] + v[0] * t, s.p0[1] + v[1] * t] : [s.p0[0] + v[0] * t, s.p0[1] + v[1] * t];
     mb.hanhLangThem = [...(mb.hanhLangThem ?? []), [[dauMut[0], dauMut[1]], moi]];
@@ -1667,7 +1667,7 @@ export function dauHanhLangNgoai(hl: readonly DoanHanhLangMB[], i: number, bao: 
   const s = hl[i];
   if (!s || s.noi) return [];
   const L = kc(s.p0, s.p1) || 1, u: Diem = [(s.p1[0] - s.p0[0]) / L, (s.p1[1] - s.p0[1]) / L];
-  const cham = (p: Diem) => hl.some((o, j) => j !== i && (kc(o.p0, p) < 400 || kc(o.p1, p) < 400 || kcDoanHL(p, o) < 400));
+  const cham = (p: Diem) => hl.some((o, j) => j !== i && !nenTruc(o, s) && (kc(o.p0, p) < 400 || kc(o.p1, p) < 400 || kcDoanHL(p, o) < 400));
   const ngoai = (k: 0 | 1) => { const p = k ? s.p1 : s.p0, g = k ? 1 : -1; return !trongDG([p[0] + u[0] * 1000 * g, p[1] + u[1] * 1000 * g], bao as Diem[]); };
   return ([0, 1] as const).filter((k) => !cham(k ? s.p1 : s.p0) && ngoai(k));
 }
@@ -1676,6 +1676,8 @@ const kcDoanHL = (p: Diem, s: DoanHanhLangMB) => {
   const t = Math.max(0, Math.min(1, ((p[0] - s.p0[0]) * dx + (p[1] - s.p0[1]) * dy) / L2));
   return Math.hypot(p[0] - s.p0[0] - t * dx, p[1] - s.p0[1] - t * dy);
 };
+/** Đoạn nối `o` chạy trùm trọn trục `s` (mẫu L / T: đoạn nối nằm chồng lên trục) — không phải chỗ gặp góc, không chặn đầu mút của `s`. */
+const nenTruc = (o: DoanHanhLangMB, s: DoanHanhLangMB) => o.noi && kcDoanHL(s.p0, o) < 400 && kcDoanHL(s.p1, o) < 400;
 /**
  * Giới hạn dời đầu `dau` của đoạn hành lang `i` (mm, dương = dài ra): ngắn nhất tới cửa căn xa nhất trên đoạn + 500 mm (và đoạn còn
  * ≥ 3 m), dài nhất +20 m (app cũ startAxDrag: dmin − 500, s1 − 3000, m0 − 20000).

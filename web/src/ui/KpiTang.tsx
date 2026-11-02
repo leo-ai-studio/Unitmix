@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { useMemo } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { LOAI_CAN, type CongNangO, type LoaiCan, type Lo, type ThuVien, type ToaDat, type TrangThaiPA } from '../tinh/kieu';
@@ -20,9 +21,9 @@ const fmtNguoi = (v: number) => fmtSo(v, { thapPhan: Number.isInteger(v) ? 0 : 2
  * DTXD một sàn · DTSD một sàn) + unit mix (donut + bảng theo loại: căn, % so với mục tiêu, DT thông thủy, dân). Chi tiết từng mẫu căn
  * trong mục gập (mặc định đóng). Tính: `tinh/kpi.ts` `kpiTang`.
  */
-export function KpiTang({ pa, tv, toa, lo, tang, can, mucTieu, nguongLech, tenTang }: {
+export function KpiTang({ pa, tv, toa, lo, tang, can, mucTieu, nguongLech, tenTang, canChon }: {
   pa: TrangThaiPA; tv: ThuVien; toa: ToaDat; lo: Lo | undefined; tang: number | null;
-  can: { canId: string; cn: CongNangO }[]; mucTieu: Record<LoaiCan, number>; nguongLech: number; tenTang: string;
+  can: { canId: string; cn: CongNangO }[]; mucTieu: Record<LoaiCan, number>; nguongLech: number; tenTang: string; canChon?: ComponentChildren;
 }) {
   const hsMin = useHieuSuatMin();
   const k = useMemo(() => kpiTang(pa, tv, toa, lo, tang, can, mucTieu, hsMin), [pa, tv, toa, lo, tang, can, mucTieu, hsMin]);
@@ -94,6 +95,7 @@ export function KpiTang({ pa, tv, toa, lo, tang, can, mucTieu, nguongLech, tenTa
         </div>
       </div>
 
+      {canChon}
       <MucGap tieuDe={t('kpi.chiTietMau')} giaiThich={t('kpi.gt.chiTietMau')}>
         <div class="kpi-bang kpi-bang-mau" role="table" aria-label={t('kpi.chiTietMau')}>
           <div class="kpi-hang dau" role="row"><span>{t('tang.mauCan')}</span><span>{t('kpi.cot.canTangToa')}</span><span>{t('kpi.cot.dtTt')}</span><span>{t('kpi.cot.nguoiCan')}</span><span>{t('kpi.cot.dan')}</span></div>

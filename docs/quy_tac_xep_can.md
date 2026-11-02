@@ -49,6 +49,7 @@ Cột *Hàm app mới*: ✔ = đã có hàm (ghi tên), — = chưa làm.
 | XC-12 | Căn góc tòa V: ranh căn = khung CAD (polyline kín DefPoints) | MDI | — | MDI · QT-58 | QT-58 | — |
 | XC-13 | Mọi lượt chèn căn / lõi / thang phải có trong thư viện | MDI | — | MDI · QT-61 | QT-61 | ✔ scripts/chep_thu_vien.py (_loi khi thiếu căn / lõi) |
 | XC-14 | Tem căn ngoài mặt tiền: không đè hình, không chồng tem | MDI | 3760 mm (rộng tem); 2600 mm (cao tem); 900 mm (cách mặt đứng); 250 mm (bước dịch dọc hàng); 400 mm (khe hàng ngoài); 150 mm (lề tem với vật / tem) | MDI · QT-11 · QT-34 (xepTem / temGoc / neoTemKhung app cũ, chủ nhiệm 3/10/2026) · QT-34b bổ sung web | QT-11 | ✔ temCan.ts · datTemCan (xepTem) · temGoc · neoTemKhung |
+| XC-15 | Kéo căn sang dãy khác: thả căn lên căn ở MẶT khác thì CHUYỂN (chèn cùng mẫu trước / sau căn đích theo phía con trỏ, bỏ ô gốc; dãy đích dài ra, dãy gốc ngắn lại ở đầu tự do, hai dãy dồn khít, số căn tổng giữ nguyên); thả lên căn cùng dãy hoặc giữ Alt thì ĐỔI CHỖ. Căn góc chuyển đi thành căn giữa cùng nhóm; dãy đích không có đầu tự do hoặc làm số căn không đủ (cự ly thoát nạn) thì không nhận | MDI | — | MDI · chủ nhiệm 02/11/2026 ("chuyển căn sang dãy khác, không chỉ đổi chỗ") · QT-8 · QT-30 · QT-69 | — | ✔ thaoTacTay.ts · chuyenCanTay (tayNen.ts; kéo thả man/CongCuTang.tsx · useKeoTay) |
 
 ## DC · Đổi mẫu căn
 

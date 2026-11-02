@@ -8,7 +8,7 @@ export type CaiTang = { kieu: KieuMb; noiThat: boolean; hienTem: boolean; chamMa
   phamViSua: PhamViSua };
 
 // Nội thất tắt sẵn: vào màn Tầng chỉ ~9 request / 0,35 MB (đề xuất hiệu năng mục 8); bật ở nút Lớp góc bản vẽ khi cần.
-let cai: CaiTang = { kieu: docKieuMb(), noiThat: true, hienTem: true, chamMau: true, suaNhieu: true, phamViSua: 'toa' };
+let cai: CaiTang = { kieu: docKieuMb(), noiThat: true, hienTem: true, chamMau: true, suaNhieu: false, phamViSua: 'toa' };
 const nghe = new Set<() => void>();
 
 export const layCaiTang = (): CaiTang => cai;

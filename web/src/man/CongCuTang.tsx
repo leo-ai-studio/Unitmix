@@ -348,6 +348,8 @@ export function ThanhCongCuTang(p: PropsCongCu) {
   );
 }
 
+/** Kiểu thả căn: đổi chỗ với ô đích, hoặc chuyển sang dãy khác (chèn trước / sau ô đích). */
+type KieuTha = 'doi' | 'truoc' | 'sau';
 type Keo = { loai: 'o' | 'thang'; khoa: string; x0: number; y0: number; w: number; h: number; nhan: string };
 /** Kết quả dò ô đích lúc rê: 'dang' = chờ chuột dừng / đang dò; 'cham' = dò quá hạn, kiểm khi thả. */
 type Do = { dich: string; tt: 'dang' | 'ok' | 'loi' | 'cham'; chu?: string };
@@ -365,6 +367,7 @@ export function useKeoTay(p: PropsCongCu) {
   const chay = useChay(p);
   const [keo, setKeo] = useState<Keo | null>(null);
   const [oDich, setODich] = useState<string | null>(null);
+  const [kieuTha, setKieuTha] = useState<KieuTha>('doi');
   const [doKq, setDoKq] = useState<Do | null>(null);
   const bong = useRef<HTMLDivElement>(null);
   const raf = useRef(0);
@@ -372,10 +375,11 @@ export function useKeoTay(p: PropsCongCu) {
   pRef.current = p;
 
   /** Phép thao tác ứng với thả ô `k` lên `dich` (hàm thuần, chưa ghi) + câu báo khi thành công. */
-  const phep = (k: Keo, dich: string): { ph: PhepTay; chu: () => string } | null => {
+  const phep = (k: Keo, dich: string, kieu: KieuTha = 'doi'): { ph: PhepTay; chu: () => string } | null => {
     const q = pRef.current, toa = q.toa;
     const cO = (kh: string) => q.can.find((x) => x.vt.khoa === kh);
     const a = k.loai === 'o' ? cO(k.khoa) : undefined, b = cO(dich);
+    if (a && b && kieu !== 'doi') return { ph: phepTay('chuyenCanTay', toa, q.tangs, a.vt, b.vt, kieu === 'truoc'), chu: () => t('cc.ok.chuyenCan').replace('{a}', tenCH(a.no)).replace('{b}', tenCH(b.no)) };
     if (a && b) return { ph: phepTay('doiChoTay', toa, q.tangs, a.vt, b.vt), chu: () => t('cc.ok.doiCho').replace('{a}', tenCH(a.no)).replace('{b}', tenCH(b.no)) };
     if (k.loai === 'thang' && b) return { ph: phepTay('doiThangTay', toa, k.khoa, b.vt.matIdx, b.vt.khoa), chu: () => t('cc.ok.doiThang').replace('{o}', tenCH(b.no)) };
     if (a && !b) return { ph: phepTay('doiThangTay', toa, dich, a.vt.matIdx, a.vt.khoa), chu: () => t('cc.ok.doiThang').replace('{o}', tenCH(a.no)) };
@@ -402,35 +406,54 @@ export function useKeoTay(p: PropsCongCu) {
     const k: Keo = { loai: khoaO ? 'o' : 'thang', khoa: (khoaO ?? khoaT)!, x0: e.clientX, y0: e.clientY,
       w: Math.min(240, Math.max(96, b.width)), h: Math.min(140, Math.max(40, b.height)),
       nhan: c ? `${tenCH(c.no)} · ${q.tv.can.get(c.canId)?.ten_vi.split(' · ')[0] ?? ''}` : t('cc.thang') };
-    let dangKeo = false, dich: string | null = null, x = e.clientX, y = e.clientY;
+    let dangKeo = false, dich: string | null = null, kieu: KieuTha = 'doi', x = e.clientX, y = e.clientY;
+    /**
+     * Thả căn lên căn ở DÃY KHÁC (mặt khác) = chuyển sang dãy đó (chèn trước / sau ô đích theo phía con trỏ so với các căn kề); thả lên
+     * căn cùng dãy, hoặc giữ Alt = đổi chỗ như cũ.
+     */
+    const tinhKieu = (d: string | null, px: number, py: number, alt: boolean): KieuTha => {
+      if (!d || alt || k.loai !== 'o') return 'doi';
+      const qq = pRef.current, a = qq.can.find((u) => u.vt.khoa === k.khoa), b = qq.can.find((u) => u.vt.khoa === d);
+      if (!a || !b || a.vt.matIdx === b.vt.matIdx) return 'doi';
+      const cung = qq.can.filter((u) => u.vt.matIdx === b.vt.matIdx).sort((u, v) => u.vt.a0 - v.vt.a0), i = cung.indexOf(b);
+      const tam = (u?: (typeof cung)[number]): [number, number] | null => {
+        const r = u ? document.querySelector(`[data-o="${u.vt.khoa}"]`)?.getBoundingClientRect() : undefined;
+        return r ? [r.left + r.width / 2, r.top + r.height / 2] : null;
+      };
+      const cb = tam(b), cp = tam(cung[i - 1]), cn = tam(cung[i + 1]);
+      if (!cb) return 'sau';
+      const ax = cp && cn ? [cn[0] - cp[0], cn[1] - cp[1]] : cn ? [cn[0] - cb[0], cn[1] - cb[1]] : cp ? [cb[0] - cp[0], cb[1] - cp[1]] : [1, 0];
+      return (px - cb[0]) * ax[0] + (py - cb[1]) * ax[1] < 0 ? 'truoc' : 'sau';
+    };
+    const khoaDo = (d: string, ki: KieuTha) => `${d}|${ki}`;
     // dò hợp lệ: cache theo ô đích trong lượt kéo (cho đúng tòa lúc bắt đầu kéo); hẹn chạy NỀN khi chuột dừng (worker dò riêng,
     // dò ô mới huỷ lượt dò ô cũ) — luồng chính không bị chặn, bóng vẫn bám tay
     const toaKeo = q.toa;
     const cache = new Map<string, KetQuaTay>();
     let hen: ReturnType<typeof setTimeout> | undefined, cham = false;
     let dangDo: { d: string; hua: Promise<KetQuaTay | null> } | null = null;
-    const baoDo = (d: string) => {
-      const r = cache.get(d);
+    const baoDo = (d: string, ki: KieuTha) => {
+      const r = cache.get(khoaDo(d, ki));
       if (!r) { setDoKq({ dich: d, tt: cham ? 'cham' : 'dang' }); return; }
       if (!r.ok) { setDoKq({ dich: d, tt: 'loi', chu: t(`cc.ngan.${r.lyDo}`).replace('{n}', r.chiTiet ?? '') }); return; }
       const dl = layDuLieuMB(), qq = pRef.current;
       const bd = dl ? bienDongCan(qq.toa, r.toa, { tv: qq.tv, dl }, qq.tangs?.[0] ?? null) : null;
       setDoKq({ dich: d, tt: 'ok', chu: bd && (bd.truoc !== bd.sau || bd.goTN.length) ? t('cc.ngan.bd').replace('{a}', String(bd.truoc)).replace('{b}', String(bd.sau)) : undefined });
     };
-    const doThu = (d: string) => {
+    const doThu = (d: string, ki: KieuTha) => {
       hen = undefined;
-      if (cache.has(d) || cham || d !== dich) return;
-      const ph = phep(k, d), dl = layDuLieuMB();
+      if (cache.has(khoaDo(d, ki)) || cham || d !== dich || ki !== kieu) return;
+      const ph = phep(k, d, ki), dl = layDuLieuMB();
       if (!ph || !dl || pRef.current.toa !== toaKeo) return;
       const t0 = performance.now();
       const hua = dieuPhoiDo.chayPhep(ph.ph, { tv: pRef.current.tv, dl });
-      dangDo = { d, hua };
+      dangDo = { d: khoaDo(d, ki), hua };
       void hua.then((r) => {
         if (dangDo?.hua === hua) dangDo = null;
         if (!r) return; // bị huỷ: rê sang ô khác / thả
-        cache.set(d, r);
+        cache.set(khoaDo(d, ki), r);
         if (performance.now() - t0 > DO_HAN_MS) cham = true; // dò quá lâu: thôi dò lúc rê, kiểm khi thả
-        if (d === dich && phien.current?.id === e.pointerId) baoDo(d);
+        if (d === dich && ki === kieu && phien.current?.id === e.pointerId) baoDo(d, ki);
       });
     };
     const ve = () => {
@@ -446,13 +469,14 @@ export function useKeoTay(p: PropsCongCu) {
       const duoi = document.elementFromPoint(x, y)?.closest?.('[data-o],[data-thang]');
       const moi = duoi ? (duoi.getAttribute('data-o') ?? duoi.getAttribute('data-thang')) : null;
       const hop = moi && moi !== k.khoa && !(k.loai === 'thang' && duoi?.hasAttribute('data-thang')) ? moi : null;
-      if (hop !== dich) {
-        dich = hop; setODich(hop);
-        if (hop) baoDo(hop); else setDoKq(null);
+      const kieuMoi = tinhKieu(hop, x, y, ev.altKey);
+      if (hop !== dich || kieuMoi !== kieu) {
+        dich = hop; kieu = kieuMoi; setODich(hop); setKieuTha(kieuMoi);
+        if (hop) baoDo(hop, kieuMoi); else setDoKq(null);
       }
       // chuột còn di thì hoãn phép dò nặng tới khi dừng ~120 ms
       clearTimeout(hen);
-      if (hop && !cache.has(hop) && !cham) { const d = hop; hen = setTimeout(() => doThu(d), DO_DUNG_MS); }
+      if (hop && !cache.has(khoaDo(hop, kieuMoi)) && !cham) { const d = hop, ki = kieuMoi; hen = setTimeout(() => doThu(d, ki), DO_DUNG_MS); }
     };
     const go = () => {
       window.removeEventListener('pointermove', di);
@@ -460,17 +484,18 @@ export function useKeoTay(p: PropsCongCu) {
       window.removeEventListener('pointercancel', tha);
       cancelAnimationFrame(raf.current); raf.current = 0;
       clearTimeout(hen);
-      setODich(null); setDoKq(null);
+      setODich(null); setDoKq(null); setKieuTha('doi');
       if (phien.current?.id === e.pointerId) phien.current = null;
     };
     const tha = (ev?: PointerEvent) => {
       if (ev && ev.pointerId !== e.pointerId) return; // ngón khác nhấc lên: không phải lượt này
       go();
       if (!dangKeo) return;
-      const ph = dich ? phep(k, dich) : null;
+      const kieuCuoi = ev ? tinhKieu(dich, ev.clientX, ev.clientY, ev.altKey) : kieu;
+      const ph = dich ? phep(k, dich, kieuCuoi) : null;
       const dung = pRef.current.toa === toaKeo;
-      const daDo = dich && dung ? cache.get(dich) : undefined;
-      const choDo = dich && dung && dangDo?.d === dich ? dangDo.hua : null;
+      const daDo = dich && dung ? cache.get(khoaDo(dich, kieuCuoi)) : undefined;
+      const choDo = dich && dung && dangDo?.d === (dich ? khoaDo(dich, kieuCuoi) : '') ? dangDo.hua : null;
       if (!choDo) dieuPhoiDo.huy();
       const xong = (ok: boolean) => {
         if (ok || giamDong() || !bong.current) { setKeo(null); return; }
@@ -499,7 +524,7 @@ export function useKeoTay(p: PropsCongCu) {
   const loiDich = !!doKq && doKq.tt === 'loi' && doKq.dich === oDich;
   const phu = (() => {
     if (!oDich) return t('cc.keo');
-    const tha = t('cc.thaVao').replace('{o}', q2(oDich));
+    const tha = t(kieuTha === 'truoc' ? 'cc.thaChuyenTruoc' : kieuTha === 'sau' ? 'cc.thaChuyenSau' : 'cc.thaVao').replace('{o}', q2(oDich));
     if (!doKq || doKq.dich !== oDich) return tha;
     if (doKq.tt === 'loi') return `✕ ${doKq.chu}`;
     if (doKq.tt === 'ok') return `✓ ${tha}${doKq.chu ? ' · ' + doKq.chu : ''}`;

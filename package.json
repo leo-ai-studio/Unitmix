@@ -1,7 +1,7 @@
 {
   "name": "unitmix",
   "private": true,
-  "version": "0.4.8",
+  "version": "0.5.6",
   "description": "Unitmix — lập cơ cấu căn hộ từ chỉ tiêu quy hoạch",
   "author": "NghiaVT",
   "workspaces": [

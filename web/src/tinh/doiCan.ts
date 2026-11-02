@@ -29,6 +29,19 @@ export const veMauGoc = <T extends DoiCan & Pick<ToaDat, 'tangRieng'>>(toa: T): 
   ...(toa.tangRieng ? { tangRieng: gonTang(Object.fromEntries(Object.entries(toa.tangRieng).map(([k, g]) => [k, { ...g, canViTri: undefined }]))) } : {}),
 });
 
+/** Mọi sửa tay / kết quả tự chỉnh của mặt bằng tòa (ToaDat): bỏ hết thì mặt bằng chạy lại từ mẫu gốc. Giữ vị trí, thông số, khoá, lật chân tòa trên TMB. */
+const KHOA_SUA_MB = [
+  'canViTri', 'congNang', 'tangRieng', 'latO', 'canThem', 'thangTay', 'hanhLangTay', 'loaiThang', 'tuPCCCTay', 'cncTay', 'tuDong',
+  'matBang', 'duongBao', 'dtxdM2',
+] as const;
+
+/** Đưa MẶT BẰNG tòa về mẫu gốc của app: bỏ đổi căn, công năng ô, lật ô, tầng riêng, căn / thang / hành lang / tủ PCCC đặt tay, STRETCH và mặt bằng tự chỉnh. */
+export const veMauGocMB = <T extends ToaDat>(toa: T): T => {
+  const kq = { ...toa, canTheo: {} } as T & Record<string, unknown>;
+  for (const k of KHOA_SUA_MB) delete kq[k];
+  return kq;
+};
+
 /** Áp kết quả tối ưu: thay toàn bộ đổi theo vị trí (đổi theo mẫu giữ nguyên). */
 export const apDoiViTri = <T extends DoiCan>(toa: T, canViTri: Record<string, string>): T => ({ ...toa, canViTri: gon(canViTri) });
 

@@ -81,15 +81,6 @@ export function capGanBien(P: Diem[], Q: Diem[]): { kc: number; a: Diem; b: Diem
   return { kc: Math.sqrt(tot2), a: ta, b: tb };
 }
 
-type HopBao = [number, number, number, number];
-const hopBao = (P: Diem[]): HopBao => {
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const [x, y] of P) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-  return [x0, y0, x1, y1];
-};
-/** Cận dưới của khoảng cách hai hình theo hộp bao. */
-const khoangHopBao = (a: HopBao, b: HopBao): number => Math.hypot(Math.max(0, a[0] - b[2], b[0] - a[2]), Math.max(0, a[1] - b[3], b[1] - a[3]));
-
 /** Khoảng cách hai tòa (0 khi chồng / chứa nhau) kèm cặp điểm để vẽ. */
 export function capGanToa(P: Diem[], Q: Diem[]): { kc: number; a: Diem; b: Diem } {
   const c = capGanBien(P, Q);
@@ -301,11 +292,16 @@ export function kiemViPham(pa: TrangThaiPA, hinh: ToaHinh[], luat: LuatTMB | nul
     }
   }
   if (luat) {
-    const hop = hinh.map((h) => hopBao(h.F));
+    // hộp bao từng tòa: hai tòa cách nhau ≥ khoảng yêu cầu theo hộp bao thì chắc chắn không vi phạm — bỏ qua phép đo đa giác (dự án nhiều tòa)
+    const hop = hinh.map((h) => { const xs = h.F.map((p) => p[0]), ys = h.F.map((p) => p[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; });
+    const kcTheoH = new Map<number, ReturnType<typeof kcToa261>>(); // khoảng yêu cầu chỉ phụ thuộc chiều cao: tính một lần mỗi giá trị
     for (let i = 0; i < hinh.length; i++) for (let j = i + 1; j < hinh.length; j++) {
       const A = hinh[i], B = hinh[j];
-      const k = kcToa261(luat.lo02, Math.max(A.H, B.H));
-      if (khoangHopBao(hop[i], hop[j]) >= k.dai) continue; // hộp bao đã cách ≥ mức cạnh dài thì khoảng cách thật cũng vậy
+      const hMax = Math.max(A.H, B.H);
+      let k = kcTheoH.get(hMax);
+      if (!k) kcTheoH.set(hMax, (k = kcToa261(luat.lo02, hMax)));
+      const a = hop[i], b = hop[j];
+      if (Math.hypot(Math.max(0, a[0] - b[2], b[0] - a[2]), Math.max(0, a[1] - b[3], b[1] - a[3])) >= k.dai - 1e-6) continue;
       const c = capGanToa(A.F, B.F);
       if (c.kc >= k.dai - 1e-6) continue;
       const muc = c.kc < k.hoi - 1e-6 ? 'loi' : 'canh';
