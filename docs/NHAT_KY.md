@@ -2,6 +2,18 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-02 (chiều) · Hành lang L/T, nhãn TMB nhẹ, panel Căn đang chọn, Reset mặt bằng, kéo căn sang dãy khác, v0.5.1 → v0.5.6 · Claude Code (Sonnet 5.5) + Antigravity
+
+Người dùng gửi từng ảnh lỗi trên app đã deploy; mỗi mục commit + deploy riêng (site hiện đúng số phiên bản sau khi xóa service worker + cache).
+- **v0.5.1 · co kéo đầu hành lang mẫu L / T**: đoạn hành lang `noi` chạy trùm trọn một trục (L1 · L2 · L3 · T1 · T2) bị `dauHanhLangNgoai` và bước tự kéo dài XC-07 coi là "có đoạn khác chạm đầu" → mất tay nắm, hành lang không kéo tới cửa xa nhất. Thêm `nenTruc` (loiThang.ts); test `dauHanhLangNoiTruc.test.ts`. Khe ở căn góc cánh dọc L2 và tay nắm đầu trên trên PA của chủ nhiệm: dựng lại mẫu gốc thì ổn, chưa tái hiện được từ PA thật (chờ link xem).
+- **v0.5.1 · TMB nhẹ**: nhãn LO-01 / §2.6.1 nhỏ 75 %, chỉ ở tòa đang chọn, tắt ở Lớp; `kiemViPham` bỏ cặp tòa xa theo hộp bao + nhớ khoảng yêu cầu theo H, màn hình dùng lại kết quả khi chỉ phóng / dời (600 tòa: 19 s → 43 ms, kết quả y hệt).
+- **v0.5.2 · panel Căn đang chọn** (Antigravity, Claude duyệt diff + merge): đặt ngay sau bảng chỉ tiêu trong `KpiTang`, gọn; bỏ nhóm Công năng ô và danh sách đổi mẫu. Tên tòa co theo cỡ tòa, dòng "22T · 399 căn" chỉ khi chọn / phóng to, Lớp › Tên tòa.
+- **v0.5.3 · Đổi căn ở menu ô**: chỉ đổi các ô đang chọn; "Sửa nhiều căn" mặc định tắt.
+- **v0.5.4 · Reset mặt bằng về mẫu gốc**: `veMauGocMB` (doiCan.ts) bỏ mọi sửa tay + kết quả tự chỉnh, tự chỉnh lại từ mẫu gốc; nút ở panel Nhập liệu màn Tầng; hoàn tác được.
+- **v0.5.6 · kéo căn sang dãy khác (XC-15)**: `chuyenCanTay` = thêm cùng mẫu ở dãy đích (`themCanTay`) rồi xóa ô gốc (`xoaCanTay`); thả lên căn cùng dãy hoặc giữ Alt vẫn đổi chỗ. Thử thật trên xh-l2: dãy 4 → 5 căn, dãy gốc 6 → 5, tổng 22.
+- **Antigravity**: giao qua connector (`agy`, chạy ẩn) vào worktree riêng `E:\Unitmix-agy`; hook `pre-tool-auto-accept` của nó bị lỗi dấu ngoặc kép quanh đường dẫn (đã bỏ cặp dấu trong `~/.gemini/config/hooks.json`, có bản `.bak-20261102`). Model dùng Gemini 4 Argon Medium.
+- **Còn dở**: khe góc / tay nắm L2 trên PA của chủ nhiệm (cần link xem); chưa đo thời gian vẽ SVG khi vài trăm tòa; chưa có chỉ báo vị trí chèn (đường kẻ) khi kéo chuyển dãy, chỉ có chữ "chèn trước / sau".
+
 ## 2026-11-02 · Long Biên: chỉ tiêu theo VTK_Tháp (17), dựng lại 79 tòa theo Excel, xếp tòa theo LO-01 / LO-02 / LO-05, v0.5.5 · Claude Code (Sonnet 5.5)
 
 Người dùng: cập nhật chỉ tiêu `LB_o_cao_tang_261102_v2.xlsx` theo sheet `VTK_Tháp  (17)`, rồi đưa số tòa / mẫu tòa / cơ cấu căn đó vào PA Long Biên.

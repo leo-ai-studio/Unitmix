@@ -66,6 +66,20 @@ export function doiChoTay(toa: ToaDat, tangs: number[] | null, a: ViTriCan, b: V
   return r;
 }
 
+/**
+ * Chuyển căn `a` sang DÃY KHÁC (mặt khác của tòa): chèn cùng mẫu căn ngay sau ô `b` (hoặc ngay TRƯỚC khi `truoc`) rồi bỏ ô `a` —
+ * dãy đích dài ra, dãy gốc ngắn lại ở đầu tự do (QT-69), mỗi dãy dồn khít (XC-04). Khác `doiChoTay` (hai ô đổi cho nhau, số căn mỗi dãy
+ * giữ nguyên). Căn góc chuyển đi thành căn giữa cùng nhóm (mauThem); dãy đích không còn đầu tự do thì trả lý do, không đổi gì.
+ */
+export function chuyenCanTay(toa: ToaDat, tangs: number[] | null, a: ViTriCan, b: ViTriCan, truoc: boolean, c: Ctx): KetQuaTay {
+  if (a.matIdx === b.matIdx) return { ok: false, lyDo: 'khong_doi' };
+  const bc = boCucTang(toa, tangs?.[0] ?? null);
+  if (congNangTai(a.khoa, bc) !== 'can') return { ok: false, lyDo: 'khong_doi' };
+  const them = themCanTay(toa, tangs, b, mauThem(c.tv, canDangDung(a, bc)), c, truoc);
+  if (!them.ok) return them;
+  return xoaCanTay(them.toa, tangs, [a.khoa], c);
+}
+
 /** Lật gương (⇄) một hoặc nhiều ô (QT-102 hàng loạt). */
 export function latTay(toa: ToaDat, tangs: number[] | null, khoas: string[], c: Ctx): KetQuaTay {
   if (!khoas.length) return { ok: false, lyDo: 'khong_doi' };

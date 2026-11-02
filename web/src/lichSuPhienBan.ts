@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.6', ngay: '2026-11-02',
+    vi: [
+      'Màn Tầng · kéo căn: thả căn lên căn ở DÃY KHÁC thì chuyển căn sang dãy đó (chèn trước / sau theo phía con trỏ, dãy gốc co lại, dãy đích dài ra); thả cùng dãy hoặc giữ Alt vẫn đổi chỗ (XC-15)',
+    ],
+    en: [
+      'Floor screen · drag units: dropping a unit on a unit of ANOTHER row now moves it there (inserted before / after by the pointer side, the source row shrinks, the target row grows); dropping on the same row, or holding Alt, still swaps (XC-15)',
+    ],
+  },
+  {
     v: '0.5.5', ngay: '2026-11-02',
     vi: [
       'Công cụ: cập nhật chỉ tiêu Long Biên theo sheet VTK_Tháp (17) và ghi chú sửa PA hàng loạt qua cổng công cụ (không đổi giao diện).',
