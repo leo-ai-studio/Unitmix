@@ -161,8 +161,7 @@ export function TangTrai(p: ChungTang) {
             );
           })}
         </div>
-      </MucGap>
-      <MucGap tieuDe={`${t('oc.tr.tieuDe')} · ${nhanPhamVi(tangs, toa.soTangDe)}`} mo>
+        <p class="dong muted" style={{ margin: '6px 0 0' }}>{t('oc.tr.tieuDe')} · {nhanPhamVi(tangs, toa.soTangDe)}</p>
         <ChonTang soTangDH={toa.soTangDH} soTangDe={toa.soTangDe} tangs={tangs} datTangs={datTangs} coRieng={coRieng} coCauRieng={coCauRieng} />
         {coRieng.length > 0 && <p class="dong muted" style={{ margin: 0 }}>{t('oc.tr.coRieng').replace('{n}', String(coRieng.length))}</p>}
         {tangs && (

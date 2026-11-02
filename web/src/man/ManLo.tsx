@@ -200,7 +200,7 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
     if (!chiXem) sua((p) => apPreset(nhom, p, du, pham, lo?.id ?? null));
   };
   return (
-    <>
+    <MucGap tieuDe={t('muc.thietLap')}>
       <MucGap tieuDe={t('gt.ps.mucCap')} giaiThich={t('gt.ps.giaiThichCap')}>
         <DongPreset nhom="cap" chiXem={chiXem} chonPham chup={() => chupPreset('cap', pa, lo)} ap={apPresetNhom('cap')} />
       </MucGap>
@@ -269,7 +269,7 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
         </div>
         <p class="dong muted">{t('heSo.ghiChu')}</p>
       </MucGap>
-    </>
+    </MucGap>
   );
 }
 

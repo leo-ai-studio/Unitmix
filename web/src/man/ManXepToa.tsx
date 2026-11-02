@@ -799,9 +799,9 @@ export function TmbPhai(p: Chung & { kq: KetQuaChiTieu | null }) {
   return (
     <>
       <KpiTmb pa={p.pa} tv={p.tv} lo={lo} kq={p.kq} />
-      <KpiView pa={p.pa} tv={p.tv} lo={lo} sua={p.sua} chiXem={p.chiXem} toaId={p.toaId} chonToa={p.chonToa} />
       <XepPhai {...p} />
       <ThangMayLo pa={p.pa} tv={p.tv} lo={lo} chonToa={p.chonToa} toaId={p.toaId} />
+      <KpiView pa={p.pa} tv={p.tv} lo={lo} sua={p.sua} chiXem={p.chiXem} toaId={p.toaId} chonToa={p.chonToa} />
       <SucChuaLo lo={lo} />
     </>
   );

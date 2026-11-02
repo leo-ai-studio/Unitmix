@@ -454,7 +454,7 @@ export function KpiView({ pa, tv, lo, sua, chiXem, toaId, chonToa }: {
     if (!s.bat) datLopView(true);
   };
   return (
-    <MucGap tieuDe={t('view.tieuDe')} giaiThich={t('gt.view.tieuDe')} mo>
+    <MucGap tieuDe={t('view.tieuDe')} giaiThich={t('gt.view.tieuDe')}>
       <div class="panel-view">
         <div class="dong kpi-view-dau">
           <div class="kpi-pham-vi" role="radiogroup" aria-label={t('kpi.phamVi')}>
