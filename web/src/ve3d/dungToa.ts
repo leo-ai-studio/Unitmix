@@ -16,6 +16,70 @@ const K = 0.001;
 export const CAO_TANG_DE_MM = 4000;
 export const CAO_TUM_MM = 3000;
 
+/**
+ * Khối đế (mỗi tầng đế cao `CAO_TANG_DE_MM` = 4.000): sàn dày 150 · dầm biên cao 700 · giữa sàn và dầm là vách kính 3.150 chia đố —
+ * đố đứng nhịp 1,2 m, đố ngang một đố ở cao 2,4 m tính từ mặt sàn. Cột (chu vi) và vách lõi cắm thẳng từ khối tháp xuống tới chân đế.
+ */
+export const SAN_DE_MM = 150;
+export const DAM_DE_MM = 700;
+export const NHIP_DO_DUNG_MM = 1200;
+export const CAO_DO_NGANG_MM = 2400;
+const DAM_NHO_MM = 15, DO_RONG_DAM_MM = 300, DO_RONG_DO_MM = 60, DO_SAU_DO_MM = 120, COT_DE_MM = 500, NHIP_COT_TOI_DA_MM = 8400;
+
+/** Dựng khối đế chi tiết vào `ngoai` (vật liệu: sàn `san`, dầm / cột / vách `de`, đố `khung`, kính `kinh`). Trả số mảnh để kiểm thử. */
+export function dungKhoiDe(T: T3, ngoai: THREE.Object3D, M: VatLieu3D, foot: Diem[], soDe: number, loi: Diem[][], khoiDac: (pts: Diem[], h: number, m: THREE.Material, z0: number) => THREE.Mesh): number {
+  let dem = 0;
+  const hop = (m: THREE.Material, mx: number, my: number, yc: number, dai: number, cao: number, sau: number, goc: number) => {
+    const me = new T.Mesh(new T.BoxGeometry(dai * K, cao * K, sau * K), m);
+    me.position.set(mx * K, yc * K, -my * K); me.rotation.y = goc; ngoai.add(me); dem++;
+  };
+  // hướng đa giác: vào trong = bên trái cạnh khi ngược chiều kim đồng hồ
+  let dt = 0; foot.forEach((p, i) => { const q = foot[(i + 1) % foot.length]; dt += p[0] * q[1] - q[0] * p[1]; });
+  const dau = dt >= 0 ? 1 : -1;
+  const [cx, cy] = trongTam(foot);
+  const tang = CAO_TANG_DE_MM, hKinh = tang - SAN_DE_MM - DAM_DE_MM;
+  for (let k = 0; k < soDe; k++) {
+    const y0 = k * tang;
+    khoiDac(foot, SAN_DE_MM, M.san, y0); dem++;
+    foot.forEach((p, i) => {
+      const q = foot[(i + 1) % foot.length], dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy);
+      if (L < 300) return;
+      const ux = dx / L, uy = dy / L, nx = -uy * dau, ny = ux * dau, goc = Math.atan2(dy, dx), mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+      const vao = (d: number) => [mx + nx * d, my + ny * d] as const;
+      // dầm biên cao 700 ở đỉnh tầng, mép ngoài nhô 15 mm khỏi đường bao: sàn tầng điển hình đầu tiên của tháp (nằm sát đỉnh đế) có mép đúng đường bao,
+      // nếu dầm cũng đúng đường bao thì hai mặt trùng nhau (z-fighting) — nhô nhẹ thì dầm luôn che mép sàn
+      const [bx, by] = vao(DO_RONG_DAM_MM / 2 - DAM_NHO_MM);
+      hop(M.de, bx, by, y0 + tang - DAM_DE_MM / 2, L, DAM_DE_MM, DO_RONG_DAM_MM, goc);
+      // tấm kính + đố ngang (một đố ở 2,4 m trên mặt sàn)
+      const [kx, ky] = vao(DO_SAU_DO_MM / 2);
+      const yKinh0 = y0 + SAN_DE_MM;
+      hop(M.kinh, kx, ky, yKinh0 + hKinh / 2, L, hKinh, 20, goc);
+      hop(M.khung, kx, ky, yKinh0 + CAO_DO_NGANG_MM, L, DO_RONG_DO_MM, DO_SAU_DO_MM, goc);
+      hop(M.khung, kx, ky, yKinh0 + DO_RONG_DO_MM / 2, L, DO_RONG_DO_MM, DO_SAU_DO_MM, goc);
+      // đố đứng: chia đều quanh 1,2 m (không để mẩu lẻ cuối cạnh)
+      const n = Math.max(1, Math.round(L / NHIP_DO_DUNG_MM));
+      for (let j = 1; j < n; j++) {
+        const t = (j / n - 0.5) * L;
+        hop(M.khung, kx + ux * t, ky + uy * t, yKinh0 + hKinh / 2, DO_RONG_DO_MM, hKinh, DO_SAU_DO_MM, goc);
+      }
+    });
+  }
+  // cột chu vi: ở các góc và chia đều cạnh dài (nhịp ≤ 8,4 m) — cao suốt khối đế, nằm trong đường bao
+  const hDe = soDe * tang;
+  const cot = (px: number, py: number) => {
+    const vx = cx - px, vy = cy - py, l = Math.hypot(vx, vy) || 1, d = COT_DE_MM * 0.75;
+    hop(M.de, px + (vx / l) * d, py + (vy / l) * d, hDe / 2, COT_DE_MM, hDe, COT_DE_MM, 0);
+  };
+  foot.forEach((p, i) => {
+    cot(p[0], p[1]);
+    const q = foot[(i + 1) % foot.length], L = Math.hypot(q[0] - p[0], q[1] - p[1]), n = Math.ceil(L / NHIP_COT_TOI_DA_MM);
+    for (let j = 1; j < n; j++) cot(p[0] + ((q[0] - p[0]) * j) / n, p[1] + ((q[1] - p[1]) * j) / n);
+  });
+  // vách lõi: đúng ranh lõi của tầng điển hình, kéo thẳng xuống chân đế
+  loi.forEach((r) => { khoiDac(r, hDe, M.de, 0); dem++; });
+  return dem;
+}
+
 /** `bao_tm` = đa giác khung tường thật của lõi (chữ V / T / Y không phải hình chữ nhật); `bao_tuong_mm` = hộp bao chữ nhật (dự phòng). */
 export type LoiHinh = { bao_tuong_mm?: [number, number, number, number]; bao_tm?: Diem[]; /** vùng tường lõi (nét `wall` đóng kín, toạ độ cục bộ) — dò khe hở nét bao */ tuong?: Diem[][] };
 export type DuLieuToa = {
@@ -473,12 +537,7 @@ export function* dungToaTung(T: T3, goc: THREE.Group, M: VatLieu3D, G: NhomHien,
   const kNgoai = JSON.stringify([foot, soDe, H, tums, P.san]);
   const rN = layNho(nhoNgoai, kNgoai, () => {
     const ngoai = new T.Group();
-    if (hDe > 0) {
-      khoi(foot, hDe, M.de, 0, true, ngoai);
-      const ln: number[] = [];
-      for (let k = 1; k < soDe; k++) foot.forEach((p, i) => { const q = foot[(i + 1) % foot.length]; ln.push(p[0] * K, k * CAO_TANG_DE_MM * K, -p[1] * K, q[0] * K, k * CAO_TANG_DE_MM * K, -q[1] * K); });
-      if (ln.length) { const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(new Float32Array(ln), 3)); ngoai.add(new T.LineSegments(g, M.line)); }
-    }
+    if (hDe > 0) dungKhoiDe(T, ngoai, M, foot, soDe, tums, (pts, h, m, z0) => khoi(pts, h, m, z0, false, ngoai));
     khoi(foot, P.san, M.san, H, false, ngoai);
     tums.forEach((r) => { khoi(r, CAO_TUM_MM, M.tum, H + P.san, true, ngoai); khoi(r, P.san, M.san, H + P.san + CAO_TUM_MM, false, ngoai); });
     foot.forEach((p, i) => { // thành chắn mái

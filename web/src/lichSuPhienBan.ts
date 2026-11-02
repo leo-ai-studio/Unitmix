@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.16', ngay: '2026-11-03',
+    vi: [
+      '3D khối đế dựng chi tiết: sàn dày 150, dầm biên cao 700, giữa là vách kính 3.150 chia đố (đố đứng nhịp 1,2 m, một đố ngang ở cao 2,4 m); cột chu vi và vách lõi cắm thẳng từ khối tháp xuống chân đế; áp cho mọi tầng đế (4 m mỗi tầng); dầm nhô 15 mm để không trùng mặt với sàn tháp',
+    ],
+    en: [
+      '3D podium modelled in detail: 150 mm slab, 700 mm edge beam, 3,150 mm curtain wall between (vertical mullions every 1.2 m, one transom at 2.4 m); perimeter columns and core walls run straight down from the tower to the podium base; applied to every podium storey (4 m each); beams project 15 mm to avoid coplanar faces with the tower slab',
+    ],
+  },
+  {
     v: '0.5.15', ngay: '2026-11-03',
     vi: [
       '3D kiểu Vật liệu như app cũ: tường ghi sáng, dải mép sàn trắng ngà, kính xanh lam, khung / lan can xám than; nét viền mảnh và nhạt hơn',
