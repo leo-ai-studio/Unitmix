@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.0', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: mục mới "Chép bố cục sang tòa khác" — chép TOÀN BỘ bố cục tầng của tòa đang xem sang các tòa cùng mẫu: tick từng tòa, cả lô hoặc cả dự án (mẫu nào cũng dùng được, một lần hoàn tác trả lại tất cả)',
+    ],
+    en: [
+      'Floor screen: new "Copy layout to other towers" — copies the WHOLE floor layout of the tower in view to same-type towers: tick towers, whole plot or whole project (works for any type, one undo reverts all)',
+    ],
+  },
+  {
     v: '0.6.5', ngay: '2026-11-03',
     vi: [
       'Màn Tầng: kéo căn đổi chỗ với căn khác bề ngang (1PN ↔ STU) chỉ đổi đúng hai căn đó; nếu tự chỉnh khít buộc đổi thêm căn thứ ba thì từ chối và giữ nguyên, không tự biến căn bên cạnh',

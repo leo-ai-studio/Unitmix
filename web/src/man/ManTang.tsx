@@ -17,7 +17,7 @@ import { MenuCongNang, MenuLoi } from '../ve/MenuO';
 import { ChonTang, nhanPhamVi, tenTang } from '../ui/ChonTang';
 import { nutLopPhong } from '../ve/LopPhong';
 import { MucGap } from '../ui/MucGap';
-import { toaNhanSua } from '../tinh/lanTruyenBoCuc';
+import { chepBoCucSang, toaNhanSua } from '../tinh/lanTruyenBoCuc';
 import { LopNoi } from '../ui/LopNoi';
 import { GocBanVe } from '../ui/GocBanVe';
 import { fmtSo } from '../ui/so';
@@ -43,6 +43,8 @@ import { nhanToa } from '../ui/nhanToa';
 export type ChungTang = {
   pa: TrangThaiPA;
   sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void;
+  /** Như `sua` nhưng KHÔNG lan bố cục sang tòa cùng mẫu theo "Áp dụng sửa cho" (nút chép bố cục có đích rõ). */
+  suaDon?: (fn: (p: TrangThaiPA) => TrangThaiPA) => void;
   chiXem: boolean;
   loId: string | null;
   chonLo: (id: string) => void;
@@ -118,6 +120,7 @@ export function TangTrai(p: ChungTang) {
   useDuLieuMB(tv, pa);
   const cai = useCaiTang();
   const [ghiChu, setGhiChu] = useState('');
+  const [dichChep, setDichChep] = useState<string[]>([]); // tòa tick làm đích chép bố cục
   // Đổi khác bề ngang + STRETCH khi tối ưu (A8 · DC-04/05, như app cũ): mặc định bật
   const [doiRong, setDoiRong] = useState(true);
   const xem = toaDangXem(pa, tv, p.loId, p.toaId);
@@ -170,6 +173,40 @@ export function TangTrai(p: ChungTang) {
               onClick={() => sua((q) => doiToa(q, toa.id, (x) => boTangRieng(x, tangs)))}>{t('oc.tr.boRieng')}</button>
           </div>
         )}
+      </MucGap>
+      <MucGap tieuDe={t('tang.chep.tieuDe')} giaiThich={t('tang.chep.gt')}>
+        {(() => {
+          const cungMau = pa.toa.filter((x) => x.id !== toa.id && x.mauId === toa.mauId && !x.khoa);
+          const ids = (pv: 'lo' | 'duAn') => toaNhanSua(pa, toa, pv).map((x) => x.id);
+          const chep = (dsId: string[]) => {
+            if (!dsId.length) return;
+            let them = 0;
+            (p.suaDon ?? sua)((q) => { const r = chepBoCucSang(q, toa.id, dsId); them = r.them; return r.pa; });
+            datBaoStretch({ loai: 'ok', chu: t('tang.chep.da').replace('{n}', String(them || dsId.length)) });
+            setDichChep([]);
+          };
+          const hop = dichChep.filter((id) => cungMau.some((x) => x.id === id));
+          return (
+            <>
+              <p class="dong muted" style={{ margin: 0 }}>{t('tang.chep.nguon').replace('{a}', nhanToa(pa, tv, toa.id, { lo: true })).replace('{m}', tenNgan(mau.ten_vi))}</p>
+              {!cungMau.length && <p class="dong muted" style={{ margin: 0 }}>{t('tang.chep.khong')}</p>}
+              <div style={{ maxHeight: '160px', overflowY: 'auto' }}>
+                {cungMau.map((x) => (
+                  <label class="o-tg" key={x.id}>
+                    <input type="checkbox" disabled={chiXem} checked={hop.includes(x.id)}
+                      onChange={(e) => setDichChep(e.currentTarget.checked ? [...hop, x.id] : hop.filter((i) => i !== x.id))} />
+                    <span>{nhanToa(pa, tv, x.id, { lo: true })}</span>
+                  </label>
+                ))}
+              </div>
+              <div class="dong" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
+                <button type="button" class="nut-phu" disabled={chiXem || !hop.length} onClick={() => chep(hop)}>{t('tang.chep.chon').replace('{n}', String(hop.length))}</button>
+                <button type="button" class="nut-phu" disabled={chiXem || !ids('lo').length} onClick={() => chep(ids('lo'))}>{t('tang.chep.lo').replace('{n}', String(ids('lo').length))}</button>
+                <button type="button" class="nut-chinh" disabled={chiXem || !ids('duAn').length} onClick={() => chep(ids('duAn'))}>{t('tang.chep.duAn').replace('{n}', String(ids('duAn').length))}</button>
+              </div>
+            </>
+          );
+        })()}
       </MucGap>
       <MucGap tieuDe={t('tang.coCauMucTieu')} giaiThich={t('tang.mixGhiChu')} mo>
         {tangs && (
