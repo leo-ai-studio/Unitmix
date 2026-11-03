@@ -1692,8 +1692,8 @@ function hanhLangToiCua(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefi
   return sua;
 }
 
-/** Co kéo đầu hành lang: bước bắt (mm), nam châm về vị trí tự động, dài thêm tối đa, ngắn nhất, chừa sau cửa căn xa nhất (app cũ p14). */
-export const HL_TAY = { buoc: 100, namCham: 400, daiMax: 20000, ngan: 3000, quaCua: 500 } as const;
+/** Co kéo đầu hành lang: bước bắt (mm), nam châm về vị trí tự động, dài thêm tối đa, ngắn nhất, chừa sau MÉP NGOÀI cánh cửa căn xa nhất (tim cửa ± nuaCua) 500 mm (app cũ p14: tính từ tim cửa). */
+export const HL_TAY = { buoc: 100, namCham: 400, daiMax: 20000, ngan: 3000, quaCua: 500, nuaCua: 450 } as const;
 /**
  * Đầu NGOÀI của đoạn hành lang `i` (0 = p0, 1 = p1): không đoạn nào khác chạm, và cách đầu 1 m ra ngoài là ngoài nét bao `bao` (mép
  * cuối hành lang ở mép sàn). Đầu nối góc / đầu chạm lõi, sảnh không kéo được (app cũ QT-39: chỉ hai đầu mút ngoài).
@@ -1714,7 +1714,7 @@ const kcDoanHL = (p: Diem, s: DoanHanhLangMB) => {
 /** Đoạn nối `o` chạy trùm trọn trục `s` (mẫu L / T: đoạn nối nằm chồng lên trục) — không phải chỗ gặp góc, không chặn đầu mút của `s`. */
 const nenTruc = (o: DoanHanhLangMB, s: DoanHanhLangMB) => o.noi && kcDoanHL(s.p0, o) < 400 && kcDoanHL(s.p1, o) < 400;
 /**
- * Giới hạn dời đầu `dau` của đoạn hành lang `i` (mm, dương = dài ra): ngắn nhất tới cửa căn xa nhất trên đoạn + 500 mm (và đoạn còn
+ * Giới hạn dời đầu `dau` của đoạn hành lang `i` (mm, dương = dài ra): ngắn nhất tới mép ngoài cánh cửa căn xa nhất trên đoạn (tim cửa ± 450) + 500 mm (và đoạn còn
  * ≥ 3 m), dài nhất +20 m (app cũ startAxDrag: dmin − 500, s1 − 3000, m0 − 20000).
  */
 export function gioiHanHanhLang(hd: ToaMB, s: DoanHanhLangMB, dau: 0 | 1, cuaCan: Record<string, number>): [number, number] {
@@ -1723,7 +1723,7 @@ export function gioiHanHanhLang(hd: ToaMB, s: DoanHanhLangMB, dau: 0 | 1, cuaCan
   const ts = dsCuaMB(hd, cuaCan).filter((c) => Math.abs((c.p[0] - s.p0[0]) * u[1] - (c.p[1] - s.p0[1]) * u[0]) <= nuaHL + 600)
     .map((c) => (c.p[0] - s.p0[0]) * u[0] + (c.p[1] - s.p0[1]) * u[1]).filter((t) => t >= -1 && t <= L + 1);
   // dời âm tối đa: còn chừa sau cửa xa nhất phía đầu đó, và đoạn còn ≥ 3 m
-  const conLai = dau ? (ts.length ? L - (Math.max(...ts) + HL_TAY.quaCua) : L - HL_TAY.ngan) : (ts.length ? Math.min(...ts) - HL_TAY.quaCua : L - HL_TAY.ngan);
+  const conLai = dau ? (ts.length ? L - (Math.max(...ts) + HL_TAY.nuaCua + HL_TAY.quaCua) : L - HL_TAY.ngan) : (ts.length ? Math.min(...ts) - HL_TAY.nuaCua - HL_TAY.quaCua : L - HL_TAY.ngan);
   return [-Math.max(0, Math.min(conLai, L - HL_TAY.ngan)), HL_TAY.daiMax];
 }
 /** Áp đầu hành lang kéo tay lên `mb.hanhLang` (sau XC-07). Trả số đầu đã dời. */

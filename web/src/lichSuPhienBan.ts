@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.3', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: giới hạn rút ngắn đầu hành lang tính từ MÉP NGOÀI cánh cửa căn gần nhất + 500 mm (trước đây tính từ tim cửa); rà 33 mẫu tòa, chỉ còn chặn đúng quy tắc này',
+    ],
+    en: [
+      'Floor screen: the limit for shortening a corridor end is now measured from the OUTER edge of the nearest unit door + 500 mm (was from the door centre); checked across all 33 tower types',
+    ],
+  },
+  {
     v: '0.7.2', ngay: '2026-11-03',
     vi: [
       'Màn Xếp tòa: bỏ phím Backspace xoá tòa — gõ "ee" bằng Telex / Unikey bắn một Backspace giả làm xoá nhầm tòa; xoá tòa chỉ bằng phím Delete',
