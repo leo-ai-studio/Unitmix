@@ -8,6 +8,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { GOC_TRAM, taoFetchTram } from './cau';
+import { LoiNhaKhac } from './khachKhac';
 import type { KhachClaude } from './vongLap';
 
 export type NguonKhoa = 'rieng' | 'chung' | 'cau';
@@ -38,6 +39,7 @@ export function taoKhach(v: { nguon?: NguonKhoa; khoaRieng: string | null; maDuA
 
 /** Lỗi → câu tiếng Việt + gợi ý hành động. `can` = 'khoa' khi nên mở Cài đặt để dán khoá riêng. */
 export function loiTiengViet(e: unknown, nguon: NguonKhoa): { chu: string; can?: 'khoa' } {
+  if (e instanceof LoiNhaKhac) return { chu: e.chuViet, can: 'khoa' }; // nhà cung cấp khác Claude (khachKhac.ts)
   const kieu = (e as { error?: { error?: { type?: string; message?: string } } })?.error?.error;
   // khoá chung chưa đặt: đường chính giờ là tài khoản Claude qua cầu — chỉ cách làm, không bảo đi tìm khoá API
   if (nguon === 'chung' && kieu?.type === 'chua_cau_hinh') return { chu: 'Leo AI chưa nối tài khoản Claude. Trên điện thoại: mở Cài đặt Leo AI → mục "Ghép với máy tính" và dán link ghép lấy từ máy tính (Cài đặt Leo AI → Chép link ghép điện thoại). Trên máy tính: Cài đặt Leo AI → Tải bộ cài cầu AI.', can: 'khoa' };

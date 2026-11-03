@@ -21,6 +21,8 @@ import { GOI_Y_MO } from './heThong';
 import { docCuoc, ghiCuoc, idCuoc, tenTuCau, type CuocTroChuyen } from './hoiThoai';
 import { cauDungDuoc, chonNguon, docDiaChiCau, docGhepCuaMay, docMaGhep, docMaGhepTuChuoi, doiMaGhep, DS_NGUON, ghiMaGhep, kiemCau, laDienThoai, linkGhep, moDangNhapCau, taoBoCaiBat, type TrangThaiCau } from './cau';
 import { loiTiengViet, taoKhach, type NguonKhoa } from './khachThat';
+import { CaiDatNhaKhac } from './CaiDatNhaKhac';
+import { docNhaKhac, ghiNhaKhac, nhaKhacDungDuoc, taoKhachKhac, type NhaKhac } from './khachKhac';
 import { phanTichMd, type Inl, type KhoiMd } from './markdown';
 import { cheKhoa, DS_MO_HINH, docCaiDat, docKhoaApi, ghiCaiDat, ghiKhoaApi, moHinhTheoId, type CaiDatLeo, type MaMoHinh, type MucNghi } from './moHinh';
 import { chayVong, gonLichSu, type KhachClaude, type KetThuc, type SuKien, type TinNhan } from './vongLap';
@@ -169,6 +171,10 @@ export function LeoAI(p: PropsLeo) {
   const [lang] = useLang();
   const [cai, setCai] = useState<CaiDatLeo>(docCaiDat);
   const [khoaApi, setKhoaApi] = useState<string | null>(docKhoaApi);
+  /** nhà cung cấp không phải Claude (Ollama, Gemini, OpenAI…): bật + đủ địa chỉ / mô hình thì thay Claude */
+  const [nhaKhac, setNhaKhac] = useState<NhaKhac>(docNhaKhac);
+  const dungKhac = nhaKhacDungDuoc(nhaKhac);
+  const datNhaKhac = (c: Partial<NhaKhac>) => { const m = { ...nhaKhac, ...c }; setNhaKhac(m); ghiNhaKhac(m); };
   const [ds, setDs] = useState<CuocTroChuyen[]>(() => docCuoc(p.maDuAn));
   const [cuocId, setCuocId] = useState<string | null>(() => docCuoc(p.maDuAn)[0]?.id ?? null);
   const [man, setMan] = useState<'chat' | 'lichSu' | 'caiDat'>('chat');
@@ -208,7 +214,7 @@ export function LeoAI(p: PropsLeo) {
   const nguonDung: NguonKhoa = chonNguon(cai.nguon, { khoaRieng: !!khoaApi, cau: cauDungDuoc(cauTT ?? null) || (!cauTT && !!maGhepLuu) }); // đã ghép mà máy tính chưa trả lời: vẫn đi đường cầu để báo "máy tính chưa nối", không rơi sang khoá chung
 
   // chưa nối được nguồn nào: đang đi đường khoá chung mà máy chủ không có khoá (hoặc đã ghép mà chưa kiểm xong thì không báo)
-  const chuaNoi = nguonDung === 'chung' && chungCo === false && cauTT !== undefined;
+  const chuaNoi = !dungKhac && nguonDung === 'chung' && chungCo === false && cauTT !== undefined;
   useEffect(() => { p.khiChay?.(chay); }, [chay]);
   useEffect(() => () => { huy.current?.abort(); dungDoc(); p.khiChay?.(false); }, []);
   // chip xác nhận cho công cụ (xoá PA, tải tệp, bấm nút nhạy cảm)
@@ -280,7 +286,7 @@ export function LeoAI(p: PropsLeo) {
     setDang({ ...DANG_RONG });
     // khách giả chỉ nhận ở bản dev (kịch bản E2E scripts/leo_ai_e2e.mjs), bản build bỏ qua
     const gia = p.khachGia ?? (import.meta.env.DEV ? (window as unknown as { __leoKhachGia?: KhachClaude }).__leoKhachGia : undefined);
-    const khach: KhachClaude & { nguon?: NguonKhoa } = gia ?? taoKhach({ nguon: nguonDung, khoaRieng: khoaApi, maDuAn: p.maDuAn, maSua: p.maSua, diaChiCau: docDiaChiCau(), qua: cauTT?.qua ?? (docMaGhep() ? 'tram' : 'may'), maGhep: docMaGhep() });
+    const khach: KhachClaude & { nguon?: NguonKhoa } = gia ?? (dungKhac ? taoKhachKhac(nhaKhac) : taoKhach({ nguon: nguonDung, khoaRieng: khoaApi, maDuAn: p.maDuAn, maSua: p.maSua, diaChiCau: docDiaChiCau(), qua: cauTT?.qua ?? (docMaGhep() ? 'tram' : 'may'), maGhep: docMaGhep() }));
     let kt: KetThuc | null = null;
     try {
       kt = await chayVong({
@@ -431,6 +437,7 @@ export function LeoAI(p: PropsLeo) {
         <MarkLeo quay={false} vuong />
         <div class="leo-ten"><strong>{t('leo.ten')}</strong>{chuaNoi
           ? <button type="button" class="leo-chip canh" onClick={() => setMan('caiDat')}>{t('leo.chuaNoi')}</button>
+          : dungKhac ? <small>{nhaKhac.moHinh}</small>
           : <small>{t(`leo.nguon.${nguonDung === 'cau' ? 'cau' : nguonDung === 'rieng' && khoaApi ? 'rieng' : 'chung'}`)} ·{mhHien.ten.replace('Claude ', '')}</small>}</div>
         <span class="gian" />
         <NutNho k="leoLichSu" nhan={t('leo.lichSu')} bat={man === 'lichSu'} onClick={() => setMan(man === 'lichSu' ? 'chat' : 'lichSu')} />
@@ -533,6 +540,7 @@ export function LeoAI(p: PropsLeo) {
             )}
             <p class="muted">{khoaApi ? t('leo.khoa.dangDungRieng') : chungCo === null ? '…' : chungCo ? t('leo.khoa.coChung') : t('leo.khoa.khongChung')}</p>
           </details>
+          <CaiDatNhaKhac cfg={nhaKhac} doi={datNhaKhac} />
           <section class="leo-muc">
             <b>{t('leo.moHinh')}</b>
             <label class="leo-chon"><input type="radio" name="leo-mh" checked={cai.moHinh === 'tu_chon'} onChange={() => datCai({ moHinh: 'tu_chon' })} /><span><b>{t('leo.tuChon')}</b><small>{t('leo.tuChonGiai')}</small></span></label>
