@@ -34,7 +34,7 @@ import { TayHanhLang } from '../ve/TayHanhLang';
 import { hlHieuDung } from '../tinh/thaoTacTay';
 import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
-import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, useCaiPCCC, usePCCCTang } from '../ve/LopPCCC';
+import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, truTCC, useCaiPCCC, usePCCCTang } from '../ve/LopPCCC';
 import { KhoiPCCC } from '../ui/KpiPCCC';
 import { ChuGiaiViewTang, LopViewTang } from '../ve/LopViewTang';
 import { gocBacPA, nutLopView } from './lopView';
@@ -420,7 +420,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
       )}
       <div class="boc-ve" ref={boc} onPointerDownCapture={(e) => { keoTay.batDau(e); batDauKhung(e); }} onClickCapture={(e) => { if (nuotClick.current) { e.stopPropagation(); e.preventDefault(); } }}>
         <BanVe khung={khung} nhanDang={`${toa.id}|${tangXem(co.tangs) ?? ''}`} nhan={t('tang.banVe')} onDieuKhien={setDk} gocBac={toa.gocDo - gocBacPA(pa)}>
-          <MatBangTang mau={mauVe} toa={bcVe} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa}
+          <MatBangTang truTCC={truTCC(pccc)} mau={mauVe} toa={bcVe} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa}
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
             deBai={cai.chamMau ? lo?.temDat.deBai?.dtCan : undefined} nguongDt={pa.nguong.dtCanM2}
@@ -533,6 +533,12 @@ function KhoiGiamCan({ bcTc, toa, coRieng, chiXem, datToa, tenO, tenCan }: {
 }
 
 /** Panel phải: căn trong tòa so với mục tiêu, công năng ô + SHCĐ, loại căn trong tầng, căn đang chọn. */
+/** DT thông thủy của căn đang chọn, đã trừ phần tường xây sau lưng tủ PCCC (nếu có). */
+function DtTTCan(p: { pa: TrangThaiPA; tv: ThuVien; toa: ToaDat; mau: ToaVe; bc: BoCuc; no: number; dt: number }) {
+  const tru = truTCC(usePCCCTang(p.pa, p.tv, p.toa, p.mau as unknown as ToaMB, p.bc)).get(p.no) ?? 0;
+  return <b title={tru ? t('tang.truTcc').replace('{m}', fmtSo(tru, { thapPhan: 2 })) : undefined}>{fmtSo(p.dt - tru, { thapPhan: 2, donVi: 'm²' })}{tru ? <small> (−{fmtSo(tru, { thapPhan: 2 })})</small> : null}</b>;
+}
+
 export function TangPhai(p: ChungTang) {
   const { pa, sua, chiXem, tv, canKhoa, chonCan } = p;
   useDuLieuMB(tv);
@@ -621,7 +627,7 @@ export function TangPhai(p: ChungTang) {
           {chon.cn !== 'can' ? <p class="dong muted" style={{ margin: 0 }}>{t('oc.khongTinhCan')}</p> : (
             <div class="can-chon-so">
               <div><small>{t('tang.kichThuoc')}</small><b>{fmtSo(cChon.rong_mm / 1000, { thapPhan: 1 })} × {fmtSo(cChon.sau_mm / 1000, { thapPhan: 1 })} m</b></div>
-              <div><small>{t('tang.thongThuy')}</small><b>{fmtSo(cChon.dt_tt_m2, { thapPhan: 2, ...m2 })}</b></div>
+              <div><small>{t('tang.thongThuy')}</small><DtTTCan pa={pa} tv={tv} toa={toa} mau={mau} bc={bc} no={chon.no} dt={cChon.dt_tt_m2} /></div>
               <div><small>{t('tang.timTuong')}</small><b>{fmtSo(cChon.dt_tim_m2, { thapPhan: 2, ...m2 })}</b></div>
               {deBai[cChon.loai] ? <div><small>{t('xep.dtDeBai')}</small><b>{fmtSo(deBai[cChon.loai]!, { thapPhan: 1, ...m2 })}</b></div> : null}
             </div>
@@ -665,7 +671,7 @@ export function TangPhai(p: ChungTang) {
 
   return (
     <>
-      <KpiTang pa={pa} tv={tv} toa={toa} lo={lo} tang={k0} can={sl.can} mucTieu={muc} nguongLech={pa.nguong.coCauDiem} tenTang={phamVi} canChon={khoiCanChon} />
+      <KpiTang pa={pa} tv={tv} toa={toa} mau={mau} bc={bc} lo={lo} tang={k0} can={sl.can} mucTieu={muc} nguongLech={pa.nguong.coCauDiem} tenTang={phamVi} canChon={khoiCanChon} />
       <KhoiPCCC pa={pa} tv={tv} toa={toa} mau={mau} bc={bc} chiXem={chiXem} datToa={(fn) => sua((q) => doiToa(q, toa.id, fn))} />
       <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}${k0 !== null ? ' · ' + tenTang(toa.soTangDe, k0) : ''}`} giaiThich={t('gt.tang.canTrongToa')}>
         <div class="bang-co-cau" role="table">

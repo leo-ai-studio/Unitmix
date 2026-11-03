@@ -76,6 +76,13 @@ export function usePCCCTang(pa: TrangThaiPA, tv: ThuVien, toa: ToaDat, mau: ToaM
   return cuoiTheoToa.get(toa.id) ?? null;
 }
 
+/** DT thông thủy căn bị trừ vì tường xây sau lưng tủ PCCC (QT-77g): số căn (CH-xx) → m² (cộng dồn nếu hai tủ cùng một căn). */
+export function truTCC(kq: KetQuaPCCCTang | null): Map<number, number> {
+  const m = new Map<number, number>();
+  for (const x of kq?.tu.truDT ?? []) m.set(x.can, (m.get(x.can) ?? 0) + x.m2);
+  return m;
+}
+
 // ---------- hình học vẽ ----------
 const r0 = (x: number) => Math.round(x);
 const P = (pts: Diem[]) => pts.map((p) => `${r0(p[0])},${r0(p[1])}`).join(' ');

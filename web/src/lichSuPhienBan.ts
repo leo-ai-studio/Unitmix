@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.1', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: căn có tủ PCCC đặt sát tường (tường xây sau lưng tủ) được trừ DT thông thủy như app cũ — tem căn, "Căn đang chọn" và DT sử dụng 1 sàn đều ghi số sau trừ',
+    ],
+    en: [
+      'Floor screen: units with a fire cabinet against the wall (masonry behind it) now have that area deducted from net area as in the old app — unit label, selected unit and floor usable area show the deducted figure',
+    ],
+  },
+  {
     v: '0.7.0', ngay: '2026-11-03',
     vi: [
       'Màn Tầng: mục mới "Chép bố cục sang tòa khác" — chép TOÀN BỘ bố cục tầng của tòa đang xem sang các tòa cùng mẫu: tick từng tòa, cả lô hoặc cả dự án (mẫu nào cũng dùng được, một lần hoàn tác trả lại tất cả)',

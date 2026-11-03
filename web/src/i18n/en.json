@@ -1455,6 +1455,7 @@
   "tang.chep.lo": "Copy to all same-type towers in this plot ({n})",
   "tang.chep.duAn": "Copy to whole project · all same-type towers ({n})",
   "tang.chep.da": "Layout copied to {n} same-type tower(s).",
+  "tang.truTcc": "minus {m} m² of masonry behind fire cabinets",
   "st.gioiHan": "step 100 · max ±500 mm",
   "st.ve0": "0",
   "tang.doi.cung": "Same-width types",
