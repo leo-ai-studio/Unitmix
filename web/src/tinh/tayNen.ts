@@ -34,12 +34,14 @@ export const BANG_TAY = {
   goiYGiuCan: (c: Ctx, sau: ToaDat, goTN: string[], canTruoc: number, tang: number | null, hanMs: number) => ({ g: goiYGiuCan(sau, goTN, canTruoc, c, tang, hanMs) as GoiYGiuCan | null }),
   /** Phân tích PCCC một tầng (tinh/pcccTang.ts: hai lượt giải cửa hành lang + phủ tủ chính xác ≈ 100–300 ms) — tinh/pcccNen.ts. */
   phanTichPCCC: (c: Ctx, v: Omit<DauVaoPCCCTang, 'tv' | 'dl'>) => phanTichPCCCTang({ ...v, tv: c.tv, dl: c.dl ?? null }),
+  /** Khởi động sẵn worker (chỉ chuyển thư viện / dữ liệu lõi sang, không tính gì) — `DieuPhoiTay.khoiDong`. */
+  ngam: () => null,
 } as const;
 export type TenTay = keyof typeof BANG_TAY;
 export type DoiSoTay<T extends TenTay> = Parameters<(typeof BANG_TAY)[T]> extends [Ctx, ...infer R] ? R : never;
 export type KqTay<T extends TenTay> = ReturnType<(typeof BANG_TAY)[T]>;
 /** Phép tay trả KetQuaTay (mọi tên trừ gợi ý, phân tích PCCC). */
-export type TenPhep = Exclude<TenTay, 'goiYGiuCan' | 'phanTichPCCC'>;
+export type TenPhep = Exclude<TenTay, 'goiYGiuCan' | 'phanTichPCCC' | 'ngam'>;
 /** Một phép tay dạng dữ liệu (tên + đối số) — chép được sang worker, chạy đồng bộ được bằng `chayPhep`. */
 export type PhepTay = { [T in TenPhep]: { ten: T; args: DoiSoTay<T> } }[TenPhep];
 export const phepTay = <T extends TenPhep>(ten: T, ...args: DoiSoTay<T>): PhepTay => ({ ten, args } as unknown as PhepTay);
@@ -110,6 +112,18 @@ export class DieuPhoiTay {
       this.worker!.postMessage(thu);
       this.bao();
     });
+  }
+
+  /**
+   * Dựng sẵn worker + chuyển thư viện / dữ liệu lõi sang khi mở màn Tầng, để phép tay đầu tiên (kéo đầu hành lang…) không phải chờ
+   * nạp module worker + chép thư viện lúc thả tay. Đang có lượt chạy thì thôi (worker đã nóng); lượt thật sau đó dùng chung worker.
+   */
+  khoiDong(c: Ctx): void {
+    if (this.cho || !this.coWorker()) return;
+    const thu: ThuTay = { id: 0, ten: 'ngam', args: [] };
+    if (this.tvW !== c.tv) { thu.tv = c.tv; this.tvW = c.tv; }
+    if (!this.dlCo || this.dlW !== c.dl) { thu.dl = c.dl ?? null; this.dlW = c.dl; this.dlCo = true; }
+    if (thu.tv !== undefined || thu.dl !== undefined) this.worker!.postMessage(thu);
   }
 
   /** Chạy một phép tay (PhepTay) — như `chay`. */

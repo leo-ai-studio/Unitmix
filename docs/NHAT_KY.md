@@ -2,6 +2,13 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-03 (đêm) · Điểm kéo hành lang: hết nhảy về chỗ cũ / biến mất, worker khởi động sẵn · Claude Code (Sonnet 5.5)
+
+- **Quét 33 mẫu tòa** (`tinh/dauHanhLangQT.test.ts`): số điểm kéo đầu hành lang đúng QT app cũ (p17c, một Circle CAD `hanhlang_moc` = một điểm kéo): I 2 · L 3 · T 4 · U 6 · V 2 · Y 3 · Z 4 — ở cao 9 / 24 / 40 tầng, khi lật, sau khi kéo hết +3 m; kéo thả từng điểm (+3 m, −1,5 m, +20 m) đều được nhận. Không tòa nào thiếu / thừa / bị chặn ở mặt bằng mẫu.
+- **Nguyên nhân trễ** (không phải tính nặng: `keoHanhLangTay` 2–12 ms): (1) phép kéo không có `hinhNhanh` nên sau khi thả tay nắm nhảy về chỗ cũ tới khi worker trả kết quả; (2) mọi phép tay nền đang chạy thì `!tam` ẩn cả bộ tay nắm → tòa "không có điểm kéo" một lúc; (3) phép tay đầu tiên phải dựng worker + nạp module + chép thư viện: đo trên trình duyệt (dev) 127 ms, các lần sau 8–12 ms.
+- **Sửa**: `TayHanhLang` giữ tay nắm ở vị trí vừa thả tới khi phép nền xong (`onKeo` trả promise), phép tay khác đang chạy thì tay nắm mờ chứ không biến mất; `DieuPhoiTay.khoiDong` dựng sẵn worker + gửi thư viện lúc mở màn Tầng (phép `ngam`), lần kéo đầu còn ~38 ms, tay nắm không còn nhảy.
+- Kiểm: tsc 0; vitest web 1005 đạt; `dongBoGio.test.ts` 2 ca rớt khi chạy song song nhưng đạt khi chạy riêng (nhạy tải, không đụng); pytest `test_cau_claude` rớt do giải mã cp1252 (có sẵn từ trước). Chưa xem tay trên màn thật (dev API đòi đăng nhập Access).
+
 ## 2026-11-03 (khuya) · Rải hầm hết treo, Excel thêm sheet Đơn giá và Theo tòa, v0.5.19 → v0.5.20 · Claude Code (Sonnet 5.5)
 
 Làm nốt ba đề xuất sau bản Excel theo brand (deploy v0.5.19 đã sửa nút XLS xoay mãi bằng cách bỏ rải hầm khỏi xuất).
