@@ -30,10 +30,10 @@ describe('xuất XLS', () => {
     expect(tenTepXls('Dự án: A', 'PA 1')).toBe('Dự án A - PA 1.xlsx');
   });
 
-  it('báo cáo PA: 8 sheet tiếng Việt có dấu, số căn khớp, đọc lại được từ tệp xlsx theo brand', async () => {
+  it('báo cáo PA: 10 sheet tiếng Việt có dấu, số căn khớp, đọc lại được từ tệp xlsx theo brand', async () => {
     const pa = paMau(10), kq = tinhChiTieu(pa, tv);
     const sheets = baoCaoPA(pa, tv, kq, 'Dự án Đồng Quan', 'PA 1', diemLechPA(pa, kq));
-    expect(sheets.map((s) => s.ten)).toEqual(['Bìa', 'Tổng hợp chỉ tiêu', 'Biểu diện tích', 'Cơ cấu theo tòa', 'Danh sách căn', 'Luật vượt', 'Dự toán', 'Tài chính']);
+    expect(sheets.map((s) => s.ten)).toEqual(['Bìa', 'Tổng hợp chỉ tiêu', 'Biểu diện tích', 'Cơ cấu theo tòa', 'Danh sách căn', 'Luật vượt', 'Theo tòa', 'Đơn giá', 'Dự toán', 'Tài chính']);
     for (const s of sheets) {
       if (s.kieu) expect(s.kieu.length).toBe(s.hang.length);
       for (const o of tatCa(s.hang)) { expect(o).not.toBeUndefined(); expect(Number.isNaN(o)).toBe(false); }
@@ -68,25 +68,57 @@ describe('xuất XLS', () => {
     if (loHam) expect(tatCa(dt)).toContain('Ước theo DT hầm'); // xuất không rải hầm
   });
 
-  it('công thức Excel khớp giá trị đã tính (Biểu diện tích, Dự toán)', () => {
+  it('công thức Excel khớp giá trị đã tính (Biểu diện tích, Theo tòa, Đơn giá → Dự toán)', () => {
     const pa = paMau(10), kq = tinhChiTieu(pa, tv), sheets = baoCaoPA(pa, tv, kq, 'D', 'P', diemLechPA(pa, kq));
-    let soCongThuc = 0;
-    for (const ten of ['Biểu diện tích', 'Dự toán']) {
-      const hang = hangCua(sheets, ten);
-      const o = (ref: string): number => { const m = /^([A-Z])(\d+)$/.exec(ref)!; const c = hang[Number(m[2]) - 1]?.[m[1].charCodeAt(0) - 65]; return typeof c === 'number' ? c : typeof c === 'object' ? c.v : 0; };
-      hang.forEach((h, i) => h.forEach((c, k) => {
+    const giaTriO = (ten: string, ref: string): number => {
+      const m = /^([A-Z])(\d+)$/.exec(ref)!;
+      const c = hangCua(sheets, ten)[Number(m[2]) - 1]?.[m[1].charCodeAt(0) - 65];
+      return typeof c === 'number' ? c : typeof c === 'object' ? c.v : 0;
+    };
+    let soCongThuc = 0, soThamChieuSheet = 0;
+    for (const ten of ['Biểu diện tích', 'Theo tòa', 'Dự toán']) {
+      hangCua(sheets, ten).forEach((h, i) => h.forEach((c, k) => {
         if (typeof c !== 'object') return;
         soCongThuc++;
-        const js = c.f.replace(/SUM\(([A-Z])(\d+):([A-Z])(\d+)\)/g, (_m, a, r1, b, r2) => {
-          let tong = 0;
-          for (let cot = a.charCodeAt(0); cot <= b.charCodeAt(0); cot++) for (let r = Number(r1); r <= Number(r2); r++) tong += o(`${String.fromCharCode(cot)}${r}`);
-          return String(tong);
-        }).replace(/([A-Z])(\d+)/g, (_m, a, r) => `(${o(`${a}${r}`)})`);
+        const js = c.f
+          .replace(/'([^']+)'!([A-Z]\d+)/g, (_m, sh: string, ref: string) => { soThamChieuSheet++; return `(${giaTriO(sh, ref)})`; })
+          .replace(/SUM\(([A-Z])(\d+):([A-Z])(\d+)\)/g, (_m, a: string, r1: string, b: string, r2: string) => {
+            let tong = 0;
+            for (let cot = a.charCodeAt(0); cot <= b.charCodeAt(0); cot++) for (let r = Number(r1); r <= Number(r2); r++) tong += giaTriO(ten, `${String.fromCharCode(cot)}${r}`);
+            return String(tong);
+          })
+          .replace(/([A-Z])(\d+)/g, (_m, a: string, r: string) => `(${giaTriO(ten, `${a}${r}`)})`);
         const kq2 = Function(`return (${js})`)() as number;
         expect(kq2, `${ten} ${String.fromCharCode(65 + k)}${i + 1} = ${c.f}`).toBeCloseTo(c.v, 4);
       }));
     }
-    expect(soCongThuc).toBeGreaterThan(20);
+    expect(soCongThuc).toBeGreaterThan(40);
+    expect(soThamChieuSheet).toBeGreaterThan(10); // Dự toán đọc đơn giá từ sheet Đơn giá
+  });
+
+  it('sheet Đơn giá: ô nhập được đánh dấu và tô nền vàng, sửa đơn giá thì Dự toán đổi theo công thức', async () => {
+    const pa = paMau(10), kq = tinhChiTieu(pa, tv), sheets = baoCaoPA(pa, tv, kq, 'D', 'P', diemLechPA(pa, kq));
+    const dg = sheets.find((x) => x.ten === 'Đơn giá')!;
+    expect(dg.nhap!.length).toBeGreaterThanOrEqual(9 + 4 + 5);
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(await ghiXls(sheets));
+    const ws = wb.getWorksheet('Đơn giá')!;
+    expect(ws.getCell(dg.nhap![0]).fill).toMatchObject({ fgColor: { argb: 'FFF6EFE0' } });
+    const du = wb.getWorksheet('Dự toán')!;
+    let coThamChieu = false;
+    du.eachRow((r) => r.eachCell((c) => { const f = (c.value as { formula?: string } | null)?.formula; if (f?.includes("'Đơn giá'!B")) coThamChieu = true; }));
+    expect(coThamChieu).toBe(true);
+  });
+
+  it('sheet Theo tòa: mỗi tòa một dòng, tổng lô và tổng chung khớp khối lượng', () => {
+    const pa = paMau(10), kq = tinhChiTieu(pa, tv), sheets = baoCaoPA(pa, tv, kq, 'D', 'P', diemLechPA(pa, kq));
+    const kl = tinhKhoiLuong(pa, tv, false);
+    const hang = hangCua(sheets, 'Theo tòa');
+    const tong = hang.find((h) => h[0] === 'Tổng')!;
+    expect(giaTri(tong[4])).toBeCloseTo(kl.tong.dtThap, 4);
+    expect(giaTri(tong[7])).toBe(kl.tong.tongCan);
+    expect(giaTri(tong[8])).toBeCloseTo(kl.tong.dtTT, 4);
+    expect(hang.filter((h) => typeof h[0] === 'string' && h[0].includes(' · ')).length).toBe(pa.toa.length);
   });
 
   it('sheet Luật vượt: có dòng khi vượt, báo "không vượt" khi không', () => {

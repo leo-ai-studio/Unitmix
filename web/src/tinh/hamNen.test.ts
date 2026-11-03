@@ -193,4 +193,25 @@ describe('điều phối rải hầm (Web Worker)', () => {
     await dp.cho('xls', pa, tv, [A, B]);
     expect(ds.reduce((a, w) => a + w.thu.length, 0)).toBe(0);
   });
+
+  it('cho(): dự án nhiều lô hơn sức chứa cache vẫn xong (không rải lại vô hạn)', async () => {
+    const tv = taoThuVien([mau], can);
+    const n = 70; // > NHO_HAM_TOI_DA
+    const nhieu: TrangThaiPA = chuanHoaPA({
+      ...pa, lo: Array.from({ length: n }, (_, i) => lo(`L${i}`, i * 100)),
+      toa: Array.from({ length: n }, (_, i) => toa({ id: `t${i}`, loId: `L${i}`, x: i * 100 + 30 })),
+    });
+    const { ds, dp } = taoBo();
+    let xong = false;
+    const hua = dp.cho('xls', nhieu, tv, nhieu.lo).then(() => { xong = true; });
+    let vong = 0;
+    while (!xong && vong++ < n * 3) {
+      await Promise.resolve();
+      const w = ds.find((x) => x.thu.length);
+      if (w) w.chay();
+    }
+    await hua;
+    expect(xong).toBe(true);
+    expect(vong).toBeLessThanOrEqual(n + 2); // mỗi lô rải đúng một lần
+  });
 });

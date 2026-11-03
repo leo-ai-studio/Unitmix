@@ -2,6 +2,15 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-03 (khuya) · Rải hầm hết treo, Excel thêm sheet Đơn giá và Theo tòa, v0.5.19 → v0.5.20 · Claude Code (Sonnet 5.5)
+
+Làm nốt ba đề xuất sau bản Excel theo brand (deploy v0.5.19 đã sửa nút XLS xoay mãi bằng cách bỏ rải hầm khỏi xuất).
+- **Nguyên nhân thật của treo**: `NHO_HAM_TOI_DA = 12` (cache LRU `tinh/ham.ts`). Dự án có > 12 lô có tòa (t1c0nhol: 22 lô): `choRaiHamPA` / `DieuPhoiHam.cho` chờ MỌI lô có trong cache cùng lúc, nhưng lô sau đẩy lô trước ra → rải đi rải lại không dứt (tính trong máy chỉ 3,2 s). Cũng làm màn Chi phí / 3D rải lặp CPU với dự án lớn. Sửa: cache 64 lô (~1 MB JSON mỗi lô) và `cho()` nhớ lô đã có kết quả (`daCo`) nên không phụ thuộc cache giữ lại. Test `hamNen.test.ts` ca 70 lô: hỏng trên mã cũ (quá 30 s), đạt trên mã mới.
+- **Sheet Đơn giá**: mọi ô nhập của dự toán một chỗ (9 đơn giá, % điều chỉnh + chi phí khác theo nhóm, 5 tỷ lệ), nền vàng `FFF6EFE0` viền `--gold`; sheet Dự toán đọc qua công thức `='Đơn giá'!B9`. `SheetXls.nhap` = địa chỉ ô nhập.
+- **Sheet Theo tòa**: từng tòa gộp theo lô, dòng tổng lô và tổng chung bằng công thức (E = C × D, hệ số TT / sàn tháp); chỉ lô có tòa (22 lô / 79 tòa → 130 dòng, không tạo sheet từng tòa).
+- Báo cáo PA nay 10 sheet. Test tính lại công thức hỗ trợ tham chiếu sheet khác. `kiem:nhanh`: tsc, web 1002 đạt; worker 2 ca rớt khi chạy song song với tải nặng (chạy riêng 46/46 đạt, không liên quan); pytest `test_cau_claude` rớt như trước.
+- **Còn dở**: chưa thử mở bằng Excel thật; sheet Tài chính vẫn giá trị tĩnh; chưa đưa ảnh mặt bằng.
+
 ## 2026-11-03 (tối) · Xuất Excel theo brand: bìa, biểu diện tích, dự toán công thức · Claude Code (Sonnet 5.5)
 
 Người dùng báo nút XLS xoay mãi trên bản đã deploy (t1c0nhol, PA 1 - xếp tòa theo VTK17), rồi đưa `report_demo.xlsx` (báo cáo diện tích + dự toán của công cụ khác) để học.

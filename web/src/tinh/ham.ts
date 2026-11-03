@@ -338,7 +338,8 @@ export type KetQuaHam = {
  * trên lô (vị trí, mẫu, lõi, số căn) và thư viện. Sửa đơn giá, tên, cơ cấu mục tiêu, tòa ở lô khác… không rải lại.
  * Dùng chung cho màn Hầm, Chi phí (tinhKhoiLuong) và 3D bật Hầm. Kết quả coi là bất biến: nơi gọi không được sửa.
  */
-const NHO_HAM_TOI_DA = 12;
+/** Mỗi kết quả ~1 MB JSON (vài MB trong bộ nhớ). 12 từng làm dự án > 12 lô có tòa rải đi rải lại không dứt (đẩy nhau khỏi cache). */
+const NHO_HAM_TOI_DA = 64;
 const nhoHam = new WeakMap<object, Map<string, KetQuaHam | null>>();
 const TV_RONG = {};
 /** Khoá cache: mọi thứ raiHamTinh đọc từ PA (pa.ham, lô, tòa thuộc lô). */

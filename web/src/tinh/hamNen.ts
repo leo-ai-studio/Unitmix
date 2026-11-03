@@ -88,9 +88,15 @@ export class DieuPhoiHam {
    * Trúng cache thì xong ngay; chưa thì xếp việc cho worker dưới kênh riêng, nghe tới khi đủ rồi bỏ kênh.
    */
   cho(kenh: string, pa: TrangThaiPA, tv: ThuVien | null, dsLo: Lo[]): Promise<void> {
+    // Nhớ lô đã có kết quả: cache LRU có thể đẩy kết quả cũ ra trước khi lô cuối xong, không được rải lại vô hạn.
+    const daCo = new Set<string>();
     const doc = (): boolean => {
       const p = this.phien(kenh);
-      for (const lo of dsLo) p.lay(pa, tv, lo);
+      for (const lo of dsLo) {
+        const khoa = khoaRaiHam(pa, lo);
+        if (daCo.has(khoa)) continue;
+        if (p.lay(pa, tv, lo) !== undefined) daCo.add(khoa);
+      }
       p.xong();
       return p.dangCho;
     };

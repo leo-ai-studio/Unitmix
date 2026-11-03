@@ -20,7 +20,12 @@ import { nhanPhienBan } from '../phienBan';
 export type OXls = string | number | { f: string; v: number };
 /** Kiểu dòng để trình bày theo brand (`xlsTrinhBay.ts`). */
 export type KieuHang = 'tieuDe' | 'thongTin' | 'muc' | 'dau' | 'dong' | 'tong' | 'ghiChu' | 'trong';
-export type SheetXls = { ten: string; hang: OXls[][]; /** Song song `hang`; thiếu thì suy ra bằng `kieuTuDong`. */ kieu?: KieuHang[]; /** Sheet bìa: chừa chỗ logo phía trên. */ bia?: boolean };
+export type SheetXls = {
+  ten: string; hang: OXls[][];
+  /** Song song `hang`; thiếu thì suy ra bằng `kieuTuDong`. */ kieu?: KieuHang[];
+  /** Sheet bìa: chừa chỗ logo phía trên. */ bia?: boolean;
+  /** Địa chỉ ô nhập (vd. "B5"): tô nền vàng nhạt để người dùng biết sửa ở đây. */ nhap?: string[];
+};
 /** Giá trị hiển thị của ô (công thức → giá trị đã tính). */
 export const giaTri = (o: OXls): string | number => (typeof o === 'object' ? o.v : o);
 
@@ -41,10 +46,13 @@ export function kieuTuDong(hang: OXls[][]): KieuHang[] {
 export class Bang {
   hang: OXls[][] = [];
   kieu: KieuHang[] = [];
+  nhap: string[] = [];
+  /** Đánh dấu ô (cột 0 = A, số dòng Excel) là ô nhập. */
+  danhDauNhap(cot: number, dong: number): void { this.nhap.push(`${cotXls(cot)}${dong}`); }
   them(k: KieuHang, ...o: OXls[]): number { this.hang.push(o); this.kieu.push(k); return this.hang.length; }
   /** Số dòng Excel của dòng sắp thêm. */
   get ke(): number { return this.hang.length + 1; }
-  sheet(ten: string, bia = false): SheetXls { return { ten, hang: this.hang, kieu: this.kieu, ...(bia ? { bia } : {}) }; }
+  sheet(ten: string, bia = false): SheetXls { return { ten, hang: this.hang, kieu: this.kieu, ...(bia ? { bia } : {}), ...(this.nhap.length ? { nhap: this.nhap } : {}) }; }
 }
 /** Tên cột Excel (0 → A). */
 export const cotXls = (i: number): string => String.fromCharCode(65 + i);
@@ -133,7 +141,12 @@ export function baoCaoPA(pa: TrangThaiPA, tv: ThuVien, kq: KetQuaChiTieu, tenDuA
   bDuToan.them('tieuDe', t('xls.sheetDuToan'));
   bTaiChinh.them('tieuDe', t('xls.sheetTaiChinh'));
   for (const b of [bDuToan, bTaiChinh]) { b.them('thongTin', t('xls.duAn'), oChu(tenDuAn)); b.them('thongTin', t('xls.pa'), oChu(tenPA)); b.them('trong'); }
-  bangDuToan(bDuToan, dt, pa.chiPhi ?? CHI_PHI_MAC_DINH, kl);
+  const cp = pa.chiPhi ?? CHI_PHI_MAC_DINH;
+  const bDonGia = new Bang();
+  bDonGia.them('tieuDe', t('xls.sheetDonGia'));
+  bDonGia.them('thongTin', t('xls.duAn'), oChu(tenDuAn)); bDonGia.them('thongTin', t('xls.pa'), oChu(tenPA)); bDonGia.them('trong');
+  const dg = bangDonGia(bDonGia, dt, cp);
+  bangDuToan(bDuToan, dt, cp, kl, dg);
   bangTaiChinh(bTaiChinh, tc, lech);
 
   return [
@@ -143,6 +156,8 @@ export function baoCaoPA(pa: TrangThaiPA, tv: ThuVien, kq: KetQuaChiTieu, tenDuA
     { ten: tenSheet(t('xls.sheetCoCau')), hang: s2 },
     { ten: tenSheet(t('xls.sheetCan')), hang: s3 },
     { ten: tenSheet(t('xls.sheetVuot')), hang: s4 },
+    bangTheoToa(kl, tv, tenDuAn, tenPA),
+    bDonGia.sheet(tenSheet(t('xls.sheetDonGia'))),
     bDuToan.sheet(tenSheet(t('xls.sheetDuToan'))),
     bTaiChinh.sheet(tenSheet(t('xls.sheetTaiChinh'))),
   ];
@@ -257,11 +272,83 @@ function bangDienTich(kq: KetQuaChiTieu, kl: KhoiLuong, tc: TaiChinh, tenDuAn: s
   return b.sheet(tenSheet(t('xls.sheetDienTich')));
 }
 
+/** Vị trí các ô nhập ở sheet Đơn giá (số dòng Excel, cột B) để sheet Dự toán tham chiếu. */
+export type ThamChieuDonGia = {
+  ten: string;
+  donGia: Record<string, number>;
+  dieuChinh: Record<string, number>;
+  khac: Record<string, number>;
+  tyLe: { qlda: number; tuVan: number; khac: number; duPhongKL: number; duPhongTruotGia: number };
+};
+
+/** Sheet Đơn giá: mọi ô nhập của dự toán một chỗ (nền vàng). Dự toán tham chiếu sang đây nên QS chỉ sửa ở một nơi. */
+export function bangDonGia(b: Bang, dt: DuToan, cp: ChiPhiPA): ThamChieuDonGia {
+  const ref: ThamChieuDonGia = { ten: tenSheet(t('xls.sheetDonGia')), donGia: {}, dieuChinh: {}, khac: {}, tyLe: { qlda: 0, tuVan: 0, khac: 0, duPhongKL: 0, duPhongTruotGia: 0 } };
+  b.them('ghiChu', t('xls.dg.ghiChu'));
+  b.them('trong');
+  b.them('dau', t('xls.dg.thamSo'), t('xls.giaTri'), t('xls.dg.donVi'));
+  const nhap = (nhan: string, v: number, donVi: string): number => { const r = b.them('dong', nhan, oTho(v), donVi); b.danhDauNhap(1, r); return r; };
+  b.them('muc', t('xls.dg.muc'), '', '');
+  for (const d of dt.dong) ref.donGia[d.khoa] = nhap(t(`chiPhi.dong.${d.khoa}`), d.donGia, d.donVi === 'thang' ? t('chiPhi.dv.thang') : `đ/${d.donVi}`);
+  b.them('muc', t('xls.dg.mucTyLe'), '', '');
+  for (const n of ['xd', 'tb'] as const) {
+    const nhan = t(`chiPhi.nhom.${n}`);
+    ref.dieuChinh[n] = nhap(t('xls.dg.dieuChinh').replace('{nhom}', nhan), dt.nhom[n].dieuChinh, '%');
+    ref.khac[n] = nhap(t('xls.dg.khac').replace('{nhom}', nhan), dt.nhom[n].khac, 'đ');
+  }
+  ref.tyLe.qlda = nhap(t('chiPhi.lop.qlda'), dt.tlQlda, '%');
+  ref.tyLe.tuVan = nhap(t('chiPhi.lop.tuVan'), cp.tyLe.tuVan, '%');
+  ref.tyLe.khac = nhap(t('chiPhi.lop.khac'), cp.tyLe.khac, '%');
+  ref.tyLe.duPhongKL = nhap(t('chiPhi.lop.duPhongKL'), cp.tyLe.duPhongKL, '%');
+  ref.tyLe.duPhongTruotGia = nhap(t('chiPhi.lop.duPhongTruotGia'), cp.tyLe.duPhongTruotGia, '%');
+  return ref;
+}
+
+/**
+ * Sheet Theo tòa: từng tòa gộp theo lô, mỗi lô một dòng tổng. Diện tích hình học thật (chưa nhân hệ số HSSDĐ), sàn đế của lô chia theo tỷ lệ chân tháp.
+ * Cột: A tòa · B mẫu · C số tầng · D DT sàn/tầng · E sàn tháp (= C × D) · F sàn đế · G áp mái · H số căn · I DT thông thủy · J hệ số TT/sàn tháp.
+ */
+function bangTheoToa(kl: KhoiLuong, tv: ThuVien, tenDuAn: string, tenPA: string): SheetXls {
+  const b = new Bang();
+  b.them('tieuDe', t('xls.sheetTheoToa'));
+  b.them('thongTin', t('xls.duAn'), oChu(tenDuAn));
+  b.them('thongTin', t('xls.pa'), oChu(tenPA));
+  b.them('trong');
+  b.them('dau', t('xls.tt.toa'), t('xls.tt.mau'), t('xls.tt.soTang'), t('xls.tt.dtTang'), t('xls.tt.sanThap'), t('xls.tt.sanDe'), t('xls.tt.sanApMai'), t('xls.soCan'), t('xls.tt.dtTT'), t('xls.dt.hieuSuat'));
+  const tongLo: number[] = [];
+  const loCoToa = kl.lo.filter((l) => l.toa.length);
+  const cong = (l: (typeof loCoToa)[number], f: (x: (typeof l.toa)[number]) => number) => l.toa.reduce((a, x) => a + f(x), 0);
+  for (const l of loCoToa) {
+    b.them('muc', oChu(l.kyHieu), '', '', '', '', '', '', '', '', '');
+    const d0 = b.ke;
+    l.toa.forEach((x, i) => {
+      const r = b.ke, ten = oChu(tv.toa.get(x.mauId)?.ten_vi ?? x.mauId);
+      b.them('dong', `${oChu(l.kyHieu)} · ${i + 1}`, ten, x.soTangDH, oTho(x.dtSanDH), { f: `C${r}*D${r}`, v: x.dtThap }, oTho(x.dtDe), oTho(x.dtApMai), oTho(x.tongCan), oTho(x.dtTT),
+        x.dtThap > 0 ? { f: `I${r}/E${r}`, v: x.dtTT / x.dtThap } : TRONG);
+    });
+    const d1 = b.ke - 1, r = b.ke;
+    const sum = (col: string, v: number): OXls => ({ f: `SUM(${col}${d0}:${col}${d1})`, v });
+    const thap = cong(l, (x) => x.dtThap), tt = cong(l, (x) => x.dtTT);
+    tongLo.push(b.them('tong', `${t('xls.tt.tongLo')} ${oChu(l.kyHieu)}`, '', '', '', sum('E', thap), sum('F', cong(l, (x) => x.dtDe)), sum('G', cong(l, (x) => x.dtApMai)),
+      sum('H', cong(l, (x) => x.tongCan)), sum('I', tt), thap > 0 ? { f: `I${r}/E${r}`, v: tt / thap } : TRONG));
+  }
+  if (tongLo.length) {
+    const r = b.ke;
+    const tong = (col: string, f: (x: (typeof loCoToa)[number]['toa'][number]) => number): OXls => ({ f: tongLo.map((x) => `${col}${x}`).join('+'), v: loCoToa.reduce((a, l) => a + cong(l, f), 0) });
+    const thap = loCoToa.reduce((a, l) => a + cong(l, (x) => x.dtThap), 0), tt = loCoToa.reduce((a, l) => a + cong(l, (x) => x.dtTT), 0);
+    b.them('tong', t('xls.tong'), '', '', '', tong('E', (x) => x.dtThap), tong('F', (x) => x.dtDe), tong('G', (x) => x.dtApMai), tong('H', (x) => x.tongCan), tong('I', (x) => x.dtTT),
+      thap > 0 ? { f: `I${r}/E${r}`, v: tt / thap } : TRONG);
+  }
+  b.them('ghiChu', t('xls.tt.ghiChu'));
+  return b.sheet(tenSheet(t('xls.sheetTheoToa')));
+}
+
 /**
  * Bảng dự toán dạng công thức: thành tiền = khối lượng × đơn giá × (1 + % điều chỉnh), cộng nhóm, các lớp tỷ lệ, tổng mức, suất đầu tư.
  * Sửa ô khối lượng / đơn giá / tỷ lệ thì phần còn lại tự tính lại. Tiền tính bằng đồng. Cột: A hạng mục … G thành tiền.
  */
-export function bangDuToan(b: Bang, dt: DuToan, cp: ChiPhiPA, kl: KhoiLuong): void {
+export function bangDuToan(b: Bang, dt: DuToan, cp: ChiPhiPA, kl: KhoiLuong, dg: ThamChieuDonGia): void {
+  const tc = (dong: number, v: number): OXls => ({ f: `'${dg.ten}'!B${dong}`, v });
   b.them('ghiChu', t('chiPhi.canhBao'));
   b.them('ghiChu', t('chiPhi.ghiChuND'));
   b.them('ghiChu', t('xls.ghiChuCongThuc'));
@@ -273,22 +360,22 @@ export function bangDuToan(b: Bang, dt: DuToan, cp: ChiPhiPA, kl: KhoiLuong): vo
     const dau = b.ke;
     for (const d of dong) {
       const r = b.ke;
-      b.them('dong', t(`chiPhi.dong.${d.khoa}`), nhan, d.donVi === 'thang' ? t('chiPhi.dv.thang') : d.donVi, oTho(d.kl), oTho(d.donGia), oTho(g.dieuChinh),
+      b.them('dong', t(`chiPhi.dong.${d.khoa}`), nhan, d.donVi === 'thang' ? t('chiPhi.dv.thang') : d.donVi, oTho(d.kl), tc(dg.donGia[d.khoa], d.donGia), tc(dg.dieuChinh[n], g.dieuChinh),
         { f: `D${r}*E${r}*(1+F${r}/100)`, v: d.thanhTien });
     }
     const cuoi = b.ke - 1, rKhac = b.ke;
-    b.them('dong', t('chiPhi.khac'), nhan, TRONG, TRONG, TRONG, TRONG, oTho(g.khac));
+    b.them('dong', t('chiPhi.khac'), nhan, TRONG, TRONG, TRONG, TRONG, tc(dg.khac[n], g.khac));
     rNhom[n] = b.them('tong', `${t('chiPhi.congNhom')}: ${nhan}`, nhan, TRONG, TRONG, TRONG, TRONG,
       dong.length ? { f: `SUM(G${dau}:G${cuoi})+G${rKhac}`, v: g.tong } : { f: `G${rKhac}`, v: g.tong });
   }
   b.them('trong');
   const rCs = b.them('tong', t('chiPhi.coSo'), TRONG, TRONG, TRONG, TRONG, TRONG, { f: `G${rNhom.xd}+G${rNhom.tb}`, v: dt.xd + dt.tb });
-  const lop: [string, number, number][] = [['qlda', dt.tlQlda, dt.qlda], ['tuVan', cp.tyLe.tuVan, dt.tuVan], ['khac', cp.tyLe.khac, dt.khac]];
-  const rLop = lop.map(([k, pct, v]) => { const r = b.ke; return b.them('dong', t(`chiPhi.lop.${k}`), TRONG, '%', oTho(pct), TRONG, TRONG, { f: `G${rCs}*D${r}/100`, v }); });
+  const lop: [keyof ThamChieuDonGia['tyLe'], number, number][] = [['qlda', dt.tlQlda, dt.qlda], ['tuVan', cp.tyLe.tuVan, dt.tuVan], ['khac', cp.tyLe.khac, dt.khac]];
+  const rLop = lop.map(([k, pct, v]) => { const r = b.ke; return b.them('dong', t(`chiPhi.lop.${k}`), TRONG, '%', tc(dg.tyLe[k], pct), TRONG, TRONG, { f: `G${rCs}*D${r}/100`, v }); });
   const rTruoc = b.them('tong', t('chiPhi.truocDuPhong'), TRONG, TRONG, TRONG, TRONG, TRONG, { f: `G${rCs}+G${rLop[0]}+G${rLop[1]}+G${rLop[2]}`, v: dt.truocDuPhong });
   const rKL = b.ke, rTG = rKL + 1;
-  b.them('dong', t('chiPhi.lop.duPhongKL'), TRONG, '%', oTho(cp.tyLe.duPhongKL), TRONG, TRONG, { f: `G${rTruoc}*D${rKL}/100`, v: dt.duPhongKL });
-  b.them('dong', t('chiPhi.lop.duPhongTruotGia'), TRONG, '%', oTho(cp.tyLe.duPhongTruotGia), TRONG, TRONG, { f: `G${rTruoc}*D${rTG}/100`, v: dt.duPhongTruotGia });
+  b.them('dong', t('chiPhi.lop.duPhongKL'), TRONG, '%', tc(dg.tyLe.duPhongKL, cp.tyLe.duPhongKL), TRONG, TRONG, { f: `G${rTruoc}*D${rKL}/100`, v: dt.duPhongKL });
+  b.them('dong', t('chiPhi.lop.duPhongTruotGia'), TRONG, '%', tc(dg.tyLe.duPhongTruotGia, cp.tyLe.duPhongTruotGia), TRONG, TRONG, { f: `G${rTruoc}*D${rTG}/100`, v: dt.duPhongTruotGia });
   const rTong = b.them('tong', t('chiPhi.tongMuc'), TRONG, TRONG, TRONG, TRONG, TRONG, { f: `G${rTruoc}+G${rKL}+G${rTG}`, v: dt.tongMuc });
   const T = kl.tong;
   const rSan = b.them('dong', `${t('xls.dt.tongSan')} (m²)`, TRONG, 'm²', oTho(T.dtSanTong), TRONG, TRONG, TRONG);

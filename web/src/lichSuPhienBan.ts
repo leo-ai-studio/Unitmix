@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.20', ngay: '2026-11-03',
+    vi: [
+      'Excel: thêm sheet Đơn giá (ô nhập nền vàng, Dự toán tham chiếu sang đây) và sheet Theo tòa (từng tòa gộp theo lô)',
+      'Sửa rải hầm: dự án nhiều hơn 12 lô có tòa không còn bị rải đi rải lại không dứt (cache đẩy kết quả nhau); sức chứa cache 64 lô',
+    ],
+    en: [
+      'Excel: new Unit prices sheet (yellow input cells, the Cost estimate reads from it) and By building sheet (buildings grouped by plot)',
+      'Basement layout fix: projects with more than 12 built plots no longer re-run the layout forever (cached results evicted each other); cache now holds 64 plots',
+    ],
+  },
+  {
     v: '0.5.19', ngay: '2026-11-03',
     vi: [
       'Xuất Excel theo brand LEO: có bìa, biểu diện tích (sàn theo khối, theo lô, cơ cấu căn, hầm và chỗ đỗ), dự toán bằng công thức Excel',

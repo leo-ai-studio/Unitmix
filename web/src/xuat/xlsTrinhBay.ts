@@ -8,7 +8,7 @@ import type { KieuHang, OXls, SheetXls } from './xuatXls';
 import { kieuTuDong } from './xuatXls';
 
 export const MAU = {
-  xanh: 'FF174F52', vang: 'FFC7AA76', nen: 'FFF1F0EA', nhat: 'FFE5EEEA', ke: 'FFDFE3DC', chu: 'FF292D2D', phu: 'FF737D78', trang: 'FFFFFFFF',
+  xanh: 'FF174F52', vang: 'FFC7AA76', nen: 'FFF1F0EA', nhat: 'FFE5EEEA', vangNhat: 'FFF6EFE0', ke: 'FFDFE3DC', chu: 'FF292D2D', phu: 'FF737D78', trang: 'FFFFFFFF',
 } as const;
 const FONT = 'Segoe UI';
 /** Số hàng chừa phía trên sheet bìa cho logo. */
@@ -97,6 +97,14 @@ export function taoSachBrand(Excel: typeof ExcelJS, sheets: SheetXls[], logo: Ar
           break;
       }
     });
+
+    // ô nhập: nền vàng nhạt, viền vàng brand
+    for (const a of s.nhap ?? []) {
+      const cell = ws.getCell(a);
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: MAU.vangNhat } };
+      cell.border = { top: vien(MAU.vang), bottom: vien(MAU.vang), left: vien(MAU.vang), right: vien(MAU.vang) };
+      cell.font = font({ bold: true });
+    }
 
     if (s.bia) {
       // sheet bìa: tên app lớn ở dòng chừa trên, logo bên trái
