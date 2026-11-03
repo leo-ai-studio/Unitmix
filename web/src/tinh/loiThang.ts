@@ -342,6 +342,20 @@ function doanTai(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], mi: number, a: numbe
   }
   return { lo, hi, tuDau: !coLo && dauTuDo(mau, mb, mi, false), tuCuoi: !coHi && dauTuDo(mau, mb, mi, true) };
 }
+/**
+ * Đầu mặt `mi` là MỐC CHẶN căn: mép đầu mặt (theo mẫu) thẳng hàng với một cạnh nét bao nằm ở phía bên kia hành lang (mép ngoài cánh
+ * kia của tòa L / T / U — căn cuối dãy phải khít đúng mép đó, không co vào). Quy tắc dồn khít: dãy không có lõi thang máy kẹp thì dồn về
+ * mốc chặn, đầu còn lại co / giãn.
+ */
+function mocChan(mau: ToaMB, mi: number, cuoi: boolean): boolean {
+  const m = mau.mat[mi], B = coSo(m.goc_deg, m.truc_mm), aE = cuoi ? m.a_cuoi : m.a_dau, Q = mau.duong_bao.map(B.ab);
+  return Q.some((A, i) => {
+    const C = Q[(i + 1) % Q.length];
+    if (Math.abs(A[0] - aE) > 60 || Math.abs(C[0] - aE) > 60) return false;
+    const lo = Math.min(A[1], C[1]), hi = Math.max(A[1], C[1]);
+    return hi - lo > 1000 && (hi <= 60 || lo >= BAY_MM - 60);
+  });
+}
 
 /**
  * Gọn đa giác nét bao: bỏ đỉnh trùng, đỉnh thẳng hàng và GAI (đi tới rồi quay lại trên cùng một đường — nét bao co lại ở đầu dãy
@@ -702,14 +716,16 @@ function themThang(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], mi: number, p: num
   return false;
 }
 
-function boThang(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], khoa: string): boolean {
+function boThang(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], khoa: string, veMocChan = false): boolean {
   const t = mb.thangBo.find((x) => x.khoa === khoa);
   if (!t) return false;
   const dn = doanTai(mau, mb, dai, t.matIdx, t.a0 + t.rong / 2);
   const vt = vatThe(mau, mb, t.matIdx).filter((v) => v.a0 >= dn.lo - 1 && v.a0 + v.w <= dn.hi + 1 && v.k !== khoa);
-  if (dn.tuCuoi && gianMat(mau, mb, t.matIdx, true, -t.rong)) vt.filter((v) => v.a0 >= t.a0 + t.rong - 1).forEach((v) => dich(mb, v, -t.rong));
-  else if (dn.tuDau && gianMat(mau, mb, t.matIdx, false, -t.rong)) vt.filter((v) => v.a0 + v.w <= t.a0 + 1).forEach((v) => dich(mb, v, t.rong));
-  else return false;
+  // thang người dùng dời / bỏ (`veMocChan`): dồn khít về mốc chặn — đầu mốc chặn (thẳng hàng mép cánh kia) thử sau, đầu kia co lại trước
+  const thuCuoi = () => dn.tuCuoi && gianMat(mau, mb, t.matIdx, true, -t.rong) && (vt.filter((v) => v.a0 >= t.a0 + t.rong - 1).forEach((v) => dich(mb, v, -t.rong)), true);
+  const thuDau = () => dn.tuDau && gianMat(mau, mb, t.matIdx, false, -t.rong) && (vt.filter((v) => v.a0 + v.w <= t.a0 + 1).forEach((v) => dich(mb, v, t.rong)), true);
+  const truocCuoi = !(veMocChan && dn.tuCuoi && dn.tuDau && mocChan(mau, t.matIdx, true) && !mocChan(mau, t.matIdx, false));
+  if (!(truocCuoi ? thuCuoi() || thuDau() : thuDau() || thuCuoi())) return false;
   mb.thangBo = mb.thangBo.filter((x) => x !== t);
   return true;
 }
@@ -741,7 +757,7 @@ function choChen(mau: ToaMB, mb: MatBangSua, e: ThangTayThem): number | null {
  */
 export function apThangTay(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tt: ThangTay): string[] {
   const dai = daiLoi(mau, dl), hong: string[] = [];
-  for (const k of tt.bo) if (mb.thangBo.some((t) => t.khoa === k) && !boThang(mau, mb, dai, k)) hong.push(k);
+  for (const k of tt.bo) if (mb.thangBo.some((t) => t.khoa === k) && !boThang(mau, mb, dai, k, true)) hong.push(k);
   for (const e of tt.them) {
     const p = choChen(mau, mb, e);
     if (p === null) { hong.push(e.khoa); continue; }
@@ -754,7 +770,7 @@ export function apThangTay(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | und
       }
     }
     const thu = banSaoMatBang(mb);
-    if (cu && !boThang(mau, thu, dai, cu.khoa)) { hong.push(e.khoa); continue; }
+    if (cu && !boThang(mau, thu, dai, cu.khoa, true)) { hong.push(e.khoa); continue; }
     const p2 = choChen(mau, thu, e);
     // thang dời giữ khoá cũ (để chọn / dời tiếp), thang thêm mới mang khoá của nó
     if (p2 === null || !themThang(mau, thu, dai, e.mat, p2, e.sx, cu?.khoa ?? e.khoa)) { hong.push(e.khoa); continue; }

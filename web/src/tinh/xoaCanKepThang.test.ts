@@ -10,7 +10,7 @@ import { apMatBang, doDeKhe, matBangTang, tuChinhToa, type DuLieuMB, type HinhLo
 import { boCucTang, viTriCan } from './matBang';
 import { tinhCuaCan } from './pccc';
 import { themBienThe } from './stretch';
-import { doiChoTay, hlHieuDung, keoHanhLangTay, themCanTay, xoaCanTay, type KetQuaTay } from './thaoTacTay';
+import { doiChoTay, doiThangTay, hlHieuDung, keoHanhLangTay, themCanTay, xoaCanTay, type KetQuaTay } from './thaoTacTay';
 import { canDangDung } from './matBang';
 import { dauHanhLangNgoai, tuChinhSauSua } from './loiThang';
 import { doiCanTaiViTri } from './doiCan';
@@ -120,5 +120,24 @@ describe('đổi chỗ hai căn khác bề ngang không đổi căn thứ ba', (
     }
     console.log('QUET', ok, tu, JSON.stringify(xau));
     expect(xau).toEqual([]);
+  });
+});
+
+describe('dồn khít về mốc chặn (tòa L: dãy không lõi thang máy)', () => {
+  it('xh-l2: dời thang dãy dưới sang dãy kia — căn cuối dãy dưới vẫn khít mép cánh dọc, đầu kia co lại', () => {
+    const goc = toaThu('xh-l2'), mau0 = mauToa(tv, goc) as ToaMB;
+    const mb0 = matBangTang(goc, mau0, dl, null), vt0 = viTriCan(apMatBang(mau0, mb0, dl), tv, boCucTang(goc, null));
+    const mi = mau0.mat.findIndex((m) => m.phan_tu.some((q) => q.loai === 'thang_bo') && Math.abs(m.goc_deg - 180) < 1);
+    expect(mi).toBeGreaterThanOrEqual(0);
+    const th = mb0.thangBo.find((t) => t.matIdx === mi)!;
+    const cuoi0 = Math.max(...vt0.filter((v) => v.matIdx === mi).map((v) => v.a1)); // đầu cuối mặt (phía cánh dọc)
+    const mat0 = mau0.mat.findIndex((m) => Math.abs(m.goc_deg) < 1);
+    const sau = viTriCan(apMatBang(mau0, mb0, dl), tv, boCucTang(goc, null)).filter((v) => v.matIdx === mat0).sort((a, b) => a.a0 - b.a0)[1].khoa;
+    const r = doiThangTay(goc, th.khoa, mat0, sau, c);
+    expect(r.ok, r.ok ? '' : r.lyDo).toBe(true);
+    if (!r.ok) return;
+    const mau = mauToa(tv, r.toa) as ToaMB, mb = matBangTang(r.toa, mau, dl, null), vt = viTriCan(apMatBang(mau, mb, dl), tv, boCucTang(r.toa, null));
+    const cuoi1 = Math.max(...vt.filter((v) => v.matIdx === mi).map((v) => v.a1));
+    expect(Math.abs(cuoi1 - cuoi0)).toBeLessThan(50);
   });
 });

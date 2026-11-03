@@ -1,7 +1,7 @@
 {
   "name": "unitmix-web",
   "private": true,
-  "version": "0.7.3",
+  "version": "0.7.4",
   "author": "NghiaVT",
   "type": "module",
   "scripts": {

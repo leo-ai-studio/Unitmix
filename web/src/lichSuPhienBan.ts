@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.4', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: dời / bỏ thang bộ thì dồn khít về mốc chặn — dãy không có lõi thang máy giữ đầu khít mép cánh kia (tòa L), đầu còn lại mới co lại',
+    ],
+    en: [
+      'Floor screen: moving / removing a stair now packs units toward the stop mark — a row without a lift core keeps its end flush with the other wing (L towers), the other end shrinks',
+    ],
+  },
+  {
     v: '0.7.3', ngay: '2026-11-03',
     vi: [
       'Màn Tầng: bỏ chặn đầu hành lang theo cửa căn — kéo đầu hành lang tự do, chỉ còn đoạn ngắn nhất 3 m và dài thêm tối đa 20 m',
