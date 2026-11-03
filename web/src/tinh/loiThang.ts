@@ -856,8 +856,10 @@ function donQuaThang(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined
       if (Math.abs(chenh) <= KHIT_MM || !d.some((o) => o.v.loai === 'can' && giu.has(o.v.k) && Math.abs(o.wA - o.wT) > KHIT_MM)) continue;
       const a0 = d[0].v.a0, a1 = d[d.length - 1].v.a0 + d[d.length - 1].wT;
       const sat = (a: number) => loi.some((x) => Math.abs(x.t1 - a) <= 400 || Math.abs(x.t0 - a) <= 400);
-      const tuDau = !sat(a0) && Math.abs(a0 - aDau) <= 1500 && dauTuDo(mau, mb, mi, false);
-      const tuCuoi = !sat(a1) && Math.abs(a1 - aCuoi) <= 1500 && dauTuDo(mau, mb, mi, true);
+      // đầu tự do: sát mép mặt (≤ 1.500 mm) hoặc cụm là vật thể CUỐI / ĐẦU của mặt (căn phía đầu đã bỏ — nét bao chưa co theo, mặt còn dư chỗ trống)
+      const khongConSau = !vatThe(mau, mb, mi).some((o) => o.a0 >= a1 - 1 && !d.some((q) => q.v.k === o.k)), khongConTruoc = !vatThe(mau, mb, mi).some((o) => o.a0 + o.w <= a0 + 1 && !d.some((q) => q.v.k === o.k));
+      const tuDau = !sat(a0) && (Math.abs(a0 - aDau) <= 1500 || khongConTruoc) && dauTuDo(mau, mb, mi, false);
+      const tuCuoi = !sat(a1) && (Math.abs(a1 - aCuoi) <= 1500 || khongConSau) && dauTuDo(mau, mb, mi, true);
       // dãy kẹp (không đầu tự do) / đầu hở ra sân trong: để khít đoạn kẹp, QT-69 sân hở (noiDauSan) xử lý như cũ
       if ((!tuDau && !tuCuoi) || sanTaiDau(san, mi, a1, true) || sanTaiDau(san, mi, a0, false)) continue;
       const neoDau = !tuDau;
@@ -904,6 +906,25 @@ function apBoCan(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, bc
  * xích vào cho liền nhau về phía mốc giữ chỗ (dải lõi nếu chỉ một đầu sát lõi, không thì đầu trái — như donKhit); chỗ trống
  * ở đầu kia do các căn còn lại giãn / đổi mẫu lấp (khitDoanKep chọn cùng lúc).
  */
+/**
+ * Căn KẸP giữa mốc lõi và một thang bộ (lõi | căn | thang | …): đoạn đóng kín, bỏ / đổi bề ngang / thêm căn đều để khe hoặc không vừa vì
+ * thang đứng yên. Trả thang kề và phía cần đặt thang: `truoc` = đặt thang TRƯỚC căn (về phía lõi) — thang đang ở sau căn; không thì
+ * đặt SAU căn. null = căn không kẹp kiểu đó.
+ */
+export function thangKepCan(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, khoa: string, dai0?: DaiLoi[]): { thang: string; truoc: boolean } | null {
+  const mi = Number(khoa.split(':')[0]);
+  if (!Number.isInteger(mi) || !mau.mat[mi]) return null;
+  const ds = vatThe(mau, mb, mi), i = ds.findIndex((x) => x.k === khoa);
+  if (i < 0) return null;
+  const v = ds[i], dai = dai0 ?? daiLoi(mau, dl);
+  const loiDau = dai.some((d) => d.matIdx === mi && Math.abs(d.t1 - v.a0) <= TUONG_CHUNG_LOI_MM);
+  const loiCuoi = dai.some((d) => d.matIdx === mi && Math.abs(d.t0 - (v.a0 + v.w)) <= TUONG_CHUNG_LOI_MM);
+  const sau = ds[i + 1], truoc = ds[i - 1];
+  if (loiDau && !loiCuoi && sau?.loai === 'thang' && Math.abs(sau.a0 - (v.a0 + v.w)) <= KHE_HUT_MM) return { thang: sau.k, truoc: true };
+  if (loiCuoi && !loiDau && truoc?.loai === 'thang' && Math.abs(v.a0 - (truoc.a0 + truoc.w)) <= KHE_HUT_MM) return { thang: truoc.k, truoc: false };
+  return null;
+}
+
 function boCanKep(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], khoa: string): boolean {
   const mi = Number(khoa.split(':')[0]);
   if (!Number.isInteger(mi) || !mau.mat[mi]) return false;
@@ -916,6 +937,20 @@ function boCanKep(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], khoa: string): bool
   const a0 = ds[s].a0, a1 = ds[e].a0 + ds[e].w;
   const loiDau = dai.some((d) => d.matIdx === mi && Math.abs(d.t1 - a0) <= TUONG_CHUNG_LOI_MM);
   const loiCuoi = dai.some((d) => d.matIdx === mi && Math.abs(d.t0 - a1) <= TUONG_CHUNG_LOI_MM);
+  // căn kẹp giữa MỘT mốc lõi và một THANG BỘ: thang + mọi vật thể liền sau (tới mốc / khe lớn kế tiếp) trượt về phía lõi (thang không là mốc)
+  const k = thangKepCan(mau, mb, null, khoa, dai);
+  if (k) {
+    const cuoiCum = loiDau && !loiCuoi;
+    const sap = ds.map((x, j) => ({ x, j })).filter(({ j }) => (cuoiCum ? j > e : j < s));
+    const cum: VatThe[] = [];
+    let truocX: VatThe = cuoiCum ? ds[e] : ds[s];
+    for (const { x } of cuoiCum ? sap : sap.reverse()) {
+      const sat = cuoiCum ? x.a0 - (truocX.a0 + truocX.w) : truocX.a0 - (x.a0 + x.w);
+      if (Math.abs(sat) > KHE_HUT_MM) break;
+      cum.push(x); truocX = x;
+    }
+    cum.forEach((x) => dich(mb, x, cuoiCum ? -v.w : v.w));
+  }
   if (loiCuoi && !loiDau) ds.slice(s, i).forEach((x) => dich(mb, x, v.w));
   else ds.slice(i + 1, e + 1).forEach((x) => dich(mb, x, -v.w));
   mb.boCan = [...(mb.boCan ?? []), khoa];

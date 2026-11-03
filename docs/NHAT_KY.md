@@ -2,6 +2,10 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-03 · Căn kẹp lõi–thang bộ: xóa / đổi / thêm được, v0.6.3 · Claude Code (Opus 5.5)
+
+Chủ nhiệm (V2): căn 1PN giữa lõi V và thang không xóa / đổi được ("để lại khe 6000 mm"). Nguyên nhân: đoạn lõi | căn | thang là đoạn đóng, thang đứng yên. Sửa: `loiThang.ts › thangKepCan` (nhận ra căn kẹp), `boCanKep` cho thang + cụm phía đầu tự do trượt về lõi, `donQuaThang` coi cụm là vật thể cuối / đầu của mặt thì là đầu tự do (nét bao chưa co theo sau khi bỏ căn). Test `tinh/xoaCanKepThang.test.ts` (tm-v2 mặt 2, cả trạng thái PA thật đã xóa 2:2). **Còn dở**: lỗi "căn V nhảy sang căn khác khi đổi / xếp" chưa tái hiện được; phím E / nút xóa chưa rõ.
+
 ## 2026-11-03 · Kéo căn: giữa căn = đổi chỗ, mép căn = chèn vào khe, v0.6.2 · Claude Code (Sonnet 5.5)
 
 Chủ nhiệm: kéo căn đến (1) giữa căn khác thì đảo hai căn cho nhau, (2) khe giữa hai căn thì chuyển căn chèn vào đó; hai cánh không để lệch nhiều. `CongCuTang.tsx › tinhKieu`: con trỏ trong nửa giữa (theo chiều dãy) căn đích → `doi`, hai phần tư đầu → `truoc` / `sau`; chữ gợi ý `cc.thaVao` đổi thành "Đổi chỗ với …". Cùng dãy vẫn luôn đổi chỗ, Alt = đổi chỗ. **Còn dở**: chưa thử kéo thật trên trình duyệt; chưa có cảnh báo độ lệch hai cánh khi chuyển căn; chưa có đường kẻ chỉ vị trí chèn.

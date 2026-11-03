@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.6.3', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: căn kẹp giữa lõi và thang bộ (lõi | căn | thang) xóa / đổi sang mẫu khác bề ngang / thêm căn được — thang và các căn phía đầu tự do trượt theo; trước đây báo "để lại khe 6000 mm" hoặc không đổi được',
+    ],
+    en: [
+      'Floor screen: a unit sandwiched between the core and a stair (core | unit | stair) can now be deleted, swapped to a different-width template or have a unit added — the stair and the units towards the free end slide along; before it reported a 6000 mm gap or refused the change',
+    ],
+  },
+  {
     v: '0.6.2', ngay: '2026-11-03',
     vi: [
       'Màn Tầng · kéo căn sang dãy khác: thả vào GIỮA căn đích thì ĐỔI CHỖ hai căn; thả ở MÉP căn đích (một phần tư hai đầu) thì CHUYỂN căn sang, chèn vào khe giữa căn đích và căn kề — trước đây thả đâu cũng chuyển nên không đổi chỗ được',
