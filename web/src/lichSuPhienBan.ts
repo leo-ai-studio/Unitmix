@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.6.2', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng · kéo căn sang dãy khác: thả vào GIỮA căn đích thì ĐỔI CHỖ hai căn; thả ở MÉP căn đích (một phần tư hai đầu) thì CHUYỂN căn sang, chèn vào khe giữa căn đích và căn kề — trước đây thả đâu cũng chuyển nên không đổi chỗ được',
+    ],
+    en: [
+      'Floor screen · drag a unit to another row: dropping on the MIDDLE of the target swaps the two units; dropping on its EDGE (outer quarters) moves the unit and inserts it in the gap next to the target — before, any drop moved it, so swapping was impossible',
+    ],
+  },
+  {
     v: '0.6.1', ngay: '2026-11-03',
     vi: [
       'Cầu MCP đổi cổng mặc định sang 3043 (3033 trùng cầu AI của Leo AI): mở app với ?congCu=1&mcp=3043; đã thử trọn vòng Claude ↔ Chrome ↔ app',

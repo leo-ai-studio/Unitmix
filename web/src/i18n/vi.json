@@ -1434,7 +1434,7 @@
   "cc.chonTruoc": "Chọn một căn hoặc thang bộ trước — ô mới chèn ngay sau (hoặc trước) ô đó.",
   "cc.dangTinh": "Đang tự chỉnh mặt bằng…",
   "cc.keo": "Thả lên ô khác để đổi chỗ",
-  "cc.thaVao": "Thả: {o}",
+  "cc.thaVao": "Đổi chỗ với {o} (thả giữa căn)",
   "cc.ok.themThang": "Đã thêm thang bộ sau {o} (ô 3.000 mm, mọi tầng). Tòa có {n} thang.",
   "cc.ok.themCan": "Đã thêm căn {c} sau {o}.",
   "cc.ok.xoaCan": "Đã xoá {n} căn, dãy dồn khít.",

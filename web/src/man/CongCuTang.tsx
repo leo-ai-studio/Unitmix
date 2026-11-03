@@ -408,22 +408,29 @@ export function useKeoTay(p: PropsCongCu) {
       nhan: c ? `${tenCH(c.no)} · ${q.tv.can.get(c.canId)?.ten_vi.split(' · ')[0] ?? ''}` : t('cc.thang') };
     let dangKeo = false, dich: string | null = null, kieu: KieuTha = 'doi', x = e.clientX, y = e.clientY;
     /**
-     * Thả căn lên căn ở DÃY KHÁC (mặt khác) = chuyển sang dãy đó (chèn trước / sau ô đích theo phía con trỏ so với các căn kề); thả lên
-     * căn cùng dãy, hoặc giữ Alt = đổi chỗ như cũ.
+     * Thả căn lên căn ở DÃY KHÁC (mặt khác): con trỏ ở GIỮA căn đích (nửa giữa theo chiều dãy) = ĐỔI CHỖ hai căn; ở MÉP căn đích (một
+     * phần tư hai đầu) = CHUYỂN căn sang dãy đó, chèn vào khe giữa căn đích và căn kề phía con trỏ. Thả lên căn cùng dãy, hoặc giữ Alt =
+     * đổi chỗ.
      */
     const tinhKieu = (d: string | null, px: number, py: number, alt: boolean): KieuTha => {
       if (!d || alt || k.loai !== 'o') return 'doi';
       const qq = pRef.current, a = qq.can.find((u) => u.vt.khoa === k.khoa), b = qq.can.find((u) => u.vt.khoa === d);
       if (!a || !b || a.vt.matIdx === b.vt.matIdx) return 'doi';
       const cung = qq.can.filter((u) => u.vt.matIdx === b.vt.matIdx).sort((u, v) => u.vt.a0 - v.vt.a0), i = cung.indexOf(b);
+      const hcn = (u?: (typeof cung)[number]) => (u ? document.querySelector(`[data-o="${u.vt.khoa}"]`)?.getBoundingClientRect() : undefined);
       const tam = (u?: (typeof cung)[number]): [number, number] | null => {
-        const r = u ? document.querySelector(`[data-o="${u.vt.khoa}"]`)?.getBoundingClientRect() : undefined;
+        const r = hcn(u);
         return r ? [r.left + r.width / 2, r.top + r.height / 2] : null;
       };
       const cb = tam(b), cp = tam(cung[i - 1]), cn = tam(cung[i + 1]);
       if (!cb) return 'sau';
       const ax = cp && cn ? [cn[0] - cp[0], cn[1] - cp[1]] : cn ? [cn[0] - cb[0], cn[1] - cb[1]] : cp ? [cb[0] - cp[0], cb[1] - cp[1]] : [1, 0];
-      return (px - cb[0]) * ax[0] + (py - cb[1]) * ax[1] < 0 ? 'truoc' : 'sau';
+      const dai = Math.hypot(ax[0], ax[1]) || 1, ux = ax[0] / dai, uy = ax[1] / dai;
+      const rb = hcn(b);
+      const nua = rb ? (Math.abs(ux) * rb.width + Math.abs(uy) * rb.height) / 2 : 0; // nửa bề ngang căn đích theo chiều dãy
+      const s = (px - cb[0]) * ux + (py - cb[1]) * uy; // lệch so với tâm căn đích dọc dãy
+      if (Math.abs(s) <= nua * 0.5) return 'doi'; // giữa căn: đổi chỗ
+      return s < 0 ? 'truoc' : 'sau'; // mép căn: chèn vào khe
     };
     const khoaDo = (d: string, ki: KieuTha) => `${d}|${ki}`;
     // dò hợp lệ: cache theo ô đích trong lượt kéo (cho đúng tòa lúc bắt đầu kéo); hẹn chạy NỀN khi chuột dừng (worker dò riêng,

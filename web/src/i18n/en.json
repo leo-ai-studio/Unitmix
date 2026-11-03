@@ -1434,7 +1434,7 @@
   "cc.chonTruoc": "Select a unit or stair first — the new cell is inserted right after (or before) it.",
   "cc.dangTinh": "Auto-adjusting the floor plan…",
   "cc.keo": "Drop on another cell to swap",
-  "cc.thaVao": "Drop: {o}",
+  "cc.thaVao": "Swap with {o} (drop on the middle)",
   "cc.ok.themThang": "Stair added after {o} (3,000 mm cell, every floor). The tower has {n} stairs.",
   "cc.ok.themCan": "Unit {c} added after {o}.",
   "cc.ok.xoaCan": "{n} unit(s) removed, run re-packed.",

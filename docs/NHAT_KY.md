@@ -2,6 +2,10 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-03 · Kéo căn: giữa căn = đổi chỗ, mép căn = chèn vào khe, v0.6.2 · Claude Code (Sonnet 5.5)
+
+Chủ nhiệm: kéo căn đến (1) giữa căn khác thì đảo hai căn cho nhau, (2) khe giữa hai căn thì chuyển căn chèn vào đó; hai cánh không để lệch nhiều. `CongCuTang.tsx › tinhKieu`: con trỏ trong nửa giữa (theo chiều dãy) căn đích → `doi`, hai phần tư đầu → `truoc` / `sau`; chữ gợi ý `cc.thaVao` đổi thành "Đổi chỗ với …". Cùng dãy vẫn luôn đổi chỗ, Alt = đổi chỗ. **Còn dở**: chưa thử kéo thật trên trình duyệt; chưa có cảnh báo độ lệch hai cánh khi chuyển căn; chưa có đường kẻ chỉ vị trí chèn.
+
 ## 2026-11-03 · Leo AI đỡ token + cầu MCP Claude Code ↔ app, v0.6.0 · Claude Code (Opus 5.5)
 
 Người dùng: Leo AI chạy nhanh, đỡ tốn token; cầu nối MCP Claude với app Unitmix nhanh, đỡ token. Yêu cầu dùng / nâng cấp tính năng sẵn có.
