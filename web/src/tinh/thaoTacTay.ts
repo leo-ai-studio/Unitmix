@@ -10,7 +10,7 @@
 import { chiSoCanThem, moRong, khoaCanThem, mauToa, rutCanThem } from './canThem';
 import { doiCanTaiViTri, doiCanTheoTang, doiChoO, doiCongNang, latO } from './doiCan';
 import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type ToaDat } from './kieu';
-import { chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
+import { apMatBang, chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
 import { duocDatVaoO, idMauGoc, nhomViTri } from './quyTacViTriCan';
 
@@ -91,6 +91,13 @@ export function doiChoTay(toa: ToaDat, tangs: number[] | null, a: ViTriCan, b: V
   for (const k of tangs ?? [null]) {
     const bc0 = boCucTang(toa, k), bc1 = boCucTang(r.toa, k);
     if (goc(canDangDung(a, bc1)) !== goc(canDangDung(b, bc0)) || goc(canDangDung(b, bc1)) !== goc(canDangDung(a, bc0))) return { ok: false, lyDo: 'khong_vua' };
+    // tự chỉnh khít không được đổi mẫu căn của ô THỨ BA (1PN ↔ STU khác bề ngang → căn bên cạnh bị biến thành STU)
+    const mauSau = mauToa(c.tv, r.toa) as ToaMB | undefined, mauTruoc = mauToa(c.tv, toa) as ToaMB | undefined;
+    if (mauSau && mauTruoc) {
+      const v0 = viTriCan(apMatBang(mauTruoc, matBangTang(toa, mauTruoc, c.dl, k), c.dl), c.tv, bc0);
+      const v1 = new Map(viTriCan(apMatBang(mauSau, matBangTang(r.toa, mauSau, c.dl, k), c.dl), c.tv, bc1).map((v) => [v.khoa, v]));
+      for (const v of v0) if (v.khoa !== a.khoa && v.khoa !== b.khoa && v1.has(v.khoa) && goc(canDangDung(v1.get(v.khoa)!, bc1)) !== goc(canDangDung(v, bc0))) return { ok: false, lyDo: 'khong_vua' };
+    }
   }
   return r;
 }

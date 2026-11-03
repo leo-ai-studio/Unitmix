@@ -10,7 +10,8 @@ import { apMatBang, doDeKhe, matBangTang, tuChinhToa, type DuLieuMB, type HinhLo
 import { boCucTang, viTriCan } from './matBang';
 import { tinhCuaCan } from './pccc';
 import { themBienThe } from './stretch';
-import { hlHieuDung, keoHanhLangTay, themCanTay, xoaCanTay, type KetQuaTay } from './thaoTacTay';
+import { doiChoTay, hlHieuDung, keoHanhLangTay, themCanTay, xoaCanTay, type KetQuaTay } from './thaoTacTay';
+import { canDangDung } from './matBang';
 import { dauHanhLangNgoai, tuChinhSauSua } from './loiThang';
 import { doiCanTaiViTri } from './doiCan';
 
@@ -88,5 +89,36 @@ describe('đầu hành lang kéo quá giới hạn (số lưu −20 m > hiệu l
     const r = keoHanhLangTay({ ...toa, hanhLangTay: hd }, i, dau, e0 + 1000, c); // kéo ra ngoài thêm 1 m từ vị trí hiệu lực
     expect(r.ok, r.ok ? '' : `${r.lyDo}`).toBe(true);
     if (r.ok) expect(r.toa.hanhLangTay?.[String(i)]?.[dau] ?? 0).toBe(e0 + 1000); // 0 = về tự động (đã bỏ khỏi hanhLangTay)
+  });
+});
+
+describe('đổi chỗ hai căn khác bề ngang không đổi căn thứ ba', () => {
+  const dung = (toa: ToaDat) => { const mau = mauToa(tv, toa) as ToaMB, mb = matBangTang(toa, mau, dl, null), bc = boCucTang(toa, null); return new Map(viTriCan(apWithMb(mau, mb), tv, bc).map((v) => [v.khoa, canDangDung(v, bc)])); };
+  const apWithMb = (mau: ToaMB, mb: NonNullable<ToaDat['matBang']>) => apMatBang(mau, mb, dl);
+  it('tm-v2: đổi 1PN (3:3, mặt 3) với STU (0:5, mặt 0)', () => {
+    const toa = toaThu('tm-v2');
+    const mau = mauToa(tv, toa) as ToaMB, mb = matBangTang(toa, mau, dl, null), vts = viTriCan(apMatBang(mau, mb, dl), tv, boCucTang(toa, null));
+    const a = vts.find((v) => v.khoa === '3:3')!, b = vts.find((v) => v.khoa === '0:5')!;
+    const truoc = dung(toa);
+    const r = doiChoTay(toa, null, a, b, c);
+    const sau = r.ok ? dung(r.toa) : null;
+    const khac = sau ? [...sau].filter(([k, v]) => truoc.get(k) !== v).map(([k, v]) => `${k}:${truoc.get(k)}→${v}`) : [];
+    console.log('DOICHO', r.ok ? 'ok' : r.lyDo, JSON.stringify(khac));
+    expect(khac.length).toBeLessThanOrEqual(2);
+  });
+  it('tm-v2: mọi cặp ô — hoặc từ chối, hoặc chỉ đổi đúng hai ô', () => {
+    const toa = toaThu('tm-v2');
+    const mau = mauToa(tv, toa) as ToaMB, vts = viTriCan(apMatBang(mau, matBangTang(toa, mau, dl, null), dl), tv, boCucTang(toa, null));
+    const truoc = dung(toa); let ok = 0, tu = 0; const xau: string[] = [];
+    for (const a of vts) for (const b of vts) {
+      if (a.khoa >= b.khoa) continue;
+      const r = doiChoTay(toa, null, a, b, c);
+      if (!r.ok) { tu++; continue; }
+      ok++;
+      const sau = dung(r.toa), khac = [...sau].filter(([k, v]) => truoc.get(k) !== v).map(([k]) => k);
+      if (khac.some((k) => k !== a.khoa && k !== b.khoa)) xau.push(`${a.khoa}↔${b.khoa}:${khac}`);
+    }
+    console.log('QUET', ok, tu, JSON.stringify(xau));
+    expect(xau).toEqual([]);
   });
 });

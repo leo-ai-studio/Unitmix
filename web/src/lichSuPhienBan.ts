@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.6.5', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: kéo căn đổi chỗ với căn khác bề ngang (1PN ↔ STU) chỉ đổi đúng hai căn đó; nếu tự chỉnh khít buộc đổi thêm căn thứ ba thì từ chối và giữ nguyên, không tự biến căn bên cạnh',
+    ],
+    en: [
+      'Floor screen: dragging a unit to swap with a different-width unit (1BR ↔ studio) now changes exactly those two units; if the auto-fit would have to re-type a third unit the swap is refused and nothing changes',
+    ],
+  },
+  {
     v: '0.6.4', ngay: '2026-11-03',
     vi: [
       'Màn Tầng: đầu hành lang kéo quá giới hạn (−20 m) không còn "kẹt" — số lưu được cắt về độ dời thật, tay nắm nằm đúng chỗ và kéo ra ngoài có tác dụng ngay',
