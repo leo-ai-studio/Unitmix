@@ -25,20 +25,27 @@ import { dungTang, tangHopLe, timO, tomTatTang } from './tangChung';
 const pct = (r: Record<LoaiCan, number>) => Object.fromEntries(LOAI_CAN.map((k) => [k, tron(r[k], 1)]));
 const tenMau = (tv: ThuVien, id: string) => tv.toa.get(id)?.ten_vi ?? id;
 
-/** Tóm tắt trạng thái chung — dùng cả cho get_state và ngữ cảnh gửi kèm mỗi câu hỏi. */
-export function tomTatTrangThai(ng: NguCanh, chiTiet = true) {
+/**
+ * Tóm tắt trạng thái chung (get_state). `loIds` lọc lô; `boLoKhac` (mặc định) bỏ lô không cao tầng chưa có tòa (cây xanh, giáo dục…)
+ * — dự án lớn có hàng trăm lô nền, liệt kê hết làm kết quả bị cắt ở 12.000 ký tự trước khi tới lô cần.
+ */
+export function tomTatTrangThai(ng: NguCanh, chiTiet = true, loc: { loIds?: string[]; boLoKhac?: boolean } = {}) {
   const pa = ng.kho.lay();
   const tv = ng.tv();
   const ui = ng.ui.lay();
   const tt = tv ? tomTatPA(pa, tv) : null;
+  const coToa = new Set(pa.toa.map((x) => x.loId));
+  const muon = loc.loIds?.length ? new Set(loc.loIds) : null;
+  const dsLo = pa.lo.filter((l) => (muon ? muon.has(l.id) || muon.has(l.temDat.kyHieu) : !(loc.boLoKhac ?? true) || laCaoTang(l) || coToa.has(l.id)));
   return {
+    ...(dsLo.length < pa.lo.length ? { lo_an: pa.lo.length - dsLo.length } : {}),
     du_an: { ma: ng.duAn.ma, ten: ng.duAn.ten },
     pa: { id: ng.duAn.paId, ten: ng.duAn.tenPA, ds: ng.duAn.dsPA() },
     che_do: ng.chiXem() ? 'chi_xem' : 'sua_duoc',
     hoan_tac: ng.kho.soBuoc(),
     man_hinh: { buoc: ui.buoc, xem: ui.xem, lo: ui.loId, toa: ui.toaId, tang: ui.tangs, can: ui.canKhoa, tang_ham: ui.tangHam },
     tong: tt ? { so_can: tt.soCan, co_cau: tt.coCau, dt_san_m2: tron(tt.dtSan, 0) } : null,
-    lo: pa.lo.map((l) => ({
+    lo: dsLo.map((l) => ({
       id: l.id, ky_hieu: l.temDat.kyHieu, chuc_nang: l.temDat.chucNang, cao_tang: laCaoTang(l),
       ...(chiTiet ? {
         chi_tieu: l.temDat.chiTieu, co_cau_muc_tieu: l.temDat.coCauMucTieu,
@@ -52,12 +59,41 @@ export function tomTatTrangThai(ng: NguCanh, chiTiet = true) {
   };
 }
 
+/**
+ * Ngữ cảnh gửi kèm MỖI câu hỏi Leo AI: chỉ phần định hướng (PA, màn hình, tổng, lô cao tầng + số tòa theo mẫu). Chi tiết lô / tòa
+ * gọi get_state khi cần — trước đây gửi cả mọi lô + mọi tòa (dự án 100 lô ≈ 16.000 ký tự mỗi câu, cộng dồn trong lịch sử).
+ */
+export function nguCanhGon(ng: NguCanh) {
+  const pa = ng.kho.lay();
+  const tv = ng.tv();
+  const ui = ng.ui.lay();
+  const tt = tv ? tomTatPA(pa, tv) : null;
+  const caoTang = pa.lo.filter((l) => laCaoTang(l) || pa.toa.some((x) => x.loId === l.id));
+  return {
+    du_an: ng.duAn.ten, pa: { id: ng.duAn.paId, ten: ng.duAn.tenPA, so_pa: ng.duAn.dsPA().length },
+    che_do: ng.chiXem() ? 'chi_xem' : 'sua_duoc',
+    man_hinh: { buoc: ui.buoc, xem: ui.xem, lo: ui.loId, toa: ui.toaId, tang: ui.tangs, can: ui.canKhoa },
+    tong: tt ? { so_can: tt.soCan, so_toa: pa.toa.length, dt_san_m2: tron(tt.dtSan, 0) } : null,
+    // [id, ký hiệu, {mẫu: số tòa}]
+    lo_cao_tang: caoTang.map((l) => {
+      const m: Record<string, number> = {};
+      for (const x of pa.toa) if (x.loId === l.id) m[x.mauId] = (m[x.mauId] ?? 0) + 1;
+      return [l.id, l.temDat.kyHieu, m];
+    }),
+    so_lo_khac: pa.lo.length - caoTang.length,
+  };
+}
+
 export const CONG_CU_DOC: CongCu[] = [
   {
     ten: 'get_state', nhom: 'doc',
-    moTa: 'Đọc trạng thái hiện tại: dự án, phương án (PA), màn hình / lựa chọn đang xem, chế độ sửa, các lô (chỉ tiêu QH, cơ cấu mục tiêu, lộ giới) và tòa (id, mẫu, vị trí m, góc, số tầng). Gọi trước khi sửa.',
-    schema: S.doiTuong({ gon: S.bool('true = bỏ chỉ tiêu chi tiết từng lô (ít token hơn)') }),
-    chay: (v, ng) => tomTatTrangThai(ng, v.gon !== true),
+    moTa: 'Đọc trạng thái hiện tại: dự án, phương án (PA), màn hình / lựa chọn đang xem, chế độ sửa, các lô (chỉ tiêu QH, cơ cấu mục tiêu, lộ giới) và tòa (id, mẫu, vị trí m, góc, số tầng). Mặc định chỉ lô cao tầng / lô có tòa (lô nền ẩn, đếm ở lo_an); lot_ids để đọc riêng vài lô. Gọi trước khi sửa.',
+    schema: S.doiTuong({
+      gon: S.bool('true = bỏ chỉ tiêu chi tiết từng lô (ít token hơn)'),
+      lot_ids: S.ds(S.chu('id hoặc ký hiệu lô'), 'chỉ đọc các lô này'),
+      all_lots: S.bool('true = kèm cả lô nền không cao tầng (cây xanh, giáo dục…)'),
+    }),
+    chay: (v, ng) => tomTatTrangThai(ng, v.gon !== true, { loIds: v.lot_ids as string[] | undefined, boLoKhac: v.all_lots !== true }),
   },
   {
     ten: 'get_kpi', nhom: 'doc',

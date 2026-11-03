@@ -3,6 +3,7 @@
 Rút ra từ đợt dựng lại 79 tòa Long Biên theo sheet `VTK_Tháp (17)` (2026-11-02). Dùng khi phải sửa nhiều tòa / nhiều lô cùng lúc.
 
 ## Cách nối
+- **Cầu MCP (nên dùng)**: đăng ký một lần `claude mcp add MDI-unitmix-connector -s user -- python E:/Unitmix/scripts/mcp_unitmix/mdi_unitmix_mcp.py`, mở app với `…&congCu=1&mcp=3033` (cho phép truy cập mạng cục bộ khi Chrome hỏi), rồi dùng `unitmix_status` → `unitmix_call` / `unitmix_call_many` / `unitmix_run_js`. Việc lặp nhiều tòa: viết hàm trong `unitmix_run_js`, chỉ trả số tổng hợp.
 - Mở `/du-an/<mã>?pa=<id>&congCu=1` (thêm `&sua=<mã sửa>` để sửa được; link chỉ đọc thì mọi công cụ sửa bị chặn). `window.unitmixTools.danhSach()` liệt kê 47 công cụ, `chay(ten, args)` gọi.
 - Luôn **nhân bản PA** (`manage_pa duplicate`) rồi sửa trên bản sao.
 - Đọc dữ liệu thật của PA: `GET /api/du-an/<mã>/pa/<id>` từ **trong trình duyệt** (Python bị 403). `trang_thai.toa[]` có `x, y, gocDo, soTangDH, duongBao, canTheo…`, `trang_thai.lo[]` có `ranh` (m). `get_state` bị cắt ở 12.000 ký tự nên không đọc được hết 79 tòa.

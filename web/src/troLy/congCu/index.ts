@@ -25,9 +25,10 @@ export const CONG_CU_API: Anthropic.Beta.BetaTool[] = BO_CONG_CU.map((c) => ({
 export type KetQuaChay = { noiDung: string; loi: boolean };
 
 /** Giới hạn độ dài kết quả gửi lại (tiết kiệm token); kết quả quá dài thì cắt kèm ghi chú. */
-const TOI_DA_KY_TU = 12_000;
+export const TOI_DA_KY_TU = 12_000;
 
-export async function chayCongCu(ten: string, dauVao: unknown, ng: NguCanh): Promise<KetQuaChay> {
+/** `toiDa`: trần ký tự kết quả (vòng AI dùng mặc định; cổng ngoài / cầu MCP tự cắt gọn nên có thể nới, 0 = không cắt). */
+export async function chayCongCu(ten: string, dauVao: unknown, ng: NguCanh, toiDa = TOI_DA_KY_TU): Promise<KetQuaChay> {
   const c = congCuTheoTen.get(ten);
   if (!c) return { noiDung: `Không có công cụ "${ten}".`, loi: true };
   const v = dauVao && typeof dauVao === 'object' && !Array.isArray(dauVao) ? (dauVao as Record<string, unknown>) : null;
@@ -37,7 +38,7 @@ export async function chayCongCu(ten: string, dauVao: unknown, ng: NguCanh): Pro
   try {
     const kq = await c.chay(v, ng);
     let s = typeof kq === 'string' ? kq : JSON.stringify(kq);
-    if (s.length > TOI_DA_KY_TU) s = s.slice(0, TOI_DA_KY_TU) + `… [cắt bớt ${s.length - TOI_DA_KY_TU} ký tự — hỏi hẹp hơn]`;
+    if (toiDa > 0 && s.length > toiDa) s = s.slice(0, toiDa) + `… [cắt bớt ${s.length - toiDa} ký tự — hỏi hẹp hơn]`;
     return { noiDung: s, loi: false };
   } catch (e) {
     if (e instanceof LoiCongCu) return { noiDung: e.message, loi: true };

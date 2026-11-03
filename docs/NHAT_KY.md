@@ -2,6 +2,13 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-03 · Leo AI đỡ token + cầu MCP Claude Code ↔ app, v0.6.0 · Claude Code (Opus 5.5)
+
+Người dùng: Leo AI chạy nhanh, đỡ tốn token; cầu nối MCP Claude với app Unitmix nhanh, đỡ token. Yêu cầu dùng / nâng cấp tính năng sẵn có.
+- **Leo AI**: ngữ cảnh gửi kèm mỗi câu (`LeoAI.tsx` → `congCu/doc.ts › nguCanhGon`) chỉ còn PA, màn hình, tổng, lô cao tầng + số tòa theo mẫu (PA Long Biên 106 lô / 79 tòa: ước ~17.000 → ~1.300 ký tự mỗi câu, lại cộng dồn trong lịch sử). `get_state` mặc định ẩn lô nền chưa có tòa (`lo_an`), thêm `lot_ids`, `all_lots`. `gonLichSu` thay ngữ cảnh câu cũ bằng `[ngữ cảnh cũ]`. `chayCongCu(…, toiDa)` cho cổng ngoài bỏ trần 12.000.
+- **Cầu MCP** `scripts/mcp_unitmix/mdi_unitmix_mcp.py` (thư viện chuẩn): Claude Code ↔ stdio ↔ cầu ↔ HTTP 127.0.0.1:3033 ↔ trang mở với `?congCu=1&mcp=3033` (`congChayNgoai.ts › noiCauMcp` long-poll, chạy bằng cổng `window.unitmixTools` sẵn có). Công cụ: `unitmix_status`, `unitmix_list_tools`, `unitmix_call`, `unitmix_call_many`, `unitmix_run_js`. Nhiều phiên dùng chung cổng (phiên sau gửi qua `/giao`). Test: `tests/test_mcp_unitmix.py`, `congChayNgoai.test.ts`.
+- **Còn dở**: chưa đăng ký MCP vào Claude Code (người dùng chạy `claude mcp add`, xem `docs/ghi_chu_sua_pa_hang_loat.md`); chưa thử với trình duyệt thật (quyền mạng cục bộ của Chrome khi trang https gọi 127.0.0.1); đường cầu AI `claude -p` vẫn mở tiến trình mới mỗi lượt công cụ (chậm hơn khoá API).
+
 ## 2026-11-02 (chiều) · Hành lang L/T, nhãn TMB nhẹ, panel Căn đang chọn, Reset mặt bằng, kéo căn sang dãy khác, v0.5.1 → v0.5.6 · Claude Code (Sonnet 5.5) + Antigravity
 
 Người dùng gửi từng ảnh lỗi trên app đã deploy; mỗi mục commit + deploy riêng (site hiện đúng số phiên bản sau khi xóa service worker + cache).
