@@ -171,6 +171,7 @@ export function dsLoi(mau: ToaMB): { khoa: string; matIdx: number; q: PhanTuMat 
 /** Dải lõi trên từng mặt: nét bao MDI-BAO-TM (thiếu thì khung tường) cắt theo dải bay [0, 8.500] của mặt; chồng ≥ 2 m mới tính. */
 export function daiLoi(mau: ToaMB, dl: DuLieuMB | null | undefined): DaiLoi[] {
   if (!dl) return [];
+  if (!nhoMocGoc.has(mau) || dlMocCuoi.get(mau) !== dl) { dlMocCuoi.set(mau, dl); mocGoc(mau, dl); }
   const kq: DaiLoi[] = [];
   for (const { khoa, q } of dsLoi(mau)) {
     const K = dl.loi.get(q.block), P = K && daGiacLoi(K);
@@ -325,7 +326,7 @@ function dich(mb: MatBangSua, v: VatThe, d: number) {
 }
 
 /** Đầu mặt tự do = điểm cách mép 1 m ra ngoài, giữa bay, nằm ngoài nét bao (đầu cánh, không phải góc nối cánh khác). */
-function dauTuDo(mau: ToaMB, mb: MatBangSua, mi: number, cuoi: boolean): boolean {
+export function dauTuDo(mau: ToaMB, mb: MatBangSua, mi: number, cuoi: boolean): boolean {
   const m = mau.mat[mi], B = coSo(m.goc_deg, m.truc_mm), [aDau, aCuoi] = mepMat(mau, mb, mi);
   return !trongDG(B.pt(cuoi ? aCuoi + 1000 : aDau - 1000, BAY_MM / 2), mb.duongBao ?? mau.duong_bao);
 }
@@ -343,11 +344,57 @@ function doanTai(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], mi: number, a: numbe
   return { lo, hi, tuDau: !coLo && dauTuDo(mau, mb, mi, false), tuCuoi: !coHi && dauTuDo(mau, mb, mi, true) };
 }
 /**
- * Đầu mặt `mi` là MỐC CHẶN căn: mép đầu mặt (theo mẫu) thẳng hàng với một cạnh nét bao nằm ở phía bên kia hành lang (mép ngoài cánh
- * kia của tòa L / T / U — căn cuối dãy phải khít đúng mép đó, không co vào). Quy tắc dồn khít: dãy không có lõi thang máy kẹp thì dồn về
- * mốc chặn, đầu còn lại co / giãn.
+ * MỐC CHẶN (app cũ QT-49 · 49b · 49c, mốc `goc` — ngang ưu tiên lõi thang máy): đầu mặt nằm trong 6.000 mm của một điểm hình học
+ * chung với cánh / lõi kề. Ứng viên: (1) giao điểm hai trục hành lang KHÁC tên gốc, kéo dài ≤ 16.000 mm mỗi trục (góc tòa L / T / Y);
+ * (2) bốn góc khung bao tường mỗi lõi thang máy (tòa U / Z — hai trục song song không giao nhau). Đầu tự do thật (mút ngoài của
+ * tòa) cách ≥ 9.000 mm. Đặt trên mẫu GỐC (a_dau / a_cuoi của mẫu): biến thể căn, STRETCH, dời thang chỉ đổi căn bên trong, mốc đứng yên.
  */
-function mocChan(mau: ToaMB, mi: number, cuoi: boolean): boolean {
+const MOC_GOC_MM = 6000;
+const nhoMocGoc = new WeakMap<ToaMB, Set<string>>();
+const dlMocCuoi = new WeakMap<ToaMB, DuLieuMB>();
+export function diemMocGoc(mau: ToaMB, dl: DuLieuMB | null | undefined): Diem[] {
+  const P: Diem[] = [];
+  const truc = (mau.truc ?? []).map((t) => { const B = coSo(t.goc_deg, 0); return { ten: t.ten, p0: B.pt(t.a_dau, t.b_mm), p1: B.pt(t.a_cuoi, t.b_mm) }; });
+  const goc = (ten: string) => ten.split(/[→~]/)[0];
+  for (let i = 0; i < truc.length; i++) for (let j = i + 1; j < truc.length; j++) {
+    const A = truc[i], C = truc[j];
+    if (goc(A.ten) === goc(C.ten)) continue;
+    const u: Diem = [A.p1[0] - A.p0[0], A.p1[1] - A.p0[1]], v: Diem = [C.p1[0] - C.p0[0], C.p1[1] - C.p0[1]];
+    const det = u[0] * v[1] - u[1] * v[0];
+    if (Math.abs(det) < 1e-6 * Math.hypot(...u) * Math.hypot(...v)) continue; // song song: tòa U / Z, dùng góc lõi
+    const r: Diem = [C.p0[0] - A.p0[0], C.p0[1] - A.p0[1]], t = (r[0] * v[1] - r[1] * v[0]) / det;
+    const X: Diem = [A.p0[0] + u[0] * t, A.p0[1] + u[1] * t];
+    if (Math.min(kc(A.p0, X), kc(A.p1, X)) > 16000 || Math.min(kc(C.p0, X), kc(C.p1, X)) > 16000) continue;
+    P.push(X);
+  }
+  if (dl) for (const { q } of dsLoi(mau)) {
+    const K = dl.loi.get(q.block);
+    const b = K?.bao_tuong_mm?.length === 4 ? K.bao_tuong_mm : (() => { const G = K && daGiacLoi(K); return G ? [Math.min(...G.map((p) => p[0])), Math.min(...G.map((p) => p[1])), Math.max(...G.map((p) => p[0])), Math.max(...G.map((p) => p[1]))] : null; })();
+    if (b) P.push(...veLoiTaiViTri([{ cat: 'b', pts: [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]] }], q)[0].pts);
+  }
+  return P;
+}
+/** Tập đầu mặt là mốc chặn, khoá `mặt:1` (cuối) / `mặt:0` (đầu). Nhớ theo mẫu gốc; `daiLoi` gọi trước nên đã có dữ liệu lõi. */
+export function mocGoc(mau: ToaMB, dl: DuLieuMB | null | undefined): Set<string> {
+  const co = nhoMocGoc.get(mau);
+  if (co && !dl) return co;
+  const P = diemMocGoc(mau, dl), kq = new Set<string>();
+  mau.mat.forEach((m, mi) => {
+    if (!laMatThat(m)) return;
+    const B = coSo(m.goc_deg, m.truc_mm);
+    for (const cuoi of [false, true]) if (P.some((q) => kc(B.pt(cuoi ? m.a_cuoi : m.a_dau, 0), q) < MOC_GOC_MM)) kq.add(`${mi}:${cuoi ? 1 : 0}`);
+  });
+  nhoMocGoc.set(mau, kq);
+  return kq;
+}
+export function mocChan(mau: ToaMB, mi: number, cuoi: boolean): boolean {
+  return (nhoMocGoc.get(mau) ?? mocGoc(mau, null)).has(`${mi}:${cuoi ? 1 : 0}`);
+}
+/**
+ * Mép đầu mặt thẳng hàng với một cạnh nét bao nằm ở phía bên kia hành lang (mép ngoài cánh kia của tòa L / T / U): căn cuối dãy khít
+ * đúng mép đó. Chỉ dùng khi người dùng dời / bỏ thang (boThang `veMocChan`); mốc `goc` QT-49 (`mocChan`) dùng cho mọi đường.
+ */
+function mocMepCanh(mau: ToaMB, mi: number, cuoi: boolean): boolean {
   const m = mau.mat[mi], B = coSo(m.goc_deg, m.truc_mm), aE = cuoi ? m.a_cuoi : m.a_dau, Q = mau.duong_bao.map(B.ab);
   return Q.some((A, i) => {
     const C = Q[(i + 1) % Q.length];
@@ -355,6 +402,15 @@ function mocChan(mau: ToaMB, mi: number, cuoi: boolean): boolean {
     const lo = Math.min(A[1], C[1]), hi = Math.max(A[1], C[1]);
     return hi - lo > 1000 && (hi <= 60 || lo >= BAY_MM - 60);
   });
+}
+/** Mốc chặn có được ưu tiên khi PC-11 bỏ / thêm thang không: tắt khi bản ưu tiên mốc còn căn vượt cự ly mà bản cũ hết (an toàn thoát nạn trước). */
+let uuTienMoc = true;
+/**
+ * Thứ tự co / giãn đầu dãy khi bỏ / thêm thang: đầu cuối trước, TRỪ khi đầu cuối là mốc chặn còn đầu đầu tự do (app cũ: dồn về
+ * mốc chặn, đầu kia co / giãn — tm-z3 mặc định co dãy trên 3.000 mm ở đầu sát lõi, sai).
+ */
+function cuoiTruoc(mau: ToaMB, mi: number, dn: Doan): boolean {
+  return !(uuTienMoc && dn.tuCuoi && dn.tuDau && mocChan(mau, mi, true) && !mocChan(mau, mi, false));
 }
 
 /**
@@ -703,17 +759,13 @@ function choCat(vt: VatThe[], dn: Doan, chenh: Map<string, number>): number[] {
 function themThang(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], mi: number, p: number, sx: 1 | -1, khoa: string): boolean {
   const dn = doanTai(mau, mb, dai, mi, p);
   const vt = vatThe(mau, mb, mi).filter((v) => v.a0 >= dn.lo - 1 && v.a0 + v.w <= dn.hi + 1);
-  if (dn.tuCuoi && gianMat(mau, mb, mi, true, O_THANG_MM)) {
-    vt.filter((v) => v.a0 >= p - 1).forEach((v) => dich(mb, v, O_THANG_MM));
-    mb.thangBo.push({ khoa, matIdx: mi, a0: p, rong: O_THANG_MM, sx, dIns: dInsThang(sx), bIns: 0, block: THANG_KHOI, nguon: 'them' });
+  const ve = (cuoi: boolean) => {
+    if (cuoi ? !(dn.tuCuoi && gianMat(mau, mb, mi, true, O_THANG_MM)) : !(dn.tuDau && gianMat(mau, mb, mi, false, O_THANG_MM))) return false;
+    vt.filter((v) => (cuoi ? v.a0 >= p - 1 : v.a0 + v.w <= p + 1)).forEach((v) => dich(mb, v, cuoi ? O_THANG_MM : -O_THANG_MM));
+    mb.thangBo.push({ khoa, matIdx: mi, a0: cuoi ? p : p - O_THANG_MM, rong: O_THANG_MM, sx, dIns: dInsThang(sx), bIns: 0, block: THANG_KHOI, nguon: 'them' });
     return true;
-  }
-  if (dn.tuDau && gianMat(mau, mb, mi, false, O_THANG_MM)) {
-    vt.filter((v) => v.a0 + v.w <= p + 1).forEach((v) => dich(mb, v, -O_THANG_MM));
-    mb.thangBo.push({ khoa, matIdx: mi, a0: p - O_THANG_MM, rong: O_THANG_MM, sx, dIns: dInsThang(sx), bIns: 0, block: THANG_KHOI, nguon: 'them' });
-    return true;
-  }
-  return false;
+  };
+  return cuoiTruoc(mau, mi, dn) ? ve(true) || ve(false) : ve(false) || ve(true);
 }
 
 function boThang(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], khoa: string, veMocChan = false): boolean {
@@ -724,7 +776,7 @@ function boThang(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], khoa: string, veMocC
   // thang người dùng dời / bỏ (`veMocChan`): dồn khít về mốc chặn — đầu mốc chặn (thẳng hàng mép cánh kia) thử sau, đầu kia co lại trước
   const thuCuoi = () => dn.tuCuoi && gianMat(mau, mb, t.matIdx, true, -t.rong) && (vt.filter((v) => v.a0 >= t.a0 + t.rong - 1).forEach((v) => dich(mb, v, -t.rong)), true);
   const thuDau = () => dn.tuDau && gianMat(mau, mb, t.matIdx, false, -t.rong) && (vt.filter((v) => v.a0 + v.w <= t.a0 + 1).forEach((v) => dich(mb, v, t.rong)), true);
-  const truocCuoi = !(veMocChan && dn.tuCuoi && dn.tuDau && mocChan(mau, t.matIdx, true) && !mocChan(mau, t.matIdx, false));
+  const truocCuoi = cuoiTruoc(mau, t.matIdx, dn) && !(veMocChan && dn.tuCuoi && dn.tuDau && mocMepCanh(mau, t.matIdx, true) && !mocMepCanh(mau, t.matIdx, false));
   if (!(truocCuoi ? thuCuoi() || thuDau() : thuDau() || thuCuoi())) return false;
   mb.thangBo = mb.thangBo.filter((x) => x !== t);
   return true;
@@ -1831,6 +1883,13 @@ const r1 = (x: number) => Math.round(x * 10) / 10;
  * (tinh/khe.ts) không được nhiều hơn mặt bằng mặc định, nếu không thì bỏ phần thang tự động (PC-11) và báo.
  */
 export function tuChinhMatBang(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | undefined, opt: TuyChonTuChinh): KetQuaMB {
+  const chay = (uu: boolean) => { const cu = uuTienMoc; uuTienMoc = uu; try { return tuChinhMatBangMot(mau, tv, dl, opt); } finally { uuTienMoc = cu; } };
+  const a = chay(true);
+  if (!(a.baoCao.vuotSau ?? 0)) return a;
+  const b = chay(false); // ưu tiên mốc mà còn căn vượt cự ly thoát nạn: thử thứ tự cũ, lấy bản ít căn vượt hơn
+  return (b.baoCao.vuotSau ?? 0) < (a.baoCao.vuotSau ?? 0) ? b : a;
+}
+function tuChinhMatBangMot(mau: ToaMB, tv: ThuVien, dl: DuLieuMB | null | undefined, opt: TuyChonTuChinh): KetQuaMB {
   const bcVao = opt.bc, H = opt.chieuCaoPCCC;
   // QT-69 trước: mặt bằng xuất phát đã theo dãy dài ra / ngắn lại (mặc định của mẫu không bị sửa — nhớ dùng chung)
   const mb0 = banSaoMatBang(matBangMacDinh(mau, dl));

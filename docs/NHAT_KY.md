@@ -1138,3 +1138,11 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Nguồn quy tắc** `tinh/quyTacViTriCan.ts`: loại vị trí lấy từ mã đuôi id mẫu (`m` giữa · `g` góc · `v`/`y` khoá), ô theo mẫu gốc của bản vẽ. `duocDatVaoO(canGocId, moi)`: ô V / Y chỉ nhận chính mẫu đó (hoặc biến thể STRETCH); ô góc chỉ nhận căn góc thường; ô giữa chỉ nhận căn giữa.
 - **Áp:** `canDangDung` bỏ đổi sai (PA cũ tự về mẫu gốc / đổi theo mẫu hợp lệ); `ungVienDoi` / `ungVienKhacRong` lọc cứng, ô V / Y không có ứng viên (panel phải hiện câu `tang.canKhoa`); `doiCanTaiViTri` / `doiCanTheoTang` không nhận đổi sai; `doiChoTay` trả `sai_vi_tri` khi đổi chỗ góc↔giữa hoặc có V / Y; `themCanTay` chỉ căn giữa, `themVaoO` đúng ô; `goiYVuaO`, `doiMauCungBeNgang` lọc theo quy tắc. Bỏ ghi chú ⚠ `tang.khacViTri` (không còn ca đó). Khoá i18n mới: `tang.canKhoa`, `cc.loi.sai_vi_tri`, `cc.ngan.sai_vi_tri` (vi + en).
 - Test `tinh/quyTacViTriCan.test.ts` (33 mẫu tòa thật): đổi chỗ, thêm căn, danh sách đổi mẫu, PA cũ lưu đổi sai.
+
+## 2026-11-04 · Mốc chặn `goc` (QT-49) — tòa Z dãy trên co sai đầu
+
+- **Lỗi (ảnh chủ nhiệm, tm-z3):** mặt bằng mặc định bỏ thang khỏi dãy trên (mặt 1, 6 căn) rồi co dãy 3.000 mm ở đầu SÁT LÕI (mốc chặn) thay vì đầu tự do ngoài cùng. Nguyên nhân: `mocChan` cũ chỉ so nét bao và chỉ dùng ở `boThang` đường người dùng.
+- **Sửa** (`tinh/loiThang.ts`): `mocGoc(mau, dl)` đặt luật app cũ QT-49 / 49b / 49c trên MẪU GỐC — đầu mặt cách ≤ 6.000 mm giao điểm hai trục hành lang khác tên gốc (kéo dài ≤ 16.000) hoặc góc khung tường lõi thang máy (tòa U / Z). Khớp số đo app cũ (tm-z1: 50–70 mm, 1.801 mm). `cuoiTruoc`: bỏ / thêm thang (PC-11) co / giãn đầu tự do trước, đầu mốc sau. Nét bao hình học cũ giữ ở `mocMepCanh` cho đường người dùng dời / bỏ thang (`veMocChan`).
+- **Nhường thoát nạn:** `tuChinhMatBang` chạy ưu tiên mốc trước; còn căn vượt cự ly thì chạy thứ tự cũ, lấy bản ít vượt hơn (xh-z4 6 → 0 vẫn đạt, mép mốc dời — test ghi `NHUONG_THOAT_NAN`).
+- Test `tinh/mocChan.test.ts` quét mọi mẫu tòa theo hình học (mẫu mới tự bị kiểm): tắt `cuoiTruoc` thì 8 mẫu Z hỏng, bật thì đạt. `kiem:nhanh`: tsc, web 1067, worker 46 đạt; pytest còn `test_cau_claude` (cp1252, cũ).
+- Chưa kiểm trên màn hình thật; chưa commit.
