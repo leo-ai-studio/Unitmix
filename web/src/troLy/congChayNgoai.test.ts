@@ -99,7 +99,7 @@ describe('cầu MCP + ngữ cảnh gọn', () => {
 
   it('?mcp: cổng hợp lệ mới nối', () => {
     expect(congMcp('?congCu=1')).toBeNull();
-    expect(congMcp('?mcp=1')).toBe(3033);
+    expect(congMcp('?mcp=1')).toBe(3043);
     expect(congMcp('?mcp=3040')).toBe(3040);
     expect(congMcp('?mcp=80')).toBeNull();
     expect(congMcp('?mcp=abc')).toBeNull();

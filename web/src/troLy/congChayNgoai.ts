@@ -10,8 +10,8 @@
  *   await unitmixTools.chay('apply_arrangement', {...}, { dongY: true })
  *   unitmixTools.danhSach()                                         → [{ ten, moTa, schema }]
  *
- * Cầu MCP (scripts/mcp_unitmix/mdi_unitmix_mcp.py): mở trang với `?congCu=1&mcp=3033` thì trang tự hỏi việc ở
- * http://127.0.0.1:3033 (long-poll), chạy bằng chính cổng này rồi gửi kết quả về — Claude Code gọi công cụ app như công cụ MCP gốc,
+ * Cầu MCP (scripts/mcp_unitmix/mdi_unitmix_mcp.py): mở trang với `?congCu=1&mcp=3043` thì trang tự hỏi việc ở
+ * http://127.0.0.1:3043 (long-poll), chạy bằng chính cổng này rồi gửi kết quả về — Claude Code gọi công cụ app như công cụ MCP gốc,
  * không phải điều khiển trình duyệt bằng JS, không bị cắt 12.000 ký tự (cầu tự cắt gọn theo yêu cầu).
  */
 import { BO_CONG_CU, chayCongCu, TOI_DA_KY_TU, type KetQuaChay } from './congCu';
@@ -29,11 +29,11 @@ export function congDuocBat(tim: string): boolean {
   return new URLSearchParams(tim).get('congCu') === '1';
 }
 
-/** Cổng cầu MCP trên máy (`?mcp=3033`; `mcp=1` = cổng mặc định 3033); null = không nối. */
+/** Cổng cầu MCP trên máy (`?mcp=3043`; `mcp=1` = cổng mặc định 3043); null = không nối. */
 export function congMcp(tim: string): number | null {
   const v = new URLSearchParams(tim).get('mcp');
   if (!v) return null;
-  const n = v === '1' ? 3033 : Number(v);
+  const n = v === '1' ? 3043 : Number(v);
   return Number.isInteger(n) && n > 1024 && n < 65536 ? n : null;
 }
 

@@ -4,7 +4,7 @@
 Trước đây Claude Code phải điều khiển trình duyệt, gõ JS gọi `window.unitmixTools`, kết quả bị cắt 12.000 ký tự, mỗi bước tốn
 cả ảnh / chữ trang. Cầu này nối hai đầu:
 
-    Claude Code ──stdio JSON-RPC (MCP)──► cầu ──HTTP 127.0.0.1:3033──► trang app mở với ?congCu=1&mcp=3033
+    Claude Code ──stdio JSON-RPC (MCP)──► cầu ──HTTP 127.0.0.1:3043──► trang app mở với ?congCu=1&mcp=3043
 
 Trang (web/src/troLy/congChayNgoai.ts › noiCauMcp) tự hỏi việc ở cầu (long-poll), chạy bằng cổng công cụ sẵn có (cùng hoàn tác,
 cùng tự lưu, cùng kiểm "Chỉ xem" — không sửa được nếu link không có mã sửa) rồi gửi kết quả. Cầu cắt gọn kết quả theo
@@ -13,7 +13,7 @@ cùng tự lưu, cùng kiểm "Chỉ xem" — không sửa được nếu link k
 Nhiều phiên Claude Code cùng chạy: phiên đầu giữ cổng, phiên sau tự gửi việc qua phiên đầu (POST /giao, chỉ từ máy này).
 
 Biến môi trường:
-    MDI_UNITMIX_PORT      cổng, mặc định 3033
+    MDI_UNITMIX_PORT      cổng, mặc định 3043
     MDI_UNITMIX_ORIGINS   nguồn trang được phép (phẩy), mặc định app Cloudflare + localhost
     MDI_UNITMIX_TIMEOUT   giây chờ trang trả lời một việc, mặc định 120
 """
@@ -34,7 +34,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 TEN = "MDI-unitmix-connector"
 PHIEN_BAN = "1.0.0"
 GIAO_THUC = "2025-06-18"
-CONG = int(os.environ.get("MDI_UNITMIX_PORT", "3033"))
+CONG = int(os.environ.get("MDI_UNITMIX_PORT", "3043"))
 CHO = int(os.environ.get("MDI_UNITMIX_TIMEOUT", "120"))
 NGUON = {n.strip().rstrip("/") for n in os.environ.get(
     "MDI_UNITMIX_ORIGINS", "https://unitmix.nghiavt-ai1.workers.dev,https://unitmix.leo-ai.dev").split(",") if n.strip()}

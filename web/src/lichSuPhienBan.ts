@@ -6,14 +6,23 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.6.1', ngay: '2026-11-03',
+    vi: [
+      'Cầu MCP đổi cổng mặc định sang 3043 (3033 trùng cầu AI của Leo AI): mở app với ?congCu=1&mcp=3043; đã thử trọn vòng Claude ↔ Chrome ↔ app',
+    ],
+    en: [
+      'MCP bridge default port is now 3043 (3033 clashed with the Leo AI bridge): open the app with ?congCu=1&mcp=3043; verified end to end Claude ↔ Chrome ↔ app',
+    ],
+  },
+  {
     v: '0.6.0', ngay: '2026-11-03',
     vi: [
       'Leo AI đỡ tốn token: mỗi câu hỏi chỉ gửi kèm ngữ cảnh gọn (PA, màn hình, lô cao tầng + số tòa theo mẫu) thay vì mọi lô + mọi tòa; get_state mặc định ẩn lô nền, đọc riêng vài lô bằng lot_ids; lịch sử dài bỏ ngữ cảnh của câu cũ',
-      'Cầu MCP cho Claude Code (scripts/mcp_unitmix): mở app với ?congCu=1&mcp=3033 là Claude Code gọi thẳng công cụ app như công cụ gốc — gọi nhiều lệnh một lượt, chạy hàm tính trong trang, kết quả cắt gọn theo yêu cầu',
+      'Cầu MCP cho Claude Code (scripts/mcp_unitmix): mở app với ?congCu=1&mcp=3043 là Claude Code gọi thẳng công cụ app như công cụ gốc — gọi nhiều lệnh một lượt, chạy hàm tính trong trang, kết quả cắt gọn theo yêu cầu',
     ],
     en: [
       'Leo AI uses fewer tokens: each question carries a compact context (plan, screen, high-rise lots + tower counts per template) instead of every lot and tower; get_state hides background lots by default, read a few lots with lot_ids; long histories drop the context of older questions',
-      'MCP bridge for Claude Code (scripts/mcp_unitmix): open the app with ?congCu=1&mcp=3033 and Claude Code calls the app tools as native tools — batch calls, in-page scripts, results trimmed on request',
+      'MCP bridge for Claude Code (scripts/mcp_unitmix): open the app with ?congCu=1&mcp=3043 and Claude Code calls the app tools as native tools — batch calls, in-page scripts, results trimmed on request',
     ],
   },
   {
