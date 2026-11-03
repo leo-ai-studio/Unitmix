@@ -31,6 +31,7 @@ import { ST_BUOC, stretchKhongBu, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
 import { ThanhCongCuTang, useKeoHanhLang, useKeoTay, useToaTam, type ChoSang, type PropsCongCu } from './CongCuTang';
 import { TayHanhLang } from '../ve/TayHanhLang';
+import { hlHieuDung } from '../tinh/thaoTacTay';
 import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
 import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, useCaiPCCC, usePCCCTang } from '../ve/LopPCCC';
@@ -276,6 +277,8 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   // lõi là vật cản khi đặt tem (QT-34): hình lõi có khi đã nạp DuLieuMB (cùng lúc mặt bằng tự chỉnh)
   const dlMB = useDuLieuMB(tv);
   const loiDG = useMemo(() => daGiacCacLoi(mau as unknown as ToaMB, dlMB), [mau, dlMB]);
+  // độ dời đầu hành lang CÓ HIỆU LỰC (số lưu có thể vượt giới hạn → tay nắm lệch, kéo không ăn)
+  const hlHd = useMemo(() => (toa.hanhLangTay && dlMB ? hlHieuDung(toa, { tv, dl: dlMB }) : toa.hanhLangTay), [toa, tv, dlMB]);
   const loiDGVe = useMemo(() => (mauVe === mau ? loiDG : daGiacCacLoi(mauVe as unknown as ToaMB, dlMB)), [mauVe, mau, loiDG, dlMB]);
   // vừa khung = nét bao + 6 m, nới thêm cho tem bị dời ra hàng ngoài (QT-34) để tem không nằm dưới la bàn / thanh công cụ
   const hopTem = useMemo(() => (cai.hienTem ? hopCacTem(datTemCan(mau, tv, sl.can, loiDG)) : null), [cai.hienTem, mau, tv, sl.can, loiDG]);
@@ -388,7 +391,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
           <g transform="scale(0.001 -0.001)"><LopPCCC kq={pccc} chiXem={chiXem} toa={toa}
             datTuTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, tuPCCCTay: ds ?? undefined })))}
             datCncTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, cncTay: ds ?? undefined })))} /></g>
-          {!chiXem && !tam && <g transform="scale(0.001 -0.001)"><TayHanhLang mau={mauVe} hanhLangTay={toa.hanhLangTay} onKeo={keoHL} /></g>}
+          {!chiXem && !tam && <g transform="scale(0.001 -0.001)"><TayHanhLang mau={mauVe} hanhLangTay={hlHd} onKeo={keoHL} /></g>}
           <LopViewTang pa={pa} tv={tv} toa={toa} mau={mauVe} bc={bcVe} tang={k0} />
         </BanVe>
       </div>

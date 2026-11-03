@@ -10,8 +10,8 @@ import { apMatBang, doDeKhe, matBangTang, tuChinhToa, type DuLieuMB, type HinhLo
 import { boCucTang, viTriCan } from './matBang';
 import { tinhCuaCan } from './pccc';
 import { themBienThe } from './stretch';
-import { themCanTay, xoaCanTay, type KetQuaTay } from './thaoTacTay';
-import { tuChinhSauSua } from './loiThang';
+import { hlHieuDung, keoHanhLangTay, themCanTay, xoaCanTay, type KetQuaTay } from './thaoTacTay';
+import { dauHanhLangNgoai, tuChinhSauSua } from './loiThang';
 import { doiCanTaiViTri } from './doiCan';
 
 const lib = new URL('../../public/lib/', import.meta.url);
@@ -71,5 +71,22 @@ describe('thêm / đổi căn kẹp giữa lõi và thang', () => {
       expect((r.toa as ToaDat).canViTri?.['2:0'], moi).toBe(moi);
     }
     expect(rx.ok).toBe(true);
+  });
+});
+
+describe('đầu hành lang kéo quá giới hạn (số lưu −20 m > hiệu lực)', () => {
+  it('số lưu được cắt về hiệu lực; kéo ra ngoài từ đó có tác dụng', () => {
+    const goc = toaThu('tm-v2'), mau = mauToa(tv, goc) as ToaMB;
+    let i = -1, dau: 0 | 1 = 0;
+    mau.hanh_lang?.forEach((_, j) => { const d = dauHanhLangNgoai(mau.hanh_lang!, j, mau.duong_bao); if (i < 0 && d.length) { i = j; dau = d[0]; } });
+    expect(i).toBeGreaterThanOrEqual(0);
+    const luu: [number, number] = dau ? [0, -20000] : [-20000, 0];
+    const toa = { ...goc, hanhLangTay: { [String(i)]: luu } };
+    const hd = hlHieuDung(toa, c);
+    const e0 = hd?.[String(i)]?.[dau] ?? 0;
+    expect(e0).toBeGreaterThan(-20000); // hiệu lực ngắn hơn số lưu
+    const r = keoHanhLangTay({ ...toa, hanhLangTay: hd }, i, dau, e0 + 1000, c); // kéo ra ngoài thêm 1 m từ vị trí hiệu lực
+    expect(r.ok, r.ok ? '' : `${r.lyDo}`).toBe(true);
+    if (r.ok) expect(r.toa.hanhLangTay?.[String(i)]?.[dau] ?? 0).toBe(e0 + 1000); // 0 = về tự động (đã bỏ khỏi hanhLangTay)
   });
 });

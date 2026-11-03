@@ -2,6 +2,10 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-03 · Đầu hành lang không kéo được, v0.6.4 · Claude Code (Opus 5.5)
+
+Chủ nhiệm (V2 NOTM-1.1): đầu HL không kéo được. Nguyên nhân: `hanhLangTay` lưu số kéo (−20 m) nhưng `apHanhLangTay` cắt về giới hạn (cửa căn xa nhất + 500 mm); kéo ra ngoài từ số lưu −20 m vẫn dưới giới hạn nên hành lang không dịch. Sửa: `thaoTacTay.ts › hlHieuDung` đo độ dời có hiệu lực (mặt bằng có / không hành lang tay), `chuanHoaHLTay` ghi lại sau mỗi phép tay, `ManTang` đưa độ dời hiệu lực cho tay nắm. Test trong `xoaCanKepThang.test.ts`. **Còn dở**: chưa thử kéo chuột thật; lỗi "căn V nhảy sang căn khác" và phím E vẫn chờ mô tả.
+
 ## 2026-11-03 · Căn kẹp lõi–thang bộ: xóa / đổi / thêm được, v0.6.3 · Claude Code (Opus 5.5)
 
 Chủ nhiệm (V2): căn 1PN giữa lõi V và thang không xóa / đổi được ("để lại khe 6000 mm"). Nguyên nhân: đoạn lõi | căn | thang là đoạn đóng, thang đứng yên. Sửa: `loiThang.ts › thangKepCan` (nhận ra căn kẹp), `boCanKep` cho thang + cụm phía đầu tự do trượt về lõi, `donQuaThang` coi cụm là vật thể cuối / đầu của mặt thì là đầu tự do (nét bao chưa co theo sau khi bỏ căn). Test `tinh/xoaCanKepThang.test.ts` (tm-v2 mặt 2, cả trạng thái PA thật đã xóa 2:2). **Còn dở**: lỗi "căn V nhảy sang căn khác khi đổi / xếp" chưa tái hiện được; phím E / nút xóa chưa rõ.

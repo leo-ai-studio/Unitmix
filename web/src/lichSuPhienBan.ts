@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.6.4', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: đầu hành lang kéo quá giới hạn (−20 m) không còn "kẹt" — số lưu được cắt về độ dời thật, tay nắm nằm đúng chỗ và kéo ra ngoài có tác dụng ngay',
+    ],
+    en: [
+      'Floor screen: a corridor end dragged past its limit (−20 m) no longer gets "stuck" — the stored value is trimmed to the real offset, the handle sits in the right place and dragging outward works at once',
+    ],
+  },
+  {
     v: '0.6.3', ngay: '2026-11-03',
     vi: [
       'Màn Tầng: căn kẹp giữa lõi và thang bộ (lõi | căn | thang) xóa / đổi sang mẫu khác bề ngang / thêm căn được — thang và các căn phía đầu tự do trượt theo; trước đây báo "để lại khe 6000 mm" hoặc không đổi được',
