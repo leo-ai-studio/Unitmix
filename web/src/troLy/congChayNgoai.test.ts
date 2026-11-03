@@ -10,7 +10,8 @@ import { taoPAMoi } from '../tinh/macDinh';
 import { traLuat, type BoQuyTac } from '../tinh/quyTac';
 import { readFileSync } from 'node:fs';
 import type { NguCanh, TrangThaiUi } from './congCu/nguCanh';
-import { baoCongNgoai, congDuocBat, taoCongNgoai } from './congChayNgoai';
+import { nguCanhGon } from './congCu/doc';
+import { baoCongNgoai, chayViecMcp, congDuocBat, congMcp, taoCongNgoai } from './congChayNgoai';
 
 const { tv, dl } = napThuVien();
 const bo = JSON.parse(readFileSync(new URL('../../public/lib/quy_tac.json', import.meta.url), 'utf8')) as BoQuyTac;
@@ -89,5 +90,40 @@ describe('window.unitmixTools', () => {
       c.chay('apply_arrangement', { lot_id: 'A', option: 1 }),
     ]);
     expect(kho.soBuoc().truoc).toBe(t0 + 2);
+  });
+});
+
+describe('cầu MCP + ngữ cảnh gọn', () => {
+  const nen: Lo = { ...lo, id: 'CX', ranh: [[300, 0], [340, 0], [340, 40], [300, 40]], temDat: { ...lo.temDat, kyHieu: 'CX-1', chucNang: 'khac' } };
+  beforeEach(() => { kho = taoKhoLoi({ ...taoPAMoi(), lo: [lo, nen] } as TrangThaiPA, () => {}); });
+
+  it('?mcp: cổng hợp lệ mới nối', () => {
+    expect(congMcp('?congCu=1')).toBeNull();
+    expect(congMcp('?mcp=1')).toBe(3043);
+    expect(congMcp('?mcp=3040')).toBe(3040);
+    expect(congMcp('?mcp=80')).toBeNull();
+    expect(congMcp('?mcp=abc')).toBeNull();
+  });
+
+  it('việc goi / nhieu / js / danh_sach chạy bằng cổng; nhieu dừng ở lệnh lỗi', async () => {
+    const c = taoCongNgoai(ng());
+    const g = (await chayViecMcp(c, { id: '1', loai: 'goi', ten: 'get_state', dau_vao: { gon: true } })) as { ok: boolean; noi_dung: string };
+    expect(g.ok).toBe(true);
+    const n = (await chayViecMcp(c, { id: '2', loai: 'nhieu', lenh: [{ ten: 'get_state' }, { ten: 'khong_co' }, { ten: 'get_state' }] })) as unknown[];
+    expect(n.length).toBe(2);
+    expect(await chayViecMcp(c, { id: '3', loai: 'js', ma: 'async (T) => (await T.chay("get_state", {gon:true})).json.lo.length' })).toBe(1);
+    expect(((await chayViecMcp(c, { id: '4', loai: 'danh_sach' })) as unknown[]).length).toBeGreaterThanOrEqual(40);
+  });
+
+  it('get_state mặc định ẩn lô nền, all_lots / lot_ids để lấy; ngữ cảnh gọn chỉ lô cao tầng', async () => {
+    const c = taoCongNgoai(ng());
+    const mac = (await c.chay('get_state', { gon: true })).json as { lo: { id: string }[]; lo_an?: number };
+    expect(mac.lo.map((l) => l.id)).toEqual(['A']);
+    expect(mac.lo_an).toBe(1);
+    expect(((await c.chay('get_state', { gon: true, all_lots: true })).json as { lo: unknown[] }).lo.length).toBe(2);
+    expect(((await c.chay('get_state', { gon: true, lot_ids: ['CX-1'] })).json as { lo: { id: string }[] }).lo.map((l) => l.id)).toEqual(['CX']);
+    const g = nguCanhGon(ng());
+    expect(g.lo_cao_tang.map((x) => x[0])).toEqual(['A']);
+    expect(g.so_lo_khac).toBe(1);
   });
 });

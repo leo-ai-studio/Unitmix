@@ -3,6 +3,9 @@ import { useMemo } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { LOAI_CAN, type CongNangO, type LoaiCan, type Lo, type ThuVien, type ToaDat, type TrangThaiPA } from '../tinh/kieu';
 import { kpiTang } from '../tinh/kpi';
+import { truTCC, usePCCCTang } from '../ve/LopPCCC';
+import type { BoCuc } from '../tinh/matBang';
+import type { ToaMB } from '../tinh/loiThang';
 import { MucGap } from './MucGap';
 import { fmtSo } from './so';
 import { LuoiSo, TheSo, VongKpi, pct1, useHieuSuatMin } from './TheSo';
@@ -21,12 +24,15 @@ const fmtNguoi = (v: number) => fmtSo(v, { thapPhan: Number.isInteger(v) ? 0 : 2
  * DTXD một sàn · DTSD một sàn) + unit mix (donut + bảng theo loại: căn, % so với mục tiêu, DT thông thủy, dân). Chi tiết từng mẫu căn
  * trong mục gập (mặc định đóng). Tính: `tinh/kpi.ts` `kpiTang`.
  */
-export function KpiTang({ pa, tv, toa, lo, tang, can, mucTieu, nguongLech, tenTang, canChon }: {
-  pa: TrangThaiPA; tv: ThuVien; toa: ToaDat; lo: Lo | undefined; tang: number | null;
+export function KpiTang({ pa, tv, toa, mau, bc, lo, tang, can, mucTieu, nguongLech, tenTang, canChon }: {
+  pa: TrangThaiPA; tv: ThuVien; toa: ToaDat; mau: unknown; bc: BoCuc; lo: Lo | undefined; tang: number | null;
   can: { canId: string; cn: CongNangO }[]; mucTieu: Record<LoaiCan, number>; nguongLech: number; tenTang: string; canChon?: ComponentChildren;
 }) {
   const hsMin = useHieuSuatMin();
-  const k = useMemo(() => kpiTang(pa, tv, toa, lo, tang, can, mucTieu, hsMin), [pa, tv, toa, lo, tang, can, mucTieu, hsMin]);
+  const k0 = useMemo(() => kpiTang(pa, tv, toa, lo, tang, can, mucTieu, hsMin), [pa, tv, toa, lo, tang, can, mucTieu, hsMin]);
+  // DTSD một sàn trừ phần tường xây sau lưng tủ PCCC của các căn (QT-77g, như app cũ)
+  const truDt = [...truTCC(usePCCCTang(pa, tv, toa, mau as ToaMB, bc)).values()].reduce((a, x) => a + x, 0);
+  const k = truDt ? { ...k0, dtsd: k0.dtsd - truDt } : k0;
   const ten = nhanToa(pa, tv, toa.id); // "V4 · 2" khi lô có hai tòa cùng mẫu
   const dsLoai = LOAI_CAN.filter((l) => k.theoLoai[l].nToa > 0 || k.theoLoai[l].mucTieu > 0);
   const tenCan = (id: string) => tv.can.get(id)?.ten_vi ?? id;
@@ -50,7 +56,8 @@ export function KpiTang({ pa, tv, toa, lo, tang, can, mucTieu, nguongLech, tenTa
         <TheSo id="kpi-hs-tang" nhan={t('kpi.hieuSuatTang')} gt={k.hieuSuat.gt === null ? null : k.hieuSuat.gt * 100} thapPhan={1} donVi="%" o={k.hieuSuat}
           tip={t('kpi.gt.hieuSuat').replace('{n}', fmtSo(hsMin * 100))} phu={<>≥ {fmtSo(hsMin * 100)} % · {t('kpi.caToa')} {pct1(k.hieuSuatToa)}</>} />
         <TheSo id="kpi-dtxd-san" nhan={t('kpi.dtxd1San')} gt={k.dtxd} thapPhan={1} donVi={m2} tip={t('kpi.gt.dtxdTang')} />
-        <TheSo id="kpi-dtsd-san" nhan={t('kpi.dtsd1San')} gt={k.dtsd} thapPhan={1} donVi={m2} tip={t('kpi.gt.dtsdTang')} />
+        <TheSo id="kpi-dtsd-san" nhan={t('kpi.dtsd1San')} gt={k.dtsd} thapPhan={1} donVi={m2} tip={t('kpi.gt.dtsdTang')}
+          phu={truDt ? t('tang.truTcc').replace('{m}', fmtSo(truDt, { thapPhan: 2 })) : null} />
       </LuoiSo>
 
       <div class="kpi-mix">

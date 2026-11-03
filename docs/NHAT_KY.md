@@ -27,6 +27,25 @@ Người dùng báo nút XLS xoay mãi trên bản đã deploy (t1c0nhol, PA 1 -
 - **Kiểm**: `xuatXls.test.ts` (8 ca) có bộ tính lại công thức (SUM, + − × ÷, tham chiếu ô) so với giá trị đã tính; thử PA thật t1c0nhol (79 tòa, 22 lô) ra tệp 182 KB, đọc lại bằng openpyxl; thử trong trình duyệt (dev trỏ API thật): bấm XLS ra Blob 182 KB, không lỗi. `kiem:nhanh`: tsc, web 999, worker 46 đạt; pytest hỏng 1 ca `test_cau_claude` (mã hoá cp1252 trong cầu Claude, không liên quan).
 - **Dở**: chưa deploy / nâng phiên bản (nhớ thêm mục `lichSuPhienBan.ts`); chưa đối chiếu Excel thật mở file (không có Excel / LibreOffice trên máy này); chưa tách sheet theo tòa, chưa đưa ảnh mặt bằng; worker rải hầm hỏng trên bản deploy vẫn chưa tìm nguyên nhân (màn Chi phí / Hầm / 3D dùng chung).
 
+## 2026-11-03 · Đầu hành lang không kéo được, v0.6.4 · Claude Code (Opus 5.5)
+
+Chủ nhiệm (V2 NOTM-1.1): đầu HL không kéo được. Nguyên nhân: `hanhLangTay` lưu số kéo (−20 m) nhưng `apHanhLangTay` cắt về giới hạn (cửa căn xa nhất + 500 mm); kéo ra ngoài từ số lưu −20 m vẫn dưới giới hạn nên hành lang không dịch. Sửa: `thaoTacTay.ts › hlHieuDung` đo độ dời có hiệu lực (mặt bằng có / không hành lang tay), `chuanHoaHLTay` ghi lại sau mỗi phép tay, `ManTang` đưa độ dời hiệu lực cho tay nắm. Test trong `xoaCanKepThang.test.ts`. **Còn dở**: chưa thử kéo chuột thật; lỗi "căn V nhảy sang căn khác" và phím E vẫn chờ mô tả.
+
+## 2026-11-03 · Căn kẹp lõi–thang bộ: xóa / đổi / thêm được, v0.6.3 · Claude Code (Opus 5.5)
+
+Chủ nhiệm (V2): căn 1PN giữa lõi V và thang không xóa / đổi được ("để lại khe 6000 mm"). Nguyên nhân: đoạn lõi | căn | thang là đoạn đóng, thang đứng yên. Sửa: `loiThang.ts › thangKepCan` (nhận ra căn kẹp), `boCanKep` cho thang + cụm phía đầu tự do trượt về lõi, `donQuaThang` coi cụm là vật thể cuối / đầu của mặt thì là đầu tự do (nét bao chưa co theo sau khi bỏ căn). Test `tinh/xoaCanKepThang.test.ts` (tm-v2 mặt 2, cả trạng thái PA thật đã xóa 2:2). **Còn dở**: lỗi "căn V nhảy sang căn khác khi đổi / xếp" chưa tái hiện được; phím E / nút xóa chưa rõ.
+
+## 2026-11-03 · Kéo căn: giữa căn = đổi chỗ, mép căn = chèn vào khe, v0.6.2 · Claude Code (Sonnet 5.5)
+
+Chủ nhiệm: kéo căn đến (1) giữa căn khác thì đảo hai căn cho nhau, (2) khe giữa hai căn thì chuyển căn chèn vào đó; hai cánh không để lệch nhiều. `CongCuTang.tsx › tinhKieu`: con trỏ trong nửa giữa (theo chiều dãy) căn đích → `doi`, hai phần tư đầu → `truoc` / `sau`; chữ gợi ý `cc.thaVao` đổi thành "Đổi chỗ với …". Cùng dãy vẫn luôn đổi chỗ, Alt = đổi chỗ. **Còn dở**: chưa thử kéo thật trên trình duyệt; chưa có cảnh báo độ lệch hai cánh khi chuyển căn; chưa có đường kẻ chỉ vị trí chèn.
+
+## 2026-11-03 · Leo AI đỡ token + cầu MCP Claude Code ↔ app, v0.6.0 · Claude Code (Opus 5.5)
+
+Người dùng: Leo AI chạy nhanh, đỡ tốn token; cầu nối MCP Claude với app Unitmix nhanh, đỡ token. Yêu cầu dùng / nâng cấp tính năng sẵn có.
+- **Leo AI**: ngữ cảnh gửi kèm mỗi câu (`LeoAI.tsx` → `congCu/doc.ts › nguCanhGon`) chỉ còn PA, màn hình, tổng, lô cao tầng + số tòa theo mẫu (PA Long Biên 106 lô / 79 tòa: ước ~17.000 → ~1.300 ký tự mỗi câu, lại cộng dồn trong lịch sử). `get_state` mặc định ẩn lô nền chưa có tòa (`lo_an`), thêm `lot_ids`, `all_lots`. `gonLichSu` thay ngữ cảnh câu cũ bằng `[ngữ cảnh cũ]`. `chayCongCu(…, toiDa)` cho cổng ngoài bỏ trần 12.000.
+- **Cầu MCP** `scripts/mcp_unitmix/mdi_unitmix_mcp.py` (thư viện chuẩn): Claude Code ↔ stdio ↔ cầu ↔ HTTP 127.0.0.1:3043 ↔ trang mở với `?congCu=1&mcp=3043` (`congChayNgoai.ts › noiCauMcp` long-poll, chạy bằng cổng `window.unitmixTools` sẵn có). Công cụ: `unitmix_status`, `unitmix_list_tools`, `unitmix_call`, `unitmix_call_many`, `unitmix_run_js`. Nhiều phiên dùng chung cổng (phiên sau gửi qua `/giao`). Test: `tests/test_mcp_unitmix.py`, `congChayNgoai.test.ts`.
+- **Còn dở**: chưa đăng ký MCP vào Claude Code (người dùng chạy `claude mcp add`, xem `docs/ghi_chu_sua_pa_hang_loat.md`); chưa thử với trình duyệt thật (quyền mạng cục bộ của Chrome khi trang https gọi 127.0.0.1); đường cầu AI `claude -p` vẫn mở tiến trình mới mỗi lượt công cụ (chậm hơn khoá API).
+
 ## 2026-11-02 (chiều) · Hành lang L/T, nhãn TMB nhẹ, panel Căn đang chọn, Reset mặt bằng, kéo căn sang dãy khác, v0.5.1 → v0.5.6 · Claude Code (Sonnet 5.5) + Antigravity
 
 Người dùng gửi từng ảnh lỗi trên app đã deploy; mỗi mục commit + deploy riêng (site hiện đúng số phiên bản sau khi xóa service worker + cache).

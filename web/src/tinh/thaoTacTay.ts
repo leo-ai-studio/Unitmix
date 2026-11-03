@@ -10,7 +10,7 @@
 import { chiSoCanThem, moRong, khoaCanThem, mauToa, rutCanThem } from './canThem';
 import { doiCanTaiViTri, doiCanTheoTang, doiChoO, doiCongNang, latO } from './doiCan';
 import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type ToaDat } from './kieu';
-import { chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
+import { apMatBang, chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
 import { duocDatVaoO, idMauGoc, nhomViTri } from './quyTacViTriCan';
 
@@ -27,6 +27,35 @@ function doTang(toa: ToaDat, tang: number | null, { tv, dl }: Ctx) {
   return { ...doDeKhe(mau, mb, dl, tv, bc), khung: deKhung(mau, mb, dl, tv, bc) };
 }
 
+/**
+ * Độ dời đầu hành lang kéo tay đang CÓ HIỆU LỰC (mm): `hanhLangTay` lưu số người dùng kéo, nhưng tự chỉnh cắt về giới hạn (không ngắn quá
+ * cửa căn xa nhất + 500 mm, đoạn ≥ 3 m, dài thêm ≤ 20 m) — kéo quá giới hạn thì số lưu (−20 m) lớn hơn hiệu lực, các lần kéo sau theo số
+ * lưu nên "không kéo được". Đo hiệu lực bằng hai mặt bằng có / không có hành lang tay.
+ */
+export function hlHieuDung(toa: ToaDat, c: Ctx): Record<string, [number, number]> | undefined {
+  const tay = toa.hanhLangTay;
+  const mau = tay ? mauToa(c.tv, toa) as ToaMB | undefined : undefined;
+  if (!tay || !mau) return tay;
+  const A = matBangTang(toa, mau, c.dl, null), B = matBangTang(tuChinhToa({ ...toa, hanhLangTay: undefined, matBang: undefined } as ToaDat, mau, c.tv, c.dl), mau, c.dl, null); // mặt bằng lưu sẵn (`matBang`) đã gồm hành lang tay → dựng lại không có
+  const lam = (x: number) => (Math.abs(x) < 50 ? 0 : Math.round(x / HL_TAY.buoc) * HL_TAY.buoc);
+  const ra: Record<string, [number, number]> = {};
+  for (const [k, dd] of Object.entries(tay)) {
+    const i = Number(k), sA = A.hanhLang[i], sB = B.hanhLang[i];
+    if (!sA || !sB) { ra[k] = dd; continue; }
+    const L = Math.hypot(sA.p1[0] - sA.p0[0], sA.p1[1] - sA.p0[1]) || 1, u = [(sA.p1[0] - sA.p0[0]) / L, (sA.p1[1] - sA.p0[1]) / L];
+    const e0 = lam((sB.p0[0] - sA.p0[0]) * u[0] + (sB.p0[1] - sA.p0[1]) * u[1]), e1 = lam((sA.p1[0] - sB.p1[0]) * u[0] + (sA.p1[1] - sB.p1[1]) * u[1]);
+    if (e0 || e1) ra[k] = [e0, e1];
+  }
+  return Object.keys(ra).length ? ra : undefined;
+}
+/** `hanhLangTay` về đúng độ dời có hiệu lực (xem hlHieuDung); không đổi gì nếu đã khớp. */
+function chuanHoaHLTay(toa: ToaDat, c: Ctx): ToaDat {
+  if (!toa.hanhLangTay) return toa;
+  const hd = hlHieuDung(toa, c), cu = toa.hanhLangTay;
+  const khop = hd && Object.keys(hd).length === Object.keys(cu).length && Object.entries(hd).every(([k, v]) => cu[k] && Math.abs(cu[k][0] - v[0]) < 50 && Math.abs(cu[k][1] - v[1]) < 50);
+  return khop || (!hd && !Object.keys(cu).length) ? toa : { ...toa, hanhLangTay: hd };
+}
+
 /** Chạy tự chỉnh sau phép sửa tay `sau` rồi kiểm không đè / khe mới trên các tầng `ks`. */
 function chotSua(truoc: ToaDat, sau0: ToaDat, ks: (number | null)[], c: Ctx, thangTuDat = false): KetQuaTay {
   const mau = mauToa(c.tv, sau0) as ToaMB | undefined;
@@ -40,7 +69,7 @@ function chotSua(truoc: ToaDat, sau0: ToaDat, ks: (number | null)[], c: Ctx, tha
     if (b.de > a.de || b.khung > a.khung) return { ok: false, lyDo: 'de' };
     if (b.mm > a.mm + 200 || b.san > a.san) return { ok: false, lyDo: 'khe', chiTiet: String(Math.round(b.mm - a.mm)) };
   }
-  return { ok: true, toa: r.toa, chan: r.chan };
+  return { ok: true, toa: chuanHoaHLTay(r.toa, c), chan: r.chan };
 }
 
 // ---------------- căn ----------------
@@ -62,6 +91,13 @@ export function doiChoTay(toa: ToaDat, tangs: number[] | null, a: ViTriCan, b: V
   for (const k of tangs ?? [null]) {
     const bc0 = boCucTang(toa, k), bc1 = boCucTang(r.toa, k);
     if (goc(canDangDung(a, bc1)) !== goc(canDangDung(b, bc0)) || goc(canDangDung(b, bc1)) !== goc(canDangDung(a, bc0))) return { ok: false, lyDo: 'khong_vua' };
+    // tự chỉnh khít không được đổi mẫu căn của ô THỨ BA (1PN ↔ STU khác bề ngang → căn bên cạnh bị biến thành STU)
+    const mauSau = mauToa(c.tv, r.toa) as ToaMB | undefined, mauTruoc = mauToa(c.tv, toa) as ToaMB | undefined;
+    if (mauSau && mauTruoc) {
+      const v0 = viTriCan(apMatBang(mauTruoc, matBangTang(toa, mauTruoc, c.dl, k), c.dl), c.tv, bc0);
+      const v1 = new Map(viTriCan(apMatBang(mauSau, matBangTang(r.toa, mauSau, c.dl, k), c.dl), c.tv, bc1).map((v) => [v.khoa, v]));
+      for (const v of v0) if (v.khoa !== a.khoa && v.khoa !== b.khoa && v1.has(v.khoa) && goc(canDangDung(v1.get(v.khoa)!, bc1)) !== goc(canDangDung(v, bc0))) return { ok: false, lyDo: 'khong_vua' };
+    }
   }
   return r;
 }

@@ -144,6 +144,8 @@ export function gonLichSu(ls: TinNhan[], nguong = 60_000, giu = 6): TinNhan[] {
       content: m.content.map((b) => {
         if (b.type === 'tool_result' && typeof b.content === 'string' && b.content.length > 300) return { ...b, content: b.content.slice(0, 300) + ' …[đã rút gọn]' };
         if (b.type === 'image' || b.type === 'document') return { type: 'text' as const, text: '[tệp đính kèm cũ đã bỏ khỏi lịch sử]' };
+        // ngữ cảnh trạng thái của câu cũ đã lỗi thời (câu mới gửi ngữ cảnh mới) — chỉ giữ dấu
+        if (b.type === 'text' && b.text.startsWith('<ngu_canh>')) return { type: 'text' as const, text: '[ngữ cảnh cũ]' };
         return b;
       }),
     });

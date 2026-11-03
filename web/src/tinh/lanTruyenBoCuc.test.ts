@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ToaDat, TrangThaiPA } from './kieu';
-import { lanTruyenBoCuc, toaNhanSua } from './lanTruyenBoCuc';
+import { chepBoCucSang, lanTruyenBoCuc, toaNhanSua } from './lanTruyenBoCuc';
 
 const toa = (id: string, loId: string, mauId: string, them: Partial<ToaDat> = {}): ToaDat =>
   ({ id, loId, mauId, x: 0, y: 0, gocDo: 0, soTangDH: 24, soTangDe: 1, caoDe: 4.5, caoDH: 3.3, coApMai: false, deOffset: 0, canTheo: {}, ...them });
@@ -40,5 +40,16 @@ describe('lan truyen bo cuc sang toa cung mau', () => {
     const p1 = sua(sua(p0, 'a', { canViTri: { k: 'x' } }), 'b', { canViTri: { k: 'y' } });
     expect(lanTruyenBoCuc(p0, p1, 'lo').them).toBe(0);
     expect(lanTruyenBoCuc(p0, sua(p0, 'a', { x: 5 }), 'lo').them).toBe(0);
+  });
+});
+
+describe('chep bo cuc sang toa chon', () => {
+  it('chi chep sang toa cung mau, chua khoa, dung dich', () => {
+    const nguon = sua(pa([A, B, C, D]), 'a', { canViTri: { '0:1': 'x' }, matBang: { thangTay: [] } as never });
+    const r = chepBoCucSang(nguon, 'a', ['b', 'd', 'a']);
+    expect(r.them).toBe(1);
+    expect(r.pa.toa.find((x) => x.id === 'b')?.canViTri).toEqual({ '0:1': 'x' });
+    expect(r.pa.toa.find((x) => x.id === 'c')?.canViTri).toBeUndefined();
+    expect(r.pa.toa.find((x) => x.id === 'd')?.canViTri).toBeUndefined();
   });
 });

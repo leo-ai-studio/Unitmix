@@ -151,7 +151,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
     if (r.them) datBaoStretch({ loai: 'ok', chu: t('tang.phamVi.da').replace('{n}', String(r.them)) });
     return r.pa;
   });
-  const chungTang = { ...chungXep, sua: suaTang, canKhoa, chonCan: setCanKhoa };
+  const chungTang = { ...chungXep, sua: suaTang, suaDon: kho.sua, canKhoa, chonCan: setCanKhoa };
   const chungHam = { ...chung, tv, tangHam, chonTangHam: setTangHam };
   // chọn trong 3D đi qua đúng state chọn của 2D; bấm đúp tòa → mặt bằng tầng (như bấm đúp ở TMB) và về khung 2D
   const [xemGiua, setXemGiua] = useState<CheDoXem>('mat_bang');

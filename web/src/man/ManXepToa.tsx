@@ -280,7 +280,8 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
     const b = e.shiftKey ? 1 : 0.1;
     if (ctrl && k.toLowerCase() === 'd') { e.preventDefault(); nhanBan(); }
     else if (ctrl) return;
-    else if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); xoa(); }
+    // chỉ Delete xoá tòa: bộ gõ Telex / Unikey gõ "ee" → ê bằng cách bắn một Backspace giả, Backspace từng xoá nhầm tòa
+    else if (k === 'Delete') { e.preventDefault(); xoa(); }
     else if (k === 'r' || k === 'R') xoay(e.shiftKey ? -90 : 90);
     else if (k === 'q' || k === 'Q') xoay(e.shiftKey ? 1 : 5);
     else if (k === 'e' || k === 'E') xoay(e.shiftKey ? -1 : -5);

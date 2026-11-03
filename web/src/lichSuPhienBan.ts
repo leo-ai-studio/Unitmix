@@ -6,25 +6,104 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
-    v: '0.5.20', ngay: '2026-11-03',
+    v: '0.7.4', ngay: '2026-11-03',
     vi: [
-      'Excel: thêm sheet Đơn giá (ô nhập nền vàng, Dự toán tham chiếu sang đây) và sheet Theo tòa (từng tòa gộp theo lô)',
-      'Sửa rải hầm: dự án nhiều hơn 12 lô có tòa không còn bị rải đi rải lại không dứt (cache đẩy kết quả nhau); sức chứa cache 64 lô',
+      'Màn Tầng: dời / bỏ thang bộ thì dồn khít về mốc chặn — dãy không có lõi thang máy giữ đầu khít mép cánh kia (tòa L), đầu còn lại mới co lại',
     ],
     en: [
-      'Excel: new Unit prices sheet (yellow input cells, the Cost estimate reads from it) and By building sheet (buildings grouped by plot)',
-      'Basement layout fix: projects with more than 12 built plots no longer re-run the layout forever (cached results evicted each other); cache now holds 64 plots',
+      'Floor screen: moving / removing a stair now packs units toward the stop mark — a row without a lift core keeps its end flush with the other wing (L towers), the other end shrinks',
     ],
   },
   {
-    v: '0.5.19', ngay: '2026-11-03',
+    v: '0.7.3', ngay: '2026-11-03',
     vi: [
-      'Xuất Excel theo brand LEO: có bìa, biểu diện tích (sàn theo khối, theo lô, cơ cấu căn, hầm và chỗ đỗ), dự toán bằng công thức Excel',
-      'Sửa nút XLS xoay mãi: xuất không chờ rải hầm nữa (số chỗ đỗ ước theo diện tích hầm)',
+      'Màn Tầng: bỏ chặn đầu hành lang theo cửa căn — kéo đầu hành lang tự do, chỉ còn đoạn ngắn nhất 3 m và dài thêm tối đa 20 m',
     ],
     en: [
-      'Excel export in LEO brand: cover, area schedule (floor area by volume and plot, unit mix, basement and parking), cost estimate with live Excel formulas',
-      'Fixed the XLS button spinning forever: the export no longer waits for the basement layout (parking counts are estimated from basement area)',
+      'Floor screen: corridor ends are no longer blocked by unit doors — drag freely; only a 3 m minimum segment and +20 m maximum remain',
+    ],
+  },
+  {
+    v: '0.7.2', ngay: '2026-11-03',
+    vi: [
+      'Màn Xếp tòa: bỏ phím Backspace xoá tòa — gõ "ee" bằng Telex / Unikey bắn một Backspace giả làm xoá nhầm tòa; xoá tòa chỉ bằng phím Delete',
+    ],
+    en: [
+      'Tower layout: Backspace no longer deletes towers — typing "ee" with a Telex / Unikey IME fires a synthetic Backspace that removed towers by mistake; only the Delete key deletes',
+    ],
+  },
+  {
+    v: '0.7.1', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: căn có tủ PCCC đặt sát tường (tường xây sau lưng tủ) được trừ DT thông thủy như app cũ — tem căn, "Căn đang chọn" và DT sử dụng 1 sàn đều ghi số sau trừ',
+    ],
+    en: [
+      'Floor screen: units with a fire cabinet against the wall (masonry behind it) now have that area deducted from net area as in the old app — unit label, selected unit and floor usable area show the deducted figure',
+    ],
+  },
+  {
+    v: '0.7.0', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: mục mới "Chép bố cục sang tòa khác" — chép TOÀN BỘ bố cục tầng của tòa đang xem sang các tòa cùng mẫu: tick từng tòa, cả lô hoặc cả dự án (mẫu nào cũng dùng được, một lần hoàn tác trả lại tất cả)',
+    ],
+    en: [
+      'Floor screen: new "Copy layout to other towers" — copies the WHOLE floor layout of the tower in view to same-type towers: tick towers, whole plot or whole project (works for any type, one undo reverts all)',
+    ],
+  },
+  {
+    v: '0.6.5', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: kéo căn đổi chỗ với căn khác bề ngang (1PN ↔ STU) chỉ đổi đúng hai căn đó; nếu tự chỉnh khít buộc đổi thêm căn thứ ba thì từ chối và giữ nguyên, không tự biến căn bên cạnh',
+    ],
+    en: [
+      'Floor screen: dragging a unit to swap with a different-width unit (1BR ↔ studio) now changes exactly those two units; if the auto-fit would have to re-type a third unit the swap is refused and nothing changes',
+    ],
+  },
+  {
+    v: '0.6.4', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: đầu hành lang kéo quá giới hạn (−20 m) không còn "kẹt" — số lưu được cắt về độ dời thật, tay nắm nằm đúng chỗ và kéo ra ngoài có tác dụng ngay',
+    ],
+    en: [
+      'Floor screen: a corridor end dragged past its limit (−20 m) no longer gets "stuck" — the stored value is trimmed to the real offset, the handle sits in the right place and dragging outward works at once',
+    ],
+  },
+  {
+    v: '0.6.3', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng: căn kẹp giữa lõi và thang bộ (lõi | căn | thang) xóa / đổi sang mẫu khác bề ngang / thêm căn được — thang và các căn phía đầu tự do trượt theo; trước đây báo "để lại khe 6000 mm" hoặc không đổi được',
+    ],
+    en: [
+      'Floor screen: a unit sandwiched between the core and a stair (core | unit | stair) can now be deleted, swapped to a different-width template or have a unit added — the stair and the units towards the free end slide along; before it reported a 6000 mm gap or refused the change',
+    ],
+  },
+  {
+    v: '0.6.2', ngay: '2026-11-03',
+    vi: [
+      'Màn Tầng · kéo căn sang dãy khác: thả vào GIỮA căn đích thì ĐỔI CHỖ hai căn; thả ở MÉP căn đích (một phần tư hai đầu) thì CHUYỂN căn sang, chèn vào khe giữa căn đích và căn kề — trước đây thả đâu cũng chuyển nên không đổi chỗ được',
+    ],
+    en: [
+      'Floor screen · drag a unit to another row: dropping on the MIDDLE of the target swaps the two units; dropping on its EDGE (outer quarters) moves the unit and inserts it in the gap next to the target — before, any drop moved it, so swapping was impossible',
+    ],
+  },
+  {
+    v: '0.6.1', ngay: '2026-11-03',
+    vi: [
+      'Cầu MCP đổi cổng mặc định sang 3043 (3033 trùng cầu AI của Leo AI): mở app với ?congCu=1&mcp=3043; đã thử trọn vòng Claude ↔ Chrome ↔ app',
+    ],
+    en: [
+      'MCP bridge default port is now 3043 (3033 clashed with the Leo AI bridge): open the app with ?congCu=1&mcp=3043; verified end to end Claude ↔ Chrome ↔ app',
+    ],
+  },
+  {
+    v: '0.6.0', ngay: '2026-11-03',
+    vi: [
+      'Leo AI đỡ tốn token: mỗi câu hỏi chỉ gửi kèm ngữ cảnh gọn (PA, màn hình, lô cao tầng + số tòa theo mẫu) thay vì mọi lô + mọi tòa; get_state mặc định ẩn lô nền, đọc riêng vài lô bằng lot_ids; lịch sử dài bỏ ngữ cảnh của câu cũ',
+      'Cầu MCP cho Claude Code (scripts/mcp_unitmix): mở app với ?congCu=1&mcp=3043 là Claude Code gọi thẳng công cụ app như công cụ gốc — gọi nhiều lệnh một lượt, chạy hàm tính trong trang, kết quả cắt gọn theo yêu cầu',
+    ],
+    en: [
+      'Leo AI uses fewer tokens: each question carries a compact context (plan, screen, high-rise lots + tower counts per template) instead of every lot and tower; get_state hides background lots by default, read a few lots with lot_ids; long histories drop the context of older questions',
+      'MCP bridge for Claude Code (scripts/mcp_unitmix): open the app with ?congCu=1&mcp=3043 and Claude Code calls the app tools as native tools — batch calls, in-page scripts, results trimmed on request',
     ],
   },
   {

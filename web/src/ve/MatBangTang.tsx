@@ -11,6 +11,8 @@ export type ToaVe = ToaCoMat & { duong_bao: Diem[]; hanh_lang?: { ten: string; n
 
 type Props = {
   mau: ToaVe;
+  /** DT thông thủy trừ theo số căn (CH-xx) vì tường xây sau lưng tủ PCCC — tem căn ghi DTTT sau trừ. */
+  truTCC?: Map<number, number>;
   /** Bố cục của tầng đang xem (chung hoặc tầng riêng). */
   toa: BoCuc;
   tv: ThuVien;
@@ -74,7 +76,7 @@ export function soLieuTang(mau: ToaVe, toa: BoCuc, tv: ThuVien) {
 }
 
 /** Mặt bằng tầng điển hình vẽ trong BanVe (toạ độ mm, lật trục y bằng phép biến đổi nhóm). */
-export function MatBangTang({ mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTem, canKhoa, onChonO, dsChon = [], onMenu, loiTT, loiKhoa, nhanCongNang, deBai, nguongDt,
+export function MatBangTang({ truTCC, mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTem, canKhoa, onChonO, dsChon = [], onMenu, loiTT, loiKhoa, nhanCongNang, deBai, nguongDt,
   thangKhoa, onChonThang, oDich, dichLoi, oKeo, hienHanhLang = true, choSang, canVuot, loiDaGiac }: Props) {
   const mauDich = dichLoi ? 'var(--warn)' : 'var(--green)';
   const K = KIEU_MB[kieu];
@@ -249,11 +251,12 @@ export function MatBangTang({ mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTe
         const c = tv.can.get(canId);
         const t = tem.get(vt.khoa);
         if (!c || !t || cn !== 'can') return null;
+        const dtTT = c.dt_tt_m2 - (truTCC?.get(no) ?? 0);
         return (
           <g key={`t${vt.khoa}`} data-o={vt.khoa} data-tem={vt.khoa} transform={`translate(${Math.round(t.cx)} ${Math.round(t.cy)}) scale(1 -1)`} onClick={(e) => onChonO(vt.khoa, e)} onContextMenu={menu('o', vt.khoa)} style={{ cursor: 'pointer' }}>
             <TemCan kieu={kieuTem ?? kieu} no={`CH-${String(no).padStart(2, '0')}`} loai={NHAN_LOAI[c.loai]} soLoai={`Loại ${loai.get(canId)}`}
-              tt={fmt(c.dt_tt_m2)} tim={fmt(c.dt_tim_m2)} mauLoai={K.u[c.loai]}
-              chamMau={deBai?.[c.loai] ? Math.abs(c.dt_tt_m2 - deBai[c.loai]!) <= nguongDt ? '#2f7d4f' : c.dt_tt_m2 > deBai[c.loai]! ? '#d98a00' : '#b42318' : undefined} />
+              tt={fmt(dtTT)} tim={fmt(c.dt_tim_m2)} mauLoai={K.u[c.loai]}
+              chamMau={deBai?.[c.loai] ? Math.abs(dtTT - deBai[c.loai]!) <= nguongDt ? '#2f7d4f' : dtTT > deBai[c.loai]! ? '#d98a00' : '#b42318' : undefined} />
           </g>
         );
       })}

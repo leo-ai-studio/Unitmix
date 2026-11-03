@@ -12,7 +12,7 @@ import { langHienTai, t, useLang } from '../i18n/i18n';
 import { BieuTuong } from '../ui/NutBieuTuong';
 import type { KhoaBieuTuong } from '../ui/bieuTuong';
 import { congCuTheoTen } from './congCu';
-import { tomTatTrangThai } from './congCu/doc';
+import { nguCanhGon } from './congCu/doc';
 import { docChuDocx } from './docDocx';
 import type { NguCanh } from './congCu/nguCanh';
 import { batDauNghe, coDoc, coNghe, docTo, dungDoc, type LoiNghe, type PhienNghe } from './giongNoi';
@@ -273,7 +273,7 @@ export function LeoAI(p: PropsLeo) {
     const goc: CuocTroChuyen = tuCuoc ?? cuoc ?? { id: idCuoc(), ten: tenTuCau(chuSach || dinhKem[0]?.ten || ''), tao: bay, sua: bay, lichSu: [], luc: [] };
     const lichSu = gonLichSu(goc.lichSu);
     const luc = [...goc.luc];
-    const nguCanh = `<ngu_canh>${JSON.stringify(tomTatTrangThai(p.ng, false))}</ngu_canh>`;
+    const nguCanh = `<ngu_canh>${JSON.stringify(nguCanhGon(p.ng))}</ngu_canh>`;
     lichSu.push({ role: 'user', content: [{ type: 'text', text: nguCanh }, ...dinhKem.map((d) => d.khoi), ...(chuSach ? [{ type: 'text' as const, text: chuSach }] : [])] });
     luc.push(bay);
     let hienTai: CuocTroChuyen = { ...goc, lichSu, luc, sua: bay };
