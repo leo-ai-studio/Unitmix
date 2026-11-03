@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.5.19', ngay: '2026-11-03',
+    vi: [
+      'Xuất Excel theo brand LEO: có bìa, biểu diện tích (sàn theo khối, theo lô, cơ cấu căn, hầm và chỗ đỗ), dự toán bằng công thức Excel',
+      'Sửa nút XLS xoay mãi: xuất không chờ rải hầm nữa (số chỗ đỗ ước theo diện tích hầm)',
+    ],
+    en: [
+      'Excel export in LEO brand: cover, area schedule (floor area by volume and plot, unit mix, basement and parking), cost estimate with live Excel formulas',
+      'Fixed the XLS button spinning forever: the export no longer waits for the basement layout (parking counts are estimated from basement area)',
+    ],
+  },
+  {
     v: '0.5.18', ngay: '2026-11-03',
     vi: [
       '3D: kính cửa sổ khối tháp trong hơn (xanh nhạt, nhìn xuyên thấy nội thất)',
