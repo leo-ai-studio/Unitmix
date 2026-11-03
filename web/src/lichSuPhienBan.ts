@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.2', ngay: '2026-11-03',
+    vi: [
+      'Màn Xếp tòa: bỏ phím Backspace xoá tòa — gõ "ee" bằng Telex / Unikey bắn một Backspace giả làm xoá nhầm tòa; xoá tòa chỉ bằng phím Delete',
+    ],
+    en: [
+      'Tower layout: Backspace no longer deletes towers — typing "ee" with a Telex / Unikey IME fires a synthetic Backspace that removed towers by mistake; only the Delete key deletes',
+    ],
+  },
+  {
     v: '0.7.1', ngay: '2026-11-03',
     vi: [
       'Màn Tầng: căn có tủ PCCC đặt sát tường (tường xây sau lưng tủ) được trừ DT thông thủy như app cũ — tem căn, "Căn đang chọn" và DT sử dụng 1 sàn đều ghi số sau trừ',
