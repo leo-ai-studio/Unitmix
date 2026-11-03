@@ -1146,3 +1146,9 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Nhường thoát nạn:** `tuChinhMatBang` chạy ưu tiên mốc trước; còn căn vượt cự ly thì chạy thứ tự cũ, lấy bản ít vượt hơn (xh-z4 6 → 0 vẫn đạt, mép mốc dời — test ghi `NHUONG_THOAT_NAN`).
 - Test `tinh/mocChan.test.ts` quét mọi mẫu tòa theo hình học (mẫu mới tự bị kiểm): tắt `cuoiTruoc` thì 8 mẫu Z hỏng, bật thì đạt. `kiem:nhanh`: tsc, web 1067, worker 46 đạt; pytest còn `test_cau_claude` (cp1252, cũ).
 - Chưa kiểm trên màn hình thật; chưa commit.
+
+## 2026-11-04 (sau) · Xoá căn: dồn khít về mốc chặn
+
+- **Lỗi (ảnh chủ nhiệm, tòa Z):** xoá một căn ở dãy gần lõi thì `boCanTren` (xoá căn → `apBoCan`) co dãy ở đầu SÁT LÕI vì coi đó là "đầu tự do gần hơn" → hở một căn ngay cạnh mốc.
+- **Sửa** (`loiThang.ts` `boCanTren`): đầu là mốc chặn QT-49 (`mocChan`) không co khi đầu kia còn tự do; căn dồn về mốc, đầu tự do co lại. Test quét `mocChan.test.ts` (xoá căn): tắt bản sửa → 11 mẫu hỏng (T, Z), bật → còn xh-z2, xh-z4.
+- **Nợ:** xh-z2 xoá căn cuối mặt 3 vẫn bị `gotDauThua` gọt mép mốc −7.500 mm (chưa tìm hết đường); xh-z4 là ca nhường thoát nạn. Thử đổi neo của `donKhit` (matBang.ts) theo mốc: không sửa được xh-z2, làm hỏng `khitLoiKep.test` → đã hoàn tác. Nhớ: mốc đang nhớ theo mẫu gốc nên `donKhit` (nhận mẫu hiệu dụng) chưa đọc được.

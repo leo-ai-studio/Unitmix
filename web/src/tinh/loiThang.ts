@@ -878,7 +878,9 @@ export function boCanTren(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], khoa: strin
   const vt = ds.filter((x) => x.a0 >= dn.lo - 1 && x.a0 + x.w <= dn.hi + 1 && x.k !== khoa);
   const sau = vt.filter((x) => x.a0 >= v.a0 + v.w - 1), truoc = vt.filter((x) => x.a0 + x.w <= v.a0 + 1);
   // thang bộ không là mốc (QT-48 app cũ): thang giữa căn bỏ và đầu tự do trượt vào cùng các căn
-  const okCuoi = dn.tuCuoi, okDau = dn.tuDau;
+  let okCuoi = dn.tuCuoi, okDau = dn.tuDau;
+  // QT-49: đầu mốc chặn (sát lõi / góc cánh) không co khi đầu kia còn tự do — căn dồn về mốc, đầu tự do co lại
+  if (okCuoi && okDau) { if (mocChan(mau, mi, true) && !mocChan(mau, mi, false)) okCuoi = false; else if (mocChan(mau, mi, false) && !mocChan(mau, mi, true)) okDau = false; }
   // phía đầu tự do gần hơn (app cũ: cắt căn giữa gần mép, căn góc ở mép trượt vào)
   const cuoi = okCuoi && (!okDau || dn.hi - (v.a0 + v.w) <= v.a0 - dn.lo);
   if (!(cuoi ? gianMat(mau, mb, mi, true, -v.w) : okDau && gianMat(mau, mb, mi, false, -v.w))) return false;

@@ -6,7 +6,11 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { taoThuVien, type CanMau, type ToaDat, type ToaMau } from './kieu';
-import { dauTuDo, mocChan, mocGoc, tuChinhToa, type DuLieuMB, type HinhLoiMB, type ToaMB } from './loiThang';
+import { layMau } from '../thu/layMau';
+import { mauToa } from './canThem';
+import { dauTuDo, matBangTang, mocChan, mocGoc, tuChinhToa, type DuLieuMB, type HinhLoiMB, type ToaMB } from './loiThang';
+import { viTriCan } from './matBang';
+import { xoaCanTay } from './thaoTacTay';
 import { tinhCuaCan } from './pccc';
 import { themBienThe } from './stretch';
 
@@ -65,4 +69,30 @@ describe('mặt bằng mặc định: dãy có một đầu mốc chặn, đầu
     if (NHUONG_THOAT_NAN.has(m.id)) return;
     expect(loi).toEqual([]);
   });
+});
+
+/** xh-z4: nhường thoát nạn (như trên). xh-z2: xoá căn cuối mặt 3 vẫn gọt mép mốc ở `gotDauThua` — chưa xử lý, ghi nợ ở NHAT_KY. */
+const CHUA_XU_LY_XOA = new Set(['xh-z4', 'xh-z2']);
+
+describe('xoá căn: dãy dồn khít về mốc chặn, đầu tự do co lại (mọi mẫu tòa)', () => {
+  it.each(tatCa.filter((m) => mocGoc(m, dl).size).map((m) => [m.id, m] as const))('%s', (_id, m) => {
+    const t0 = tuChinhToa(toaThu(m), m, tv, dl), mb0 = matBangTang(t0, mauToa(tv, t0) as ToaMB, dl, null), loi: string[] = [];
+    const moc = (mi: number, cuoi: boolean) => mocChan(m, mi, cuoi);
+    let ca = 0;
+    for (const vt of layMau(viTriCan(m, tv), 6)) {
+      if (!moc(vt.matIdx, false) && !moc(vt.matIdx, true)) continue;
+      const r = xoaCanTay(t0, null, [vt.khoa], { tv, dl });
+      if (!r.ok) continue;
+      ca++;
+      const mb = matBangTang(r.toa, mauToa(tv, r.toa) as ToaMB, dl, null), mi = vt.matIdx, x = m.mat[mi];
+      const a = mb0.mep?.[mi] ?? [x.a_dau, x.a_cuoi], b = mb.mep?.[mi] ?? [x.a_dau, x.a_cuoi];
+      for (const cuoi of [false, true]) {
+        const doi = Math.round(cuoi ? b[1] - a[1] : b[0] - a[0]);
+        if (Math.abs(doi) < 5 || !moc(mi, cuoi) || moc(mi, !cuoi) || !dauTuDo(m, mb0, mi, !cuoi)) continue;
+        loi.push(`xoá ${vt.khoa}: mép ${cuoi ? 'cuối' : 'đầu'} (mốc chặn) mặt ${mi} dời ${doi} mm dù đầu kia tự do`);
+      }
+    }
+    expect(ca).toBeGreaterThan(0);
+    if (!CHUA_XU_LY_XOA.has(m.id)) expect(loi).toEqual([]);
+  }, 120_000);
 });
