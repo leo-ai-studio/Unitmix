@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.7', ngay: '2026-11-04',
+    vi: [
+      'Màn Tầng: xoá căn thì dãy dồn khít về mốc chặn (sát lõi / góc cánh), đầu tự do co lại — không còn chừa chỗ hở cạnh lõi',
+    ],
+    en: [
+      'Floor screen: deleting a unit packs the row toward the stop mark (next to the core / wing corner) and shrinks the free end — no more gap beside the core.',
+    ],
+  },
+  {
     v: '0.7.6', ngay: '2026-11-04',
     vi: [
       'Màn Tầng: mốc chặn theo app cũ (QT-49) — tòa Z / U / L bỏ hoặc thêm thang thì dãy co giãn ở đầu tự do, đầu sát lõi / góc cánh giữ nguyên',
