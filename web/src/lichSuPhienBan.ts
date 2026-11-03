@@ -8,10 +8,10 @@ export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
     v: '0.7.3', ngay: '2026-11-03',
     vi: [
-      'Màn Tầng: giới hạn rút ngắn đầu hành lang tính từ MÉP NGOÀI cánh cửa căn gần nhất + 500 mm (trước đây tính từ tim cửa); rà 33 mẫu tòa, chỉ còn chặn đúng quy tắc này',
+      'Màn Tầng: bỏ chặn đầu hành lang theo cửa căn — kéo đầu hành lang tự do, chỉ còn đoạn ngắn nhất 3 m và dài thêm tối đa 20 m',
     ],
     en: [
-      'Floor screen: the limit for shortening a corridor end is now measured from the OUTER edge of the nearest unit door + 500 mm (was from the door centre); checked across all 33 tower types',
+      'Floor screen: corridor ends are no longer blocked by unit doors — drag freely; only a 3 m minimum segment and +20 m maximum remain',
     ],
   },
   {

@@ -1713,18 +1713,12 @@ const kcDoanHL = (p: Diem, s: DoanHanhLangMB) => {
 };
 /** Đoạn nối `o` chạy trùm trọn trục `s` (mẫu L / T: đoạn nối nằm chồng lên trục) — không phải chỗ gặp góc, không chặn đầu mút của `s`. */
 const nenTruc = (o: DoanHanhLangMB, s: DoanHanhLangMB) => o.noi && kcDoanHL(s.p0, o) < 400 && kcDoanHL(s.p1, o) < 400;
-/**
- * Giới hạn dời đầu `dau` của đoạn hành lang `i` (mm, dương = dài ra): ngắn nhất tới mép ngoài cánh cửa căn xa nhất trên đoạn (tim cửa ± 450) + 500 mm (và đoạn còn
- * ≥ 3 m), dài nhất +20 m (app cũ startAxDrag: dmin − 500, s1 − 3000, m0 − 20000).
- */
-export function gioiHanHanhLang(hd: ToaMB, s: DoanHanhLangMB, dau: 0 | 1, cuaCan: Record<string, number>): [number, number] {
-  const v: Diem = [s.p1[0] - s.p0[0], s.p1[1] - s.p0[1]], L = Math.hypot(v[0], v[1]) || 1, u: Diem = [v[0] / L, v[1] / L];
-  const nuaHL = (hd.hanh_lang_mm || 1800) / 2;
-  const ts = dsCuaMB(hd, cuaCan).filter((c) => Math.abs((c.p[0] - s.p0[0]) * u[1] - (c.p[1] - s.p0[1]) * u[0]) <= nuaHL + 600)
-    .map((c) => (c.p[0] - s.p0[0]) * u[0] + (c.p[1] - s.p0[1]) * u[1]).filter((t) => t >= -1 && t <= L + 1);
-  // dời âm tối đa: còn chừa sau cửa xa nhất phía đầu đó, và đoạn còn ≥ 3 m
-  const conLai = dau ? (ts.length ? L - (Math.max(...ts) + HL_TAY.nuaCua + HL_TAY.quaCua) : L - HL_TAY.ngan) : (ts.length ? Math.min(...ts) - HL_TAY.nuaCua - HL_TAY.quaCua : L - HL_TAY.ngan);
-  return [-Math.max(0, Math.min(conLai, L - HL_TAY.ngan)), HL_TAY.daiMax];
+/** Giới hạn dời đầu hành lang `dau` của đoạn `s` (mm, dương = dài ra): không còn chặn theo cửa căn; đoạn còn ≥ 3 m, dài thêm tối đa 20 m. */
+export function gioiHanHanhLang(hd: ToaMB, s: DoanHanhLangMB, _dau: 0 | 1, _cuaCan: Record<string, number>): [number, number] {
+  // chủ nhiệm 3/11/2026: bỏ chặn theo cửa căn — chỉ còn đoạn hành lang ngắn nhất 3 m và dài thêm tối đa 20 m
+  const L = Math.hypot(s.p1[0] - s.p0[0], s.p1[1] - s.p0[1]) || 1;
+  void hd;
+  return [-Math.max(0, L - HL_TAY.ngan), HL_TAY.daiMax];
 }
 /** Áp đầu hành lang kéo tay lên `mb.hanhLang` (sau XC-07). Trả số đầu đã dời. */
 function apHanhLangTay(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tay: Record<string, [number, number]>, cuaCan: Record<string, number>): number {
