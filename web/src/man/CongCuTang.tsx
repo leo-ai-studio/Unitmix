@@ -134,10 +134,9 @@ function useChay(p: PropsCongCu) {
  */
 export function useKeoHanhLang(p: PropsCongCu) {
   const chay = useChay(p);
-  return (i: number, dau: 0 | 1, d: number) => {
-    void chay(phepTay('keoHanhLangTay', p.toa, i, dau, d), () => (d === 0 ? t('cc.ok.hanhLangTuDong')
+  return (i: number, dau: 0 | 1, d: number) =>
+    chay(phepTay('keoHanhLangTay', p.toa, i, dau, d), () => (d === 0 ? t('cc.ok.hanhLangTuDong')
       : t('cc.ok.hanhLang').replace('{d}', `${d > 0 ? '+' : '−'}${m1(Math.abs(d))} m`)));
-  };
 }
 
 /** Mặt bằng tạm của tòa `toa` trong lúc phép tay chạy nền (null = vẽ tòa như trong PA). */

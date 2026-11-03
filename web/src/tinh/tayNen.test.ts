@@ -166,6 +166,24 @@ describe('điều phối mọi phép tay qua worker', () => {
     expect(hinhNhanh(phepTay('thangTuDongLai', toa))).toBeNull();
   });
 
+  it('khởi động sẵn worker: chuyển thư viện một lần, không tính gì; lượt thật sau đó không chép lại', async () => {
+    const toa = tuChinhToa(toaThu('tm-u1'), tv.toa.get('tm-u1') as unknown as ToaMB, tv, dl);
+    const { ds, dp } = taoBo();
+    dp.khoiDong(c);
+    expect(ds.length).toBe(1);
+    expect(ds[0].thu[0].tv).toBeDefined();
+    expect(dp.dangChay).toBe(false); // khởi động không phải lượt chạy
+    ds[0].chay(); // worker trả id 0: bỏ qua, không treo
+    dp.khoiDong(c); // đã có đủ: không gửi lại
+    expect(ds[0].thu.length).toBe(0);
+    const ph = phepTay('hanhLangTuDong', { ...toa, hanhLangTay: { '0': [1000, 0] } });
+    const h = dp.chayPhep(ph, c);
+    expect(ds.length).toBe(1); // dùng lại worker nóng
+    expect(ds[0].thu[0].tv).toBeUndefined();
+    ds[0].chay();
+    expect(kyDu(await h)).toBe(kyDu(chayPhep(ph, c)));
+  });
+
   it('mặt bằng tạm: chỉ lượt đặt nó gỡ được; tòa trong PA đổi thì không hiện', () => {
     const goc = toaThu('tm-u1'), t1 = { ...goc, x: 1 }, t2 = { ...goc, x: 2 };
     const a = datTam(goc, t1);

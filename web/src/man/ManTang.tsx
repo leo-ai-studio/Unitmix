@@ -31,6 +31,7 @@ import { ST_BUOC, stretchKhongBu, tachMa } from '../tinh/stretch';
 import { goiYVuaO } from '../tinh/goiYVuaO';
 import { ThanhCongCuTang, useKeoHanhLang, useKeoTay, useToaTam, type ChoSang, type PropsCongCu } from './CongCuTang';
 import { TayHanhLang } from '../ve/TayHanhLang';
+import { dieuPhoiTay } from '../tinh/tayNen';
 import { hlHieuDung } from '../tinh/thaoTacTay';
 import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
@@ -313,6 +314,12 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   const hinh = useHinhHoc(sl.can.map((c) => c.canId), loiIds, tv);
   // lõi là vật cản khi đặt tem (QT-34): hình lõi có khi đã nạp DuLieuMB (cùng lúc mặt bằng tự chỉnh)
   const dlMB = useDuLieuMB(tv);
+  // dựng sẵn worker phép tay (lúc rảnh) để lần kéo / thả đầu tiên không chờ nạp worker + chép thư viện
+  useEffect(() => {
+    if (!dlMB || chiXem) return;
+    const id = window.setTimeout(() => dieuPhoiTay.khoiDong({ tv, dl: dlMB }), 300);
+    return () => window.clearTimeout(id);
+  }, [tv, dlMB, chiXem]);
   const loiDG = useMemo(() => daGiacCacLoi(mau as unknown as ToaMB, dlMB), [mau, dlMB]);
   // độ dời đầu hành lang CÓ HIỆU LỰC (số lưu có thể vượt giới hạn → tay nắm lệch, kéo không ăn)
   const hlHd = useMemo(() => (toa.hanhLangTay && dlMB ? hlHieuDung(toa, { tv, dl: dlMB }) : toa.hanhLangTay), [toa, tv, dlMB]);
@@ -428,7 +435,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
           <g transform="scale(0.001 -0.001)"><LopPCCC kq={pccc} chiXem={chiXem} toa={toa}
             datTuTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, tuPCCCTay: ds ?? undefined })))}
             datCncTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, cncTay: ds ?? undefined })))} /></g>
-          {!chiXem && !tam && <g transform="scale(0.001 -0.001)"><TayHanhLang mau={mauVe} hanhLangTay={hlHd} onKeo={keoHL} /></g>}
+          {!chiXem && <g transform="scale(0.001 -0.001)"><TayHanhLang mau={mau} hanhLangTay={hlHd} onKeo={keoHL} khoa={!!tam} /></g>}
           <LopViewTang pa={pa} tv={tv} toa={toa} mau={mauVe} bc={bcVe} tang={k0} />
         </BanVe>
       </div>

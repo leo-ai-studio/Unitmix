@@ -11,13 +11,19 @@ import { fmtSo } from '../ui/so';
  * 400 mm); thả thì chạy phép `keoHanhLangTay` (nền, nét bao + DTXD + cự ly thoát nạn tính lại). Bấm đúp = đầu đó về tự động.
  * Toạ độ mm như MatBangTang (nhóm scale(0.001 −0.001)); `hanhLangTay` = độ dời đang có của tòa.
  */
-export function TayHanhLang({ mau, hanhLangTay, onKeo }: {
+export function TayHanhLang({ mau, hanhLangTay, onKeo, khoa }: {
   mau: ToaMB;
   hanhLangTay: Record<string, [number, number]> | undefined;
-  onKeo: (i: number, dau: 0 | 1, d: number) => void;
+  /** Trả promise (nếu có) → tay nắm giữ ở vị trí vừa thả cho tới khi phép nền xong (không nhảy về chỗ cũ rồi mới chạy tới). */
+  onKeo: (i: number, dau: 0 | 1, d: number) => unknown;
+  /** Phép tay khác đang chạy nền: tay nắm vẫn hiện (không biến mất rồi hiện lại) nhưng mờ, chưa kéo được. */
+  khoa?: boolean;
 }) {
   const g = useRef<SVGGElement>(null);
   const [keo, setKeo] = useState<{ i: number; dau: 0 | 1; d0: number; d: number } | null>(null);
+  // vừa thả, chờ phép nền: giữ tổng độ dời đã thả (so với tự động) thay cho giá trị trong PA
+  const [cho, setCho] = useState<{ i: number; dau: 0 | 1; tong: number } | null>(null);
+  const luot = useRef(0);
   const hl = mau.hanh_lang ?? [];
   const nua = (mau.hanh_lang_mm || 1800) / 2;
   const diemMm = (e: PointerEvent): Diem | null => {
@@ -27,7 +33,7 @@ export function TayHanhLang({ mau, hanhLangTay, onKeo }: {
     return [p.x, p.y];
   };
   const batDau = (e: PointerEvent, i: number, dau: 0 | 1) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || khoa) return;
     e.stopPropagation();
     e.preventDefault();
     const s = hl[i], L = Math.hypot(s.p1[0] - s.p0[0], s.p1[1] - s.p0[1]) || 1;
@@ -51,21 +57,30 @@ export function TayHanhLang({ mau, hanhLangTay, onKeo }: {
       window.removeEventListener('pointerup', tha);
       window.removeEventListener('pointercancel', tha);
       setKeo(null);
-      if (Math.abs(cur.d) >= 1) onKeo(i, dau, cur.d0 + cur.d);
+      if (Math.abs(cur.d) >= 1) giaoKeo(i, dau, cur.d0 + cur.d);
     };
     window.addEventListener('pointermove', di);
     window.addEventListener('pointerup', tha);
     window.addEventListener('pointercancel', tha);
   };
+  const giaoKeo = (i: number, dau: 0 | 1, tong: number) => {
+    const n = ++luot.current;
+    setCho({ i, dau, tong });
+    const xong = () => { if (luot.current === n) setCho(null); };
+    try { Promise.resolve(onKeo(i, dau, tong)).then(xong, xong); } catch (err) { xong(); throw err; }
+  };
   const r = Math.max(450, nua * 0.5);
   return (
-    <g ref={g} class="tay-hl">
+    <g ref={g} class={`tay-hl${khoa ? ' khoa' : ''}`}>
       {hl.map((s, i) => dauHanhLangNgoai(hl, i, mau.duong_bao).map((dau) => {
         const p = dau ? s.p1 : s.p0, L = Math.hypot(s.p1[0] - s.p0[0], s.p1[1] - s.p0[1]) || 1;
         const u: Diem = [(s.p1[0] - s.p0[0]) / L, (s.p1[1] - s.p0[1]) / L], huong = dau ? 1 : -1;
         const dang = keo && keo.i === i && keo.dau === dau ? keo : null;
-        const q: Diem = dang ? [p[0] + u[0] * dang.d * huong, p[1] + u[1] * dang.d * huong] : p;
-        const tong = (hanhLangTay?.[String(i)]?.[dau] ?? 0) + (dang?.d ?? 0);
+        const hienCo = hanhLangTay?.[String(i)]?.[dau] ?? 0;
+        const giu = !dang && cho && cho.i === i && cho.dau === dau ? cho : null;
+        const dich = dang ? dang.d : giu ? giu.tong - hienCo : 0;
+        const q: Diem = dich ? [p[0] + u[0] * dich * huong, p[1] + u[1] * dich * huong] : p;
+        const tong = hienCo + dich;
         return (
           <g key={`${i}-${dau}`}>
             {dang && (
@@ -79,7 +94,7 @@ export function TayHanhLang({ mau, hanhLangTay, onKeo }: {
             )}
             <circle class={`tay-hl-nut${tong ? ' da-keo' : ''}`} cx={Math.round(q[0])} cy={Math.round(q[1])} r={r} vector-effect="non-scaling-stroke"
               data-hl={`${i}:${dau}`} onPointerDown={(e) => batDau(e as unknown as PointerEvent, i, dau)}
-              onDblClick={(e) => { e.stopPropagation(); if (hanhLangTay?.[String(i)]?.[dau]) onKeo(i, dau, 0); }}>
+              onDblClick={(e) => { e.stopPropagation(); if (hanhLangTay?.[String(i)]?.[dau]) giaoKeo(i, dau, 0); }}>
               <title>{t('cc.hl.gt')}</title>
             </circle>
           </g>
