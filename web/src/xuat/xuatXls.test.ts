@@ -68,7 +68,7 @@ describe('xuất XLS', () => {
   it('sheet Dự toán / Tài chính: tổng mức và lợi nhuận khớp hàm tính, có ghi chú số tạm', () => {
     const pa = paMau(10), kq = tinhChiTieu(pa, tv), lech = diemLechPA(pa, kq);
     const sheets = baoCaoPA(pa, tv, kq, 'D', 'P', lech);
-    const kl = tinhKhoiLuong(pa, tv), dt = tinhDuToan(kl, pa.chiPhi), tc = tinhTaiChinh(pa, tv, kl, dt, lech);
+    const kl = tinhKhoiLuong(pa, tv, false), dt = tinhDuToan(kl, pa.chiPhi), tc = tinhTaiChinh(pa, tv, kl, dt, lech);
     const duToan = sheets[4].hang, taiChinh = sheets[5].hang;
     expect(tatCa(duToan).join(' ')).toContain('SỐ TẠM');
     expect(tatCa(duToan).join(' ')).toContain('Nghị định 10/2021/NĐ-CP');
