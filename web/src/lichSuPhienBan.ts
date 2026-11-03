@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.6', ngay: '2026-11-04',
+    vi: [
+      'Màn Tầng: mốc chặn theo app cũ (QT-49) — tòa Z / U / L bỏ hoặc thêm thang thì dãy co giãn ở đầu tự do, đầu sát lõi / góc cánh giữ nguyên',
+      'Leo AI: dùng được nhà cung cấp khác Claude (Ollama, LM Studio, Gemini, OpenAI, OpenRouter) trong Cài đặt',
+    ],
+    en: [
+      'Floor screen: stop marks as in the old app (QT-49) — on Z / U / L towers, removing or adding a stair stretches the free end; the end next to the core / wing corner stays put.',
+      'Leo AI: can use providers other than Claude (Ollama, LM Studio, Gemini, OpenAI, OpenRouter) from Settings.',
+    ],
+  },
+  {
     v: '0.7.5', ngay: '2026-11-03',
     vi: [
       'Màn Tầng: tay nắm kéo đầu hành lang không còn nhảy về chỗ cũ sau khi thả hay biến mất khi có phép tay khác chạy nền; lần kéo đầu tiên nhanh hơn (worker dựng sẵn).',
