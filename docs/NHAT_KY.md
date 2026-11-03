@@ -2,6 +2,15 @@
 
 Mỗi đợt một mục: ngày, ai làm, đã làm gì (kèm commit), kiểm thế nào, còn dở gì. Ngắn, đủ để phiên sau làm tiếp không phải dò lại.
 
+## 2026-11-03 (tối) · Xuất Excel theo brand: bìa, biểu diện tích, dự toán công thức · Claude Code (Sonnet 5.5)
+
+Người dùng báo nút XLS xoay mãi trên bản đã deploy (t1c0nhol, PA 1 - xếp tòa theo VTK17), rồi đưa `report_demo.xlsx` (báo cáo diện tích + dự toán của công cụ khác) để học.
+- **Sửa treo** (`7477719`): xuất không chờ rải hầm nữa (worker rải hầm không trả kết quả trên bản deploy; tính trong máy 22 lô chỉ 3,2 s). `tinhKhoiLuong(pa, tv, false)` → số chỗ đỗ ước theo DT hầm, ghi rõ trên sheet.
+- **Học từ file mẫu**: biểu diện tích hai cột (sàn xây dựng / tính HSSDĐ), tỷ lệ hiệu quả, hầm + chỗ đỗ trên căn, dự toán bằng công thức Excel, bìa, định dạng.
+- **Làm**: đổi SheetJS → **ExcelJS** để ghi — `xuat/xlsTrinhBay.ts` (màu `--green` / `--gold` / `--soft`, ẩn lưới, đầu bảng xanh chữ trắng, dòng tổng nền nhạt, số `#,##0.00`, logo `leo_ai_mark.png` ở bìa, cố định đầu bảng khi sheet chỉ có một bảng, in ngang vừa khổ A4). Báo cáo PA nay 8 sheet: Bìa · Tổng hợp chỉ tiêu · **Biểu diện tích** (4 mục: sàn theo khối, theo lô, cơ cấu căn + DT thông thủy TB, hầm / chỗ đỗ) · Cơ cấu theo tòa · Danh sách căn · Luật vượt · **Dự toán công thức** (`{ f, v }`: thành tiền = KL × đơn giá × (1 + %), cộng nhóm, lớp tỷ lệ, tổng mức, suất đầu tư) · Tài chính. SheetJS vẫn dùng để NHẬP Excel (`nhap/docExcel.ts`).
+- **Kiểm**: `xuatXls.test.ts` (8 ca) có bộ tính lại công thức (SUM, + − × ÷, tham chiếu ô) so với giá trị đã tính; thử PA thật t1c0nhol (79 tòa, 22 lô) ra tệp 182 KB, đọc lại bằng openpyxl; thử trong trình duyệt (dev trỏ API thật): bấm XLS ra Blob 182 KB, không lỗi. `kiem:nhanh`: tsc, web 999, worker 46 đạt; pytest hỏng 1 ca `test_cau_claude` (mã hoá cp1252 trong cầu Claude, không liên quan).
+- **Dở**: chưa deploy / nâng phiên bản (nhớ thêm mục `lichSuPhienBan.ts`); chưa đối chiếu Excel thật mở file (không có Excel / LibreOffice trên máy này); chưa tách sheet theo tòa, chưa đưa ảnh mặt bằng; worker rải hầm hỏng trên bản deploy vẫn chưa tìm nguyên nhân (màn Chi phí / Hầm / 3D dùng chung).
+
 ## 2026-11-02 (chiều) · Hành lang L/T, nhãn TMB nhẹ, panel Căn đang chọn, Reset mặt bằng, kéo căn sang dãy khác, v0.5.1 → v0.5.6 · Claude Code (Sonnet 5.5) + Antigravity
 
 Người dùng gửi từng ảnh lỗi trên app đã deploy; mỗi mục commit + deploy riêng (site hiện đúng số phiên bản sau khi xóa service worker + cache).
