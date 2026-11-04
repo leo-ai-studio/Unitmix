@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.8', ngay: '2026-11-05',
+    vi: [
+      'Thư viện mẫu, thay lõi thang máy cùng mẫu tòa, lưu mẫu tòa, kiểm và thử phá chạy nền (có Huỷ)',
+      'Đo và kích thước trên TMB · Tầng · Hầm: bắt điểm kiểu CAD, DIM, đo được cả khi chỉ xem; hầm có lưới cột',
+    ],
+    en: [
+      'Template library, swap elevator cores within a tower template, save tower templates; checks and stress tests run in the background (with Cancel).',
+      'Measuring and dimensions on site plan, floor and basement: CAD-style snapping, DIM, measuring also works in view-only mode; basement column grid.',
+    ],
+  },
+  {
     v: '0.7.7', ngay: '2026-11-04',
     vi: [
       'Màn Tầng: xoá căn thì dãy dồn khít về mốc chặn (sát lõi / góc cánh), đầu tự do co lại — không còn chừa chỗ hở cạnh lõi',
