@@ -8,14 +8,13 @@ import { t, useLang } from '../i18n/i18n';
 import { choDuLieuMB } from '../man/tuChinhTang';
 import { docMauToaLuu, doiTenMauToaLuu, ghiMauToaLuu, nhapMauToaLuu, taoToaTuMauLuu, xoaMauToaLuu, xuatMauToaLuu, type MauToaLuu } from '../kho/mauToaLuu';
 import { taoToaTrenLo } from '../tinh/hopLo';
-import { kiemThuVien, kiemMauCan, kiemToaThuVien, type KetQuaThuVien, type ViPhamCan } from '../tinh/kiemThuVien';
+import { kiemMauCan, type KetQuaThuVien, type ViPhamCan } from '../tinh/kiemThuVien';
 import type { Ctx, ViPhamMau } from '../tinh/kiemMauToa';
 import type { CanMau, Lo, ThuVien, ToaDat, ToaMau, TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang } from '../tinh/loaiDat';
 import { toaAo } from '../tinh/soSanhMau';
-import { thuMauToa, type KetQuaThu } from '../tinh/thuMauToa';
-import { tuChinhToa, type ToaMB } from '../tinh/loiThang';
-import { mauToa } from '../tinh/canThem';
+import type { KetQuaThu } from '../tinh/thuMauToa';
+import { dieuPhoiTay } from '../tinh/tayNen';
 import { xacNhan } from './HopHoi';
 import { chuViPham, chuViPhamCan } from './chuKiem';
 import { LopNoi } from './LopNoi';
@@ -60,6 +59,7 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props & { tv: ThuVien }) 
   const [dangTen, setDangTen] = useState<{ id: string; ten: string } | null>(null);
   const [kiemAll, setKiemAll] = useState<KetQuaThuVien | 'dang' | null>(null);
   const [nhom, setNhom] = useState<'tm' | 'xh'>('tm');
+  const [dangLam, setDangLam] = useState<string | null>(null); // mẫu đang kiểm / thử nền
   const loDs = pa.lo.filter(laCaoTang);
   const lo: Lo | null = pa.lo.find((l) => l.id === loId && laCaoTang(l)) ?? loDs[0] ?? null;
 
@@ -83,18 +83,26 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props & { tv: ThuVien }) 
     void mauId;
   };
   const toaThuVien = (m: ToaMau): ToaDat => toaMoi(m.id);
-  const kiemToa = (m: ToaMau) => { if (ctx) { const r = kiemToaThuVien(m, ctx); ghiKq(m.id, { loai: 'toa', vi: r.vi, soCan: r.soCan }); } };
-  const thuToa = (m: ToaMau) => {
+  const kiemToa = async (m: ToaMau) => {
     if (!ctx) return;
-    const goc = tuChinhToa(toaThuVien(m), mauToa(tv, toaThuVien(m)) as ToaMB, tv, ctx.dl);
-    ghiKq(m.id, { loai: 'thu', thu: thuMauToa(goc, ctx, { hat: 7, buoc: 24, hanMs: 8000 }) });
+    setDangLam(m.id);
+    const r = await dieuPhoiTay.chay('kiemToaThuVien', ctx, m);
+    setDangLam((x) => (x === m.id ? null : x));
+    if (r) ghiKq(m.id, { loai: 'toa', vi: r.vi, soCan: r.soCan });
+  };
+  const thuToa = async (m: ToaMau) => {
+    if (!ctx) return;
+    setDangLam(m.id);
+    const r = await dieuPhoiTay.chay('thuToaThuVien', ctx, toaThuVien(m), { hat: 7, buoc: 24, hanMs: 8000 });
+    setDangLam((x) => (x === m.id ? null : x));
+    if (r) ghiKq(m.id, { loai: 'thu', thu: r });
   };
   const kiemCan = (c: CanMau) => ghiKq(c.id, { loai: 'can', vi: kiemMauCan(c, tv) });
   const luuDoi = (ds: MauToaLuu[]) => { setLuu(ds); if (!ghiMauToaLuu(ds)) setBao(t('mt.luuLoi')); };
-  const chayKiemAll = () => {
+  const chayKiemAll = async () => {
     if (!ctx) return;
     setKiemAll('dang');
-    setTimeout(() => setKiemAll(kiemThuVien(ctx)), 30);
+    setKiemAll(await dieuPhoiTay.chay('kiemThuVien', ctx));
   };
   const xuat = () => {
     const url = URL.createObjectURL(new Blob([xuatMauToaLuu(luu)], { type: 'application/json' }));
@@ -162,8 +170,8 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props & { tv: ThuVien }) 
                   <b>{tenNgan(m)}</b>
                   <span class="muted">{t('tv.canTang').replace('{n}', String(m.so_can_tang))} · {fmtSo(m.dtxd_m2, { donVi: 'm²' })}</span>
                   <span class="tvm-nut">
-                    <button type="button" disabled={!ctx} onClick={() => kiemToa(m)}>{t('tv.kiem')}</button>
-                    <button type="button" disabled={!ctx} onClick={() => thuToa(m)}>{t('tv.thu')}</button>
+                    <button type="button" disabled={!ctx} onClick={() => (dangLam === m.id ? dieuPhoiTay.huy() : void kiemToa(m))}>{dangLam === m.id ? t('mt.huy') : t('tv.kiem')}</button>
+                    <button type="button" disabled={!ctx || dangLam === m.id} onClick={() => void thuToa(m)}>{dangLam === m.id ? t('mt.thuDang') : t('tv.thu')}</button>
                     <button type="button" class="nut-phu" disabled={chiXem || !lo} onClick={() => datMau(m.id, (l, id) => taoToaTrenLo(m, l, id), m.ten_vi)}>{t('tv.dat')}</button>
                   </span>
                 </div>
@@ -225,7 +233,7 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props & { tv: ThuVien }) 
         {s.tab === 'kiem' && (
           <div class="tvm-ds">
             <div class="tvm-hang">
-              <button type="button" class="nut-chinh" disabled={!ctx || kiemAll === 'dang'} onClick={chayKiemAll}>{kiemAll === 'dang' ? t('tv.dangKiem') : t('tv.chayKiem')}</button>
+              <button type="button" class="nut-chinh" disabled={!ctx} onClick={() => (kiemAll === 'dang' ? dieuPhoiTay.huy() : void chayKiemAll())}>{kiemAll === 'dang' ? `${t('tv.dangKiem')} · ${t('mt.huy')}` : t('tv.chayKiem')}</button>
               {kiemAll && kiemAll !== 'dang' && <b class={kiemAll.soLoi ? 'vuot' : 'ok'}>{t('tv.kiemXong').replace('{toa}', String(kiemAll.toa.length)).replace('{can}', String(kiemAll.can.length)).replace('{loi}', String(kiemAll.soLoi)).replace('{canhBao}', String(kiemAll.soCanhBao))}</b>}
             </div>
             {kiemAll && kiemAll !== 'dang' && (

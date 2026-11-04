@@ -245,8 +245,8 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
   const nguonHam = useRef<() => NguonBat>(() => ({ dinh: [], canh: [] }));
   const khungLo = lo ? khungBao([lo.ranh]) : null;
   const dm = useDoKichThuoc({
-    pa, sua, chiXem, phamVi: 'ham', bat: dangDo && !ve, tat: () => setDangDo(false), nguon: () => nguonHam.current(),
-    keoDai: khungLo ? Math.max(khungLo[2] - khungLo[0], khungLo[3] - khungLo[1]) : 100,
+    pa, sua, chiXem, phamVi: `ham:${lo?.id ?? ''}`, bat: dangDo && !ve, tat: () => setDangDo(false), nguon: () => nguonHam.current(),
+    keoDai: dk?.tyLeM ? dk.tyLeM * 8 : khungLo ? Math.max(khungLo[2] - khungLo[0], khungLo[3] - khungLo[1]) : 100,
   });
   if (!lo) return <div class="giua-man"><span>{t('xep.chuaCoLo')}</span></div>;
   if (kq === undefined) return <div class="giua-man"><VongRai /><span>{t('ham.dangRai')}</span></div>;

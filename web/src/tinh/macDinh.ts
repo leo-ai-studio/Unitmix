@@ -207,5 +207,6 @@ export const chuanHoaPA = (pa: TrangThaiPA): TrangThaiPA => ({
   lo: pa.lo.map((l) => chuanHoaCanhDuong({ ...l, temDat: { ...l.temDat, chiTieu: { ...CHI_TIEU_MAC_DINH, ...l.temDat.chiTieu } } })),
   toa: (pa.toa ?? []).map(chuanHoaToa),
   chiPhi: chuanHoaChiPhi(pa.chiPhi),
-  kichThuoc: chuanHoaKichThuoc(pa.kichThuoc),
+  // tòa / lô đã xoá: dọn lúc mở PA, không dọn ngay khi xoá để hoàn tác còn nguyên kích thước
+  kichThuoc: chuanHoaKichThuoc(pa.kichThuoc, (pv) => (pv.startsWith('tang:') ? (pa.toa ?? []).some((x) => `tang:${x.id}` === pv) : pv.startsWith('ham:') ? pa.lo.some((l) => `ham:${l.id}` === pv) : true)),
 });

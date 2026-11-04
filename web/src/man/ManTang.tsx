@@ -339,7 +339,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
   const [dangDo, setDangDo] = useState(false);
   const dm = useDoKichThuoc({
     pa, sua: p.sua, chiXem, phamVi: `tang:${toa.id}`, bat: dangDo, tat: () => setDangDo(false),
-    keoDai: khung ? Math.max(khung[2] - khung[0], khung[3] - khung[1]) : 60,
+    keoDai: dk?.tyLeM ? dk.tyLeM * 8 : khung ? Math.max(khung[2] - khung[0], khung[3] - khung[1]) : 60,
     nguon: () => nguonBatTang(mauVe as unknown as ToaMB, sl.vts, loiDGVe),
   });
   // tab "Đổi căn" của menu ô: mọi ô đang chọn đều là căn cùng mẫu gốc — đổi ĐÚNG những ô đang chọn (trừ khi bật "Sửa nhiều căn")
@@ -434,7 +434,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
           <button type="button" class="nut-phu" onClick={() => { chonCan(null); datChonToa(toa, { ds: [] }); }}>{t('oc.boChon')}</button>
         </div>
       )}
-      <div class="boc-ve" ref={boc} onPointerDownCapture={(e) => { keoTay.batDau(e); batDauKhung(e); }} onClickCapture={(e) => { if (nuotClick.current) { e.stopPropagation(); e.preventDefault(); } }}>
+      <div class="boc-ve" ref={boc} onPointerDownCapture={(e) => { if (dangDo) return; keoTay.batDau(e); batDauKhung(e); }} onClickCapture={(e) => { if (nuotClick.current) { e.stopPropagation(); e.preventDefault(); } }}>
         <BanVe khung={khung} nhanDang={`${toa.id}|${tangXem(co.tangs) ?? ''}`} nhan={t('tang.banVe')} onDieuKhien={setDk} onBamNen={dm.onBamNen} onTroDi={dm.onTroDi} gocBac={toa.gocDo - gocBacPA(pa)}>
           <MatBangTang truTCC={truTCC(pccc)} mau={mauVe} toa={bcVe} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa}
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
@@ -690,7 +690,7 @@ export function TangPhai(p: ChungTang) {
     <>
       <KpiTang pa={pa} tv={tv} toa={toa} mau={mau} bc={bc} lo={lo} tang={k0} can={sl.can} mucTieu={muc} nguongLech={pa.nguong.coCauDiem} tenTang={phamVi} canChon={khoiCanChon} />
       <KhoiPCCC pa={pa} tv={tv} toa={toa} mau={mau} bc={bc} chiXem={chiXem} datToa={(fn) => sua((q) => doiToa(q, toa.id, fn))} />
-      <KhoiMauToa pa={pa} tv={tv} toa={toa} chiXem={chiXem} sua={sua} />
+      <KhoiMauToa key={toa.id} pa={pa} tv={tv} toa={toa} chiXem={chiXem} sua={sua} />
       <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}${k0 !== null ? ' · ' + tenTang(toa.soTangDe, k0) : ''}`} giaiThich={t('gt.tang.canTrongToa')}>
         <div class="bang-co-cau" role="table">
           <div class="dong bang-cc dau" style={{ gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr' }} role="row"><span /><span>{t('tang.canTang')}</span><span>{t('xep.tyLe')}</span><span>{t('xep.mucTieu')}</span><span>{t('xep.lech')}</span></div>

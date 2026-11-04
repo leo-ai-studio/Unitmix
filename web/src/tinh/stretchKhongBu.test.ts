@@ -4,25 +4,15 @@
  * căn vừa kéo giữ đúng mẫu đã kéo (hoặc bị chặn — giữ nguyên), không bị tự đổi sang mẫu khác.
  */
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { napThuVien } from '../thu/thuVienThat';
 import { layMau } from '../thu/layMau';
 import { doiCanTaiViTri } from './doiCan';
-import { taoThuVien, type CanMau, type ToaDat, type ToaMau } from './kieu';
-import { doDeKhe, tuChinhSauSua, tuChinhToa, type DuLieuMB, type HinhLoiMB, type ToaMB } from './loiThang';
+import type { ToaDat } from './kieu';
+import { doDeKhe, tuChinhSauSua, tuChinhToa, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, viTriCan } from './matBang';
-import { tinhCuaCan } from './pccc';
-import { ST_MAX, stretchKhongBu, tachMa, themBienThe } from './stretch';
+import { ST_MAX, stretchKhongBu, tachMa } from './stretch';
 
-const lib = new URL('../../public/lib/', import.meta.url);
-const doc = <T>(p: string) => JSON.parse(readFileSync(new URL(p, lib), 'utf8')) as T;
-const toaDs = doc<ToaMau[]>('toa.json'), canDs = doc<CanMau[]>('can.json');
-const tv = themBienThe(taoThuVien(toaDs, canDs));
-const idLoi = (b: string) => 'loi-' + b.replace(/^x_/, '').replace(/_/g, '-');
-const dl: DuLieuMB = { loi: new Map(), cuaCan: {} };
-for (const t of toaDs) for (const m of (t as unknown as ToaMB).mat) for (const q of m.phan_tu)
-  if (q.loai !== 'can' && !dl.loi.has(q.block) && existsSync(new URL(`loi/${idLoi(q.block)}.json`, lib))) dl.loi.set(q.block, doc<HinhLoiMB>(`loi/${idLoi(q.block)}.json`));
-dl.loi.set('x_tb_n2', doc<HinhLoiMB>('loi/loi-tb-n2.json'));
-for (const c of canDs) dl.cuaCan[c.ma_goc] = tinhCuaCan(doc<{ ve: { cat: string; pts: [number, number][] }[] }>(`can/${c.id}.json`).ve, c.rong_mm);
+const { tv, dl } = napThuVien();
 
 const mau = (id: string) => tv.toa.get(id) as unknown as ToaMB;
 const toaThu = (m: ToaMB): ToaDat =>
@@ -57,7 +47,7 @@ describe('stretchKhongBu · kết quả thuần', () => {
 });
 
 describe('stretchKhongBu + tự chỉnh: dãy tự khít, không khe / đè mới, căn vừa kéo giữ nguyên mẫu đã kéo hoặc bị chặn', () => {
-  it.each(['tm-i1', 'tm-l1', 'tm-u1', 'tm-z1', 'xh-z2'])('%s', (id) => {
+  it.each(layMau(['tm-i1', 'tm-l1', 'tm-u1', 'tm-z1', 'xh-z2'], 2))('%s', (id) => {
     const m = mau(id), vts = viTriCan(m, tv), loi: string[] = [];
     const t0 = tuChinhToa(toaThu(m), m, tv, dl), kb = doDeKhe(m, t0.matBang!, dl, tv, boCucTang(t0, null));
     let ca = 0, chan = 0;

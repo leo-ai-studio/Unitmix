@@ -173,14 +173,14 @@ export function soDoHaiDiem(a: Diem, b: Diem) {
   return { dai: Math.hypot(dx, dy), dx: Math.abs(dx), dy: Math.abs(dy), goc: g };
 }
 
-/** Làm sạch danh sách kích thước đọc từ PA cũ / tệp: bản ghi hỏng bỏ. */
-export function chuanHoaKichThuoc(v: unknown): Record<string, KichThuoc[]> | undefined {
+/** Làm sạch danh sách kích thước đọc từ PA cũ / tệp: bản ghi hỏng bỏ; `conPV` (nếu có) lọc phạm vi của tòa / lô đã xoá. */
+export function chuanHoaKichThuoc(v: unknown, conPV?: (phamVi: string) => boolean): Record<string, KichThuoc[]> | undefined {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
   const so = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
   const diem = (p: unknown): p is Diem => Array.isArray(p) && p.length === 2 && so(p[0]) && so(p[1]);
   const kq: Record<string, KichThuoc[]> = {};
   for (const [pv, ds] of Object.entries(v as Record<string, unknown>)) {
-    if (!Array.isArray(ds)) continue;
+    if (!Array.isArray(ds) || conPV?.(pv) === false) continue;
     const ok = ds.filter((k): k is KichThuoc => !!k && typeof k === 'object' && typeof (k as KichThuoc).id === 'string' && ['thang', 'ngang', 'dung', 'goc'].includes((k as KichThuoc).loai)
       && Array.isArray((k as KichThuoc).p) && (k as KichThuoc).p.every(diem) && (k as KichThuoc).p.length === ((k as KichThuoc).loai === 'goc' ? 3 : 2) && so((k as KichThuoc).lech));
     if (ok.length) kq[pv] = ok.slice(0, 200);
