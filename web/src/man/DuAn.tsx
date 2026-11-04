@@ -7,6 +7,8 @@ import {
   boKhoiDanhSach, dsDuAnDaMo, ghiNhoDuAn, hoanTacBo, layMaSua, layTenNguoi, luuTenNguoi, linkChiaSe, linkSua, linkXem, luuMaSua, phanTichLink, type LoaiLink,
 } from '../kho/maSua';
 import { taoPAMoi } from '../tinh/macDinh';
+import { dsTinhChon } from '../tinh/quyTacDanSo';
+import { docLienKet, ganViTri } from '../tinh/viTri';
 import { LOAI_CAN } from '../tinh/kieu';
 import { ChonLang, TacGiaBan, ThuongHieu } from '../ui/ThanhTren';
 import { BieuTuong, NutBieuTuong } from '../ui/NutBieuTuong';
@@ -34,10 +36,17 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
   const { route } = useLocation();
   const [ten, setTen] = useState('');
   const [diaDiem, setDiaDiem] = useState('');
+  const [tinh, setTinh] = useState('');
+  const [lienKet, setLienKet] = useState('');
   const [dangTao, setDangTao] = useState(false);
   const [loi, setLoi] = useState('');
   const [kq, setKq] = useState<{ ma: string; ma_sua: string } | null>(null);
 
+  // dán link Google Maps / Earth hoặc "vĩ độ, kinh độ" → vị trí dự án (cùng bộ đọc với hộp Nắng–gió)
+  const kqLk = lienKet.trim() ? docLienKet(lienKet) : null;
+  const viTri = kqLk && 'lat' in kqLk ? kqLk : null;
+  const loiLk = kqLk && 'loi' in kqLk ? kqLk.loi : null;
+  const dsTinh = dsTinhChon();
   async function tao(e: Event) {
     e.preventDefault();
     setDangTao(true);
@@ -45,7 +54,10 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
     try {
       const r = await api.taoDuAn(ten, diaDiem);
       luuMaSua(r.ma, r.ma_sua);
-      await api.ghiPA(r.ma, 'pa-1', r.ma_sua, t('pa.mau'), taoPAMoi(), {});
+      let pa = taoPAMoi();
+      if (tinh) pa = { ...pa, tinhDuAn: tinh };
+      if (viTri) pa = ganViTri(pa, { lat: viTri.lat, lng: viTri.lng, neo: [0, 0], cachDat: 'lienKet' });
+      await api.ghiPA(r.ma, 'pa-1', r.ma_sua, t('pa.mau'), pa, {});
       ghiNhoDuAn(r.ma, ten || r.ma);
       setKq(r);
     } catch {
@@ -62,6 +74,16 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
           <h2 id="tieu-de-tao">{t('duAn.moi').replace('+ ', '')}</h2>
           <label>{t('duAn.ten')}<input value={ten} onInput={(e) => setTen(e.currentTarget.value)} required autoFocus /></label>
           <label>{t('duAn.diaDiem')}<input value={diaDiem} onInput={(e) => setDiaDiem(e.currentTarget.value)} /></label>
+          <label title={t('gt.ds.khai.tinh')}>{t('duAn.tinh')}
+            <select value={tinh} onChange={(e) => setTinh(e.currentTarget.value)}>
+              <option value="">{t('ds.khai.chuaKhai')}</option>
+              <optgroup label={t('ds.khai.nhomTrongDiem')}>{dsTinh.trongDiem.map((q) => <option value={q.id} key={q.id}>{t(`ds.tinh.${q.id}`)}</option>)}</optgroup>
+              <optgroup label={t('ds.khai.nhomKhac')}>{dsTinh.khac.map((q) => <option value={q.id} key={q.id}>{t(`ds.tinh.${q.id}`)}</option>)}</optgroup>
+            </select>
+          </label>
+          <label>{t('duAn.viTriMap')}<input value={lienKet} placeholder={t('duAn.viTriMapGoiY')} onInput={(e) => setLienKet(e.currentTarget.value)} /></label>
+          {viTri && <p class="ghi-chu" role="status">{t('duAn.viTriDoc').replace('{lat}', viTri.lat.toFixed(5)).replace('{lng}', viTri.lng.toFixed(5))}</p>}
+          {loiLk && <p class="vuot" role="alert">{t(loiLk === 'rutGon' ? 'duAn.viTriRutGon' : 'duAn.viTriKhongDoc')}</p>}
           {loi && <p class="vuot" role="alert">{loi}</p>}
           <div class="chan-hop">
             <button type="button" class="nut-phu" onClick={dongMem}>{t('duAn.huy')}</button>

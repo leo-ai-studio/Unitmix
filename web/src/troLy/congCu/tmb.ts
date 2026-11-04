@@ -7,7 +7,7 @@ import { tinhChiTieu } from '../../tinh/chiTieu';
 import { taoToaTrenLo } from '../../tinh/hopLo';
 import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiTieuQH, type KhaiDanSo, type Lo, type ToaDat, type TrangThaiPA } from '../../tinh/kieu';
 import { laCaoTang } from '../../tinh/loaiDat';
-import { taoLo } from '../../tinh/macDinh';
+import { loTheoTinhDuAn, taoLo } from '../../tinh/macDinh';
 import { timQuyTac } from '../../tinh/quyTacDanSo';
 import { boCanhDuong, datCanhDuong, dichNhom, hinhToa, kiemViPham, latNhom, tamNhom, viTriNhanBan, xoayNhom } from '../../tinh/thaoTacToa';
 import { apHangLoat, loXepDuoc, thuTuLo, xepHangLoatNen, type KetQuaLo } from '../../tinh/xepHangLoat';
@@ -282,7 +282,7 @@ export const CONG_CU_TMB: CongCu[] = [
       const kt = { rong: (v.width as number) ?? 80, dai: (v.depth as number) ?? 60 };
       const id = `lo-${Date.now().toString(36)}`;
       const x0 = Math.max(0, ...pa.lo.flatMap((l) => l.ranh.map((q) => q[0]))) + (pa.lo.length ? 20 : 0);
-      const moi = taoLo(id, (v.code as string) || `Lô ${pa.lo.length + 1}`, 'tm', [[x0, 0], [x0 + kt.rong, 0], [x0 + kt.rong, kt.dai], [x0, kt.dai]]);
+      const moi = loTheoTinhDuAn(pa, taoLo(id, (v.code as string) || `Lô ${pa.lo.length + 1}`, 'tm', [[x0, 0], [x0 + kt.rong, 0], [x0 + kt.rong, kt.dai], [x0, kt.dai]]));
       suaPA(ng, (p) => ({ ...p, lo: [...p.lo, moi] }));
       ng.ui.dat({ loId: id, toaId: null });
       return { lo_moi: { id, ky_hieu: moi.temDat.kyHieu, chi_tieu: moi.temDat.chiTieu }, buoc_hoan_tac: buocHoanTac(ng) };

@@ -401,6 +401,8 @@ export type TrangThaiPA = {
   huongView?: CaiDatViewLuu;
   /** Vị trí dự án trên bản đồ (WGS84) + tham chiếu bản vẽ → bản đồ (tinh/viTri.ts). Thiếu = chưa đặt toạ độ (vĩ độ lấy `huongView.viDo`). */
   viTri?: ViTriLuu;
+  /** Tỉnh / thành chọn lúc tạo dự án (id ở `tinh/quyTacDanSo.ts`): lô cao tầng thêm mới tự khai cách tính dân số theo tỉnh này. */
+  tinhDuAn?: string;
   /** Kích thước (DIM) người dùng đặt trên bản vẽ, theo phạm vi: 'tmb' · 'ham' · 'tang:<id tòa>' (tinh/kichThuoc.ts, toạ độ mét). */
   kichThuoc?: Record<string, KichThuoc[]>;
 };
