@@ -128,7 +128,7 @@ const trongDG = (p: Diem, P: Diem[]) => {
   return c;
 };
 /** Cắt đa giác theo nửa mặt phẳng f(p) ≥ 0 (Sutherland–Hodgman). */
-function catNua(P: Diem[], f: (p: Diem) => number): Diem[] {
+export function catNua(P: Diem[], f: (p: Diem) => number): Diem[] {
   const R: Diem[] = [];
   for (let i = 0; i < P.length; i++) {
     const A = P[i], B = P[(i + 1) % P.length], fa = f(A), fb = f(B);
@@ -137,10 +137,10 @@ function catNua(P: Diem[], f: (p: Diem) => number): Diem[] {
   }
   return R;
 }
-const laMatThat = (m: MatToa) => m.a_cuoi - m.a_dau > 1;
+export const laMatThat = (m: MatToa) => m.a_cuoi - m.a_dau > 1;
 
 // ---------- lõi: dải trên mặt (XC-05), sảnh (XC-06) ----------
-const daGiacLoi = (K: HinhLoiMB): Diem[] | null => {
+export const daGiacLoi = (K: HinhLoiMB): Diem[] | null => {
   if (K.bao_tm?.length) return K.bao_tm;
   const b = K.bao_tuong_mm;
   return b && b.length === 4 ? [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]] : null;

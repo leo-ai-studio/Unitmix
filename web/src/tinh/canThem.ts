@@ -7,6 +7,7 @@
 import type { CanThem, Diem, ThuVien, ToaDat, ToaMau } from './kieu';
 import { coMat, type ToaCoMat } from './matBang';
 import { BAY_MM, noiNetBao } from './loiThang';
+import { thayLoiMau } from './thayLoi';
 
 const rad = (d: number) => (d * Math.PI) / 180;
 const trongDG = (p: Diem, P: Diem[]) => {
@@ -107,9 +108,10 @@ export function moRong<T extends ToaMau>(mau: T, ds: CanThem[] | undefined, tv: 
 export const mauMoRong = <T extends ToaMau>(mau: T, ds: CanThem[] | undefined, tv: ThuVien): T => moRong(mau, ds, tv).mau;
 
 /** Mẫu tòa của một tòa: thư viện + căn thêm tay. Không có mẫu thì undefined. */
-export function mauToa(tv: ThuVien, toa: Pick<ToaDat, 'mauId' | 'canThem'>): ToaMau | undefined {
+export function mauToa(tv: ThuVien, toa: Pick<ToaDat, 'mauId' | 'canThem' | 'loiThay'>): ToaMau | undefined {
   const m = tv.toa.get(toa.mauId);
-  return m && mauMoRong(m, toa.canThem, tv);
+  // lõi thay trước (khoá lõi theo mẫu thư viện), căn thêm tay sau (khoá căn thêm tính theo phần tử của mẫu thư viện)
+  return m && mauMoRong(thayLoiMau(m, toa.loiThay), toa.canThem, tv);
 }
 
 /** Chỉ số căn thêm có khoá ô `khoa`; không phải căn thêm thì −1. */
