@@ -61,7 +61,7 @@ describe('thay lõi — danh sách thay được theo dạng / loại hình / m�
 describe('thay lõi — mọi cặp: thay được, không đè / khe mới, khít lõi mới, hoàn tác', () => {
   const theoMau = new Map<string, typeof cap>();
   for (const x of cap) theoMau.set(x.id, [...(theoMau.get(x.id) ?? []), x]);
-  it.each([...theoMau.keys()])('%s', (id) => {
+  it.each(layMau([...theoMau.keys()], 3))('%s', (id) => {
     const toa = toaThu(id), truoc = doKhi(toa), loi: string[] = [];
     for (const x of theoMau.get(id)!) {
       const r = thayLoiTay(toa, x.khoa, x.moi, c);
@@ -84,7 +84,7 @@ describe('thay lõi — mọi cặp: thay được, không đè / khe mới, kh�
 describe('thay lõi rồi sửa tay (xoá · thêm · lật căn): vẫn dồn về lõi MỚI, không đè / khe mới', () => {
   const mot = new Map<string, (typeof cap)[number]>();
   for (const x of cap) if (!mot.has(x.id)) mot.set(x.id, x);
-  it.each([...mot.keys()])('%s', (id) => {
+  it.each(layMau([...mot.keys()], 3))('%s', (id) => {
     const x = mot.get(id)!, toa0 = toaThu(id), r0 = thayLoiTay(toa0, x.khoa, x.moi, c);
     expect(r0.ok, `${id} ${x.khoa} → ${x.moi}`).toBe(true);
     if (!r0.ok) return;

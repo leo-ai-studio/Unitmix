@@ -557,16 +557,24 @@ export function hocLogia(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undef
   return kq;
 }
 
+/** Mẫu tòa đã thay lõi → mẫu gốc của bản vẽ (thayLoi.ts ghi; canThem.moRong chuyển tiếp). */
+const mauGocLoi = new WeakMap<object, ToaMB>();
+export const ghiMauGocLoi = (daThay: object, goc: ToaMB) => { mauGocLoi.set(daThay, goc); };
+export const layMauGocLoi = (mau: object): ToaMB | undefined => mauGocLoi.get(mau);
+
 /**
  * Nét bao bo theo ô (app cũ duongBao0 — tinh/netBao.ts): so ô đặc của mặt bằng `mb` với mặt bằng mặc định của mẫu, trừ phần
  * sàn mất (nở 700 mm, trừ lại ô còn + hành lang), cộng phần mọc thêm. Không đổi gì thì undefined (= nét bao mẫu).
  */
 function baoTheoO(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc, dungLai = false): Diem[] | undefined | null {
-  const goc = matBangMacDinh(mau, dl), a = oDacMB(mau, goc, dl, tv), b = oDacMB(mau, mb, dl, tv, bc);
+  // lõi đã thay (QT-71: "lõi đã thay không còn là bố cục gốc"): nét bao dựng lại bằng phép boolean từ BẢN VẼ mẫu — ô + khung lõi cũ → mới
+  const m0 = mauGocLoi.get(mau) ?? mau;
+  if (m0 !== mau) dungLai = true;
+  const goc = matBangMacDinh(m0, dl), a = oDacMB(m0, goc, dl, tv), b = oDacMB(mau, mb, dl, tv, bc);
   // nét bao nối dần (noiNetBao ở đầu mặt — đúng tới mm khi dãy dài ra / ngắn lại) còn khớp ô thì giữ; hỏng (gai, viền thừa quanh
   // chỗ trống, ô lòi ra ngoài) mới dựng lại bằng phép boolean như app cũ
   const P1 = mb.duongBao ?? mau.duong_bao;
-  const P = !dungLai && !baoHong(P1, mau, a, b) ? P1 : netBaoTheoO(mau.duong_bao, a.o, b.o, b.hl, a.hl);
+  const P = !dungLai && !baoHong(P1, mau, a, b) ? P1 : netBaoTheoO(m0.duong_bao, a.o, b.o, b.hl, a.hl);
   if (!P) return null;
   // hốc logia đi theo căn (QT-59b): căn dời / đổi chỗ / lật thì hốc cũ lấp lại, hốc mới khoét theo căn
   const Q = suaHocLogia(P, hocLogia(mau, goc, dl, tv), hocLogia(mau, mb, dl, tv, bc), b.o, mau.duong_bao);

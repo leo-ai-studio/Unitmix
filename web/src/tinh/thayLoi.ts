@@ -9,7 +9,7 @@
  * Hàm thuần, không phụ thuộc giao diện.
  */
 import type { Diem, LoiThay, ThuVien, ToaMau } from './kieu';
-import { BAY_MM, catNua, daGiacLoi, daiLoi, doSanh, dsLoi, noiNetBao, type DuLieuMB, type HinhLoiMB, type ToaMB } from './loiThang';
+import { BAY_MM, catNua, daGiacLoi, daiLoi, doSanh, dsLoi, ghiMauGocLoi, noiNetBao, type DuLieuMB, type HinhLoiMB, type ToaMB } from './loiThang';
 import { coMat, veLoiTaiViTri } from './matBang';
 
 /** Ngưỡng bề rộng sảnh phân NOTM / NOXH (QT-72). */
@@ -181,10 +181,9 @@ function dichChuoi(kq: ToaMB, d: NonNullable<LoiThay['dich']>[number]): void {
     if (!daMat) continue;
     const aE = dau ? f.a_dau : f.a_cuoi;
     const P = noiNetBao(kq.duong_bao, f.goc_deg, f.truc_mm, aE, dau ? -1 : 1, dau ? -dd : dd);
-    if (!P) continue;
     for (const q of chuoi) { q.a0 += dd; q.a1 += dd; q.x += u[0] * dd; q.y += u[1] * dd; }
     if (dau) f.a_dau += dd; else f.a_cuoi += dd;
-    kq.duong_bao = P;
+    if (P) kq.duong_bao = P; // không nối được thì tự chỉnh dựng lại nét bao từ ô (ghiMauGocLoi)
   }
 }
 
@@ -220,6 +219,7 @@ export function thayLoiMau<T extends ToaMau>(mau: T, ds: Record<string, LoiThay>
       if (a) { a.p0 = [a.p0[0] + u[0] * t.dHl, a.p0[1] + u[1] * t.dHl]; a.p1 = [a.p1[0] + u[0] * t.dHl, a.p1[1] + u[1] * t.dHl]; }
     }
   }
+  ghiMauGocLoi(kq, mau as unknown as ToaMB);
   if (!m) nho.set(mau, (m = new Map()));
   if (m.size > 30) m.clear();
   m.set(k, kq);

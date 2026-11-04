@@ -6,7 +6,7 @@
  */
 import type { CanThem, Diem, ThuVien, ToaDat, ToaMau } from './kieu';
 import { coMat, type ToaCoMat } from './matBang';
-import { BAY_MM, noiNetBao } from './loiThang';
+import { BAY_MM, ghiMauGocLoi, layMauGocLoi, noiNetBao, type ToaMB } from './loiThang';
 import { thayLoiMau } from './thayLoi';
 
 const rad = (d: number) => (d * Math.PI) / 180;
@@ -98,6 +98,8 @@ export function moRong<T extends ToaMau>(mau: T, ds: CanThem[] | undefined, tv: 
     mat: mau.mat.map((f) => ({ ...f, phan_tu: f.phan_tu.map((q) => ({ ...q })) })) } as T & ToaCoMat;
   const hong: number[] = [];
   ds.forEach((e, i) => { if (themMot(m, e, tv)) hong.push(i); });
+  const g0 = layMauGocLoi(mau);
+  if (g0) ghiMauGocLoi(m, g0 as unknown as ToaMB);
   const kq = { mau: m as T, hong };
   if (!theoMau) nho.set(mau, (theoMau = new Map()));
   if (theoMau.size > 30) theoMau.clear();

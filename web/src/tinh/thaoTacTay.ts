@@ -10,9 +10,10 @@
 import { chiSoCanThem, moRong, khoaCanThem, mauToa, rutCanThem } from './canThem';
 import { doiCanTaiViTri, doiCanTheoTang, doiChoO, doiCongNang, latO } from './doiCan';
 import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type ToaDat } from './kieu';
-import { dsLoi, apMatBang, chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
+import { dsLoi, mauHieuDung, apMatBang, chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
 import { duocDatVaoO, idMauGoc, nhomViTri } from './quyTacViTriCan';
+import { stretchTay } from './stretch';
 import { loiThayDuoc, lyDoKhongThay, thayLoiMau, ungVienLoiThay } from './thayLoi';
 
 export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'khong_vua' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan' | 'sai_vi_tri' | 'khong_thay_loi' | 'thieu_hinh_loi';
@@ -431,4 +432,25 @@ export function loiThayDuocToa(toa: ToaDat, c: Ctx, khoa: string): string[] {
   const hienTai = thayLoiMau(goc, toa.loiThay) as unknown as ToaMB, dang = dsLoi(hienTai).find((x) => x.khoa === khoa)?.q.block;
   // theo lõi của bản vẽ mẫu (thư viện), bỏ khối đang dùng; khối của bản vẽ thì là "trả về" (huyThayLoiTay)
   return loiThayDuoc(c.tv, goc, khoa, c.dl).filter((b) => b !== dang);
+}
+
+// ---------------- STRETCH tay ----------------
+
+/**
+ * STRETCH tay một căn (app cũ QT-81): kéo `khoa` thêm `d` mm (±ST_BUOC, tổng ≤ ±ST_MAX) — căn kề cùng đoạn bù ngược, không có căn bù
+ * thì dãy dài ra / ngắn lại ở đầu tự do (QT-69). Cùng đường với công cụ Leo AI `stretch_cell`; chạy tự chỉnh + kiểm không đè / khe mới.
+ */
+export function stretchCanTay(toa: ToaDat, khoa: string, d: number, c: Ctx): KetQuaTay {
+  const goc = mauToa(c.tv, toa) as ToaMB | undefined;
+  if (!goc || !Array.isArray(goc.mat)) return { ok: false, lyDo: 'khong_doi' };
+  const mau = mauHieuDung(toa, goc, c.dl, null), bc = boCucTang(toa, null);
+  const r = stretchTay(mau, bc, c.tv, khoa, d, { choDaiRa: true });
+  if (!r.ok) return { ok: false, lyDo: 'khong_doi', chiTiet: r.lyDo };
+  const vts = viTriCan(mau, c.tv, bc);
+  let sau = toa;
+  for (const [kh, id] of r.doi) {
+    const vt = vts.find((x) => x.khoa === kh);
+    if (vt) sau = doiCanTaiViTri(sau, vt, id, vts, false);
+  }
+  return chotSua(toa, sau, [null], c);
 }
