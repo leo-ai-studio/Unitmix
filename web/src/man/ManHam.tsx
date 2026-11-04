@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { diemTheoDoDai, dongRanhVe, type HamDayDu, type KetQuaHam, type KiemHam } from '../tinh/ham';
 import { useRaiHam } from '../tinh/hamNen';
@@ -7,8 +7,12 @@ import { PHAN_HAM_MAC_DINH, type Diem, type LoaiRam, type ThongSoHam, type ThuVi
 import { chuanHoaHam } from '../tinh/macDinh';
 import { MucGap } from '../ui/MucGap';
 import { GocBanVe } from '../ui/GocBanVe';
+import { datLopHam, useLopHam } from '../ve/lopHam';
 import { fmtSo } from '../ui/so';
 import { BanVe, khungBao, sPoly, type DieuKhienVe } from '../ve/BanVe';
+import { NutDoKichThuoc, useDoKichThuoc } from '../ve/DoKichThuoc';
+import { nguonBatHam } from '../tinh/nguonBat';
+import type { NguonBat } from '../tinh/kichThuoc';
 import { ChuGiaiHam, ChuGiaiT1, MatBangHam, MatBangT1 } from '../ve/MatBangHam';
 import { VeRanh } from '../ve/VeRanh';
 import { ChonLoCaoTang } from './ManLo';
@@ -205,6 +209,7 @@ export function HamTrai({ pa, sua, chiXem, loId, chonLo, tv, tangHam, chonTangHa
 /** Bản vẽ màn Hầm: ranh lô, chân tòa (nét đứt), mặt bằng tầng hầm đang chọn; chọn tầng và công cụ Vẽ ranh ở lớp phủ trên. */
 export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: ChungHam) {
   const [dk, setDk] = useState<DieuKhienVe | null>(null);
+  const lopHam = useLopHam();
   const [ve, setVe] = useState(false);
   const [pts, setPts] = useState<Diem[]>([]);
   const [con, setCon] = useState<Diem | null>(null);
@@ -235,15 +240,25 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
     window.addEventListener('keydown', phim);
     return () => window.removeEventListener('keydown', phim);
   }, [ve, pts]);
+  // đo / kích thước (ve/DoKichThuoc): nguồn bắt điểm gán sau khi đã có kết quả hầm (ngay dưới)
+  const [dangDo, setDangDo] = useState(false);
+  const nguonHam = useRef<() => NguonBat>(() => ({ dinh: [], canh: [] }));
+  const khungLo = lo ? khungBao([lo.ranh]) : null;
+  const dm = useDoKichThuoc({
+    pa, sua, chiXem, phamVi: 'ham', bat: dangDo && !ve, tat: () => setDangDo(false), nguon: () => nguonHam.current(),
+    keoDai: khungLo ? Math.max(khungLo[2] - khungLo[0], khungLo[3] - khungLo[1]) : 100,
+  });
   if (!lo) return <div class="giua-man"><span>{t('xep.chuaCoLo')}</span></div>;
   if (kq === undefined) return <div class="giua-man"><VongRai /><span>{t('ham.dangRai')}</span></div>;
   if (!kq) return <div class="giua-man"><span>{t('ham.ranhRong')}</span>{dangCho && <PhuDangRai />}</div>;
   const tang = kq.tang[Math.min(Math.max(1, tangHam), kq.tang.length) - 1];
   const h = chuanHoaHam(pa.ham);
   const khung = khungBao([lo.ranh, kq.ranh]);
-  const coChu = Math.max(1, khung ? (khung[2] - khung[0]) / 70 : 2);
+  // cỡ chữ theo thước tỷ lệ của BanVe (đổi theo mức zoom, bước tròn số) → chữ luôn đọc được, hình không méo / vỡ khi phóng
+  const coChu = dk && dk.tyLeM > 0 ? Math.max(0.05, dk.tyLeM / 6) : Math.max(1, khung ? (khung[2] - khung[0]) / 70 : 2);
   const chan = tv ? pa.toa.filter((x) => x.loId === lo.id && tv.toa.has(x.mauId)).map((x) => chanToa(mauToa(tv, x)!, x)) : [];
   const nut: Diem[] = [...lo.ranh, ...(lo.chiGioi ?? [])];
+  nguonHam.current = () => nguonBatHam(lo.ranh, lo.chiGioi, kq.ranh, chan, kq.loi, kq.cot, ...(xemT1 ? [] : [tang.cho, tang.xeLan, tang.lan, tang.kho, tang.xeMay, tang.kyThuat]));
   const datDoDai = () => {
     const v = Number(doDai.replace(',', '.')), a = pts[pts.length - 1];
     if (!a || !con || !(v > 0)) return;
@@ -252,7 +267,7 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
   };
   return (
     <>
-      <BanVe khung={khung} nhan={t('ham.banVe')} onDieuKhien={setDk}>
+      <BanVe khung={khung} nhan={t('ham.banVe')} onDieuKhien={setDk} onBamNen={dm.onBamNen} onTroDi={dm.onTroDi}>
         {xemT1 && kq.t1 ? <MatBangT1 kq={kq} lo={lo} coChu={coChu} /> : (
           <>
             <g class="ham-ve"><polygon class="ranh-lo" points={sPoly(lo.ranh)} vector-effect="non-scaling-stroke" /></g>
@@ -266,6 +281,7 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
             else { setPts([...pts, p]); setBao(''); }
           }}
           onSuaRanh={(r) => suaHam(sua, () => ({ ranh: r }))} />
+        {dm.lop}
       </BanVe>
       <div class="noi-tren">
         <nav class="ham-tang" aria-label={t('ham.chonTang')}>
@@ -274,7 +290,9 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
           {kq.tang.map((x) => (
             <button type="button" key={x.tang} aria-pressed={!xemT1 && x.tang === tang.tang} onClick={() => { setXemT1(false); chonTangHam(x.tang); }}>{`B${x.tang}`}</button>
           ))}
-          {!chiXem && !xemT1 && <button type="button" class="nut-ve-ranh" aria-pressed={ve} onClick={() => (ve ? huyVe() : setVe(true))}>{t('ham.ve.nut')}</button>}
+          {!chiXem && !xemT1 && <button type="button" class="nut-ve-ranh" aria-pressed={ve} onClick={() => { if (!ve) setDangDo(false); ve ? huyVe() : setVe(true); }}>{t('ham.ve.nut')}</button>}
+          <span class="sep" aria-hidden="true" />
+          <NutDoKichThuoc bat={dangDo && !ve} onBat={() => { if (!dangDo && ve) huyVe(); setDangDo(!dangDo); }} chiXem={chiXem} ds={dm.ds} xoa={dm.xoa} xoaHet={dm.xoaHet} huongDan={dm.huongDan} />
         </nav>
         {ve && (
           <div class="ham-ve-thanh" role="group" aria-label={t('ham.ve.nut')}>
@@ -294,7 +312,12 @@ export function HamGiua({ pa, sua, chiXem, loId, tv, tangHam, chonTangHam }: Chu
         {!ve && !chiXem && h.ranh && <p class="ham-ve-ghi">{t('ham.ve.keoDinh')}</p>}
       </div>
       {dangCho && <PhuDangRai />}
-      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null} chuGiai={xemT1 ? <ChuGiaiT1 /> : <ChuGiaiHam coSac={tang.vungSac.length > 0} />} />
+      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null} lop={xemT1 ? undefined : [
+        { khoa: 'luoi', nhan: t('ham.lop.luoi'), bat: lopHam.luoi, onClick: () => datLopHam({ luoi: !lopHam.luoi }) },
+        { khoa: 'khoang', nhan: t('ham.lop.khoang'), bat: lopHam.khoang, onClick: () => datLopHam({ khoang: !lopHam.khoang }) },
+        { khoa: 'nhan', nhan: t('ham.lop.nhan'), bat: lopHam.nhan, onClick: () => datLopHam({ nhan: !lopHam.nhan }) },
+        { khoa: 'thoat', nhan: t('ham.lop.thoat'), bat: lopHam.thoat, onClick: () => datLopHam({ thoat: !lopHam.thoat }) },
+      ]} chuGiai={xemT1 ? <ChuGiaiT1 /> : <ChuGiaiHam coSac={tang.vungSac.length > 0} />} />
     </>
   );
 }

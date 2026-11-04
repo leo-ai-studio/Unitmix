@@ -1,4 +1,5 @@
 /** Kiểu dữ liệu phương án (PA) và thư viện. Toạ độ hình học tính bằng mét, trục y hướng lên như CAD. */
+import type { KichThuoc } from './kichThuoc';
 export type Diem = [number, number];
 export type LoaiCan = 'stu' | '1pn' | '2pn' | '2pnp' | '3pn';
 export const LOAI_CAN: LoaiCan[] = ['stu', '1pn', '2pn', '2pnp', '3pn'];
@@ -400,6 +401,8 @@ export type TrangThaiPA = {
   huongView?: CaiDatViewLuu;
   /** Vị trí dự án trên bản đồ (WGS84) + tham chiếu bản vẽ → bản đồ (tinh/viTri.ts). Thiếu = chưa đặt toạ độ (vĩ độ lấy `huongView.viDo`). */
   viTri?: ViTriLuu;
+  /** Kích thước (DIM) người dùng đặt trên bản vẽ, theo phạm vi: 'tmb' · 'ham' · 'tang:<id tòa>' (tinh/kichThuoc.ts, toạ độ mét). */
+  kichThuoc?: Record<string, KichThuoc[]>;
 };
 
 /**

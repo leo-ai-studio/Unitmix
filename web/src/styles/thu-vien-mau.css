@@ -23,3 +23,15 @@
 .khoi-mau-toa .o-chon select { min-width: 0; flex: 1; }
 .khoi-mau-toa input[type='text'] { min-width: 0; flex: 1 1 120px; }
 .khoi-mau-toa .ds-kiem { font-size: 12px; line-height: 1.4; }
+
+/* Đo / kích thước (ve/DoKichThuoc.tsx): popover dưới nút Đo, dùng chung TMB · Tầng · Hầm */
+.nut-do-kt { position: relative; display: inline-flex; }
+.nut-do-kt .thanh-do { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; min-width: 250px; max-width: 320px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px color-mix(in srgb, #000 16%, transparent); font-size: 12px; }
+.nut-do-kt .do-bat { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.nut-do-kt .o-tg { flex-direction: row; align-items: center; gap: 4px; padding: 0; font-size: 12px; }
+.nut-do-kt input[type='checkbox'] { min-width: 0; width: auto; margin: 0; accent-color: var(--green); }
+.nut-do-kt .do-goi-y { margin: 0; line-height: 1.4; }
+.nut-do-kt .do-ds { margin: 0; padding: 0; list-style: none; max-height: 120px; overflow: auto; }
+.nut-do-kt .do-ds li { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.nut-do-kt .do-ds button { border: 0; background: none; color: var(--muted-text); cursor: pointer; font-size: 15px; line-height: 1; }

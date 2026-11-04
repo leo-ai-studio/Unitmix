@@ -36,6 +36,8 @@ import { hlHieuDung } from '../tinh/thaoTacTay';
 import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
 import { KhoiMauToa } from './KhoiMauToa';
+import { NutDoKichThuoc, useDoKichThuoc } from '../ve/DoKichThuoc';
+import { nguonBatTang } from '../tinh/nguonBat';
 import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, truTCC, useCaiPCCC, usePCCCTang } from '../ve/LopPCCC';
 import { KhoiPCCC } from '../ui/KpiPCCC';
 import { ChuGiaiViewTang, LopViewTang } from '../ve/LopViewTang';
@@ -334,6 +336,12 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
     return [Math.min(k[0] - 6, h?.[0] ?? Infinity), Math.min(k[1] - 6, h?.[1] ?? Infinity), Math.max(k[2] + 6, h?.[2] ?? -Infinity), Math.max(k[3] + 6, h?.[3] ?? -Infinity)] as [number, number, number, number];
   }, [mau, hopTem]);
   const dsO = oDangChon(canKhoa, co.ds);
+  const [dangDo, setDangDo] = useState(false);
+  const dm = useDoKichThuoc({
+    pa, sua: p.sua, chiXem, phamVi: `tang:${toa.id}`, bat: dangDo, tat: () => setDangDo(false),
+    keoDai: khung ? Math.max(khung[2] - khung[0], khung[3] - khung[1]) : 60,
+    nguon: () => nguonBatTang(mauVe as unknown as ToaMB, sl.vts, loiDGVe),
+  });
   // tab "Đổi căn" của menu ô: mọi ô đang chọn đều là căn cùng mẫu gốc — đổi ĐÚNG những ô đang chọn (trừ khi bật "Sửa nhiều căn")
   const canChonO = dsO.map((k) => sl.can.find((c) => c.vt.khoa === k));
   const oMenu = canChonO.length && canChonO.every((c) => c && c.cn === 'can' && c.vt.canGocId === canChonO[0]!.vt.canGocId) ? canChonO[0] : undefined;
@@ -427,7 +435,7 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
         </div>
       )}
       <div class="boc-ve" ref={boc} onPointerDownCapture={(e) => { keoTay.batDau(e); batDauKhung(e); }} onClickCapture={(e) => { if (nuotClick.current) { e.stopPropagation(); e.preventDefault(); } }}>
-        <BanVe khung={khung} nhanDang={`${toa.id}|${tangXem(co.tangs) ?? ''}`} nhan={t('tang.banVe')} onDieuKhien={setDk} gocBac={toa.gocDo - gocBacPA(pa)}>
+        <BanVe khung={khung} nhanDang={`${toa.id}|${tangXem(co.tangs) ?? ''}`} nhan={t('tang.banVe')} onDieuKhien={setDk} onBamNen={dm.onBamNen} onTroDi={dm.onTroDi} gocBac={toa.gocDo - gocBacPA(pa)}>
           <MatBangTang truTCC={truTCC(pccc)} mau={mauVe} toa={bcVe} tv={tv} hinh={hinh} kieu={cai.kieu} noiThat={cai.noiThat} hienTem={cai.hienTem} canKhoa={canKhoa}
             onChonO={onChonO} dsChon={co.ds} onMenu={onMenu} loiTT={(k) => thongTinLoi(toa, k)} loiKhoa={menu?.loai === 'loi' ? menu.khoa : null}
             nhanCongNang={(cn) => t(`oc.nhan.${cn}`)}
@@ -438,9 +446,10 @@ function TangVe(p: ChungTang & { tv: ThuVien; toa: ToaDat; mau: ToaVe; lo: Lo | 
             datCncTay={(ds) => p.sua((q) => doiToa(q, toa.id, (x) => ({ ...x, cncTay: ds ?? undefined })))} /></g>
           {!chiXem && <g transform="scale(0.001 -0.001)"><TayHanhLang mau={mau} hanhLangTay={hlHd} onKeo={keoHL} khoa={!!tam} /></g>}
           <LopViewTang pa={pa} tv={tv} toa={toa} mau={mauVe} bc={bcVe} tang={k0} />
+          {dm.lop}
         </BanVe>
       </div>
-      <ThanhCongCuTang {...ccProps} />
+      <ThanhCongCuTang {...ccProps} nutDo={<NutDoKichThuoc bat={dangDo} onBat={() => setDangDo(!dangDo)} chiXem={chiXem} ds={dm.ds} xoa={dm.xoa} xoaHet={dm.xoaHet} huongDan={dm.huongDan} />} />
       <ChuGiaiViewTang pa={pa} />
       {keoTay.bongKeo}
       {baoSt && (

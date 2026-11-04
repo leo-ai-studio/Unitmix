@@ -93,3 +93,9 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, .08);
 }
 .ham-dang-rai .spin-o { margin-right: 0 !important; }
+
+/* lưới cột: nét mảnh chấm gạch, không tranh với hình */
+.ham-ve .luoi-truc { stroke: var(--muted); stroke-width: 0.8; stroke-dasharray: 8 3 1.5 3; opacity: 0.55; fill: none; }
+.ham-ve .luoi-bong { fill: var(--bg, #fff); stroke: var(--muted); stroke-width: 1; }
+.ham-ve .luoi-chu { fill: var(--text, currentColor); font-weight: 700; }
+.ham-ve .luoi-nhip { fill: var(--muted); }

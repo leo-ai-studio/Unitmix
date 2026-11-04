@@ -6,6 +6,7 @@
  * (tinh/baoThaoTac.ts — chỉ gợi ý). Kéo thả bám tay 1:1 (rAF), dò hợp lệ ô đích khi chuột dừng ~120 ms (cache theo ô đích), ô đích
  * không hợp lệ tô `--warn` kèm lý do ngắn; tôn trọng prefers-reduced-motion. Chế độ chỉ xem: khoá.
  */
+import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import { bienDongCan, type BienDongCan, type GoiYGiuCan } from '../tinh/baoThaoTac';
@@ -27,6 +28,8 @@ type CanSo = { vt: ViTriCan; canId: string; no: number; cn: string };
 /** Đoạn trống đang rê chuột trong danh sách chỗ trống (bản vẽ tô nét đứt). */
 export type ChoSang = { matIdx: number; a0: number; a1: number } | null;
 export type PropsCongCu = {
+  /** nút Đo + popover kích thước (ve/DoKichThuoc), đặt đầu thanh công cụ */
+  nutDo?: ComponentChildren;
   pa: TrangThaiPA;
   sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void;
   chiXem: boolean;
@@ -279,6 +282,7 @@ export function ThanhCongCuTang(p: PropsCongCu) {
   return (
     <div class="thanh-cc-tang" role="toolbar" aria-label={t('cc.nhom')}>
       <span class="nhom-bt">
+        {p.nutDo}
         <NutBieuTuong k="sapXep" bat={p.keoBat} tat={chiXem} ghiChu={ghi('sapXep')} onClick={() => p.datKeoBat(!p.keoBat)} />
         <span class="cc-them">
           <NutBieuTuong k="them" bat={moThem} tat={chiXem} ghiChu={ghi('them')} onClick={() => (moThem ? dong() : setMoThem(true))} />

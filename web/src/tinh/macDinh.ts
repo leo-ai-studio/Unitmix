@@ -1,3 +1,4 @@
+import { chuanHoaKichThuoc } from './kichThuoc';
 import { chuanHoaViTri } from './viTri';
 import { chuanHoaMatBang, ganLoaiThang, goTuDong, laLoaiThang, loaiTheoChung, THANG_MAX, THANG_MIN } from './loiThang';
 import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiPhiPA, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type ToaDat, type TrangThaiPA } from './kieu';
@@ -202,4 +203,5 @@ export const chuanHoaPA = (pa: TrangThaiPA): TrangThaiPA => ({
   lo: pa.lo.map((l) => chuanHoaCanhDuong({ ...l, temDat: { ...l.temDat, chiTieu: { ...CHI_TIEU_MAC_DINH, ...l.temDat.chiTieu } } })),
   toa: (pa.toa ?? []).map(chuanHoaToa),
   chiPhi: chuanHoaChiPhi(pa.chiPhi),
+  kichThuoc: chuanHoaKichThuoc(pa.kichThuoc),
 });
