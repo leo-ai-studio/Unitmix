@@ -31,6 +31,7 @@ import { HopCanhLo, NhanCanhLo, datCanhChon } from './loGioiCanh';
 import { HopHangLoat, LopHangLoat } from './xepHangLoat';
 import { ThangMayLo } from '../ui/ThangMayLo';
 import { moSoSanhMau } from '../ui/SoSanhMau';
+import { moThuVienMau } from '../ui/HopThuVienMau';
 import { ChuGiaiView, KpiView, LopViewTmb, TheViewToa, gocBacPA, nutLopView, useLopView } from './lopView';
 import { nhanToa } from '../ui/nhanToa';
 import { HopNangGioCho, LopNangGio2D, useNutNangGio } from '../nangGio'; // ảnh vệ tinh nền + nắng / gió (gói riêng, lớp phủ)
@@ -119,6 +120,7 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
               <BieuTuong k="soSanhMau" />
             </button>
           </div>
+          <div class="dong"><button type="button" class="nut-phu" disabled={!tv} onClick={() => moThuVienMau()}>{t('mt.moThuVien')}</button></div>
           {!tv && <p class="dong muted">{t('lo.dangTaiThuVien')}</p>}
           {dsMau.map(({ m, hop }) => (
             <div class="the-mau" key={m.id}>

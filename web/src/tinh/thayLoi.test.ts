@@ -15,6 +15,9 @@ import { layMau } from '../thu/layMau';
 import { canDangDung, viTriCan } from './matBang';
 import { dsLoiToa, huyThayLoiTay, latTay, loiThayDuocToa, mauThem, thayLoiTay, themCanTay, xoaCanTay, type KetQuaTay } from './thaoTacTay';
 import { mauCuaLoi } from './thayLoi';
+import { veMauGocMB } from './doiCan';
+import { chepBoCucSang } from './lanTruyenBoCuc';
+import { taoPAMoi } from './macDinh';
 
 const lib = new URL('../../public/lib/', import.meta.url);
 const doc = <T>(p: string) => JSON.parse(readFileSync(new URL(p, lib), 'utf8')) as T;
@@ -105,4 +108,29 @@ describe('thay lõi rồi sửa tay (xoá · thêm · lật căn): vẫn dồn v
     }
     expect(loi).toEqual([]);
   }, 300_000);
+});
+
+describe('thay lõi — Reset mặt bằng về mẫu gốc và chép bố cục sang tòa khác', () => {
+  const cap2 = cap.find((x) => x.id === 'tm-z1')!;
+  it('Reset: bỏ lõi thay, mẫu tòa và mặt bằng về đúng mẫu gốc của app', () => {
+    const toa0 = toaThu(cap2.id), r = thayLoiTay(toa0, cap2.khoa, cap2.moi, c);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.toa.loiThay).toBeTruthy();
+    expect(mauToa(tv, r.toa)).not.toBe(tv.toa.get(cap2.id)); // đang mang lõi mới
+    const reset = veMauGocMB(r.toa);
+    expect(reset.loiThay).toBeUndefined();
+    expect(mauToa(tv, reset)).toBe(tv.toa.get(cap2.id)); // đúng đối tượng mẫu thư viện
+    const nen = toaThu(cap2.id), moi = tuChinhToa(reset, mauDung(reset), tv, dl), cu = tuChinhToa(nen, mauDung(nen), tv, dl);
+    expect(JSON.stringify(moi.matBang)).toBe(JSON.stringify(cu.matBang));
+    expect(dsLoiToa(moi, c).map((l) => l.block)).toEqual(dsLoiToa(cu, c).map((l) => l.block));
+  });
+  it('Chép bố cục sang tòa cùng mẫu mang theo lõi đã thay', () => {
+    const toa0 = toaThu(cap2.id), r = thayLoiTay(toa0, cap2.khoa, cap2.moi, c);
+    if (!r.ok) throw new Error('không thay được');
+    const pa = { ...taoPAMoi(), toa: [{ ...r.toa, id: 'a' }, { ...toaThu(cap2.id), id: 'b' }] };
+    const kq = chepBoCucSang(pa, 'a', ['b']);
+    expect(kq.them).toBe(1);
+    expect(kq.pa.toa.find((x) => x.id === 'b')!.loiThay).toEqual(r.toa.loiThay);
+  });
 });

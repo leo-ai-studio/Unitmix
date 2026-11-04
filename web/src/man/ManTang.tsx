@@ -35,6 +35,7 @@ import { dieuPhoiTay } from '../tinh/tayNen';
 import { hlHieuDung } from '../tinh/thaoTacTay';
 import { mauToa } from '../tinh/canThem';
 import { KpiTang } from '../ui/KpiTang';
+import { KhoiMauToa } from './KhoiMauToa';
 import { batLopPCCC, ChuGiaiPCCC, LopPCCC, nutLopPCCC, truTCC, useCaiPCCC, usePCCCTang } from '../ve/LopPCCC';
 import { KhoiPCCC } from '../ui/KpiPCCC';
 import { ChuGiaiViewTang, LopViewTang } from '../ve/LopViewTang';
@@ -680,6 +681,7 @@ export function TangPhai(p: ChungTang) {
     <>
       <KpiTang pa={pa} tv={tv} toa={toa} mau={mau} bc={bc} lo={lo} tang={k0} can={sl.can} mucTieu={muc} nguongLech={pa.nguong.coCauDiem} tenTang={phamVi} canChon={khoiCanChon} />
       <KhoiPCCC pa={pa} tv={tv} toa={toa} mau={mau} bc={bc} chiXem={chiXem} datToa={(fn) => sua((q) => doiToa(q, toa.id, fn))} />
+      <KhoiMauToa pa={pa} tv={tv} toa={toa} chiXem={chiXem} sua={sua} />
       <MucGap tieuDe={`${t('tang.canTrongToa')} · ${tenNgan(mau.ten_vi)}${k0 !== null ? ' · ' + tenTang(toa.soTangDe, k0) : ''}`} giaiThich={t('gt.tang.canTrongToa')}>
         <div class="bang-co-cau" role="table">
           <div class="dong bang-cc dau" style={{ gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr' }} role="row"><span /><span>{t('tang.canTang')}</span><span>{t('xep.tyLe')}</span><span>{t('xep.mucTieu')}</span><span>{t('xep.lech')}</span></div>

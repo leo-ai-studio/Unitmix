@@ -4,6 +4,7 @@ import { mauHieuDung, THANG_KHOI, THANG_N2, tuChinhSauSua, tuChinhToa, type Chan
 import { coMat } from '../tinh/matBang';
 import { idLoi, tai, taiCuaCan } from '../ve/hinhHocThuVien';
 import { mauToa } from '../tinh/canThem';
+import { khoiLoiThuVien } from '../tinh/thayLoi';
 
 /**
  * Dữ liệu cho tự chỉnh mặt bằng tầng (tinh/loiThang.ts): hình lõi (nét bao MDI-BAO-TM, tường để đo sảnh) của các khối lõi / thang
@@ -44,6 +45,9 @@ function napChoPA(khoi: string[], tv: ThuVien): void {
     nghe.forEach((f) => f());
   });
 }
+
+/** Nạp hình MỌI khối lõi của thư viện (để liệt kê lõi thay được — khối lõi khác không có trong PA); gọi lúc rảnh, tải một lần. */
+export function napLoiThayDuoc(tv: ThuVien): void { napChoPA(khoiLoiThuVien(tv), tv); }
 
 /** Chờ dữ liệu tự chỉnh đủ cho các khối PA `pa` dùng (trợ lý Leo AI gọi trước phép tay; giao diện dùng `useDuLieuMB`). */
 export function choDuLieuMB(pa: TrangThaiPA, tv: ThuVien): Promise<DuLieuMB> {

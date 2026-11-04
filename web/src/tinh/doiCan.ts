@@ -31,7 +31,7 @@ export const veMauGoc = <T extends DoiCan & Pick<ToaDat, 'tangRieng'>>(toa: T): 
 
 /** Mọi sửa tay / kết quả tự chỉnh của mặt bằng tòa (ToaDat): bỏ hết thì mặt bằng chạy lại từ mẫu gốc. Giữ vị trí, thông số, khoá, lật chân tòa trên TMB. */
 const KHOA_SUA_MB = [
-  'canViTri', 'congNang', 'tangRieng', 'latO', 'canThem', 'thangTay', 'hanhLangTay', 'loaiThang', 'tuPCCCTay', 'cncTay', 'tuDong',
+  'canViTri', 'congNang', 'tangRieng', 'latO', 'canThem', 'loiThay', 'thangTay', 'hanhLangTay', 'loaiThang', 'tuPCCCTay', 'cncTay', 'tuDong',
   'matBang', 'duongBao', 'dtxdM2',
 ] as const;
 

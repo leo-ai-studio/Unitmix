@@ -1,0 +1,25 @@
+/* Thư viện mẫu tòa · mẫu căn (ui/HopThuVienMau.tsx) + khối "Mẫu tòa · lõi thang máy" panel phải màn Tầng (man/KhoiMauToa.tsx). Màu chỉ lấy biến :root. */
+.thu-vien-mau { gap: 10px; max-height: min(86vh, 760px); overflow: auto; }
+.thu-vien-mau .tvm-dau { display: flex; align-items: center; gap: 10px; }
+.thu-vien-mau .tvm-dau h2 { flex: 1; margin: 0; }
+.thu-vien-mau .tvm-ghi { margin: 0; font-size: 12px; line-height: 1.45; }
+.thu-vien-mau .tvm-bao { margin: 0; font-size: 12.5px; }
+.thu-vien-mau .tvm-ds { display: flex; flex-direction: column; gap: 6px; }
+.thu-vien-mau .tvm-the { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; background: var(--panel); }
+.thu-vien-mau .tvm-hang { display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap; }
+.thu-vien-mau .tvm-hang > b { flex: 1 1 180px; min-width: 0; }
+.thu-vien-mau .tvm-nut { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.thu-vien-mau .tvm-nhap { cursor: pointer; display: inline-flex; align-items: center; padding: 4px 10px; }
+.thu-vien-mau .tvm-kq { font-size: 12px; line-height: 1.45; }
+.thu-vien-mau .tvm-kq ul, .khoi-mau-toa .ds-kiem { margin: 4px 0 0; padding-left: 18px; }
+.thu-vien-mau .tvm-kq li.vuot, .khoi-mau-toa .ds-kiem li.vuot { color: var(--bad, #b3261e); }
+.thu-vien-mau .tvm-kq li.canh, .khoi-mau-toa .ds-kiem li.canh { color: var(--warn, #8a5a00); }
+.thu-vien-mau .vuot { color: var(--bad, #b3261e); }
+.thu-vien-mau .ok { color: var(--green); }
+.thu-vien-mau input[type='text'] { min-width: 0; flex: 1 1 160px; }
+.khoi-mau-toa { display: flex; flex-direction: column; gap: 6px; }
+.khoi-mau-toa .dong { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.khoi-mau-toa .o-chon { flex-direction: row; }
+.khoi-mau-toa .o-chon select { min-width: 0; flex: 1; }
+.khoi-mau-toa input[type='text'] { min-width: 0; flex: 1 1 120px; }
+.khoi-mau-toa .ds-kiem { font-size: 12px; line-height: 1.4; }

@@ -31,6 +31,7 @@ import { TmbPhai, TmbTrai, XepGiua, loDangXep } from './ManXepToa';
 import { baoCongNgoai } from '../troLy/congChayNgoai';
 import { taoNguCanhSoan, type PhuSoan } from '../troLy/nguCanhSoan';
 import { HopSoSanhMau } from '../ui/SoSanhMau';
+import { HopThuVienMau } from '../ui/HopThuVienMau';
 import { oDungCan } from '../tinh/soSanhMau';
 
 // Màn nặng ít dùng: chunk riêng, tải khi mở (vòng O giữ chỗ) — de_xuat_hieu_nang P5.
@@ -218,6 +219,8 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
     <>
       {!duocSua && <div class="thong-bao" role="status">{t('soan.chiXem')}</div>}
       <HopSoSanhMau pa={kho.pa} tv={tv} sua={kho.sua} chiXem={chiXem} loId={loId}
+        daDat={(lo, id) => { setLoId(lo); setToaId(id); setCanKhoa(null); setBuoc('tmb'); setXemGiua('mat_bang'); }} />
+      <HopThuVienMau pa={kho.pa} tv={tv} sua={kho.sua} chiXem={chiXem} loId={loId}
         daDat={(lo, id) => { setLoId(lo); setToaId(id); setCanKhoa(null); setBuoc('tmb'); setXemGiua('mat_bang'); }} />
       {moTl && tv && <HopXuatTaiLieu nhom={moTl} pa={kho.pa} tv={tv} tenDuAn={da.ten} tenPA={tenPA} toaDangXem={xemXuat?.toa.id ?? null} dong={() => setMoTl(null)} />}
       {moXuat && xemXuat && tv && <HopXuatCad toa={xemXuat.toa} mau={xemXuat.mauTang(null)} mauTang={xemXuat.mauTang} tv={tv} ten={da.ten} dong={() => setMoXuat(false)} />}
