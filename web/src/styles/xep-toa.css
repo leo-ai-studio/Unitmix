@@ -24,3 +24,30 @@
 .tieu-de-mau { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 .the-mau input[type='checkbox'] { min-width: 0; width: auto; flex: none; accent-color: var(--green); }
 .muc-phu { margin: 8px 0 2px; font-weight: 700; font-size: 11px; color: var(--muted-text); text-transform: uppercase; letter-spacing: .03em; }
+
+/* Xếp tòa: hai chế độ, ưu tiên, thẻ phương án có 5 thanh điểm, thư viện mẫu một dòng */
+.xep-che-do { display: flex; width: 100%; }
+.xep-che-do button { flex: 1; min-width: 0; padding: 6px 4px; }
+.xep-nut { flex: 1; }
+.goi-y-the { display: grid; grid-template-columns: 72px minmax(0, 1fr); column-gap: 8px; align-items: start; }
+.goi-y-the .goi-y-hinh { float: none; width: 72px; height: 60px; margin: 0; }
+.goi-y-noi { display: flex; flex-direction: column; min-width: 0; font-size: 11px; line-height: 1.35; }
+.goi-y-noi b { font-size: 12px; }
+.goi-y-mau { overflow-wrap: anywhere; }
+.goi-y-nam { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 4px; }
+.goi-y-nam span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.goi-y-nam small { font-size: 10px; color: var(--muted-text); }
+.goi-y-nam i { display: block; height: 4px; background: var(--soft); }
+.goi-y-nam u { display: block; height: 100%; background: var(--green); text-decoration: none; }
+.goi-y-the .goi-y-cb { grid-column: 1 / -1; margin: 3px 0 0; }
+.goi-y-the .goi-y-ap { grid-column: 1 / -1; justify-self: end; margin-top: 4px; padding: 3px 10px; }
+.cong-cu-mau { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 2px 0 6px; }
+.cong-cu-mau .dan { flex: 1; }
+.cong-cu-mau .nut-bt { flex: none; }
+.ds-mau-gon { display: flex; flex-direction: column; }
+.mau-dong { display: grid; grid-template-columns: auto 30px minmax(0, 1fr) 12px auto; align-items: center; column-gap: 6px; height: 28px; border-bottom: 1px solid var(--line); font-size: 12px; }
+.mau-dong input[type='checkbox'] { width: auto; min-width: 0; margin: 0; accent-color: var(--green); }
+.mau-dong .muted { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mau-dong .nut-nho { width: 22px; height: 22px; padding: 0; line-height: 1; }
+.goi-y-nam small b { font-weight: 700; color: var(--ink); }
+.goi-y-xep > .goi-y-cb { margin: 2px 0; font-size: 11px; }

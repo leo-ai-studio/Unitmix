@@ -6,6 +6,19 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.8.0', ngay: '2026-11-06',
+    vi: [
+      'Xếp tòa trong lô: Xếp tòa đang có (giữ nguyên tòa) hoặc Tự tổ hợp (sát DTXD, cơ cấu), mỗi chế độ 10 phương án trong vài giây',
+      'Chấm mỗi phương án theo nắng, gió, view, mặt phố, sân; chọn tiêu chí ưu tiên',
+      'Thư viện mẫu tòa thành mục riêng, mỗi mẫu một dòng; chữ trên bản vẽ đúng cỡ khi zoom',
+    ],
+    en: [
+      'Tower layout: Rearrange existing towers or Auto mix (near max footprint, unit mix), 10 options each in seconds',
+      'Each option scored on sun, wind, view, street frontage and courtyard; choose a priority',
+      'Tower library moved to its own compact section; drawing labels now scale with zoom',
+    ],
+  },
+  {
     v: '0.7.9', ngay: '2026-11-05',
     vi: [
       'Gợi ý xếp tòa: 5–10 phương án theo kiểu Hai dãy, So le, Dãy kết hợp, Một dãy, Quanh sân, Tự do (học từ M34, M7, Long Biên); chọn mẫu tòa để xếp, xem hình nhỏ từng phương án',

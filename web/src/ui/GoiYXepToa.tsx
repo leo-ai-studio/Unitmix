@@ -8,15 +8,16 @@ import { t } from '../i18n/i18n';
 import { chanToa } from '../tinh/hinhHoc';
 import type { Lo, ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { taiQuyTac, traLuat } from '../tinh/quyTac';
-import { DS_KIEU_BO_CUC, goiYXepToaNen, TRONG_SO_VIEW_XEP, type GoiYXep, type KieuBoCuc } from '../tinh/xepToa';
+import { sinhBoCuc } from '../tinh/boCucLo';
+import { DS_UU_TIEN, goiYXepToaNen, type CheDoBoCuc, type GoiYXep, type UuTienXep } from '../tinh/xepToa';
 import { sPoly } from '../ve/BanVe';
 import { taiCuaCan } from '../ve/hinhHocThuVien';
 import { fmtSo } from './so';
 import { mauToa } from '../tinh/canThem';
 
 // ---- trạng thái dùng chung panel trái ↔ bản vẽ (cấp module, không lưu vào PA) ----
-type TrangThai = { mt: boolean; chiMau: string[]; kieu: KieuBoCuc[]; khoa: string | null; ds: GoiYXep[] | null; chay: boolean; tienDo: number; xem: number | null; loi: string | null; ms: number | null };
-let tt: TrangThai = { mt: false, chiMau: [], kieu: [], khoa: null, ds: null, chay: false, tienDo: 0, xem: null, loi: null, ms: null };
+type TrangThai = { cheDo: CheDoBoCuc | null; uuTien: UuTienXep; chiMau: string[]; khoa: string | null; ds: GoiYXep[] | null; chay: boolean; tienDo: number; xem: number | null; loi: string | null; ms: number | null };
+let tt: TrangThai = { cheDo: null, uuTien: 'can_bang', chiMau: [], khoa: null, ds: null, chay: false, tienDo: 0, xem: null, loi: null, ms: null };
 const nghe = new Set<() => void>();
 const dat = (p: Partial<TrangThai>) => { tt = { ...tt, ...p }; nghe.forEach((f) => f()); };
 function useTT(): TrangThai {
@@ -34,13 +35,10 @@ const daChay = new Set<string>(); // lô đã tự chạy (không tự chạy l�
 /** Chữ ký đầu vào của lô: đổi ranh, chỉ giới, chỉ tiêu, cơ cấu mục tiêu, tòa lô bên cạnh hay cài đặt view thì gợi ý cũ hết hiệu lực. */
 const khoaLo = (pa: TrangThaiPA, lo: Lo) =>
   lo.id + '|' + JSON.stringify([lo.ranh, lo.chiGioi, lo.canhDuong ?? null, lo.temDat.chucNang, lo.temDat.chiTieu, lo.temDat.coCauMucTieu, pa.toa.filter((x) => x.loId !== lo.id).map((x) => [x.mauId, x.x, x.y, x.gocDo, x.soTangDH]), pa.huongView ?? null]);
-/** Trọng số view khi xếp hạng (%), lưu ở PA (`huongView.trongSoXep`). */
-const trongSoView = (pa: TrangThaiPA) => pa.huongView?.trongSoXep ?? TRONG_SO_VIEW_XEP;
-
 const coChiTieu = (lo: Lo) => lo.temDat.chucNang !== 'khac' && lo.ranh.length >= 3 && lo.temDat.chiTieu.matDoMax > 0 && lo.temDat.chiTieu.hssddMax > 0;
 
 let lanChay = 0;
-async function chay(pa: TrangThaiPA, lo: Lo, tv: ThuVien) {
+async function chay(pa: TrangThaiPA, lo: Lo, tv: ThuVien, cheDo: CheDoBoCuc) {
   const lan = ++lanChay, khoa = khoaLo(pa, lo);
   dat({ khoa, ds: null, chay: true, tienDo: 0, xem: null, loi: null, ms: null });
   try {
@@ -48,7 +46,7 @@ async function chay(pa: TrangThaiPA, lo: Lo, tv: ThuVien) {
     const lo01 = traLuat(bo, 'LO-01'), lo02 = traLuat(bo, 'LO-02');
     if (!lo01 || !lo02) throw new Error('LO-01 / LO-02');
     const t0 = performance.now();
-    const ds = await goiYXepToaNen({ pa, lo, tv, luat: { lo01, lo02 }, cuaCan, theoMucTieu: tt.mt, chiMau: tt.chiMau, kieuBoCuc: tt.kieu }, (x, n) => lan === lanChay && dat({ tienDo: x / n }), () => lan !== lanChay);
+    const ds = await goiYXepToaNen({ pa, lo, tv, luat: { lo01, lo02 }, cuaCan, chiMau: tt.chiMau, cheDoBoCuc: cheDo, uuTien: tt.uuTien }, (x, n) => lan === lanChay && dat({ tienDo: x / n }), () => lan !== lanChay, sinhBoCuc);
     if (ds && lan === lanChay) dat({ ds, chay: false, tienDo: 1, ms: performance.now() - t0 });
   } catch (e) {
     if (lan === lanChay) dat({ chay: false, loi: String((e as Error).message ?? e) });
@@ -62,92 +60,86 @@ export function GoiYXepToa({ pa, lo, tv, sua, chiXem, chonToa }: { pa: TrangThai
   const s = useTT();
   const khoa = khoaLo(pa, lo);
   const cuaLo = s.khoa === khoa;
-  const coToa = pa.toa.some((x) => x.loId === lo.id);
+  const soToa = pa.toa.filter((x) => x.loId === lo.id).length, coToa = soToa > 0;
+  const cheDo: CheDoBoCuc = s.cheDo === 'to_hop' || !coToa ? 'to_hop' : s.cheDo ?? 'sap_lai';
   // lô có chỉ tiêu mà chưa có tòa: tự chạy một lần
   useEffect(() => {
     if (!tv || coToa || !coChiTieu(lo) || daChay.has(lo.id) || (s.chay && cuaLo)) return;
     daChay.add(lo.id);
-    void chay(pa, lo, tv);
+    void chay(pa, lo, tv, 'to_hop');
   }, [tv, khoa, coToa]);
   // đổi lô thì bỏ xem trước
   useEffect(() => () => dat({ xem: null }), [lo.id]);
 
   const apDung = (g: GoiYXep) => {
-    const moi: ToaDat[] = g.toa.map((x) => ({ ...x, id: idMoi() }));
-    sua((p) => ({ ...p, toa: [...p.toa.filter((x) => x.loId !== lo.id), ...moi] }));
+    // sắp lại giữ id và tòa khoá; tổ hợp mới thay hết tòa của lô
+    const moi: ToaDat[] = g.toa.map((x) => (x.id.startsWith('goiy-') ? { ...x, id: idMoi() } : x));
+    sua((p) => ({ ...p, toa: [...p.toa.filter((x) => x.loId !== lo.id || (cheDo === 'sap_lai' && x.khoa)), ...moi] }));
     chonToa(moi[0]?.id ?? null);
     dat({ xem: null });
   };
 
+  // mọi phương án cùng vượt một số chỉ tiêu (giữ nguyên tòa): báo một lần trên đầu danh sách
+  const loiDs = cuaLo && s.ds ? [...new Set(s.ds.map((g) => g.loiQH))] : [];
+  const loiChung = loiDs.length === 1 ? loiDs[0] : 0;
+
   return (
     <div class="goi-y-xep">
+      <div class="nhom-nut xep-che-do" role="group" aria-label={t('xep.khoiXep')}>
+        <button type="button" aria-pressed={cheDo === 'sap_lai'} disabled={!coToa} title={t('gt.xep.sapLai')} onClick={() => dat({ cheDo: 'sap_lai' })}>{t('xep.sapLai').replace('{n}', String(soToa))}</button>
+        <button type="button" aria-pressed={cheDo === 'to_hop'} title={t('gt.xep.toHop')} onClick={() => dat({ cheDo: 'to_hop' })}>{t('xep.toHop')}</button>
+      </div>
+      <div class="goi-y-kieu" role="group" aria-label={t('xep.uuTien')}>
+        {DS_UU_TIEN.map((k) => (
+          <button type="button" key={k} title={t(`gt.xep.uu.${k}`)} aria-pressed={s.uuTien === k} onClick={() => dat({ uuTien: k })}>{t(`xep.uu.${k}`)}</button>
+        ))}
+      </div>
       <div class="dong">
-        <button type="button" class="nut-chinh" title={t('gt.xep.goiY')} disabled={!tv || s.chay || !coChiTieu(lo)} onClick={() => tv && void chay(pa, lo, tv)}>
-          {tt.chiMau.length ? t('xep.goiYMauChon').replace('{n}', String(tt.chiMau.length)) : t('xep.goiY')}
+        <button type="button" class="nut-chinh xep-nut" title={t('gt.xep.goiY')} disabled={!tv || s.chay || !coChiTieu(lo) || chiXem} onClick={() => tv && void chay(pa, lo, tv, cheDo)}>
+          {cheDo === 'to_hop' && tt.chiMau.length ? t('xep.goiYMauChon').replace('{n}', String(tt.chiMau.length)) : t('xep.goiY')}
         </button>
         {s.chay && cuaLo && <span class="muted goi-y-tien-do"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" />{fmtSo(s.tienDo * 100, { donVi: '%' })}</span>}
       </div>
-      <div class="goi-y-kieu" role="group" aria-label={t('xep.kieu')}>
-        {DS_KIEU_BO_CUC.map((k) => (
-          <button type="button" key={k} title={t(`gt.xep.kieu.${k}`)} aria-pressed={s.kieu.includes(k)}
-            onClick={() => dat({ kieu: s.kieu.includes(k) ? s.kieu.filter((x) => x !== k) : [...s.kieu, k] })}>{t(`xep.kieu.${k}`)}</button>
-        ))}
-      </div>
-      <label class="goi-y-trong-so goi-y-muc-tieu" title={t('gt.xep.goiYMucTieu')}>
-        <input type="checkbox" checked={s.mt} disabled={chiXem || s.chay} onChange={(e) => {
-          dat({ mt: e.currentTarget.checked });
-          if (tv && cuaLo && s.ds) void chay(pa, lo, tv); // đang có danh sách thì xếp lại theo chế độ mới
-        }} />
-        <span>{t('xep.goiYMucTieu')}</span>
-      </label>
-      <label class="goi-y-trong-so" title={t('gt.xep.goiYTrongSoView')}>
-        <span>{t('xep.goiYTrongSoView')}</span>
-        <input type="range" min={0} max={100} step={10} value={trongSoView(pa)} disabled={chiXem || s.chay} aria-valuetext={`${trongSoView(pa)} %`}
-          onChange={(e) => {
-            const v = Number(e.currentTarget.value);
-            if (!Number.isFinite(v) || v === trongSoView(pa)) return;
-            const pa2: TrangThaiPA = { ...pa, huongView: { ...(pa.huongView ?? {}), trongSoXep: v } };
-            sua((p) => ({ ...p, huongView: { ...(p.huongView ?? {}), trongSoXep: v } }));
-            if (tv && cuaLo && s.ds) void chay(pa2, lo, tv); // đang có danh sách thì xếp lại theo trọng số mới
-          }} />
-        <b>{fmtSo(trongSoView(pa), { donVi: '%' })}</b>
-      </label>
       {!coChiTieu(lo) && <p class="dong muted">{t('xep.goiYCanChiTieu')}</p>}
       {cuaLo && s.loi && <p class="dong vuot">{s.loi}</p>}
       {cuaLo && s.ds && !s.ds.length && <p class="dong muted">{t('xep.goiYRong')}</p>}
       {cuaLo && s.ds && s.ds.length > 0 && (
         <>
           <p class="dong muted" style={{ margin: 0 }}>{t('xep.goiYXong').replace('{n}', String(s.ds.length)).replace('{s}', fmtSo((s.ms ?? 0) / 1000, { thapPhan: 1 }))}</p>
+          {loiChung > 0 && <p class="goi-y-cb canh-bao">{t('xep.vuotChiTieu').replace('{n}', String(loiChung))}</p>}
           <ol class="goi-y-ds" onMouseLeave={() => dat({ xem: null })}>
             {s.ds.map((g, i) => (
               <li key={g.khoa} class={`goi-y-the${s.xem === i ? ' xem' : ''}`} onMouseEnter={() => dat({ xem: i })} onFocusCapture={() => dat({ xem: i })}>
                 {tv && <HinhGoiY lo={lo} g={g} tv={tv} />}
-                <div class="goi-y-dau">
-                  <b>{i + 1}. {t(`xep.kieu.${g.kieu}`)} · {g.mau.map(([m, n]) => `${n} × ${tv?.toa.get(m)?.ten_vi.split(' · ')[0] ?? m}`).join(' + ')}</b>
-                  <span class="muted">{1 + g.soTangDH} T</span>
+                <div class="goi-y-noi">
+                  <b>{i + 1}. {t(`xep.kieu.${g.kieu}`)}</b>
+                  <span class="goi-y-mau">{g.mau.map(([m, n]) => `${n} × ${tv?.toa.get(m)?.ten_vi.split(' · ')[0] ?? m}`).join(' + ')} · {g.soTangDH + 1} T</span>
+                  <span class="muted">{t('xep.tongCan').replace('{n}', fmtSo(g.soCan))} · {t('xep.goiYMatDo')} {fmtSo(g.matDo, { thapPhan: 1, donVi: '%' })}</span>
+                  {g.boCuc && <span class="muted">{t('xep.san')} {fmtSo(g.boCuc.sanM2, { donVi: 'm²' })}</span>}
                 </div>
-                <div class="goi-y-so">
-                  <span title={t('gt.xep.goiYCan')}>{t('xep.tongCan').replace('{n}', fmtSo(g.soCan))}{g.soCanMuc ? ` / ${fmtSo(g.soCanMuc)}` : ''}</span>
-                  <span title={t('xep.diemLech')}>{t('xep.goiYLech')} {fmtSo(g.lech, { thapPhan: 1 })}</span>
-                  <span title={t('xep.hssdd')}>{t('xep.goiYSan')} {fmtSo(g.tyLeSan * 100, { thapPhan: 0, donVi: '%' })}</span>
-                  <span title={t('xep.matDo')}>{t('xep.goiYMatDo')} {fmtSo(g.matDo, { thapPhan: 1, donVi: '%' })}</span>
-                  <span title={t('gt.xep.goiYPccc')} class={g.pcccVuot ? 'canh-bao' : g.pcccVuot === 0 ? 'ok' : ''}>{t('xep.goiYPccc')} {g.pcccVuot ?? '—'}</span>
-                  <span title={t('gt.xep.goiYHuong')}>{t('xep.goiYHuong')} {fmtSo(g.huongTot, { thapPhan: 0, donVi: '%' })}</span>
-                  <span title={t('gt.xep.goiYView')} class={g.view === null || g.view === undefined ? '' : 'goi-y-view'}>{t('xep.goiYView')} {fmtSo(g.view ?? null, { thapPhan: 0 })}{g.viewTot != null ? ` · ${t('view.tot')} ${fmtSo(g.viewTot, { thapPhan: 0, donVi: '%' })}` : ''}</span>
-                </div>
-                {g.theoMucTieu && (
-                  <p class={`goi-y-cb ${g.theoMucTieu.thieuToa || g.theoMucTieu.thieuDtxd > 0.05 ? 'canh-bao' : 'ok'}`}>
-                    {t('xep.goiYMucTieuKq').replace('{dt}', fmtSo(g.theoMucTieu.dtxdPct, { thapPhan: 1, donVi: '%' }))}
-                    {g.theoMucTieu.thieuToa > 0 ? ` · ${t('xep.goiYMucTieuThieu').replace('{n}', String(g.theoMucTieu.thieuToa))}` : ''}
-                  </p>
-                )}
+                {g.boCuc && <DiemNam d={g.boCuc} />}
+                {g.loiQH > 0 && g.loiQH !== loiChung && <p class="goi-y-cb canh-bao">{t('xep.vuotChiTieu').replace('{n}', String(g.loiQH))}</p>}
                 {g.canhBao.length > 0 && <p class="goi-y-cb canh-bao">{g.canhBao.join(' · ')}</p>}
-                <button type="button" class="nut-phu" disabled={chiXem} title={t('gt.xep.goiYApDung')} onClick={() => apDung(g)}>{t('xep.goiYApDung')}</button>
+                <button type="button" class="nut-phu goi-y-ap" disabled={chiXem} title={t('gt.xep.goiYApDung')} onClick={() => apDung(g)}>{t('xep.goiYApDung')}</button>
               </li>
             ))}
           </ol>
         </>
       )}
+    </div>
+  );
+}
+
+/** Năm tiêu chí bố cục, mỗi tiêu chí một thanh 0–100. */
+function DiemNam({ d }: { d: NonNullable<GoiYXep['boCuc']> }) {
+  const ds: [string, number][] = [['nang', d.nang], ['gio', d.gio], ['view', d.view], ['mat', d.mat], ['san', d.san]];
+  return (
+    <div class="goi-y-nam">
+      {ds.map(([k, v]) => (
+        <span key={k} title={`${t(`gt.xep.diem.${k}`)}: ${fmtSo(v, { thapPhan: 0 })}/100`}>
+          <small>{t(`xep.diem.${k}`)} <b>{fmtSo(v, { thapPhan: 0 })}</b></small><i><u style={{ width: `${Math.round(v)}%` }} /></i>
+        </span>
+      ))}
     </div>
   );
 }

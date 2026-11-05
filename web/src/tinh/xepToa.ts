@@ -89,6 +89,8 @@ const trong = (p: Diem, P: Diem[]) => {
   }
   return c;
 };
+/** Điểm trong đa giác (nhanh, không qua Clipper). */
+export const trongDaGiac = trong;
 const kcDoan = (p: Diem, a: Diem, b: Diem) => {
   const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1;
   const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L));
@@ -117,7 +119,7 @@ export function duXaDaGiac(P: Diem[], Q: Diem[], k: number): boolean {
   for (let i = 0; i < P.length; i++) for (let j = 0; j < Q.length; j++) if (cat(P[i], P[(i + 1) % P.length], Q[j], Q[(j + 1) % Q.length])) return false;
   return !(trong(P[0], Q) || trong(Q[0], P));
 }
-const namTrongNhanh = (F: Diem[], V: Diem[]) =>
+export const namTrongNhanh = (F: Diem[], V: Diem[]) =>
   F.every((p) => trong(p, V)) && !F.some((p, i) => V.some((q, j) => cat(p, F[(i + 1) % F.length], q, V[(j + 1) % V.length])));
 /** Khoảng cách nhỏ nhất từ đa giác F tới đoạn ab (cạnh lô). */
 export const kcToiDoan = (F: Diem[], a: Diem, b: Diem) => {
@@ -159,13 +161,22 @@ export type DauVaoXep = {
   chiMau?: string[];
   /** Chỉ giữ các kiểu bố cục này; rỗng / thiếu = mọi kiểu. */
   kieuBoCuc?: KieuBoCuc[];
+  /** Có giá trị thì chạy bộ xếp bố cục (tinh/boCucLo.ts): `sap_lai` giữ các tòa đang có, `to_hop` tự chọn tổ hợp mẫu. */
+  cheDoBoCuc?: CheDoBoCuc;
+  /** Tiêu chí ưu tiên khi xếp hạng bố cục. */
+  uuTien?: UuTienXep;
 };
+export type CheDoBoCuc = 'sap_lai' | 'to_hop';
+export type UuTienXep = 'can_bang' | 'nang' | 'gio' | 'view' | 'mat_pho' | 'san';
+export const DS_UU_TIEN: UuTienXep[] = ['can_bang', 'nang', 'gio', 'view', 'mat_pho', 'san'];
+/** Điểm bố cục 0–100 từng tiêu chí (tinh/boCucLo.ts). */
+export type DiemBoCuc = { nang: number; gio: number; view: number; mat: number; san: number; tong: number; sanM2: number; banKinhSan: number; gioPct: number };
 /**
  * Kiểu bố cục: `tu_do` tham lam từ neo; `hai_day` hai dãy bám hai cạnh đối diện, sân giữa (M34 vị trí 8, 10); `so_le` như hai dãy, dãy sau lệch
  * nửa bước; `ket_hop` mỗi dãy một mẫu (M34 PA1: T + I); `mot_day` một dãy giữa lô, cho lô dẹt (M34 vị trí 9, lô dài Long Biên);
  * `vien` tòa bám mọi cạnh, mở sân giữa (M7 4 tòa L, MH3 PA3).
  */
-export type KieuBoCuc = 'tu_do' | 'hai_day' | 'so_le' | 'ket_hop' | 'mot_day' | 'vien';
+export type KieuBoCuc = 'tu_do' | 'hai_day' | 'ba_day' | 'so_le' | 'ket_hop' | 'mot_day' | 'vien';
 export const DS_KIEU_BO_CUC: KieuBoCuc[] = ['hai_day', 'so_le', 'ket_hop', 'mot_day', 'vien', 'tu_do'];
 /** Cạnh chính của vùng đặt: gộp các đoạn gần thẳng hàng (vát góc lô), dài trước; `u` chạy dọc cạnh, `n` hướng vào trong lô. */
 export type CanhChinh = { a: Diem; b: Diem; dai: number; goc: number; u: Diem; n: Diem };
@@ -221,6 +232,8 @@ export type GoiYXep = {
   viewTot: number | null;
   /** Phương án sinh ở chế độ THEO MỤC TIÊU: tổ hợp dự kiến, số tòa không đặt được so với dự kiến, DTXD đạt (% MĐXD tối đa). */
   theoMucTieu?: { duKien: [string, number][]; thieuToa: number; dtxdPct: number; thieuDtxd: number };
+  /** Có khi chạy bộ xếp bố cục. */
+  boCuc?: DiemBoCuc;
 };
 
 // ---------- MT-06: % căn hướng tốt (app cũ `huongThat` + nhóm mặc định TỐT = Đ · ĐN · N) ----------
@@ -276,6 +289,9 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
 
   // tòa đã đặt ở lô khác (LO-02 · lô bên cạnh)
   const ngoai = pa.toa.filter((t) => t.loId !== lo.id && tv.toa.has(t.mauId)).map((t) => ({ id: t.id, loId: t.loId, F: chanToa(tv.toa.get(t.mauId)!, t), H: t.soTangDe * t.caoDe + t.soTangDH * t.caoDH }));
+  // LO-02 chỉ xét trong 60 m: tòa ngoài khung lô + 60 m không bao giờ vi phạm, khỏi dò với mọi ứng viên
+  const xV = V.map((p) => p[0]), yV = V.map((p) => p[1]), [x0V, x1V, y0V, y1V] = [Math.min(...xV), Math.max(...xV), Math.min(...yV), Math.max(...yV)];
+  const ngoaiGan = ngoai.filter((o) => o.F.some((p) => p[0] > x0V - XET_LO_BEN_M && p[0] < x1V + XET_LO_BEN_M && p[1] > y0V - XET_LO_BEN_M && p[1] < y1V + XET_LO_BEN_M));
 
   // góc thử: theo cạnh dài nhất của ranh lô (+ 90 / 180 / 270), như app cũ
   let dai = 0, gocL = 0, iL = 0;
@@ -293,7 +309,7 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
       const F = chanToa(mau, { x, y, gocDo: goc } as ToaDat);
       if (!namTrongNhanh(F, V)) continue;
       if (!duLuiTungCanh(F, R, lui)) continue;
-      if (ngoai.some((o) => kcDaGiac(F, o.F) < XET_LO_BEN_M && kcDaGiac(F, o.F) < kcToa261(luat.lo02, Math.max(Hmax, o.H)).dai)) continue;
+      if (ngoaiGan.some((o) => { const k = kcDaGiac(F, o.F); return k < XET_LO_BEN_M && k < kcToa261(luat.lo02, Math.max(Hmax, o.H)).dai; })) continue;
       kq.push({ mauId: mau.id, x, y, goc, F, r: Math.max(...F.map((p) => Math.hypot(p[0] - x, p[1] - y))) });
     }
     return kq;
@@ -476,7 +492,7 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
       // làm tròn TRƯỚC khi kiểm: toạ độ lưu là toạ độ đã kiểm
       const x = Math.round(x0 * 100) / 100, y = Math.round(y0 * 100) / 100, goc = Math.round(((gocDo % 360) + 360) % 360 * 10) / 10, F = chanToa(mau, { x, y, gocDo: goc } as ToaDat);
       if (!namTrongNhanh(F, V) || !duLuiTungCanh(F, R, lui)) return null;
-      if (ngoai.some((o) => kcDaGiac(F, o.F) < XET_LO_BEN_M && kcDaGiac(F, o.F) < kcToa261(luat.lo02, Math.max(Hmax, o.H)).dai)) return null;
+      if (ngoaiGan.some((o) => { const k = kcDaGiac(F, o.F); return k < XET_LO_BEN_M && k < kcToa261(luat.lo02, Math.max(Hmax, o.H)).dai; })) return null;
       return { mauId: mau.id, x, y, goc, F, r: Math.max(...F.map((p) => Math.hypot(p[0] - x, p[1] - y))) };
     };
     const cham2 = (p: Diem, q: Diem) => p[0] * q[0] + p[1] * q[1];
@@ -658,7 +674,7 @@ const taoWorkerGoiY = (): Worker | null => {
  * nhả luồng giữa các mẫu vẫn đứng giao diện); `huy()` được hỏi mỗi lần nhận tiến độ và mỗi 100 ms — true thì terminate worker, trả null.
  * Không có Worker (vitest / node): chạy trên luồng chính, nhả luồng sau mỗi mẫu như cũ.
  */
-export async function goiYXepToaNen(v: DauVaoXep, tienDo?: (xong: number, tong: number) => void, huy?: () => boolean): Promise<GoiYXep[] | null> {
+export async function goiYXepToaNen(v: DauVaoXep, tienDo?: (xong: number, tong: number) => void, huy?: () => boolean, sinh: (v: DauVaoXep) => Generator<{ xong: number; tong: number }, GoiYXep[]> = sinhGoiY): Promise<GoiYXep[] | null> {
   huyLuotGoiY?.(); // lượt cũ còn chạy: giết worker, lượt cũ trả null — chỉ giữ lượt mới nhất
   if (!workerGoiY) { workerGoiY = taoWorkerGoiY(); tvCuaWorker = null; }
   const w = workerGoiY;
@@ -690,7 +706,7 @@ export async function goiYXepToaNen(v: DauVaoXep, tienDo?: (xong: number, tong: 
       w.postMessage(thu);
     });
   }
-  const g = sinhGoiY(v);
+  const g = sinh(v);
   for (;;) {
     const r = g.next();
     if (r.done) return r.value;

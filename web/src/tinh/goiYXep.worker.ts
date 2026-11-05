@@ -1,6 +1,7 @@
 /* Worker gợi ý xếp tòa (tinh/xepToa.ts `goiYXepToaNen` điều phối): chạy `sinhGoiY`, báo tiến độ sau mỗi mẫu, trả danh sách gợi ý.
    Thư viện gửi một lần, giữ lại cho các lượt sau. Huỷ = luồng chính terminate worker. */
 import type { ThuVien } from './kieu';
+import { sinhBoCuc } from './boCucLo';
 import { sinhGoiY, type ThuGoiY, type ThuGoiYVe } from './xepToa';
 
 const ctx = self as unknown as { onmessage: ((e: MessageEvent<ThuGoiY>) => void) | null; postMessage: (m: ThuGoiYVe) => void };
@@ -10,7 +11,7 @@ ctx.onmessage = (e) => {
   const m = e.data;
   if (m.tv !== undefined) tv = m.tv;
   try {
-    const g = sinhGoiY({ ...m.v, tv: tv! });
+    const g = (m.v.cheDoBoCuc ? sinhBoCuc : sinhGoiY)({ ...m.v, tv: tv! });
     for (;;) {
       const r = g.next();
       if (r.done) { ctx.postMessage({ id: m.id, ds: r.value }); return; }

@@ -107,17 +107,19 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
       {lo && (
         <MucGap tieuDe={`${t('xep.khoiXep')} · ${toaLo.length}`} giaiThich={t('gt.xep.goiY')} mo>
           <GoiYXepToa pa={pa} lo={lo} tv={tv} sua={sua} chiXem={chiXem} chonToa={chonToa} />
-          <div class="dong tieu-de-mau">
-            <b>{t('xep.thuVien')}</b>
-            {chiMau.length > 0 && <button type="button" class="nut-phu" onClick={boChonMau}>{t('xep.boChonMau')}</button>}
-          </div>
-          <p class="dong muted" style={{ margin: 0 }}>{t('xep.thuVienGiaiThich')}</p>
-          <div class="dong">
+        </MucGap>
+      )}
+
+      {lo && (
+        <MucGap tieuDe={`${t('xep.thuVien')} · ${dsMau.length}${chiMau.length ? ` · ${t('xep.daChonMau').replace('{n}', String(chiMau.length))}` : ''}`} giaiThich={t('xep.thuVienGiaiThich')} mo={false}>
+          <div class="cong-cu-mau">
             <div class="nhom-nut" role="group" aria-label={t('xep.thuVien')}>
               {(['tm', 'xh'] as const).map((k) => (
-                <button type="button" title={t('gt.xep.nhom')} aria-pressed={nhomXem === k} onClick={() => setNhom(k)}>{t(k === 'tm' ? 'xep.nhomTm' : 'xep.nhomXh')}</button>
+                <button type="button" title={t('gt.xep.nhom')} aria-pressed={nhomXem === k} onClick={() => setNhom(k)}>{t(k === 'tm' ? 'xep.nhomTmNgan' : 'xep.nhomXhNgan')}</button>
               ))}
             </div>
+            {chiMau.length > 0 && <button type="button" class="nut-phu" onClick={boChonMau}>{t('xep.boChonMau')}</button>}
+            <span class="dan" />
             <button type="button" class="nut-bt nut-so-sanh-mau" title={`${t('ssm.moNut')} — ${t('gt.ssm.moNut')}`} aria-label={t('ssm.moNut')} disabled={!tv}
               onClick={() => moSoSanhMau({ tv, nhom: nhomXem, hinh: (toa && tv?.toa.get(toa.mauId)?.nhom === nhomXem ? tv.toa.get(toa.mauId)?.hinh : null) ?? 'l' })}>
               <BieuTuong k="soSanhMau" />
@@ -125,20 +127,18 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
             <button type="button" class="nut-phu" disabled={!tv} onClick={() => moThuVienMau()}>{t('mt.moThuVien')}</button>
           </div>
           {!tv && <p class="dong muted">{t('lo.dangTaiThuVien')}</p>}
-          {dsMau.map(({ m, hop }) => (
-            <div class="the-mau" key={m.id}>
-              <input type="checkbox" checked={chiMau.includes(m.id)} aria-label={t('xep.chonMau')} title={t('xep.chonMau')} onChange={() => doiChonMau(m.id)} />
-              <div>
-                <b>{m.ten_vi}</b>
-                <span class="muted">{t('xep.canTang').replace('{n}', String(m.so_can_tang))} · {fmtSo(m.dtxd_m2, { donVi: 'm²' })}</span>
-                <span class={hop ? 'ok' : 'vuot'}>{hop ? `✓ ${t('xep.hopLo')}` : `✕ ${t('xep.khongHop')}`}</span>
+          <div class="ds-mau-gon">
+            {dsMau.map(({ m, hop }) => (
+              <div class="mau-dong" key={m.id} title={m.ten_vi}>
+                <input type="checkbox" checked={chiMau.includes(m.id)} aria-label={`${t('xep.chonMau')}: ${tenNgan(m)}`} title={t('xep.chonMau')} onChange={() => doiChonMau(m.id)} />
+                <b>{tenNgan(m)}</b>
+                <span class="muted">{m.so_can_tang} {t('xep.canNgan')} · {fmtSo(m.dtxd_m2, { donVi: 'm²' })}</span>
+                <span class={hop ? 'ok' : 'vuot'} title={t(hop ? 'xep.hopLo' : 'xep.khongHop')}>{hop ? '✓' : '✕'}</span>
+                <button type="button" class="nut-nho" title={t('gt.xep.dat')} aria-label={`${t('gt.xep.dat')}: ${tenNgan(m)}`} disabled={chiXem}
+                  onClick={() => { const moi = taoToaTrenLo(m, lo, idMoi()); sua((p) => ({ ...p, toa: [...p.toa, moi] })); chonToa(moi.id); }}>+</button>
               </div>
-              <button type="button" class="nut-phu" title={t('gt.xep.dat')} disabled={chiXem}
-                onClick={() => { const moi = taoToaTrenLo(m, lo, idMoi()); sua((p) => ({ ...p, toa: [...p.toa, moi] })); chonToa(moi.id); }}>
-                {t('xep.dat')}
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
         </MucGap>
       )}
 
@@ -291,8 +291,10 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
 
   if (!pa.lo.length) return <div class="giua-man"><span>{t('xep.chuaCoLo')}</span></div>;
   const khung = khungBao(pa.lo.map((l) => l.ranh));
-  const coChu = Math.max(1.2, khung ? (khung[2] - khung[0]) / 70 : 2);
-  const buocM = dk?.tyLeM ?? coChu * 6; // thước tỷ lệ ≈ 1/8 khung nhìn → cỡ chữ / tay nắm gần như cố định trên màn hình
+  const coKhung = Math.max(1.2, khung ? (khung[2] - khung[0]) / 70 : 2);
+  const buocM = dk?.tyLeM ?? coKhung * 6; // thước tỷ lệ ≈ 1/8 khung nhìn → cỡ chữ / tay nắm gần như cố định trên màn hình
+  // nhãn tính theo khung nhìn đang zoom: thước tỷ lệ ≈ 1/8 khung nên chữ giữ cỡ gần như cố định trên màn hình; không to hơn lúc xem toàn dự án
+  const coChu = Math.min(coKhung, Math.max(0.5, buocM * 0.1));
   const chuNho = Math.max(0.15, buocM * 0.045);
 
   // vị trí tạm khi đang kéo / xoay (chưa ghi vào PA)

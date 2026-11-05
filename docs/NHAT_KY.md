@@ -1170,3 +1170,13 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Đề bài:** `tinh/loaiNha.ts` (TĐC = chucNang xh + `taiDinhCu`, nhận ký hiệu TDC…), `troLy/docAnhDeBai.ts` đọc ảnh / PDF qua nguồn AI đang cài rồi đi đường bảng dán. Chưa thử với mô hình thật.
 - **Panel:** bỏ danh sách Tòa trên lô ở panel trái (bảng phải và bản vẽ đã chọn được); gộp Chỉ tiêu lô + DT trên lô + Sức chứa.
 - **PDF:** thêm trang tổng hợp PA so với QH, thống kê căn < 45 m² (mẫu trình), trang tầng dùng `sk_rivea`, đường kích thước, bảng unit mix, thang máy, keyplan.
+
+## 2026-11-06 · Bộ xếp bố cục hai chế độ, panel mẫu gọn, cỡ chữ theo zoom · Claude Code (Opus 5.5)
+
+- **Lỗi xếp tòa:** đo trên bản sao PA Long Biên, lô TĐC-1.2 (60 đỉnh, 80 tòa cả dự án): lượt cũ trên 5 phút, đứng ở vài phần trăm. Nguyên nhân: mỗi ứng viên dò LO-02 với mọi tòa dự án và từng cạnh lô. Sửa `ngoaiGan` cho bộ cũ (hàng loạt vẫn dùng); còn 73 s.
+- **`tinh/boCucLo.ts` mới:** `sap_lai` giữ tòa đang có, `to_hop` tự chọn tổ hợp; 10 phương án, chấm nắng, gió, view, mặt phố, sân; trên app chừng 4 s và 6–11 s. Xem `docs/hoc_xep_lo.md`. Bộ cũ `sinhGoiY` chỉ còn cho xếp hàng loạt và trợ lý.
+- **Panel:** Thư viện mẫu thành mục riêng, gập sẵn, mỗi mẫu một dòng 28 px; bỏ thanh Ưu tiên view, chip kiểu bố cục, ô Theo mục tiêu (thay bằng 2 chế độ + 6 nút Ưu tiên). Lô đang gắn mẫu khác dòng (TĐC-1.2 là tm nhưng đặt xh-z6) nay xếp được.
+- **Nhãn:** `coChu` tính theo cả dự án nên zoom vào lô chữ to hơn tòa; nay theo thước tỷ lệ khung nhìn.
+- **Test:** `tinh/boCucLo.test.ts` 12 ca. Full web lúc máy tải 3 ca đỏ (`dauHanhLangQT` hết giờ, `temCan`, `tuChinhMoRong` ngưỡng thời gian), chạy riêng xanh. Thử tay trên bản sao cục bộ: chạy 2 chế độ, rê xem trước, áp dụng, Ctrl+Z.
+- **Pytest:** sửa `test_huy_viec_tu_tram_giet_tien_trinh` đỏ lâu nay: test đọc tệp UTF-8 bằng cp1252 và gọi `pgrep`, không có trên Windows. Dò tiến trình giả bằng PowerShell, bật lại `test_dung_giua_chung_giet_tien_trinh`.
+- **Chưa làm:** hoa gió thật của dự án; bóng đổ giữa các tòa trong tiêu chí nắng; so hiện trạng đủ 5 tiêu chí trên panel; tòa L ôm góc lô.

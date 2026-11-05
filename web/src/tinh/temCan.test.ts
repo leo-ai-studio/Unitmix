@@ -136,7 +136,7 @@ describe('tem căn — chép luật app cũ xepTem (QT-11 · QT-34) + QT-34b', (
       if (dt > max) { max = dt; ten = mau0.id; }
     }
     if (process.env.UNITMIX_IN) process.stderr.write(`giải tem chậm nhất ${max.toFixed(1)} ms (${ten})\n`);
-    expect(max).toBeLessThan(25);
+    expect(max).toBeLessThan(100); // một mình cỡ 20 ms, chạy song song cả bộ test có lúc tới 40 ms
   });
 
   it('nhớ theo mặt bằng: gọi lại trả cùng kết quả, không giải lại', () => {

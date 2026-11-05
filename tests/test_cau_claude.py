@@ -23,8 +23,12 @@ def _het_tien_trinh_gia(toi_da=8):
     """Chờ (tối đa vài giây) tới khi không còn claude giả nào chạy — giết tiến trình cần chút thời gian."""
     import subprocess
     t0 = time.time()
+    # Windows không có pgrep: tìm theo dòng lệnh của các tiến trình python
+    lenh = ["powershell", "-NoProfile", "-Command",
+            "(Get-CimInstance Win32_Process -Filter \"Name like 'python%'\" | Where-Object { $_.CommandLine -match 'fake_claude.py' }).ProcessId"] \
+        if sys.platform == "win32" else ["pgrep", "-f", "fake_claude.py"]
     while time.time() - t0 < toi_da:
-        if subprocess.run(["pgrep", "-f", "fake_claude.py"], capture_output=True, text=True).stdout.strip() == "":
+        if subprocess.run(lenh, capture_output=True, text=True).stdout.strip() == "":
             return True
         time.sleep(0.25)
     return False
@@ -153,17 +157,14 @@ def test_suc_khoe(may, monkeypatch):
 
 
 def test_dung_giua_chung_giet_tien_trinh(may, monkeypatch):
-    import shutil
     import socket
-    if not shutil.which("pgrep"):
-        pytest.skip("cần pgrep để đếm tiến trình (Linux/macOS)")
     cong, ghi = may
     monkeypatch.setenv("FAKE_KICH_BAN", "treo")
     s = socket.create_connection(("127.0.0.1", cong))
     b = json.dumps(THAN).encode()
     s.sendall(b"POST /v1/messages HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n" % len(b) + b)
     t0 = time.time()
-    while not (ghi.exists() and ghi.read_text()) and time.time() - t0 < 15:
+    while not (ghi.exists() and ghi.read_bytes()) and time.time() - t0 < 15:
         time.sleep(0.1)
     s.close()   # như SDK khi bấm Dừng
     assert _het_tien_trinh_gia()   # tiến trình giả đang ngủ 60 s phải đã bị giết
@@ -181,7 +182,7 @@ def test_huy_viec_tu_tram_giet_tien_trinh(may, monkeypatch):
     th = threading.Thread(target=cau.xu_ly_viec, args=(WsGia(), {"ma": ma, "duong": "/v1/messages", "than": json.dumps(THAN)}, "http://localhost", cong), daemon=True)
     th.start()
     t0 = time.time()
-    while not (ghi.exists() and ghi.read_text()) and time.time() - t0 < 15:
+    while not (ghi.exists() and ghi.read_bytes()) and time.time() - t0 < 15:
         time.sleep(0.1)
     assert ma in cau.VIEC           # đang chờ cầu trả lời
     assert cau.huy_viec(ma) is True

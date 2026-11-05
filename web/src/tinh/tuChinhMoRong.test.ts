@@ -74,7 +74,7 @@ describe('PC-11 · chuyển thang sang mặt / đoạn khác (datThangBo app cũ
       if (!Array.isArray(m.mat)) continue;
       const t0 = performance.now();
       const r = tuChinhMatBang(m, tv, dl, { bc: trong, chieuCaoPCCC: H24 });
-      expect(performance.now() - t0, t.id).toBeLessThan(2000); // một mình ≤ 160 ms (đo 33 mẫu); cổng kiểm chạy song song tsc / worker nên nới
+      expect(performance.now() - t0, t.id).toBeLessThan(5000); // một mình ≤ 160 ms (đo 33 mẫu); chạy song song cả bộ test có lúc tới 2,7 s, ngưỡng này chỉ bắt chậm thật
       expect(r.baoCao.vuotSau!, t.id).toBeLessThanOrEqual(r.baoCao.vuotTruoc!);
     }
   });

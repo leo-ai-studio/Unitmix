@@ -26,3 +26,21 @@ Quy luật chung: tòa xoay đúng theo cạnh lô nó bám, kể cả lô hình
 - Mở sân về phía cây xanh / hồ: chưa chấm theo lô bên cạnh.
 - Tòa L đặt đúng góc lô: kiểu Quanh sân thử 4 góc xoay, chưa khoá theo chữ L ôm góc.
 - Quy hoạch M34 chỉ đọc từ PDF: chưa dựng lại lô thật để so số căn với PA đã duyệt.
+
+## Bộ xếp bố cục (`tinh/boCucLo.ts`, 2026-11-06)
+
+Hai chế độ: **Xếp tòa đang có** giữ đúng tòa (mẫu, số tầng, căn đã sửa, id), tòa khoá đứng yên; **Tự tổ hợp** chọn mẫu × số tòa sát DTXD tối đa (MĐXD, mật độ tháp) và cơ cấu rồi xếp cùng quy tắc.
+
+Vì sao lượt cũ chạy trên 5 phút ở lô TĐC-1.2: mỗi ứng viên lưới dò LO-02 với cả 80 tòa của dự án (thêm 60 cạnh lô, 37 đỉnh tòa), đã lọc tòa lô xa (`ngoaiGan`, còn 73 s). Bộ mới không dò lưới: sinh bố cục theo dãy, đọc bản đồ khoảng lùi tính sẵn, chỉ bố cục đạt mới kiểm chính xác.
+
+Năm tiêu chí 0–100 (`DiemBoCuc`), chọn Ưu tiên thì tiêu chí đó nặng 60 %:
+
+| Tiêu chí | Cách đo | Căn cứ, giới hạn |
+|---|---|---|
+| Nắng | Hướng mặt căn + giờ nắng, trừ nắng Tây (`viewXoayMau`) | Chưa tính tòa che nhau |
+| Gió | % bề ngang lô gió mùa hè xuyên thẳng không vướng tòa, 50 % = 100 | Hướng Đông Nam là hằng số quy ước miền Bắc, chưa đọc hoa gió Open-Meteo; ước lượng hình học, không thay mô phỏng gió |
+| View | Điểm view TB các căn (`BoDemView`), có tòa lô bên cạnh trong 300 m | Như màn View |
+| Mặt phố | Tòa song song cạnh lô gần nhất (50 %), nhịp đều (25 %), ít họ góc (25 %) | Quy ước tự đặt, chờ chủ nhiệm chốt trọng số |
+| Sân | Mảnh sân liền cách tòa ≥ 12 m, cách ranh ≥ 3 m + vòng tròn trống lớn nhất | Chưa trừ đường nội bộ, chỗ đỗ, khối đế |
+
+Tài liệu tham khảo: nghiên cứu Vũ Hán (khí hậu nóng ẩm, ENVI-met) cho thấy dãy song song tạo hành lang gió, tăng tốc gió khoảng 0,3 m/s, và dãy so le theo hướng gió chủ đạo tăng thêm: [MDPI Sustainability 12(3) 1046](https://www.mdpi.com/2071-1050/12/3/1046/html). Tìm kiếm chưa ra số liệu chính thức cho hướng gió Hà Nội; dùng kinh nghiệm miền Bắc, cần đối chiếu QCVN 02 hoặc hoa gió dự án trước khi coi là căn cứ.

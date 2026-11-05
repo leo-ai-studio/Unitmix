@@ -26,7 +26,7 @@ describe('Điểm kéo đầu hành lang theo QT (mọi mẫu tòa)', () => {
       const n = diem(tuChinh(id, cao)).flat().length;
       expect(n, `${id} cao ${cao}`).toBe(QT[id.split('-')[1][0]]);
     }
-  });
+  }, 120_000); // quét mọi mẫu × 3 chiều cao, cả bộ test chạy song song có lúc quá 30 s
 
   it('tòa lật và tòa đã kéo hết điểm +3 m vẫn đủ điểm kéo', () => {
     for (const id of layMau(ids, 3)) {
