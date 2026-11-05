@@ -22,7 +22,7 @@ const suaCP = (ng: NguCanh, f: (c: ChiPhiPA) => ChiPhiPA) => suaPA(ng, (p) => ({
 export const CONG_CU_KHAC: CongCu[] = [
   {
     ten: 'update_basement', nhom: 'khac', sua: true,
-    moTa: 'Sửa thông số hầm (màn Hầm), một bước hoàn tác: soTang (1–6), caoTang, dayKetCau, lui, choDai, choRong, rongLan, choXeLan, nhip, cotRong, tangXeMay, khoMoiTang, dtKho, rongKho, lanKho, tyLeKyThuat (%), dtXeMay (m² hoặc null = tự), dtKhoangMax (m², khoang cháy QCVN 13 Bảng 4), cuLyThoat (m, Bảng 3), thangRong, thangDai (thang thoát nạn thêm), qSinhHoat (L/người/ngày, ≥ 80), ngayDuTru, kvaMoiCan, xeMayRong, xeMayDai, xeMayLan, garaCoKhi, auto_rooms (bật / tắt tự bố trí phòng kỹ thuật), auto_accessible (chỗ xe lăn theo QCVN 10:2024 Bảng 1), rooms {loại phòng: {dt m² | null, bo}} (loại: beSH, bomSH, bePCCC, bomPCCC, xlnt, vanHanhXlnt, tba, mayPhat, baoVe, trucPCCC, dienNhe, khoVatTu, quatHut, quatCap, rac); ram {loai thang_mai|cong|ho, dai, rong, docNgang %, coNguoiDi, viaHe, doanChuyen, doanThangDuoi, doanThangTren, banKinh}; ev {bat, tang, choOto, tyLeOto %}; apply_measured_ratios = true áp tỷ lệ đỗ xe / kỹ thuật đo từ hầm đã rải vào phần hầm không tính HSSDĐ.',
+    moTa: 'Sửa thông số hầm (màn Hầm chỉ tính số: soTang, caoTang, dayKetCau, lui, dtXeMay, garaCoKhi có tác dụng; các trường bố trí mặt bằng — ô đỗ, ram, phòng, khoang cháy, xe điện — được lưu nhưng chưa dùng, layout ở nhánh feat/ham-layout), một bước hoàn tác: soTang (1–6), caoTang, dayKetCau, lui, choDai, choRong, rongLan, choXeLan, nhip, cotRong, tangXeMay, khoMoiTang, dtKho, rongKho, lanKho, tyLeKyThuat (%), dtXeMay (m² hoặc null = tự), dtKhoangMax (m², khoang cháy QCVN 13 Bảng 4), cuLyThoat (m, Bảng 3), thangRong, thangDai (thang thoát nạn thêm), qSinhHoat (L/người/ngày, ≥ 80), ngayDuTru, kvaMoiCan, xeMayRong, xeMayDai, xeMayLan, garaCoKhi, auto_rooms (bật / tắt tự bố trí phòng kỹ thuật), auto_accessible (chỗ xe lăn theo QCVN 10:2024 Bảng 1), rooms {loại phòng: {dt m² | null, bo}} (loại: beSH, bomSH, bePCCC, bomPCCC, xlnt, vanHanhXlnt, tba, mayPhat, baoVe, trucPCCC, dienNhe, khoVatTu, quatHut, quatCap, rac); ram {loai thang_mai|cong|ho, dai, rong, docNgang %, coNguoiDi, viaHe, doanChuyen, doanThangDuoi, doanThangTren, banKinh}; ev {bat, tang, choOto, tyLeOto %}',
     schema: S.doiTuong({
       fields: { type: 'object', additionalProperties: { type: 'number', nullable: true }, description: 'trường số → giá trị' },
       garaCoKhi: S.bool(),
@@ -32,7 +32,6 @@ export const CONG_CU_KHAC: CongCu[] = [
       auto_accessible: S.bool(),
       rooms: { type: 'object', additionalProperties: { type: 'object', properties: { dt: { type: 'number', nullable: true }, bo: { type: 'boolean' } } }, description: 'loại phòng → {dt, bo}' },
       ev: S.doiTuong({ bat: S.bool(), tang: S.so(undefined, 1), choOto: S.so(undefined, 0), tyLeOto: S.so(undefined, 0, 100) }),
-      apply_measured_ratios: S.bool(),
     }),
     chay: async (v, ng) => {
       kiemSua(ng);
@@ -53,16 +52,7 @@ export const CONG_CU_KHAC: CongCu[] = [
       const LOAI_PHONG = ['beSH', 'bomSH', 'bePCCC', 'bomPCCC', 'xlnt', 'vanHanhXlnt', 'tba', 'mayPhat', 'baoVe', 'trucPCCC', 'dienNhe', 'khoVatTu', 'quatHut', 'quatCap', 'rac'];
       const rooms = (v.rooms ?? null) as Record<string, { dt?: number | null; bo?: boolean }> | null;
       if (rooms) for (const k of Object.keys(rooms)) if (!LOAI_PHONG.includes(k)) throw new LoiCongCu(`Loại phòng "${k}" không có. Có: ${LOAI_PHONG.join(', ')}.`);
-      let tyLe: { doXe: number; kyThuat: number } | null = null;
-      if (v.apply_measured_ratios) {
-        const { raiHam } = await import('../../tinh/ham');
-        const { laCaoTang } = await import('../../tinh/loaiDat');
-        const pa = ng.kho.lay(), tv = ng.tv();
-        const lo = pa.lo.find((l) => l.id === ng.ui.lay().loId) ?? pa.lo.find(laCaoTang);
-        const kq = lo && tv ? raiHam(pa, tv, lo) : null;
-        if (!kq) throw new LoiCongCu('Chưa rải được hầm để đo tỷ lệ.');
-        tyLe = { doXe: Math.round(kq.tyLe.doXe * 1000) / 1000, kyThuat: Math.round(kq.tyLe.kyThuat * 1000) / 1000 };
-      }
+      const tyLe: { doXe: number; kyThuat: number } | null = null;
       suaPA(ng, (p) => {
         const h = chuanHoaHam(p.ham);
         const ram = v.ram ? { ...h.ram, ...(v.ram as object) } : h.ram;

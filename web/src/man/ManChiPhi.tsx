@@ -5,7 +5,6 @@ import { diemLechPA } from '../tinh/diemPA';
 import { NHOM_CHI_PHI, tinhDuToan, tinhKhoiLuong, type DuToan, type KhoiLuong } from '../tinh/duToan';
 import { LOAI_CAN, type ChiPhiPA, type GiaBan, type ThuVien, type TrangThaiPA, type TyLeChiPhi } from '../tinh/kieu';
 import { chuanHoaChiPhi, DIEU_CHINH_MAX, DIEU_CHINH_MIN } from '../tinh/macDinh';
-import { dieuPhoiHam, useNgheHam } from '../tinh/hamNen';
 import { tinhTaiChinh, type TaiChinh } from '../tinh/taiChinh';
 import { MucGap } from '../ui/MucGap';
 import { DongPreset } from '../ui/Preset';
@@ -16,21 +15,16 @@ type Props = { pa: TrangThaiPA; tv: ThuVien | null; kq: KetQuaChiTieu | null; su
 type KetQuaCP = { cp: ChiPhiPA; kl: KhoiLuong; dt: DuToan; tc: TaiChinh; lech: number | null; dangRai: boolean };
 
 // PA là bất biến (mỗi lần sửa ra đối tượng mới): nhớ kết quả theo PA để panel giữa và panel phải không tính hai lần.
-// Hầm rải trong Web Worker (tinh/hamNen.ts, kênh 'chiPhi'): đang rải thì lô đó giữ số rải cũ (hoặc ước theo DT) và báo `dangRai`;
-// rải xong `phienBan` tăng → tính lại.
-const nho = new WeakMap<TrangThaiPA, { tv: ThuVien; v: number; kq: KetQuaCP }>();
+const nho = new WeakMap<TrangThaiPA, { tv: ThuVien; kq: KetQuaCP }>();
 export function ketQua(pa: TrangThaiPA, tv: ThuVien, kqCT: KetQuaChiTieu | null): KetQuaCP {
-  const v = dieuPhoiHam.phienBan;
   const co = nho.get(pa);
-  if (co && co.tv === tv && co.v === v) return co.kq;
+  if (co && co.tv === tv) return co.kq;
   const cp = chuanHoaChiPhi(pa.chiPhi);
-  const ph = dieuPhoiHam.phien('chiPhi');
-  const kl = tinhKhoiLuong(pa, tv, true, ph.lay);
-  ph.xong();
+  const kl = tinhKhoiLuong(pa, tv);
   const dt = tinhDuToan(kl, cp);
   const lech = kqCT ? diemLechPA(pa, kqCT) : null;
-  const kq = { cp, kl, dt, tc: tinhTaiChinh(pa, tv, kl, dt, lech), lech, dangRai: ph.dangCho };
-  nho.set(pa, { tv, v, kq });
+  const kq = { cp, kl, dt, tc: tinhTaiChinh(pa, tv, kl, dt, lech), lech, dangRai: false };
+  nho.set(pa, { tv, kq });
   return kq;
 }
 
@@ -56,7 +50,6 @@ const OSo = ({ v, thapPhan = 0, donVi }: { v: number | null | undefined; thapPha
 /** Nội dung tab Chi phí ở panel giữa: dự toán, hiệu quả tài chính, khối lượng theo lô / tòa. Cuộn trong khung, không đổi kích thước khung. */
 export function ChiPhiGiua({ pa, tv, kq, sua, chiXem }: Props) {
   useLang();
-  useNgheHam('chiPhi');
   if (!tv) return <div class="chi-phi"><p class="muted">{t('chiPhi.dangTai')}</p></div>;
   const { cp, kl, dt, tc, lech, dangRai } = ketQua(pa, tv, kq);
   const suaCP = (f: (c: ChiPhiPA) => ChiPhiPA) => sua((p) => ({ ...p, chiPhi: f(chuanHoaChiPhi(p.chiPhi)) }));
@@ -239,7 +232,6 @@ export function ChiPhiGiua({ pa, tv, kq, sua, chiXem }: Props) {
 /** Panel phải khi đang ở tab Chi phí: tóm tắt tổng mức, doanh thu, lợi nhuận (số tạm). */
 export function ChiPhiPhai({ pa, tv, kq }: Pick<Props, 'pa' | 'tv' | 'kq'>) {
   useLang();
-  useNgheHam('chiPhi.phai'); // chỉ nghe để vẽ lại; việc rải do kênh 'chiPhi' (panel giữa) khai
   if (!tv) return <p class="muted" style={{ padding: '12px' }}>{t('chiPhi.dangTai')}</p>;
   const { dt, tc } = ketQua(pa, tv, kq);
   const dong = (nhan: string, v: number | null | undefined, donVi: string, thapPhan = 2) => (

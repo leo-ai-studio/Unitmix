@@ -53,20 +53,20 @@ describe('khối lượng từ mô hình', () => {
     expect(tinhKhoiLuong(paGia([toa({ soTangDH: 30 })]), tvGia, false).tong.soThang).toBe(2); // 90 căn
   });
 
-  it('hầm chưa rải thì ước theo DT lô', () => {
+  it('hầm: DT = DT ranh hầm (lùi 3 m) × số tầng; số chỗ ước theo tỷ lệ đỗ xe', () => {
     const kl = tinhKhoiLuong(paGia([toa()], 2), tvGia, false);
     const l = kl.lo[0];
     expect(l.nguonHam).toBe('uoc');
-    expect(l.dtHam).toBeCloseTo(2 * 5000);
+    expect(l.dtHam).toBeCloseTo(2 * 94 * 44, 0); // lô 100 × 50 co vào 3 m
     expect(l.dtXeMay).toBe(6 * 30);
     expect(l.soChoOto).toBeGreaterThan(0);
   });
 
-  it('hầm rải được thì lấy số chỗ từ raiHam', () => {
-    const kl = tinhKhoiLuong(paGia([toa()], 1), tvGia, true);
-    expect(kl.lo[0].nguonHam).toBe('rai');
+  it('hầm 1 tầng: số liệu khớp tinhHamSo (không bố trí mặt bằng)', () => {
+    const kl = tinhKhoiLuong(paGia([toa()], 1), tvGia);
+    expect(kl.lo[0].nguonHam).toBe('uoc');
     expect(kl.tong.soChoOto).toBeGreaterThan(0);
-    expect(kl.tong.dtHam).toBeGreaterThan(0);
+    expect(kl.tong.dtHam).toBeCloseTo(94 * 44, 0);
   });
 
   it('PA rỗng: mọi số là 0, không NaN', () => {
