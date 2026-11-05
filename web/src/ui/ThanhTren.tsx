@@ -12,7 +12,8 @@ export type MucCap = { khoa: string; nhan: string; phu?: string; nhom?: string; 
 export type MenuCap = { nhan: string; tieuDe: string; ds: MucCap[]; onChon: (khoa: string) => void; dangO?: boolean };
 /** Dải cấp giữa thanh trên: lô / PA · cốt · tòa · tầng · căn; `onLen` lên một cấp (căn → tầng → tòa → lô). */
 export type CapDo = { lo: MenuCap; coTe?: MenuCap; toa?: MenuCap; tang?: MenuCap; can?: MenuCap; onLen?: () => void; nhanLen?: string };
-export type CheDo = 'tu_dong' | 'chinh_tay' | 'chi_xem';
+/** Tự chỉnh luôn chạy và sửa tay luôn được khi có quyền: chỉ còn Chỉnh sửa / Chỉ xem. */
+export type CheDo = 'sua' | 'chi_xem';
 export type CheDoXem = 'mat_bang' | 'mo_hinh' | 'chi_phi';
 export type TrangThaiLuu = 'da_luu' | 'dang_luu' | 'chua_luu_duoc';
 
@@ -304,7 +305,7 @@ export function ThanhTren(p: Props) {
   useLang();
   const xem: [CheDoXem, string][] = [['mat_bang', 'xem.matBang'], ['mo_hinh', 'xem.moHinh']];
   const laChiPhi = p.cheDoXem === 'chi_phi';
-  const cheDo: [CheDo, string][] = [['tu_dong', 'cheDo.tuDong'], ['chinh_tay', 'cheDo.chinhTay'], ['chi_xem', 'cheDo.chiXem']];
+  const cheDo: [CheDo, string][] = [['sua', 'cheDo.sua'], ['chi_xem', 'cheDo.chiXem']];
   const luu = p.trangThaiLuu;
   // Xuất XLS có thể chờ rải hầm chạy nền: hiện vòng O trên nút, chặn bấm lặp.
   const [dangXls, setDangXls] = useState(false);

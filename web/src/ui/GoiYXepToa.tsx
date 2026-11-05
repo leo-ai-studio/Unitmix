@@ -8,21 +8,26 @@ import { t } from '../i18n/i18n';
 import { chanToa } from '../tinh/hinhHoc';
 import type { Lo, ThuVien, ToaDat, TrangThaiPA } from '../tinh/kieu';
 import { taiQuyTac, traLuat } from '../tinh/quyTac';
-import { goiYXepToaNen, TRONG_SO_VIEW_XEP, type GoiYXep } from '../tinh/xepToa';
+import { DS_KIEU_BO_CUC, goiYXepToaNen, TRONG_SO_VIEW_XEP, type GoiYXep, type KieuBoCuc } from '../tinh/xepToa';
 import { sPoly } from '../ve/BanVe';
 import { taiCuaCan } from '../ve/hinhHocThuVien';
 import { fmtSo } from './so';
 import { mauToa } from '../tinh/canThem';
 
 // ---- trạng thái dùng chung panel trái ↔ bản vẽ (cấp module, không lưu vào PA) ----
-type TrangThai = { mt: boolean; khoa: string | null; ds: GoiYXep[] | null; chay: boolean; tienDo: number; xem: number | null; loi: string | null; ms: number | null };
-let tt: TrangThai = { mt: false, khoa: null, ds: null, chay: false, tienDo: 0, xem: null, loi: null, ms: null };
+type TrangThai = { mt: boolean; chiMau: string[]; kieu: KieuBoCuc[]; khoa: string | null; ds: GoiYXep[] | null; chay: boolean; tienDo: number; xem: number | null; loi: string | null; ms: number | null };
+let tt: TrangThai = { mt: false, chiMau: [], kieu: [], khoa: null, ds: null, chay: false, tienDo: 0, xem: null, loi: null, ms: null };
 const nghe = new Set<() => void>();
 const dat = (p: Partial<TrangThai>) => { tt = { ...tt, ...p }; nghe.forEach((f) => f()); };
 function useTT(): TrangThai {
   const [, ve] = useState(0);
   useEffect(() => { const f = () => ve((n) => n + 1); nghe.add(f); return () => void nghe.delete(f); }, []);
   return tt;
+}
+/** Mẫu tòa người dùng chọn cho lượt xếp tự động (rỗng = mọi mẫu): dùng chung danh sách mẫu ở cùng khối với nút Đặt tay. */
+export function useChiMau(): [string[], (id: string) => void, () => void] {
+  const s = useTT();
+  return [s.chiMau, (id) => dat({ chiMau: s.chiMau.includes(id) ? s.chiMau.filter((x) => x !== id) : [...s.chiMau, id] }), () => dat({ chiMau: [] })];
 }
 const daChay = new Set<string>(); // lô đã tự chạy (không tự chạy lại sau khi người dùng xoá hết tòa)
 
@@ -43,7 +48,7 @@ async function chay(pa: TrangThaiPA, lo: Lo, tv: ThuVien) {
     const lo01 = traLuat(bo, 'LO-01'), lo02 = traLuat(bo, 'LO-02');
     if (!lo01 || !lo02) throw new Error('LO-01 / LO-02');
     const t0 = performance.now();
-    const ds = await goiYXepToaNen({ pa, lo, tv, luat: { lo01, lo02 }, cuaCan, theoMucTieu: tt.mt }, (x, n) => lan === lanChay && dat({ tienDo: x / n }), () => lan !== lanChay);
+    const ds = await goiYXepToaNen({ pa, lo, tv, luat: { lo01, lo02 }, cuaCan, theoMucTieu: tt.mt, chiMau: tt.chiMau, kieuBoCuc: tt.kieu }, (x, n) => lan === lanChay && dat({ tienDo: x / n }), () => lan !== lanChay);
     if (ds && lan === lanChay) dat({ ds, chay: false, tienDo: 1, ms: performance.now() - t0 });
   } catch (e) {
     if (lan === lanChay) dat({ chay: false, loi: String((e as Error).message ?? e) });
@@ -78,9 +83,15 @@ export function GoiYXepToa({ pa, lo, tv, sua, chiXem, chonToa }: { pa: TrangThai
     <div class="goi-y-xep">
       <div class="dong">
         <button type="button" class="nut-chinh" title={t('gt.xep.goiY')} disabled={!tv || s.chay || !coChiTieu(lo)} onClick={() => tv && void chay(pa, lo, tv)}>
-          {t('xep.goiY')}
+          {tt.chiMau.length ? t('xep.goiYMauChon').replace('{n}', String(tt.chiMau.length)) : t('xep.goiY')}
         </button>
         {s.chay && cuaLo && <span class="muted goi-y-tien-do"><img class="spin-o" src="/brand/leo_ai_o.png" alt="" />{fmtSo(s.tienDo * 100, { donVi: '%' })}</span>}
+      </div>
+      <div class="goi-y-kieu" role="group" aria-label={t('xep.kieu')}>
+        {DS_KIEU_BO_CUC.map((k) => (
+          <button type="button" key={k} title={t(`gt.xep.kieu.${k}`)} aria-pressed={s.kieu.includes(k)}
+            onClick={() => dat({ kieu: s.kieu.includes(k) ? s.kieu.filter((x) => x !== k) : [...s.kieu, k] })}>{t(`xep.kieu.${k}`)}</button>
+        ))}
       </div>
       <label class="goi-y-trong-so goi-y-muc-tieu" title={t('gt.xep.goiYMucTieu')}>
         <input type="checkbox" checked={s.mt} disabled={chiXem || s.chay} onChange={(e) => {
@@ -110,8 +121,9 @@ export function GoiYXepToa({ pa, lo, tv, sua, chiXem, chonToa }: { pa: TrangThai
           <ol class="goi-y-ds" onMouseLeave={() => dat({ xem: null })}>
             {s.ds.map((g, i) => (
               <li key={g.khoa} class={`goi-y-the${s.xem === i ? ' xem' : ''}`} onMouseEnter={() => dat({ xem: i })} onFocusCapture={() => dat({ xem: i })}>
+                {tv && <HinhGoiY lo={lo} g={g} tv={tv} />}
                 <div class="goi-y-dau">
-                  <b>{i + 1}. {g.mau.map(([m, n]) => `${n} × ${tv?.toa.get(m)?.ten_vi.split(' · ')[0] ?? m}`).join(' + ')}</b>
+                  <b>{i + 1}. {t(`xep.kieu.${g.kieu}`)} · {g.mau.map(([m, n]) => `${n} × ${tv?.toa.get(m)?.ten_vi.split(' · ')[0] ?? m}`).join(' + ')}</b>
                   <span class="muted">{1 + g.soTangDH} T</span>
                 </div>
                 <div class="goi-y-so">
@@ -137,6 +149,19 @@ export function GoiYXepToa({ pa, lo, tv, sua, chiXem, chonToa }: { pa: TrangThai
         </>
       )}
     </div>
+  );
+}
+
+/** Hình nhỏ của phương án (ranh lô + chân tòa) để so các bố cục mà không phải rê từng thẻ. */
+function HinhGoiY({ lo, g, tv }: { lo: Lo; g: GoiYXep; tv: ThuVien }) {
+  const xs = lo.ranh.map((p) => p[0]), ys = lo.ranh.map((p) => p[1]);
+  const x0 = Math.min(...xs), y1 = Math.max(...ys), w = Math.max(...xs) - x0 || 1, h = y1 - Math.min(...ys) || 1;
+  const d = (P: [number, number][]) => P.map((p) => `${(p[0] - x0).toFixed(1)},${(y1 - p[1]).toFixed(1)}`).join(' ');
+  return (
+    <svg class="goi-y-hinh" viewBox={`${-w * 0.02} ${-h * 0.02} ${w * 1.04} ${h * 1.04}`} aria-hidden="true">
+      <polygon points={d(lo.ranh)} fill="var(--soft)" stroke="var(--muted-text)" stroke-width="1" vector-effect="non-scaling-stroke" />
+      {g.toa.map((x, i) => { const m = mauToa(tv, x); return m ? <polygon key={i} points={d(chanToa(m, x))} fill="var(--green)" /> : null; })}
+    </svg>
   );
 }
 

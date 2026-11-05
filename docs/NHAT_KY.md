@@ -1161,3 +1161,12 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Worker:** kiểm / thử mẫu và kiểm thư viện chạy nền qua `dieuPhoiTay` (`BANG_TAY`), có nút Huỷ. Chưa có báo tiến độ theo bước. Lưu ý: lượt mới huỷ lượt cũ, phép tay ở bản vẽ sẽ huỷ Thử phá đang chạy.
 - **Test:** `layMau` cho vòng ngoài `quetThangLien`, `stretchKhongBu`, hai tệp dùng `napThuVien`; `mocChan` lọc ca trước khi lấy mẫu. Nhanh web 66 → 49 s. `isolate: false` đạt và còn 42 s nhưng chưa bật: lợi ít mà test dùng chung trạng thái module.
 - **Chưa làm:** `ManXepToa.tsx`, `tmbThaoTac.tsx` trong cây làm việc vẫn LF (gốc CRLF / trộn); `useDoKichThuoc` ở XepGiua vẫn sau `return` sớm.
+
+## 2026-11-05 (tối) · Gộp nhánh vào main, xếp tòa theo dãy, đề bài theo loại nhà ở, báo cáo PDF, v0.7.9 · Claude Code (Opus 5.5)
+
+- **Gộp:** `feat/thu-vien-mau-thay-loi` tới `d029ace` vào `main` (`c9c9b0e`), giữ màn Hầm chỉ tính số; bốn commit layout hầm sau đó vẫn ở `feat/ham-layout`. Lý do người dùng chưa thấy chọn tỉnh: main đã deploy đè bản nhánh.
+- **Chế độ:** Tự động và Chỉnh tay chạy cùng một đường, gộp thành Chỉnh sửa (`CheDo = 'sua' | 'chi_xem'`).
+- **Xếp tòa:** `docs/hoc_xep_lo.md`, `tinh/xepToa.ts` (`canhChinh`, `KieuBoCuc`, `chiMau`, `kieuBoCuc`), mặc định 10 phương án; UI gộp gợi ý + đặt tay một khối, tick mẫu, chọn kiểu, hình nhỏ. Test `tinh/xepBoCuc.test.ts`.
+- **Đề bài:** `tinh/loaiNha.ts` (TĐC = chucNang xh + `taiDinhCu`, nhận ký hiệu TDC…), `troLy/docAnhDeBai.ts` đọc ảnh / PDF qua nguồn AI đang cài rồi đi đường bảng dán. Chưa thử với mô hình thật.
+- **Panel:** bỏ danh sách Tòa trên lô ở panel trái (bảng phải và bản vẽ đã chọn được); gộp Chỉ tiêu lô + DT trên lô + Sức chứa.
+- **PDF:** thêm trang tổng hợp PA so với QH, thống kê căn < 45 m² (mẫu trình), trang tầng dùng `sk_rivea`, đường kích thước, bảng unit mix, thang máy, keyplan.

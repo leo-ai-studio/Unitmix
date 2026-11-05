@@ -19,7 +19,7 @@ import { laCaoTang, loaiDat, MAU_DAT } from '../tinh/loaiDat';
 import { BangChiTieuLo, ChonLoCaoTang, LoChiTieu, LoNhap, SucChuaLo } from './ManLo';
 import { DashDanSo } from '../ui/DashDanSo';
 import { KpiTmb } from '../ui/KpiTmb';
-import { GoiYXepToa, LopGoiY } from '../ui/GoiYXepToa';
+import { GoiYXepToa, LopGoiY, useChiMau } from '../ui/GoiYXepToa';
 import {
   batDinh, batGoc, caoToa, dichBatDinh, dichNhom, gocCanhLo, hinhToa, kichThuocToa, kiemViPham, latNhom, namTrongNhanh,
   tamNhom, toaTrongKhung, viTriNhanBan, xoayNhom, type MucBat,
@@ -83,6 +83,7 @@ function O({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1, am = false }: { nhan: s
 export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: Chung) {
   const lo = loDangXep(pa, loId);
   const [nhom, setNhom] = useState<'tm' | 'xh' | null>(null);
+  const [chiMau, doiChonMau, boChonMau] = useChiMau();
   const luat = useLuatTMB();
   const nhomXem = nhom ?? (lo?.temDat.chucNang === 'xh' ? 'xh' : 'tm');
   const vung = lo ? vungDat(lo) : [];
@@ -104,28 +105,29 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
   return (
     <>
       {lo && (
-        <MucGap tieuDe={t('xep.goiYTieuDe')} giaiThich={t('gt.xep.goiY')} mo>
+        <MucGap tieuDe={`${t('xep.khoiXep')} · ${toaLo.length}`} giaiThich={t('gt.xep.goiY')} mo>
           <GoiYXepToa pa={pa} lo={lo} tv={tv} sua={sua} chiXem={chiXem} chonToa={chonToa} />
-        </MucGap>
-      )}
-      {lo && (
-        <MucGap tieuDe={t('xep.thuVien')} giaiThich={t('xep.thuVienGiaiThich')} mo={!toaLo.length}>
+          <div class="dong tieu-de-mau">
+            <b>{t('xep.thuVien')}</b>
+            {chiMau.length > 0 && <button type="button" class="nut-phu" onClick={boChonMau}>{t('xep.boChonMau')}</button>}
+          </div>
+          <p class="dong muted" style={{ margin: 0 }}>{t('xep.thuVienGiaiThich')}</p>
           <div class="dong">
             <div class="nhom-nut" role="group" aria-label={t('xep.thuVien')}>
               {(['tm', 'xh'] as const).map((k) => (
                 <button type="button" title={t('gt.xep.nhom')} aria-pressed={nhomXem === k} onClick={() => setNhom(k)}>{t(k === 'tm' ? 'xep.nhomTm' : 'xep.nhomXh')}</button>
               ))}
             </div>
-            {/* chỉ biểu tượng: hàng Thương mại / Nhà ở xã hội + nút chữ cũ vượt panel 270 px, xuống hai dòng */}
             <button type="button" class="nut-bt nut-so-sanh-mau" title={`${t('ssm.moNut')} — ${t('gt.ssm.moNut')}`} aria-label={t('ssm.moNut')} disabled={!tv}
               onClick={() => moSoSanhMau({ tv, nhom: nhomXem, hinh: (toa && tv?.toa.get(toa.mauId)?.nhom === nhomXem ? tv.toa.get(toa.mauId)?.hinh : null) ?? 'l' })}>
               <BieuTuong k="soSanhMau" />
             </button>
+            <button type="button" class="nut-phu" disabled={!tv} onClick={() => moThuVienMau()}>{t('mt.moThuVien')}</button>
           </div>
-          <div class="dong"><button type="button" class="nut-phu" disabled={!tv} onClick={() => moThuVienMau()}>{t('mt.moThuVien')}</button></div>
           {!tv && <p class="dong muted">{t('lo.dangTaiThuVien')}</p>}
           {dsMau.map(({ m, hop }) => (
             <div class="the-mau" key={m.id}>
+              <input type="checkbox" checked={chiMau.includes(m.id)} aria-label={t('xep.chonMau')} title={t('xep.chonMau')} onChange={() => doiChonMau(m.id)} />
               <div>
                 <b>{m.ten_vi}</b>
                 <span class="muted">{t('xep.canTang').replace('{n}', String(m.so_can_tang))} · {fmtSo(m.dtxd_m2, { donVi: 'm²' })}</span>
@@ -137,20 +139,6 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
               </button>
             </div>
           ))}
-        </MucGap>
-      )}
-
-      {lo && (
-        <MucGap tieuDe={`${t('xep.toaTrenLo')} · ${toaLo.length}`} giaiThich={t('gt.xep.toaTrenLo')} mo>
-          {!toaLo.length && <p class="dong muted">{t('xep.chuaCoToa')}</p>}
-          {toaLo.map((x) => {
-            return (
-              <button type="button" key={x.id} class={`muc-lo${x.id === toaId ? ' chon' : ''}`} aria-pressed={x.id === toaId} onClick={() => chonToa(x.id)}>
-                <b>{nhanToa(pa, tv, x.id, { day: true })}{x.khoa ? ` · ${t('xep.daKhoa')}` : ''}</b>
-                <span>{x.soTangDe} + {x.soTangDH} T · {fmtSo(x.gocDo, { donVi: '°' })}</span>
-              </button>
-            );
-          })}
         </MucGap>
       )}
 
@@ -722,9 +710,9 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq, sua, chiXem, moCan }
   const cot = { gridTemplateColumns: `1.3fr repeat(${LOAI_CAN.length}, 1fr) 1fr` };
   return (
     <>
-      <BangChiTieuLo dong={r?.dong ?? []} mo={false} />
       <DashDanSo pa={pa} tv={tv} lo={lo} sua={sua} chiXem={chiXem} moCan={moCan} />
-      <MucGap tieuDe={`${t('xep.dtLo')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.xep.dtLo')}>
+      <BangChiTieuLo dong={r?.dong ?? []} mo={false}>
+        <p class="dong muc-phu">{t('xep.dtLo')}</p>
         <div class="dong bang-ct dau"><span /><span>{t('xep.xayDung')}</span><span>{t('xep.tinhHSSDD')}</span></div>
         <div class="dong bang-ct"><span>{t('sc.dtLo')}</span><span>{fmtSo(dtLo, m2)}</span><span>{fmtSo(dtLo, m2)}</span></div>
         <div class="dong bang-ct"><span>{t('xep.dtDe')} / {t('xep.dtSan')}</span><span><SoDong value={r && toaLo.length ? r.dtDe : null} {...m2} /></span><span><SoDong value={r && toaLo.length ? r.dtSanTinhHSSDD : null} {...m2} /></span></div>
@@ -737,7 +725,8 @@ export function XepPhai({ pa, loId, tv, toaId, chonToa, kq, sua, chiXem, moCan }
           <span>{fmtSo(r && toaLo.length && dtLo ? (r.dtDe / dtLo) * 100 : null, { thapPhan: 1, donVi: '%' })}</span>
           <span>{fmtSo(r && toaLo.length && dtLo ? r.dtSanTinhHSSDD / dtLo : null, { thapPhan: 2 })}</span>
         </div>
-      </MucGap>
+              <SucChuaLo lo={lo} gon />
+      </BangChiTieuLo>
       <MucGap tieuDe={t('xep.coCau')} giaiThich={t('gt.xep.coCau')} mo>
         <div class="dong" style={{ alignItems: 'center' }}>
           <VongCoCau pct={pct} />
@@ -825,7 +814,6 @@ export function TmbPhai(p: Chung & { kq: KetQuaChiTieu | null }) {
       <XepPhai {...p} />
       <ThangMayLo pa={p.pa} tv={p.tv} lo={lo} chonToa={p.chonToa} toaId={p.toaId} />
       <KpiView pa={p.pa} tv={p.tv} lo={lo} sua={p.sua} chiXem={p.chiXem} toaId={p.toaId} chonToa={p.chonToa} />
-      <SucChuaLo lo={lo} />
     </>
   );
 }

@@ -6,6 +6,23 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.9', ngay: '2026-11-05',
+    vi: [
+      'Gợi ý xếp tòa: 5–10 phương án theo kiểu Hai dãy, So le, Dãy kết hợp, Một dãy, Quanh sân, Tự do (học từ M34, M7, Long Biên); chọn mẫu tòa để xếp, xem hình nhỏ từng phương án',
+      'Đề bài kinh doanh: chọn nhà ở thương mại, xã hội, tái định cư; đọc được Excel theo loại, ảnh và PDF (qua Leo AI)',
+      'Gộp Tự động và Chỉnh tay thành Chỉnh sửa; panel trái, phải gọn lại, bớt mục trùng',
+      'Báo cáo PDF: bảng tổng hợp so sánh với quy hoạch, trang tầng có màu loại căn, kích thước, bảng unit mix, thang máy, keyplan',
+      'Đã gộp vào bản chính: Thư viện mẫu, thay lõi, đo và kích thước, chọn tỉnh khi tạo dự án',
+    ],
+    en: [
+      'Tower suggestions: 5–10 options by layout type (two rows, staggered, mixed rows, single row, around a court, free), learned from M34, M7, Long Bien; pick templates, thumbnail per option.',
+      'Business brief: choose commercial, social or resettlement housing; reads Excel by type, plus images and PDF through Leo AI.',
+      'Auto and Manual merged into Edit; left and right panels tidied, duplicates removed.',
+      'PDF report: summary against planning, floor pages with unit colours, dimensions, unit-mix table, elevators, key plan.',
+      'Now in the main build: template library, core swap, measuring and dimensions, province on project creation.',
+    ],
+  },
+  {
     v: '0.7.8', ngay: '2026-11-05',
     vi: [
       'Màn Hầm chỉ tính số: DTXD hầm, số chỗ ô tô / xe máy theo hệ số và theo QCVN 04 — mặt bằng hầm (ô đỗ, ram, khoang cháy) chưa hoàn thiện nên tạm gỡ; 3D bỏ hầm',

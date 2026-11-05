@@ -1,10 +1,11 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { xacNhan } from '../ui/HopHoi';
 import type { BanDxf } from '../dxf/napDxf';
 import { t } from '../i18n/i18n';
 import type { DongChiTieu } from '../tinh/chiTieu';
 import { dienTich } from '../tinh/hinhHoc';
-import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiTieuQH, type ChucNang, type HeSoDTSan, type Lo, type TrangThaiPA } from '../tinh/kieu';
+import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiTieuQH, type HeSoDTSan, type Lo, type TrangThaiPA } from '../tinh/kieu';
 import { loTheoTinhDuAn, loDangChonHoacDatO, taoLo } from '../tinh/macDinh';
 import { laCaoTang } from '../tinh/loaiDat';
 import { sucChua } from '../tinh/sucChua';
@@ -15,6 +16,7 @@ import { fmtSo } from '../ui/so';
 import { SoDong } from '../ui/SoDong';
 import { NhapChiTieu } from './NhapChiTieu';
 import { NhapDeBai } from './NhapDeBai';
+import { loaiNhaCuaLo, temTheoLoai, type LoaiNhaO } from '../tinh/loaiNha';
 import { KhaiDanSo } from '../ui/KhaiDanSo';
 
 type Chung = { pa: TrangThaiPA; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; loId: string | null; chonLo: (id: string) => void };
@@ -213,8 +215,8 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
               <input value={lo.temDat.kyHieu} disabled={chiXem} onChange={(e) => { const v = e.currentTarget.value.trim(); if (v) sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, kyHieu: v } }))); }} />
             </label>
             <label class="o-chon" title={t('gt.lo.chucNang')}><span>{t('lo.chucNang')}</span>
-              <select value={lo.temDat.chucNang} disabled={chiXem} onChange={(e) => { const v = e.currentTarget.value as ChucNang; sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, chucNang: v } }))); }}>
-                {(['tm', 'xh', 'khac'] as const).map((c) => <option value={c}>{t(`cn.${c}`)}</option>)}
+              <select value={loaiNhaCuaLo(lo) ?? 'khac'} disabled={chiXem} onChange={(e) => { const v = temTheoLoai(e.currentTarget.value as LoaiNhaO | 'khac'); sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, ...v } }))); }}>
+                {(['tm', 'xh', 'tdc', 'khac'] as const).map((c) => <option value={c}>{t(`cn.${c}`)}</option>)}
               </select>
             </label>
             {lo.temDat.nguonChiTieu && (
@@ -275,11 +277,11 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
 }
 
 /** Sức chứa của lô theo chỉ tiêu QH (panel phải). */
-export function SucChuaLo({ lo }: { lo: Lo }) {
+export function SucChuaLo({ lo, gon }: { lo: Lo; gon?: boolean }) {
   const sc = sucChua(lo);
   const m2 = { donVi: 'm²' };
-  return (
-    <MucGap tieuDe={`${t('muc.sucChua')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.muc.sucChua')}>
+  const than = (
+    <>
       <div class="dong" title={t('gt.sc.dtLo')}><span>{t('sc.dtLo')}</span><b>{fmtSo(sc.dtLo, m2)}</b></div>
       <div class="dong" title={t('gt.sc.dtxdMax')}><span>{t('sc.dtxdMax')}</span><b>{fmtSo(sc.dtxdMax, m2)}</b></div>
       {sc.dtxdThapMax !== null && <div class="dong" title={t('gt.sc.dtxdThapMax')}><span>{t('sc.dtxdThapMax')}</span><b>{fmtSo(sc.dtxdThapMax, m2)}</b></div>}
@@ -288,12 +290,15 @@ export function SucChuaLo({ lo }: { lo: Lo }) {
       <div class="dong" title={t('gt.sc.choDo')}><span>{t('sc.choDoCan')}</span><b>{fmtSo(sc.choDoCan, { donVi: t('sc.cho') })}</b></div>
       <div class="dong" title={t('gt.sc.choXeMay')}><span>{t('sc.choXeMayCan')}</span><b>{fmtSo(sc.choXeMayCan, { donVi: t('sc.cho') })}</b></div>
       <div class="dong" title={t('gt.sc.cayXanh')}><span>{t('sc.cayXanhCan')}</span><b>{fmtSo(sc.cayXanhCan, m2)}</b></div>
-    </MucGap>
+    </>
+  );
+  return gon ? <><p class="dong muc-phu">{t('muc.sucChua')}</p>{than}</> : (
+    <MucGap tieuDe={`${t('muc.sucChua')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.muc.sucChua')}>{than}</MucGap>
   );
 }
 
 /** Bảng chỉ tiêu lô Đạt (kèm chênh) / Mục tiêu; dùng ở cấp Lô và màn Xếp tòa. */
-export function BangChiTieuLo({ dong, mo = true }: { dong: DongChiTieu[]; mo?: boolean }) {
+export function BangChiTieuLo({ dong, mo = true, children }: { dong: DongChiTieu[]; mo?: boolean; children?: ComponentChildren }) {
   const m2 = { donVi: 'm²' };
   const dv: Record<string, { thapPhan?: number; donVi?: string }> = { matDo: { thapPhan: 1, donVi: '%' }, matDoThap: { thapPhan: 1, donVi: '%' }, dtSan: m2, cayXanh: m2 };
   return (
@@ -309,6 +314,7 @@ export function BangChiTieuLo({ dong, mo = true }: { dong: DongChiTieu[]; mo?: b
           <span>{d.mucTieu === null ? '—' : `${d.chieu === '<=' ? '≤' : '≥'} ${fmtSo(d.mucTieu, dv[d.khoa])}`}</span>
         </div>
       ))}
+      {children}
     </MucGap>
   );
 }

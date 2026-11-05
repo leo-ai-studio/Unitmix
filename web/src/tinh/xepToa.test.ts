@@ -52,7 +52,7 @@ describe('gợi ý xếp tòa (MT-05)', () => {
   const ms = performance.now() - t0;
   it('ra phương án, đủ nhanh', () => {
     expect(ds.length).toBeGreaterThan(0);
-    expect(ds.length).toBeLessThanOrEqual(5);
+    expect(ds.length).toBeLessThanOrEqual(10);
     expect(ms).toBeLessThan(15000);
   });
   it('mọi phương án: đúng dòng sản phẩm, trong lô, đủ lùi, đủ khoảng cách đầu hồi, không vượt chỉ tiêu', () => {

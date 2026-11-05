@@ -16,7 +16,7 @@ export function useKho({ ma, paId, tenPA, maSua, duocSua, ban, tomTat }: Mo) {
   const tinhTomTat = useRef(tomTat);
   tinhTomTat.current = tomTat;
   const [pa, setPA] = useState<TrangThaiPA>(ban);
-  const [cheDo, setCheDo] = useState<CheDo>(duocSua ? 'tu_dong' : 'chi_xem');
+  const [cheDo, setCheDo] = useState<CheDo>(duocSua ? 'sua' : 'chi_xem');
   const [trangThaiLuu, setLuu] = useState<TrangThaiLuu>('da_luu');
 
   const boLuu = useMemo(

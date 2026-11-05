@@ -13,6 +13,8 @@
  * View trong lúc xếp: (1) chọn góc đặt — ứng viên cùng khoảng tới neo thì ưu tiên góc xoay có hướng + nắng tốt hơn (cache theo mẫu × góc);
  * (2) điểm phương án — điểm view TB các căn (tòa của phương án + tòa lô bên cạnh làm vật cản), bộ đếm tăng dần theo số tòa, ước ở
  * số tầng trần; phương án trả về tính lại đúng số tầng.
+ * Bố cục theo dãy (`KieuBoCuc`, docs/hoc_xep_lo.md — học từ QH Đan Phượng M34 · M7 · Long Biên): tòa cùng mẫu xếp thành dãy bám cạnh lô, xoay
+ * theo đúng cạnh đó, dãn đều hết cạnh, chừa sân giữa; danh sách trả về giữ đủ các kiểu bố cục để so sánh.
  */
 import { tinhChiTieu } from './chiTieu';
 import { coCauRong, diemLechCoCau, phanTram } from './coCau';
@@ -153,11 +155,45 @@ export type DauVaoXep = {
   theoMucTieu?: boolean;
   /** DTXD tối thiểu (% của MĐXD tối đa) để tổ hợp được coi là đạt; mặc định 85. */
   matDoMinPct?: number;
+  /** Chỉ xếp các mẫu tòa này (người dùng chọn); rỗng / thiếu = mọi mẫu đúng dòng sản phẩm của lô. */
+  chiMau?: string[];
+  /** Chỉ giữ các kiểu bố cục này; rỗng / thiếu = mọi kiểu. */
+  kieuBoCuc?: KieuBoCuc[];
 };
+/**
+ * Kiểu bố cục: `tu_do` tham lam từ neo; `hai_day` hai dãy bám hai cạnh đối diện, sân giữa (M34 vị trí 8, 10); `so_le` như hai dãy, dãy sau lệch
+ * nửa bước; `ket_hop` mỗi dãy một mẫu (M34 PA1: T + I); `mot_day` một dãy giữa lô, cho lô dẹt (M34 vị trí 9, lô dài Long Biên);
+ * `vien` tòa bám mọi cạnh, mở sân giữa (M7 4 tòa L, MH3 PA3).
+ */
+export type KieuBoCuc = 'tu_do' | 'hai_day' | 'so_le' | 'ket_hop' | 'mot_day' | 'vien';
+export const DS_KIEU_BO_CUC: KieuBoCuc[] = ['hai_day', 'so_le', 'ket_hop', 'mot_day', 'vien', 'tu_do'];
+/** Cạnh chính của vùng đặt: gộp các đoạn gần thẳng hàng (vát góc lô), dài trước; `u` chạy dọc cạnh, `n` hướng vào trong lô. */
+export type CanhChinh = { a: Diem; b: Diem; dai: number; goc: number; u: Diem; n: Diem };
+export function canhChinh(V: Diem[]): CanhChinh[] {
+  let dt2 = 0;
+  V.forEach((p, i) => { const q = V[(i + 1) % V.length]; dt2 += p[0] * q[1] - q[0] * p[1]; });
+  const huong = (a: Diem, b: Diem) => Math.atan2(b[1] - a[1], b[0] - a[0]);
+  const lech = (x: number, y: number) => { const d = Math.abs(x - y) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
+  const doan = V.map((p, i): [Diem, Diem] => [p, V[(i + 1) % V.length]]).filter(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1]) > 0.01);
+  const NGUONG = (8 * Math.PI) / 180;
+  const gop: [Diem, Diem][] = [];
+  for (const d of doan) {
+    const c = gop[gop.length - 1];
+    if (c && lech(huong(c[0], c[1]), huong(d[0], d[1])) < NGUONG) c[1] = d[1]; else gop.push([d[0], d[1]]);
+  }
+  if (gop.length > 2 && lech(huong(gop[0][0], gop[0][1]), huong(gop[gop.length - 1][0], gop[gop.length - 1][1])) < NGUONG) gop[0][0] = gop.pop()![0];
+  return gop.map(([a, b]) => {
+    const dai = Math.hypot(b[0] - a[0], b[1] - a[1]), u: Diem = [(b[0] - a[0]) / dai, (b[1] - a[1]) / dai];
+    return { a, b, dai, goc: (huong(a, b) * 180) / Math.PI, u, n: (dt2 >= 0 ? [-u[1], u[0]] : [u[1], -u[0]]) as Diem };
+  }).sort((x, y) => y.dai - x.dai);
+}
+
 /** Trọng số view mặc định khi xếp hạng gợi ý (%) — nhẹ: chỉ tách các phương án gần bằng nhau. Giá trị tạm, chờ chủ nhiệm chốt. */
 export const TRONG_SO_VIEW_XEP = 20;
 export type GoiYXep = {
   khoa: string;
+  /** Kiểu bố cục tòa trên lô. */
+  kieu: KieuBoCuc;
   /** Tòa đặt trên lô (id tạm `goiy-…`; áp dụng thì đổi id mới). */
   toa: ToaDat[];
   /** Mẫu × số tòa, vd [["tm-i1", 3]]. */
@@ -226,7 +262,8 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
   if (R.length < 3 || V.length < 3 || lo.temDat.chucNang === 'khac') return [];
   const ct = lo.temDat.chiTieu, dtLo = dienTich(R);
   const nhom = lo.temDat.chucNang === 'xh' ? 'xh' : 'tm';
-  const mauDs = [...tv.toa.values()].filter((m): m is ToaCoMat & ToaMau => m.nhom === nhom && coMat(m));
+  const mauDs = [...tv.toa.values()].filter((m): m is ToaCoMat & ToaMau => m.nhom === nhom && coMat(m) && (!v.chiMau?.length || v.chiMau.includes(m.id)));
+  const soGoiY = Math.max(1, v.soGoiY ?? 10);
   const soTangDe = ct.tangDe ?? 1;
   const nMax = Math.max(1, ct.tangCanHo ?? Math.round(ct.tangCaoMax) - soTangDe);
   const Hmax = soTangDe * CAO_DE + nMax * CAO_DH;
@@ -375,7 +412,7 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
     const tyLeCan = muc ? Math.min(1, kq.soCan / muc) : 0;
     const view = wView > 0 ? (bo ? bo.tb() : viewDung(dat, nMax).tb) : null; // ước ở số tầng trần; phương án trả về tính lại đúng tầng
     return {
-      khoa, toa: tot.toa, mau: [...dem], soTangDH: nTot, soCan: kq.soCan, soCanMuc: muc, lech, tyLeSan,
+      khoa, kieu: 'tu_do', toa: tot.toa, mau: [...dem], soTangDH: nTot, soCan: kq.soCan, soCanMuc: muc, lech, tyLeSan,
       matDo: kq.dong.find((d) => d.khoa === 'matDo')?.dat ?? 0, danSo: kq.soCan * ct.nguoiMoiCan, loiQH: tot.loi,
       pcccVuot, huongTot, canhBao, view, viewTot: null,
       // điểm: sát số căn chỉ tiêu (≤ 100) − ½ lệch cơ cấu (như diemPA "cân bằng") + tận dụng HSSDĐ + % hướng tốt (nhẹ)
@@ -430,6 +467,84 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
     if (dat.length > tot1[0].dat.length && new Set(dat.map((d) => d.mauId)).size > 1) {
       const g = cham(dat, `tron×${dat.length}`);
       if (g) ketQua.push(g);
+    }
+  }
+  // bố cục theo dãy (docs/hoc_xep_lo.md): mỗi kiểu chấm các ứng viên nhiều căn nhất
+  const canhLo = canhChinh(V);
+  if (soGoiY >= 3 && canhLo.length >= 3) {
+    const datTai = (mau: ToaMau, x0: number, y0: number, gocDo: number): Dat | null => {
+      // làm tròn TRƯỚC khi kiểm: toạ độ lưu là toạ độ đã kiểm
+      const x = Math.round(x0 * 100) / 100, y = Math.round(y0 * 100) / 100, goc = Math.round(((gocDo % 360) + 360) % 360 * 10) / 10, F = chanToa(mau, { x, y, gocDo: goc } as ToaDat);
+      if (!namTrongNhanh(F, V) || !duLuiTungCanh(F, R, lui)) return null;
+      if (ngoai.some((o) => kcDaGiac(F, o.F) < XET_LO_BEN_M && kcDaGiac(F, o.F) < kcToa261(luat.lo02, Math.max(Hmax, o.H)).dai)) return null;
+      return { mauId: mau.id, x, y, goc, F, r: Math.max(...F.map((p) => Math.hypot(p[0] - x, p[1] - y))) };
+    };
+    const cham2 = (p: Diem, q: Diem) => p[0] * q[0] + p[1] * q[1];
+    type Cach = 'doc' | 'ngang' | 'tot'; // tòa nằm dọc cạnh / vuông góc cạnh / góc nào đặt được nhiều nhất
+    /** Một dãy mẫu `mau` bám cạnh `c`, góc xoay `gocDo`: dò dọc cạnh, tòa cách cạnh ít nhất có thể, rồi dãn đều cho hết cạnh. */
+    const dayGoc = (mau: ToaMau, c: CanhChinh, gocDo: number, daCo: Dat[], lechDau: number, giua: boolean): Dat[] => {
+      const F0 = chanToa(mau, { x: 0, y: 0, gocDo } as ToaDat), us = F0.map((p) => cham2(p, c.u)), ns = F0.map((p) => cham2(p, c.n));
+      const u0 = Math.min(...us), rong = Math.max(...us) - u0, n0 = Math.min(...ns), sau = Math.max(...ns) - n0;
+      const sauLo = Math.max(...V.map((p) => cham2([p[0] - c.a[0], p[1] - c.a[1]], c.n)));
+      if (giua && sau > sauLo) return [];
+      const dsD = giua ? [(sauLo - sau) / 2] : [0, 1, 2, 3, 4, 6, 8, 10, 12, 15];
+      const tai = (s: number, d: number) => datTai(mau, c.a[0] + c.u[0] * (s - u0) + c.n[0] * (d - n0), c.a[1] + c.u[1] * (s - u0) + c.n[1] * (d - n0), gocDo);
+      const dtChan = dienTich(F0), day: { s: number; d: number; o: Dat }[] = [];
+      let foot = daCo.reduce((a, x) => a + dienTich(x.F), 0);
+      for (let s = lechDau; s + rong <= c.dai + 1e-6 && ((foot + dtChan) / dtLo) * 100 <= ct.matDoMax + 1e-6;) {
+        let gap: { s: number; d: number; o: Dat } | null = null;
+        for (const d of dsD) {
+          const o = tai(s, d);
+          if (o && daCo.every((x) => xaDu(o, x)) && day.every((x) => xaDu(o, x.o))) { gap = { s, d, o }; break; }
+        }
+        if (gap) { day.push(gap); foot += dtChan; s += rong + 1; } else s += 2;
+      }
+      if (day.length < 2) return day.map((x) => x.o);
+      // dãn đều: tòa đầu giữ đầu cạnh, tòa cuối tới cuối cạnh; hỏng thì giữ dãy sít
+      const thua = c.dai - (day[day.length - 1].s + rong), deu: Dat[] = [];
+      for (let i = 0; i < day.length && deu.length === i; i++) {
+        const o = tai(day[i].s + (thua * i) / (day.length - 1), day[i].d);
+        if (o && daCo.every((x) => xaDu(o, x)) && deu.every((x) => xaDu(o, x))) deu.push(o);
+      }
+      return deu.length === day.length ? deu : day.map((x) => x.o);
+    };
+    const dayCach = (mau: ToaMau, c: CanhChinh, cach: Cach, daCo: Dat[], lechDau = 0, giua = false): Dat[] => {
+      let tot: Dat[] = [];
+      for (const k of [0, 90, 180, 270]) {
+        const F0 = chanToa(mau, { x: 0, y: 0, gocDo: c.goc + k } as ToaDat), us = F0.map((p) => cham2(p, c.u)), ns = F0.map((p) => cham2(p, c.n));
+        const doc = Math.max(...us) - Math.min(...us) >= Math.max(...ns) - Math.min(...ns);
+        if ((cach === 'doc' && !doc) || (cach === 'ngang' && doc)) continue;
+        const d = dayGoc(mau, c, c.goc + k, daCo, lechDau, giua);
+        if (d.length > tot.length) tot = d;
+      }
+      return tot;
+    };
+    const A = canhLo[0], B = canhLo.slice(1).find((c) => cham2(c.u, A.u) < -0.7) ?? canhLo[1];
+    const ung: { kieu: KieuBoCuc; dat: Dat[]; khoa: string }[] = [];
+    const them = (kieu: KieuBoCuc, dat: Dat[], khoa: string) => { if (dat.length) ung.push({ kieu, dat, khoa: `${kieu}|${khoa}|${dat.length}` }); };
+    const tuTren = [...mauDs].sort((a, b) => (chanMau.get(b.id)?.nMax ?? 0) - (chanMau.get(a.id)?.nMax ?? 0) || b.so_can_tang - a.so_can_tang).slice(0, 8);
+    let xong = 0;
+    for (const m of tuTren) {
+      for (const cach of ['doc', 'ngang'] as const) {
+        const a = dayCach(m, A, cach, []);
+        them('hai_day', [...a, ...dayCach(m, B, cach, a)], `${m.id}|${cach}`);
+        them('so_le', [...a, ...dayCach(m, B, cach, a, 18)], `${m.id}|${cach}`);
+        them('mot_day', dayCach(m, A, cach, [], 0, true), `${m.id}|${cach}`);
+      }
+      let vien: Dat[] = [];
+      for (const c of canhLo) if (c.dai >= 30) vien = [...vien, ...dayCach(m, c, 'tot', vien)];
+      them('vien', vien, m.id);
+      yield { xong: mauDs.length + (++xong / tuTren.length) / 2, tong: mauDs.length + 1 };
+    }
+    for (const m1 of tuTren.slice(0, 4)) for (const m2 of tuTren.slice(0, 4)) {
+      if (m1 === m2) continue;
+      const a = dayCach(m1, A, 'tot', []);
+      them('ket_hop', [...a, ...dayCach(m2, B, 'tot', a)], `${m1.id}+${m2.id}`);
+    }
+    const canDat = (d: Dat[]) => d.reduce((s, x) => s + tv.toa.get(x.mauId)!.so_can_tang, 0);
+    for (const kieu of DS_KIEU_BO_CUC) {
+      const top3 = ung.filter((u) => u.kieu === kieu).sort((a, b) => canDat(b.dat) - canDat(a.dat)).slice(0, 3);
+      for (const u of top3) { const g = cham(u.dat, u.khoa); if (g) { g.kieu = kieu; ketQua.push(g); } }
     }
   }
   // THEO MỤC TIÊU: suy tổ hợp mẫu × số tòa đạt DTXD + cơ cấu, rồi đặt từng tòa theo chỉ tiêu từng mẫu
@@ -497,14 +612,17 @@ export function* sinhGoiY(v: DauVaoXep): Generator<{ xong: number; tong: number 
   const diemMT = (g: GoiYXep) => g.lech + 2 * (g.theoMucTieu ? g.theoMucTieu.thieuDtxd : Math.max(0, (minPct * ct.matDoMax) / 100 - g.matDo));
   if (v.theoMucTieu) ketQua.sort((a, b) => a.loiQH - b.loiQH || diemMT(a) - diemMT(b) || (a.pcccVuot ?? 99) - (b.pcccVuot ?? 99) || b.diem - a.diem);
   else ketQua.sort((a, b) => a.loiQH - b.loiQH || (a.pcccVuot ?? 99) - (b.pcccVuot ?? 99) || b.diem - a.diem);
-  const daCo = new Set<string>(), top: GoiYXep[] = [];
+  // bỏ trùng số liệu trong cùng kiểu; giữ phương án đầu của mỗi kiểu bố cục để danh sách đa dạng, phần còn lại theo hạng
+  const daCo = new Set<string>(), khac: GoiYXep[] = [];
   for (const g of ketQua) {
-    const k = `${g.mau.map((m) => m.join('×')).join('+')}|${g.soTangDH}|${g.soCan}`;
-    if (daCo.has(k)) continue;
-    daCo.add(k);
-    top.push(g);
-    if (top.length >= (v.soGoiY ?? 5)) break;
+    if (v.kieuBoCuc?.length && !v.kieuBoCuc.includes(g.kieu)) continue;
+    const k = `${g.kieu}|${g.mau.map((m) => m.join('×')).join('+')}|${g.soTangDH}|${g.soCan}`;
+    if (!daCo.has(k)) { daCo.add(k); khac.push(g); }
   }
+  const chon = new Set<GoiYXep>(khac.slice(0, 1));
+  if (!v.theoMucTieu) for (const kieu of DS_KIEU_BO_CUC) { const g = khac.find((x) => x.kieu === kieu); if (g && chon.size < soGoiY) chon.add(g); }
+  for (const g of khac) { if (chon.size >= soGoiY) break; chon.add(g); }
+  const top = khac.filter((g) => chon.has(g));
   // điểm view đúng số tầng của từng phương án trả về (xếp hạng dùng ước ở số tầng trần)
   for (const g of top) {
     const dat = g.toa.map((x) => ({ mauId: x.mauId, x: x.x, y: x.y, goc: x.gocDo, F: chanToa(tv.toa.get(x.mauId)!, x), r: 0 }));

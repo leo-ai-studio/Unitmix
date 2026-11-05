@@ -52,6 +52,8 @@ export type TemDat = {
   chiTieu: ChiTieuQH;
   coCauMucTieu: Record<LoaiCan, number>;
   deBai?: DeBaiKD;
+  /** Nhà ở tái định cư (chucNang 'xh', xem tinh/loaiNha.ts). Thiếu = nhận theo ký hiệu lô TDC… */
+  taiDinhCu?: boolean;
   nguonChiTieu?: NguonChiTieu;
   /** Tuỳ chọn: tính dân số theo QĐ tỉnh, từng căn. */
   danSo?: KhaiDanSo;

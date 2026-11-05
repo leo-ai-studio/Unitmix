@@ -63,8 +63,17 @@ const CSS = `
 #in-pdf .in-bang.nho { font-size: 2.7mm; } #in-pdf .in-bang.nho td { padding: 0.5mm 1.4mm; } #in-pdf .in-bang.nho th { padding: 0.8mm 1.4mm; }
 #in-pdf .in-bang .muc-vuot td { background: #fdecea; color: #8a1f17; } #in-pdf .in-bang .muc-canh_bao td { background: #fff6e0; }
 #in-pdf .in-bang .lech { color: #8a1f17; font-weight: 600; }
+#in-pdf .in-bang caption { caption-side: top; text-align: center; font-weight: 700; font-size: 4.2mm; color: #174f52; padding-bottom: 1.5mm; }
+#in-pdf .in-um th, #in-pdf .in-tong-hop th { background: #bcd7ec; color: #0f2a3a; border: 0.15mm solid #5e7a8a; text-align: center; }
+#in-pdf .in-um td, #in-pdf .in-tong-hop td { border: 0.15mm solid #9aa8ae; }
+#in-pdf .in-um td small { color: #33404a; font-size: 2.6mm; }
+#in-pdf .in-um tfoot .noi td { font-weight: 700; } #in-pdf .in-um .thang td { font-size: 2.8mm; font-style: italic; }
+#in-pdf .in-bang .do { color: #d21f1f; font-weight: 700; } #in-pdf .in-bang .vang { background: #ffe94d; font-weight: 700; color: #b01212; }
+#in-pdf .in-tong-hop { font-size: 3.6mm; } #in-pdf .in-tong-hop th.giua.tong { background: #ffe9a8; } #in-pdf .in-tong-hop .pa { font-weight: 700; color: #1a3f9c; }
+#in-pdf .in-ghi { margin: 0; font-size: 3mm; color: #5a6464; }
+#in-pdf .sw.ranh { border: none; border-top: 0.6mm dashed #d21f1f; height: 0; vertical-align: 0.8mm; }
 #in-pdf .sw { display: inline-block; width: 3.4mm; height: 3.4mm; border: 0.2mm solid #7a8585; margin-right: 1.6mm; vertical-align: -0.6mm; }
-#in-pdf .sw.lon { width: 6mm; height: 6mm; } #in-pdf .sw.net { border: none; border-top: 0.4mm dashed #a5703c; height: 0; vertical-align: 0.8mm; }
+#in-pdf .sw.lon { width: 6mm; height: 6mm; } #in-pdf .sw.net { border: none; border-top: 0.4mm dashed #2b52c4; height: 0; vertical-align: 0.8mm; }
 #in-pdf .in-so-lieu { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; }
 #in-pdf .in-so-lieu div { border: 0.2mm solid #dfe3e1; border-left: 1mm solid #174f52; padding: 1.5mm 2.5mm; }
 #in-pdf .in-so-lieu dt { font-size: 2.8mm; color: #6b7373; } #in-pdf .in-so-lieu dd { margin: 0; font-size: 5mm; font-weight: 700; color: #022b1e; }

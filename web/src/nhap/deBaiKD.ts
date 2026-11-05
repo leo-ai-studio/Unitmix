@@ -3,6 +3,7 @@
  * số căn và/hoặc DT căn. Thiếu tỷ lệ thì suy từ số căn.
  */
 import { LOAI_CAN, type LoaiCan } from '../tinh/kieu';
+import { loaiTrongTen, type LoaiNhaO } from '../tinh/loaiNha';
 import { boDau, chuTrongO, soTrongO, type Luoi } from './luoi';
 
 export type DongDeBai = { loai: LoaiCan; nhan: string; tyLe: number | null; soCan: number | null; dtCan: number | null };
@@ -58,11 +59,15 @@ function khoiMaTran(luoi: Luoi): KhoiMaTran[] {
   return kq;
 }
 
-function docMaTran(luoi: Luoi): DeBaiDoc | null {
+function docMaTran(luoi: Luoi, loaiNha?: LoaiNhaO): DeBaiDoc | null {
   const khoi = khoiMaTran(luoi);
   const dem = khoi.find((k) => !k.dt);
   if (!dem) return null;
   const dtKhoi = khoi.find((k) => k.dt && k.cot.length === dem.cot.length);
+  // dòng TỔNG không cộng lại; bảng có dòng theo loại nhà ở (TĐC, NOXH, NOTM) thì chỉ lấy dòng đúng loại đang chọn
+  const khongTong = dem.hang.filter((h) => !/^tong/.test(boDau(h.nhan)));
+  const dungLoai = loaiNha ? khongTong.filter((h) => loaiTrongTen(h.nhan) === loaiNha) : [];
+  dem.hang = dungLoai.length ? dungLoai : khongTong.length ? khongTong : dem.hang;
   const sc = new Map<LoaiCan, number>(), tdt = new Map<LoaiCan, number>(), mauSo = new Map<LoaiCan, number>();
   for (const h of dem.hang) {
     const dtHang = dtKhoi?.hang.find((x) => boDau(x.nhan) === boDau(h.nhan));
@@ -85,8 +90,8 @@ function docMaTran(luoi: Luoi): DeBaiDoc | null {
 }
 
 /** Đọc lưới (sheet Excel hoặc bảng dán). Dòng nào nhận được loại căn thì lấy; cột số lấy theo tiêu đề, không có tiêu đề thì đoán. */
-export function docDeBai(luoi: Luoi): DeBaiDoc {
-  const maTran = docMaTran(luoi);
+export function docDeBai(luoi: Luoi, loaiNha?: LoaiNhaO): DeBaiDoc {
+  const maTran = docMaTran(luoi, loaiNha);
   if (maTran) return maTran;
   const cot = cotTheoTieuDe(luoi);
   const canhBao: string[] = [];
@@ -94,13 +99,22 @@ export function docDeBai(luoi: Luoi): DeBaiDoc {
   for (let r = cot.hang + 1; r < luoi.length; r++) {
     const hang = luoi[r] ?? [];
     const iNhan = cot.nhan ?? hang.findIndex((o) => typeof o === 'string' && loaiTheoNhan(o) !== null);
-    if (iNhan < 0) continue;
-    const nhan = chuTrongO(hang[iNhan] ?? null);
-    const loai = loaiTheoNhan(nhan);
-    if (!loai) continue;
+    const nhan = iNhan < 0 ? '' : chuTrongO(hang[iNhan] ?? null);
+    const loai = nhan ? loaiTheoNhan(nhan) : null;
+    if (!loai) {
+      // một sheet thường có nhiều bảng (tổng + từng tòa): hết bảng đầu thì dừng, không cộng dồn bảng sau
+      const dau = boDau(chuTrongO(hang.find((o) => o !== null) ?? null));
+      if (gop.size && (!dau || /^(tong|dtsd|total)/.test(dau))) break;
+      continue;
+    }
     let tyLe = cot.tyLe !== undefined ? soTrongO(hang[cot.tyLe] ?? null) : null;
     let soCan = cot.soCan !== undefined ? soTrongO(hang[cot.soCan] ?? null) : null;
     let dtCan = cot.dtCan !== undefined ? soTrongO(hang[cot.dtCan] ?? null) : null;
+    if (cot.hang >= 0 && dtCan === null && cot.dtCan === undefined && iNhan + 1 !== cot.soCan && iNhan + 1 !== cot.tyLe) {
+      // cột DT không có tiêu đề, nằm ngay sau nhãn (bảng "LOẠI CĂN | | Số căn | Tỷ lệ")
+      const o = soTrongO(hang[iNhan + 1] ?? null);
+      if (o !== null && o >= 20 && o <= 300) dtCan = o;
+    }
     if (cot.hang < 0) {
       // Không có tiêu đề: ô có dấu % là tỷ lệ; số nguyên > 100 hoặc số còn lại đầu tiên là số căn / DT theo độ lớn.
       const so = hang.slice(iNhan + 1).map((o) => ({ o, v: soTrongO(o) })).filter((x) => x.v !== null);

@@ -7,10 +7,12 @@ import { docTepExcel, luoiTuChuDan } from '../nhap/docExcel';
 import type { Sheet } from '../nhap/luoi';
 import { LOAI_CAN, type Lo } from '../tinh/kieu';
 import { fmtSo } from '../ui/so';
+import { chonSheetTheoLoai, DS_LOAI_NHA, loaiNhaCuaLo, loaiTrongTen, type LoaiNhaO } from '../tinh/loaiNha';
+import { anhThanhBang } from '../troLy/docAnhDeBai';
 
-type PhamVi = 'lo' | 'cungChucNang' | 'datO';
+type PhamVi = 'lo' | 'cungLoai' | 'datO';
 
-/** Hộp thoại: dán bảng hoặc chọn Excel unitmix đề bài của kinh doanh → xem trước → áp cơ cấu + DT căn vào lô. */
+/** Hộp thoại: chọn loại nhà ở, dán bảng / chọn Excel / chọn ảnh đề bài của kinh doanh → xem trước → áp cơ cấu + DT căn vào các lô loại đó. */
 export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong: () => void; ap: (moi: Lo[]) => void }) {
   const { lop, dongMem } = useDongHop(dong);
   const [chu, setChu] = useState('');
@@ -18,7 +20,10 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
   const [sheet, setSheet] = useState('');
   const [nguon, setNguon] = useState('');
   const [kq, setKq] = useState<DeBaiDoc | null>(null);
-  const [pham, setPham] = useState<PhamVi>('cungChucNang');
+  const [pham, setPham] = useState<PhamVi>('cungLoai');
+  const [loai, setLoai] = useState<LoaiNhaO>(loaiNhaCuaLo(loChon) ?? 'tm');
+  const [dangDocAnh, setDangDocAnh] = useState(false);
+  const [loiAnh, setLoiAnh] = useState('');
 
   function docChu(v: string) {
     setChu(v);
@@ -28,20 +33,42 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
   }
   async function chonTep(f: File) {
     const s = await docTepExcel(f);
-    // Sheet đầu tiên đọc được dòng loại căn.
-    const tot = s.find((x) => docDeBai(x.luoi).dong.length) ?? s[0];
+    const l = loaiTrongTen(f.name) ?? loai;
+    setLoai(l);
     setSheets(s);
     setNguon(f.name);
-    doiSheet(s, tot.ten, f.name);
+    doiSheet(s, sheetTot(s, l), f.name, l);
   }
-  function doiSheet(s: Sheet[], ten: string, tep = nguon) {
+  /** Sheet đọc được dòng loại căn, ưu tiên sheet ghi đúng loại nhà ở đang chọn. */
+  const sheetTot = (s: Sheet[], l: LoaiNhaO) => chonSheetTheoLoai(s, (x) => docDeBai(x.luoi, l).dong.length > 0, l)!.ten;
+  function chonLoai(l: LoaiNhaO) {
+    setLoai(l);
+    if (sheets) doiSheet(sheets, sheetTot(sheets, l), nguon, l);
+  }
+  /** Ảnh / PDF: mô hình chép bảng ra chữ, sau đó đi đúng đường bảng dán để người dùng xem trước và sửa. */
+  async function chonAnh(f: File) {
+    setDangDocAnh(true); setLoiAnh('');
+    try {
+      const l = loaiTrongTen(f.name);
+      if (l) setLoai(l);
+      docChu(await anhThanhBang(f));
+      setNguon(f.name || t('db.nguonAnh'));
+    } catch (e) {
+      setLoiAnh(t('db.loiAnh').replace('{e}', String((e as Error).message ?? e)));
+    } finally { setDangDocAnh(false); }
+  }
+  function danAnh(e: ClipboardEvent) {
+    const f = [...(e.clipboardData?.files ?? [])].find((x) => x.type.startsWith('image/'));
+    if (f) { e.preventDefault(); void chonAnh(f); }
+  }
+  function doiSheet(s: Sheet[], ten: string, tep = nguon, l = loai) {
     setSheet(ten);
     setNguon(tep);
-    setKq(docDeBai(s.find((x) => x.ten === ten)!.luoi));
+    setKq(docDeBai(s.find((x) => x.ten === ten)!.luoi, l));
   }
 
   const apDung = (l: Lo) =>
-    pham === 'lo' ? l.id === loChon.id : pham === 'cungChucNang' ? l.temDat.chucNang === loChon.temDat.chucNang : l.temDat.chucNang !== 'khac';
+    pham === 'lo' ? l.id === loChon.id : pham === 'cungLoai' ? loaiNhaCuaLo(l) === loai : l.temDat.chucNang !== 'khac';
   const soLo = ds.filter(apDung).length;
 
   return (
@@ -50,14 +77,21 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
       <div>
         <h2 id="tieu-de-db">{t('db.tieuDe')}</h2>
         <p class="muted" style={{ margin: 0 }}>{t('db.giaiThich')}</p>
+        <div class="nhom-nut" role="group" aria-label={t('db.loaiNha')}>
+          {DS_LOAI_NHA.map((k) => <button type="button" key={k} aria-pressed={loai === k} title={t('gt.db.loaiNha')} onClick={() => chonLoai(k)}>{t(`cn.${k}`)}</button>)}
+        </div>
         <label title={t('gt.db.dan')}>{t('db.dan')}
           <textarea rows={6} value={chu} placeholder={'Loại căn\tTỷ lệ\tDT (m²)\nStudio\t5%\t30\n1PN\t20%\t45\n2PN\t45%\t65\n2PN+1\t15%\t75\n3PN\t15%\t90'}
-            onInput={(e) => docChu(e.currentTarget.value)} style={{ fontFamily: 'monospace', fontSize: '12px', padding: '8px', border: '1px solid var(--line)', borderRadius: '5px' }} />
+            onInput={(e) => docChu(e.currentTarget.value)} onPaste={danAnh} style={{ fontFamily: 'monospace', fontSize: '12px', padding: '8px', border: '1px solid var(--line)', borderRadius: '5px' }} />
         </label>
         <div class="dong" style={{ gap: '8px', padding: 0 }}>
           <label class="nut-phu" title={t('gt.db.chonTep')} style={{ cursor: 'pointer', flexDirection: 'row' }}>
             {t('db.chonTep')}
             <input type="file" accept=".xlsx,.xls,.xlsm" class="sr-only" onChange={(e) => e.currentTarget.files?.[0] && chonTep(e.currentTarget.files[0])} />
+          </label>
+          <label class="nut-phu" title={t('gt.db.chonAnh')} style={{ cursor: dangDocAnh ? 'wait' : 'pointer', flexDirection: 'row' }}>
+            {dangDocAnh ? t('db.dangDocAnh') : t('db.chonAnh')}
+            <input type="file" accept="image/*,application/pdf,.pdf" class="sr-only" disabled={dangDocAnh} onChange={(e) => { const f = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (f) void chonAnh(f); }} />
           </label>
           {sheets && (
             <select aria-label={t('nct.sheet')} title={t('gt.db.sheet')} value={sheet} onChange={(e) => doiSheet(sheets, e.currentTarget.value)}>
@@ -65,6 +99,7 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
             </select>
           )}
         </div>
+        {loiAnh && <p class="vuot" role="alert" style={{ margin: 0 }}>{loiAnh}</p>}
         {kq && (
           <>
             <div class="bang-nhap" role="table" aria-label={t('db.xemTruoc')}>
@@ -85,7 +120,7 @@ export function NhapDeBai({ ds, loChon, dong, ap }: { ds: Lo[]; loChon: Lo; dong
             <label title={t('gt.db.apCho')}>{t('db.apCho')}
               <select value={pham} onChange={(e) => setPham(e.currentTarget.value as PhamVi)}>
                 <option value="lo">{t('db.pv.lo').replace('{l}', loChon.temDat.kyHieu)}</option>
-                <option value="cungChucNang">{t('db.pv.cungChucNang').replace('{c}', t(`cn.${loChon.temDat.chucNang}`))}</option>
+                <option value="cungLoai">{t('db.pv.cungChucNang').replace('{c}', t(`cn.${loai}`))}</option>
                 <option value="datO">{t('db.pv.datO')}</option>
               </select>
             </label>

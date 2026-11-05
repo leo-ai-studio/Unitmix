@@ -45,3 +45,18 @@ describe('đề bài unitmix của kinh doanh', () => {
     expect(d.coCau['2pn']).toBe(48);
   });
 });
+
+describe('nhiều bảng và loại nhà ở', () => {
+  const tieuDe = ['Bang', 'STU', '1PN', '2PN', '2PN+', '3PN'];
+  it('dừng ở bảng đầu, không cộng bảng sau; cột DT không tiêu đề', () => {
+    const k = docDeBai([['LOẠI CĂN', null, 'Số căn', 'Tỷ lệ'], ['3PN', 104, 10, 0.1], ['2PN', 62.5, 90, 0.9], ['TỔNG', null, 100, 1], [null], ['LOẠI CĂN', 'DT', 'Số căn', 'Tỷ lệ'], ['2PN', 60, 500, 1]]);
+    expect(k.coCau['3pn']).toBe(10);
+    expect(k.coCau['2pn']).toBe(90);
+    expect(k.dong.find((d) => d.loai === '3pn')!.dtCan).toBe(104);
+  });
+  it('ma trận: bỏ dòng TỔNG, lọc theo loại nhà ở', () => {
+    const l = [['Số căn', null, null, null, null, null], tieuDe, ['TĐC', 0, 10, 10, 0, 0], ['NOTM', 10, 0, 0, 0, 10], ['TỔNG', 10, 10, 10, 0, 10]];
+    expect(docDeBai(l, 'tdc').coCau['2pn']).toBe(50);
+    expect(docDeBai(l).coCau['3pn']).toBe(25);
+  });
+});

@@ -16,3 +16,11 @@
 .the-lo-chon { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin: 6px 8px 0; padding: 5px 10px; max-width: min(640px, calc(100% - 80px)); font-size: 12px; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--panel) 94%, transparent); font-variant-numeric: tabular-nums; }
 .the-lo-chon b { color: var(--green); font-size: 13px; }
 
+/* Khối Xếp tòa trên lô: tự động + đặt tay chung một danh sách mẫu; kiểu bố cục; hình nhỏ từng phương án */
+.goi-y-kieu { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0; }
+.goi-y-kieu button { border: 1px solid var(--line); background: var(--panel); border-radius: 4px; padding: 2px 8px; font-size: 11px; color: var(--ink); cursor: pointer; }
+.goi-y-kieu button[aria-pressed="true"] { border-color: var(--green); color: var(--green); background: var(--soft); font-weight: 700; }
+.goi-y-the .goi-y-hinh { float: right; width: 64px; height: 56px; margin: 0 0 4px 6px; }
+.tieu-de-mau { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.the-mau input[type='checkbox'] { min-width: 0; width: auto; flex: none; accent-color: var(--green); }
+.muc-phu { margin: 8px 0 2px; font-weight: 700; font-size: 11px; color: var(--muted-text); text-transform: uppercase; letter-spacing: .03em; }
