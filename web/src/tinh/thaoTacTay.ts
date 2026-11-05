@@ -10,11 +10,13 @@
 import { chiSoCanThem, moRong, khoaCanThem, mauToa, rutCanThem } from './canThem';
 import { doiCanTaiViTri, doiCanTheoTang, doiChoO, doiCongNang, latO } from './doiCan';
 import { LOAI_CAN, type CanMau, type CanThem, type ThangTay, type ThuVien, type ToaDat } from './kieu';
-import { apMatBang, chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
+import { dsLoi, mauHieuDung, apMatBang, chupThangTay, deKhung, doDeKhe, ganLoaiThang, HL_TAY, laLoaiThang, matBangCua, matBangTang, THANG_MAX, THANG_MIN, THANG_N2, THANG_N3, tuChinhSauSua, tuChinhToa, type ChanSua, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, congNangTai, tangCoRieng, viTriCan, type ViTriCan } from './matBang';
 import { duocDatVaoO, idMauGoc, nhomViTri } from './quyTacViTriCan';
+import { stretchTay } from './stretch';
+import { loiThayDuoc, lyDoKhongThay, thayLoiMau, ungVienLoiThay } from './thayLoi';
 
-export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'khong_vua' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan' | 'sai_vi_tri';
+export type LyDoTay = 'de' | 'khe' | 'khong_bo' | 'khong_vua' | 'it_thang' | 'nhieu_thang' | 'khong_dat_thang' | 'khong_dau_tu_do' | 'khong_doi' | 'thoat_nan' | 'sai_vi_tri' | 'khong_thay_loi' | 'thieu_hinh_loi';
 export type KetQuaTay = { ok: true; toa: ToaDat; chan: ChanSua[]; canhBao?: 'nhieu_thang' | 'it_thang' } | { ok: false; lyDo: LyDoTay; chiTiet?: string };
 
 export type Ctx = { tv: ThuVien; dl: DuLieuMB | null | undefined };
@@ -362,4 +364,93 @@ export function keoHanhLangTay(toa: ToaDat, i: number, dau: 0 | 1, d: number, c:
 export function hanhLangTuDong(toa: ToaDat, c: Ctx): KetQuaTay {
   if (!toa.hanhLangTay) return { ok: false, lyDo: 'khong_doi' };
   return chotSua(toa, { ...toa, hanhLangTay: undefined }, [null], c);
+}
+
+// ---------------- thay lõi thang máy ----------------
+
+/** Mặt bằng đã lưu của tòa bỏ đi (chung + từng tầng riêng): lõi đổi thì tự chỉnh dựng lại từ mẫu tòa mang lõi mới. */
+const boMatBangLuu = (t: ToaDat): ToaDat => ({
+  ...t, matBang: undefined, duongBao: undefined, dtxdM2: undefined,
+  ...(t.tangRieng ? { tangRieng: Object.fromEntries(Object.entries(t.tangRieng).map(([k, g]) => { const { matBang: _b, ...r } = g; void _b; return [k, r]; })) } : {}),
+});
+
+/** Khối lõi của lõi `khoa` (khoá theo mẫu thư viện) đang dùng trong tòa. */
+export function loiDangDung(toa: ToaDat, c: Ctx, khoa: string): string | null {
+  const goc = c.tv.toa.get(toa.mauId);
+  const m = goc && (thayLoiMau(goc, toa.loiThay) as unknown as ToaMB);
+  const q = m && m.mat?.[Number(khoa.split(':')[0])]?.phan_tu[Number(khoa.split(':')[1])];
+  return q?.loai === 'loi' ? q.block : null;
+}
+
+/** Các lõi (khoá theo mẫu thư viện) của tòa và khối đang dùng. */
+export function dsLoiToa(toa: ToaDat, c: Ctx): { khoa: string; block: string; matIdx: number }[] {
+  const goc = c.tv.toa.get(toa.mauId) as ToaMB | undefined;
+  if (!goc || !Array.isArray(goc.mat)) return [];
+  const m = thayLoiMau(goc, toa.loiThay) as unknown as ToaMB;
+  return dsLoi(goc).map((l) => ({ khoa: l.khoa, matIdx: l.matIdx, block: loiDangDung(toa, c, l.khoa) ?? m.mat[l.matIdx].phan_tu[Number(l.khoa.split(':')[1])].block }));
+}
+
+/**
+ * Thay lõi thang máy `khoa` bằng khối `block` (app cũ QT-71 · QT-72 · QT-74): cùng dạng, cùng loại hình, tòa mẫu riêng chỉ lõi cùng
+ * mẫu. Thử lần lượt các độ dời điểm chèn (sát hành lang / tâm / hai mép), nhận độ dời đầu tiên mà tự chỉnh khít được (không đè, không
+ * khe mới) — căn dồn vào lõi mới, dãy dài ra / ngắn lại ở đầu tự do, nét bao + DTXD theo, nét hành lang qua tim sảnh lõi mới.
+ */
+export function thayLoiTay(toa: ToaDat, khoa: string, block: string, c: Ctx): KetQuaTay {
+  const goc = c.tv.toa.get(toa.mauId) as ToaMB | undefined, dl = c.dl;
+  if (!goc || !Array.isArray(goc.mat)) return { ok: false, lyDo: 'khong_doi' };
+  if (!dl) return { ok: false, lyDo: 'thieu_hinh_loi' };
+  // luôn tính từ lõi của BẢN VẼ mẫu (khoá lõi theo mẫu thư viện): đổi sang lõi khác nữa thì thay thế lần trước, về lõi bản vẽ thì bỏ thay
+  const l = dsLoi(goc).find((x) => x.khoa === khoa);
+  if (!l) return { ok: false, lyDo: 'khong_doi' };
+  if (l.q.block === block) return huyThayLoiTay(toa, khoa, c);
+  if (toa.loiThay?.[khoa]?.block === block) return { ok: false, lyDo: 'khong_doi' };
+  const f = goc.mat[l.matIdx], ly = lyDoKhongThay(goc, l.q.block, block, l.q, f.goc_deg, f.truc_mm, dl);
+  if (ly === 'thieu_hinh') return { ok: false, lyDo: 'thieu_hinh_loi', chiTiet: block };
+  if (ly) return { ok: false, lyDo: 'khong_thay_loi', chiTiet: ly };
+  const ks: (number | null)[] = [null, ...tangCoRieng(toa)];
+  let loi: KetQuaTay = { ok: false, lyDo: 'de' };
+  for (const uv of ungVienLoiThay(goc, khoa, block, dl)) {
+    const r = chotSua(toa, boMatBangLuu({ ...toa, loiThay: { ...(toa.loiThay ?? {}), [khoa]: uv } }), ks, c, true);
+    if (r.ok) return r;
+    loi = r;
+  }
+  return loi;
+}
+
+/** Trả lõi `khoa` về lõi của bản vẽ mẫu (bỏ thay). */
+export function huyThayLoiTay(toa: ToaDat, khoa: string, c: Ctx): KetQuaTay {
+  if (!toa.loiThay?.[khoa]) return { ok: false, lyDo: 'khong_doi' };
+  const { [khoa]: _bo, ...con } = toa.loiThay;
+  void _bo;
+  return chotSua(toa, boMatBangLuu({ ...toa, loiThay: Object.keys(con).length ? con : undefined }), [null, ...tangCoRieng(toa)], c, true);
+}
+
+/** Khối lõi thay được cho lõi `khoa` của tòa (theo lõi đang dùng), không gồm khối đang dùng. */
+export function loiThayDuocToa(toa: ToaDat, c: Ctx, khoa: string): string[] {
+  const goc = c.tv.toa.get(toa.mauId);
+  if (!goc || !c.dl || !Array.isArray((goc as ToaMB).mat)) return [];
+  const hienTai = thayLoiMau(goc, toa.loiThay) as unknown as ToaMB, dang = dsLoi(hienTai).find((x) => x.khoa === khoa)?.q.block;
+  // theo lõi của bản vẽ mẫu (thư viện), bỏ khối đang dùng; khối của bản vẽ thì là "trả về" (huyThayLoiTay)
+  return loiThayDuoc(c.tv, goc, khoa, c.dl).filter((b) => b !== dang);
+}
+
+// ---------------- STRETCH tay ----------------
+
+/**
+ * STRETCH tay một căn (app cũ QT-81): kéo `khoa` thêm `d` mm (±ST_BUOC, tổng ≤ ±ST_MAX) — căn kề cùng đoạn bù ngược, không có căn bù
+ * thì dãy dài ra / ngắn lại ở đầu tự do (QT-69). Cùng đường với công cụ Leo AI `stretch_cell`; chạy tự chỉnh + kiểm không đè / khe mới.
+ */
+export function stretchCanTay(toa: ToaDat, khoa: string, d: number, c: Ctx): KetQuaTay {
+  const goc = mauToa(c.tv, toa) as ToaMB | undefined;
+  if (!goc || !Array.isArray(goc.mat)) return { ok: false, lyDo: 'khong_doi' };
+  const mau = mauHieuDung(toa, goc, c.dl, null), bc = boCucTang(toa, null);
+  const r = stretchTay(mau, bc, c.tv, khoa, d, { choDaiRa: true });
+  if (!r.ok) return { ok: false, lyDo: 'khong_doi', chiTiet: r.lyDo };
+  const vts = viTriCan(mau, c.tv, bc);
+  let sau = toa;
+  for (const [kh, id] of r.doi) {
+    const vt = vts.find((x) => x.khoa === kh);
+    if (vt) sau = doiCanTaiViTri(sau, vt, id, vts, false);
+  }
+  return chotSua(toa, sau, [null], c);
 }

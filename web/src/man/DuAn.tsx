@@ -7,6 +7,7 @@ import {
   boKhoiDanhSach, dsDuAnDaMo, ghiNhoDuAn, hoanTacBo, layMaSua, layTenNguoi, luuTenNguoi, linkChiaSe, linkSua, linkXem, luuMaSua, phanTichLink, type LoaiLink,
 } from '../kho/maSua';
 import { taoPAMoi } from '../tinh/macDinh';
+import { dsTinhChon } from '../tinh/quyTacDanSo';
 import { LOAI_CAN } from '../tinh/kieu';
 import { ChonLang, TacGiaBan, ThuongHieu } from '../ui/ThanhTren';
 import { BieuTuong, NutBieuTuong } from '../ui/NutBieuTuong';
@@ -34,10 +35,12 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
   const { route } = useLocation();
   const [ten, setTen] = useState('');
   const [diaDiem, setDiaDiem] = useState('');
+  const [tinh, setTinh] = useState('');
   const [dangTao, setDangTao] = useState(false);
   const [loi, setLoi] = useState('');
   const [kq, setKq] = useState<{ ma: string; ma_sua: string } | null>(null);
 
+  const dsTinh = dsTinhChon();
   async function tao(e: Event) {
     e.preventDefault();
     setDangTao(true);
@@ -45,7 +48,9 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
     try {
       const r = await api.taoDuAn(ten, diaDiem);
       luuMaSua(r.ma, r.ma_sua);
-      await api.ghiPA(r.ma, 'pa-1', r.ma_sua, t('pa.mau'), taoPAMoi(), {});
+      let pa = taoPAMoi();
+      if (tinh) pa = { ...pa, tinhDuAn: tinh };
+      await api.ghiPA(r.ma, 'pa-1', r.ma_sua, t('pa.mau'), pa, {});
       ghiNhoDuAn(r.ma, ten || r.ma);
       setKq(r);
     } catch {
@@ -62,6 +67,13 @@ function HopTaoDuAn({ dong }: { dong: () => void }) {
           <h2 id="tieu-de-tao">{t('duAn.moi').replace('+ ', '')}</h2>
           <label>{t('duAn.ten')}<input value={ten} onInput={(e) => setTen(e.currentTarget.value)} required autoFocus /></label>
           <label>{t('duAn.diaDiem')}<input value={diaDiem} onInput={(e) => setDiaDiem(e.currentTarget.value)} /></label>
+          <label title={t('gt.ds.khai.tinh')}>{t('duAn.tinh')}
+            <select value={tinh} onChange={(e) => setTinh(e.currentTarget.value)}>
+              <option value="">{t('ds.khai.chuaKhai')}</option>
+              <optgroup label={t('ds.khai.nhomTrongDiem')}>{dsTinh.trongDiem.map((q) => <option value={q.id} key={q.id}>{t(`ds.tinh.${q.id}`)}</option>)}</optgroup>
+              <optgroup label={t('ds.khai.nhomKhac')}>{dsTinh.khac.map((q) => <option value={q.id} key={q.id}>{t(`ds.tinh.${q.id}`)}</option>)}</optgroup>
+            </select>
+          </label>
           {loi && <p class="vuot" role="alert">{loi}</p>}
           <div class="chan-hop">
             <button type="button" class="nut-phu" onClick={dongMem}>{t('duAn.huy')}</button>

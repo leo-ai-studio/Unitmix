@@ -21,7 +21,7 @@ import { DashDanSo } from '../ui/DashDanSo';
 import { KpiTmb } from '../ui/KpiTmb';
 import { GoiYXepToa, LopGoiY } from '../ui/GoiYXepToa';
 import {
-  batDiem, batDinh, batGoc, caoToa, dichBatDinh, dichNhom, gocCanhLo, hinhToa, kichThuocToa, kiemViPham, latNhom, namTrongNhanh,
+  batDinh, batGoc, caoToa, dichBatDinh, dichNhom, gocCanhLo, hinhToa, kichThuocToa, kiemViPham, latNhom, namTrongNhanh,
   tamNhom, toaTrongKhung, viTriNhanBan, xoayNhom, type MucBat,
 } from '../tinh/thaoTacToa';
 import { DsCanhBao, HopToaDo, ThanhTMB, datChonNhieu, datTuyChon, luaChon, suaNhom, useChonNhieu, useLuatTMB, useTuyChon } from './tmbThaoTac';
@@ -31,6 +31,9 @@ import { HopCanhLo, NhanCanhLo, datCanhChon } from './loGioiCanh';
 import { HopHangLoat, LopHangLoat } from './xepHangLoat';
 import { ThangMayLo } from '../ui/ThangMayLo';
 import { moSoSanhMau } from '../ui/SoSanhMau';
+import { moThuVienMau } from '../ui/HopThuVienMau';
+import { NutDoKichThuoc, useDoKichThuoc } from '../ve/DoKichThuoc';
+import { nguonBatDaGiac } from '../tinh/kichThuoc';
 import { ChuGiaiView, KpiView, LopViewTmb, TheViewToa, gocBacPA, nutLopView, useLopView } from './lopView';
 import { nhanToa } from '../ui/nhanToa';
 import { HopNangGioCho, LopNangGio2D, useNutNangGio } from '../nangGio'; // ảnh vệ tinh nền + nắng / gió (gói riêng, lớp phủ)
@@ -119,6 +122,7 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
               <BieuTuong k="soSanhMau" />
             </button>
           </div>
+          <div class="dong"><button type="button" class="nut-phu" disabled={!tv} onClick={() => moThuVienMau()}>{t('mt.moThuVien')}</button></div>
           {!tv && <p class="dong muted">{t('lo.dangTaiThuVien')}</p>}
           {dsMau.map(({ m, hop }) => (
             <div class="the-mau" key={m.id}>
@@ -215,7 +219,6 @@ type HienKeo = { loai: LuotKeo['loai']; ids: string[]; dx: number; dy: number; d
 export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moTang, tenDuAn }: Chung) {
   const [dk, setDk] = useState<DieuKhienVe | null>(null);
   const [hien, setHien] = useState<HienKeo | null>(null);
-  const [diemDo, setDiemDo] = useState<Diem[]>([]);
   const [loXem, setLoXem] = useState<string | null>(null); // lô KHÔNG xếp tòa (cây xanh, trường…) đang bấm xem thông số — không đổi lô làm việc
   const [menuToa, setMenuToa] = useState<{ id: string; x: number; y: number } | null>(null); // menu ngữ cảnh tòa (chuột phải / nhấn giữ)
   const luot = useRef<LuotKeo | null>(null);
@@ -274,7 +277,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
     const el = e.target as HTMLElement | null;
     if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
     const k = e.key, ctrl = e.ctrlKey || e.metaKey;
-    if (k === 'Escape') { datCanhChon(null); if (diemDo.length) setDiemDo([]); else if (tc.do) datTuyChon({ do: false }); else chon([], null); return; }
+    if (k === 'Escape') { datCanhChon(null); if (!tc.do) chon([], null); return; } // đang đo: móc đo (ve/DoKichThuoc) tự xử lý Esc
     if (ctrl && k.toLowerCase() === 'a') { e.preventDefault(); if (lo) chon(pa.toa.filter((x) => x.loId === lo.id).map((x) => x.id)); return; }
     if (chiXem || !sel.length) return;
     const b = e.shiftKey ? 1 : 0.1;
@@ -453,7 +456,10 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
   })();
 
   // đo: bắt vào đỉnh tòa / lô / chỉ giới
-  const dinhBat = (): Diem[] => [...pa.lo.flatMap((l) => [...l.ranh, ...(l.chiGioi ?? [])]), ...hinh.flatMap((h) => h.F)];
+  const dm = useDoKichThuoc({
+    pa, sua, chiXem, phamVi: 'tmb', bat: tc.do, tat: () => datTuyChon({ do: false }), keoDai: buocM * 8,
+    nguon: () => nguonBatDaGiac(...pa.lo.flatMap((l) => [l.ranh, l.chiGioi]), ...hinh.map((h) => h.F)),
+  });
   const bamNen = (p: Diem, e: PointerEvent) => {
     // Cảm ứng: chạm tòa CHƯA chọn để bản vẽ dời được khi kéo (không kéo nhầm tòa) — chạm không kéo thì chọn tòa / lô dưới ngón ở đây.
     if (!tc.do) {
@@ -469,11 +475,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
       if (idLo && idLo !== lo?.id) { setLoXem(null); chonLo(idLo); chon([], null); datCanhChon(null); return; }
       if (loXem) setLoXem(null);
     }
-    if (tc.do) {
-      const q = batDiem(p, dinhBat(), (buocM * 0.12));
-      setDiemDo(diemDo.length >= 2 ? [q] : [...diemDo, q]);
-      return;
-    }
+    if (tc.do) { dm.onBamNen(p, e); return; }
     // bấm cạnh lô đang chọn → khai lộ giới cạnh đó (LO-01 từng cạnh)
     const i = lo ? canhGan(lo, p, buocM * 0.06) : null;
     datCanhChon(lo && i !== null ? { loId: lo.id, i } : null);
@@ -497,7 +499,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
 
   return (
     <>
-      <BanVe khung={khung} nhan={t('xep.banVe')} onDieuKhien={setDk} onBamNen={bamNen} gocBac={-gocBacPA(pa)}
+      <BanVe khung={khung} nhan={t('xep.banVe')} onDieuKhien={setDk} onBamNen={bamNen} onTroDi={dm.onTroDi} gocBac={-gocBacPA(pa)}
         chonKhung={tc.do ? undefined : {
           bat: tc.khung,
           onXong: (a, b, them) => { const ids = toaTrongKhung(hinh, a, b); chon(them ? [...new Set([...sel, ...ids])] : ids); },
@@ -613,8 +615,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
           </g>
         )}
         {/* đo khoảng cách */}
-        {diemDo.map((p, i) => <circle key={`do${i}`} cx={p[0]} cy={-p[1]} r={buocM * 0.015} fill="var(--green)" style={{ pointerEvents: 'none' }} />)}
-        {diemDo.length === 2 && nhanDoan(diemDo[0], diemDo[1], m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1])), 'var(--green)', 'do')}
+        {dm.lop}
         {!hien && <LopViewTmb pa={pa} tv={tv} coChu={coChu} toaId={toaId} />}
         <LopGoiY loId={lo?.id ?? null} tv={tv} />
         <LopHangLoat tv={tv} />
@@ -631,7 +632,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         })}
       </BanVe>
       <div class="noi-tren">
-        <ThanhTMB chiXem={chiXem} soChon={sel.length} coDiChuyen={diDuoc.length > 0} tatCaKhoa={tatCaKhoa} kiem={kiem}
+        <ThanhTMB nutDo={<NutDoKichThuoc bat={tc.do} onBat={() => datTuyChon({ do: !tc.do, khung: false })} chiXem={chiXem} ds={dm.ds} xoa={dm.xoa} xoaHet={dm.xoaHet} huongDan={dm.huongDan} />} chiXem={chiXem} soChon={sel.length} coDiChuyen={diDuoc.length > 0} tatCaKhoa={tatCaKhoa} kiem={kiem}
           xoay90={() => xoay(90)} lat={lat} nhanBan={nhanBan} khoa={khoa} xoa={xoa} />
         {tc.toaDo && sel.length > 0 && (
           <HopToaDo ds={toaChon} tat={chiXem || !diDuoc.length}
@@ -641,7 +642,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         {tc.dsCanhBao && <DsCanhBao kiem={kiem} ten={tenToa} chon={(ids) => chon(ids)} />}
         <HopCanhLo pa={pa} sua={sua} chiXem={chiXem} luat={luat} />
         <HopHangLoat pa={pa} tv={tv} sua={sua} chiXem={chiXem} luat={luat} />
-        {tc.do && <p class="tmb-goi-y">{diemDo.length === 2 ? `${t('tmb.do.ketQua')} ${m1(Math.hypot(diemDo[1][0] - diemDo[0][0], diemDo[1][1] - diemDo[0][1]))} · Δx ${m1(Math.abs(diemDo[1][0] - diemDo[0][0]))} · Δy ${m1(Math.abs(diemDo[1][1] - diemDo[0][1]))}` : t('tmb.do.huongDan')}</p>}
+        {tc.do && <p class="tmb-goi-y">{dm.huongDan}</p>}
         {hien?.chan && <p class="tmb-goi-y canh">{t('tmb.chanCG')}</p>}
         {(loXem ? pa.lo.find((q) => q.id === loXem) ?? lo : lo) && !tc.do && (() => {
           const loThe = (loXem ? pa.lo.find((q) => q.id === loXem) : undefined) ?? lo!;

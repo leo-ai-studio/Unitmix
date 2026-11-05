@@ -1152,3 +1152,12 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Lỗi (ảnh chủ nhiệm, tòa Z):** xoá một căn ở dãy gần lõi thì `boCanTren` (xoá căn → `apBoCan`) co dãy ở đầu SÁT LÕI vì coi đó là "đầu tự do gần hơn" → hở một căn ngay cạnh mốc.
 - **Sửa** (`loiThang.ts` `boCanTren`): đầu là mốc chặn QT-49 (`mocChan`) không co khi đầu kia còn tự do; căn dồn về mốc, đầu tự do co lại. Test quét `mocChan.test.ts` (xoá căn): tắt bản sửa → 11 mẫu hỏng (T, Z), bật → còn xh-z2, xh-z4.
 - **Nợ:** xh-z2 xoá căn cuối mặt 3 vẫn bị `gotDauThua` gọt mép mốc −7.500 mm (chưa tìm hết đường); xh-z4 là ca nhường thoát nạn. Thử đổi neo của `donKhit` (matBang.ts) theo mốc: không sửa được xh-z2, làm hỏng `khitLoiKep.test` → đã hoàn tác. Nhớ: mốc đang nhớ theo mẫu gốc nên `donKhit` (nhận mẫu hiệu dụng) chưa đọc được.
+
+## 2026-11-05 · Sửa 10 mục review nhánh thay lõi + đo / kích thước · Claude Code (Opus 5.5)
+
+- **Đo (`ve/DoKichThuoc.tsx`):** rê chuột gộp theo rAF, phần theo con trỏ tách thành `LopConTro` (state riêng, không vẽ lại cả màn), nguồn bắt nhớ tới lần màn vẽ lại, `onTroDi` chỉ cấp cho BanVe khi đang đo. Ngưỡng bắt / cỡ chữ theo `dk.tyLeM` (Tầng, Hầm). Chỉ xem: đo nhanh hai điểm, không ghi PA; có quyền sửa cũng thấy dài · Δx · Δy ngay khi đủ hai điểm (Esc bỏ). Shift ở màn Tầng hết bị `batDauKhung` nuốt.
+- **Phạm vi kích thước:** hầm theo lô `ham:<loId>`; tòa / lô đã xoá dọn lúc mở PA (`chuanHoaPA`), không dọn ngay để hoàn tác còn nguyên.
+- **Lõi thay:** `khoiCuaPA` gồm `toa.loiThay`; lõi ngoài PA nạp vào kho riêng khi mở khối Mẫu tòa (`napLoiThayDuoc`, `useDuLieuDayDu`), không đụng `choTai` / `dl`.
+- **Worker:** kiểm / thử mẫu và kiểm thư viện chạy nền qua `dieuPhoiTay` (`BANG_TAY`), có nút Huỷ. Chưa có báo tiến độ theo bước. Lưu ý: lượt mới huỷ lượt cũ, phép tay ở bản vẽ sẽ huỷ Thử phá đang chạy.
+- **Test:** `layMau` cho vòng ngoài `quetThangLien`, `stretchKhongBu`, hai tệp dùng `napThuVien`; `mocChan` lọc ca trước khi lấy mẫu. Nhanh web 66 → 49 s. `isolate: false` đạt và còn 42 s nhưng chưa bật: lợi ít mà test dùng chung trạng thái module.
+- **Chưa làm:** `ManXepToa.tsx`, `tmbThaoTac.tsx` trong cây làm việc vẫn LF (gốc CRLF / trộn); `useDoKichThuoc` ở XepGiua vẫn sau `return` sớm.

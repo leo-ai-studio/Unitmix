@@ -29,6 +29,8 @@ type Props = {
   gocBac?: number;
   /** Bấm (không kéo) lên nền bản vẽ: điểm bấm theo mét (y lên). Bấm lên phần tử con đã chặn sự kiện thì không gọi. */
   onBamNen?: (p: Diem, e: PointerEvent) => void;
+  /** Chuột đi qua bản vẽ (không nhấn): điểm theo mét (y lên); rời khỏi bản vẽ thì null. Dùng cho bắt điểm khi đo / đặt kích thước. */
+  onTroDi?: (p: Diem | null) => void;
   /**
    * Chọn bằng khung: `bat` = kéo nền vẽ khung thay vì di bản vẽ (chế độ cảm ứng); giữ Shift khi kéo nền cũng vẽ khung.
    * `onXong(a, b, them)` nhận hai góc theo mét; `them` = giữ Shift / Ctrl (thêm vào lựa chọn).
@@ -68,7 +70,7 @@ function phatChuot(loai: 'dblclick' | 'contextmenu', x: number, y: number) {
  * quanh điểm giữa hai ngón (bám tay 1:1: mỗi frame đổi viewBox, mọi frame đúng hình — không phóng ảnh bằng CSS transform); chạm = bấm, chạm hai lần = bấm đúp
  * (dblclick), nhấn giữ = menu ngữ cảnh (contextmenu) — phát lên phần tử dưới ngón để con (tòa, lô, ô căn) dùng lại handler chuột.
  */
-export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen, chonKhung, nhanDang }: Props) {
+export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen, onTroDi, chonKhung, nhanDang }: Props) {
   const goc = khung ?? [0, 0, 100, 60];
   const hop = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -305,8 +307,12 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
             }
             batDauKeo(e.pointerId);
           }}
+          onPointerLeave={() => onTroDi?.(null)}
           onPointerMove={(e) => {
-            if (!diem.current.has(e.pointerId)) return;
+            if (!diem.current.has(e.pointerId)) {
+              if (onTroDi && e.pointerType === 'mouse') { const q = viTri(e); onTroDi(raMet(q.x, q.y)); }
+              return;
+            }
             diem.current.set(e.pointerId, viTri(e));
             const g = cuChi.current, { r, c } = ktRef.current;
             const bn = batDauNen.current, pm = diem.current.get(e.pointerId)!;

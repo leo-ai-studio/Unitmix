@@ -1,3 +1,4 @@
+import { chuanHoaKichThuoc } from './kichThuoc';
 import { chuanHoaViTri } from './viTri';
 import { chuanHoaMatBang, ganLoaiThang, goTuDong, laLoaiThang, loaiTheoChung, THANG_MAX, THANG_MIN } from './loiThang';
 import { HE_SO_MAC_DINH, NGUONG_MAC_DINH, PHAN_HAM_MAC_DINH, type ChiPhiPA, type ChiTieuQH, type ChucNang, type Diem, type KhuXeDien, type RamHam, type ThongSoHam, type LoaiCan, type Lo, type ToaDat, type TrangThaiPA } from './kieu';
@@ -121,6 +122,10 @@ export const taoLo = (id: string, kyHieu: string, chucNang: ChucNang, ranh: Diem
   xungQuanh: [],
 });
 
+/** Lô mới thừa hưởng tỉnh của dự án (khai dân số giai đoạn cấp phép); đã có khai riêng hoặc dự án chưa chọn tỉnh thì giữ nguyên. */
+export const loTheoTinhDuAn = (pa: Pick<TrangThaiPA, 'tinhDuAn'>, lo: Lo): Lo =>
+  pa.tinhDuAn && !lo.temDat.danSo ? { ...lo, temDat: { ...lo.temDat, danSo: { tinh: pa.tinhDuAn, giaiDoan: 'cp' } } } : lo;
+
 /** Trạng thái một PA mới: chưa có lô, chưa có tòa. Hệ số và ngưỡng là giá trị tạm, chờ chủ nhiệm chốt. */
 export const taoPAMoi = (): TrangThaiPA => ({
   phienBan: 1,
@@ -202,4 +207,6 @@ export const chuanHoaPA = (pa: TrangThaiPA): TrangThaiPA => ({
   lo: pa.lo.map((l) => chuanHoaCanhDuong({ ...l, temDat: { ...l.temDat, chiTieu: { ...CHI_TIEU_MAC_DINH, ...l.temDat.chiTieu } } })),
   toa: (pa.toa ?? []).map(chuanHoaToa),
   chiPhi: chuanHoaChiPhi(pa.chiPhi),
+  // tòa / lô đã xoá: dọn lúc mở PA, không dọn ngay khi xoá để hoàn tác còn nguyên kích thước
+  kichThuoc: chuanHoaKichThuoc(pa.kichThuoc, (pv) => (pv.startsWith('tang:') ? (pa.toa ?? []).some((x) => `tang:${x.id}` === pv) : pv.startsWith('ham:') ? pa.lo.some((l) => `ham:${l.id}` === pv) : true)),
 });

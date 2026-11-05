@@ -1,43 +1,45 @@
 /* Màn Hầm: màu bản vẽ hầm và bảng kiểm. Bảng màu theo brand LEO (xanh rêu / kem). */
+/* Kiểu bản vẽ kỹ thuật phẳng (như Architechtures): nền trắng, ô đỗ chỉ là nét xám mảnh, lõi + cột đặc, màu chỉ để phân loại ô đặc biệt (sạc, xe lăn, xe máy). */
 :root {
-  --ham-san: #f4f2ec;
-  --ham-lan: #ece8de;
+  --ham-san: #ffffff;
+  --ham-lan: #f6f7f8;
   --ham-cho: #ffffff;
-  --ham-xe-lan: #cfe0ef;
-  --ham-xe-may: #f1e3c8;
-  --ham-kho: #e3d9f0;
-  --ham-ky-thuat: #e0e0e0;
-  --ham-loi: #5c6662;
-  --ham-ram: #f6d8b8;
-  --ham-sac: #c9e6c4;
-  --ham-phong: #e4e7ea;
-  --ham-thang: #f3c9c4;
-  --ham-gio: #cfe0f3;
+  --ham-net: #7d858c;
+  --ham-xe-lan: #d6e6f5;
+  --ham-xe-may: #eef0f2;
+  --ham-kho: #eceaf3;
+  --ham-ky-thuat: #e9ebed;
+  --ham-loi: #3b4147;
+  --ham-ram: #f3e4d2;
+  --ham-sac: #cfe8cc;
+  --ham-phong: #e9ebed;
+  --ham-thang: #f3d3cf;
+  --ham-gio: #d7e5f3;
   --ham-t1-thap: #d9d6cc;
   --ham-t1-de: #ebe7dc;
   --ham-t1-xanh: #dcebd2;
 }
 
-.ham-ve .ranh-ham { fill: var(--ham-san); stroke: var(--green); stroke-width: 2; }
+.ham-ve .ranh-ham { fill: var(--ham-san); stroke: #2b2f33; stroke-width: 1.6; }
 .ham-ve .lan { fill: var(--ham-lan); stroke: none; }
-.ham-ve .cho { fill: var(--ham-cho); stroke: var(--muted); stroke-width: 0.8; }
-.ham-ve .xe-lan { fill: var(--ham-xe-lan); stroke: var(--thua); stroke-width: 1; }
-.ham-ve .sac { stroke: var(--ok); stroke-width: 1.2; }
-.ham-ve .xe-may { fill: var(--ham-xe-may); stroke: #c7aa76; stroke-width: 1; }
-.ham-ve .kho { fill: var(--ham-kho); stroke: #8f7bb0; stroke-width: 0.8; }
-.ham-ve .ky-thuat { fill: var(--ham-ky-thuat); stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 3; }
-.ham-ve .loi { fill: var(--ham-loi); fill-opacity: 0.85; stroke: none; }
-.ham-ve .cot { fill: var(--ink); stroke: none; }
-.ham-ve .ram { fill: var(--ham-ram); stroke: #a15c1d; stroke-width: 1.5; }
+.ham-ve .cho { fill: var(--ham-cho); stroke: var(--ham-net); stroke-width: 0.6; }
+.ham-ve .xe-lan { fill: var(--ham-xe-lan); stroke: #5f87ad; stroke-width: 0.7; }
+.ham-ve .sac { stroke: #5d9a58; stroke-width: 0.8; }
+.ham-ve .xe-may { fill: var(--ham-xe-may); stroke: var(--ham-net); stroke-width: 0.6; }
+.ham-ve .kho { fill: var(--ham-kho); stroke: #9a93b3; stroke-width: 0.6; }
+.ham-ve .ky-thuat { fill: var(--ham-ky-thuat); stroke: var(--ham-net); stroke-width: 0.7; stroke-dasharray: 4 3; }
+.ham-ve .loi { fill: var(--ham-loi); fill-opacity: 1; stroke: none; }
+.ham-ve .cot { fill: #2b2f33; stroke: none; }
+.ham-ve .ram { fill: var(--ham-ram); stroke: #8a6a4a; stroke-width: 1; }
 .ham-ve .chan-toa { fill: none; stroke: var(--ink); stroke-width: 1; stroke-dasharray: 6 4; }
 .ham-ve .ranh-lo { fill: none; stroke: var(--muted); stroke-width: 1; }
 .ham-ve text { pointer-events: none; fill: var(--ink); }
 /* Đợt 2: phòng kỹ thuật, xe máy từng ô, thang thoát nạn, hộp gió, tường / rèm ngăn cháy, đầu làn cụt, tầng 1. */
-.ham-ve .phong { fill: var(--ham-phong); stroke: var(--muted); stroke-width: 1; }
-.ham-ve .cho-xe-may { fill: none; stroke: #c7aa76; stroke-width: 0.5; }
+.ham-ve .phong { fill: var(--ham-phong); stroke: var(--ham-net); stroke-width: 0.7; }
+.ham-ve .cho-xe-may { fill: none; stroke: var(--ham-net); stroke-width: 0.4; }
 .ham-ve .thang-thoat { fill: var(--ham-thang); stroke: var(--vuot); stroke-width: 1.2; }
 .ham-ve .ong-gio { fill: var(--ham-gio); stroke: #3b6ea8; stroke-width: 1; }
-.ham-ve .tuong-chay { stroke: var(--vuot); stroke-width: 3; stroke-dasharray: 10 4 2 4; fill: none; }
+.ham-ve .tuong-chay { stroke: var(--vuot); stroke-width: 1.6; stroke-dasharray: 10 4 2 4; fill: none; opacity: 0.8; }
 .ham-ve .rem-chay { fill: var(--vuot); stroke: none; }
 .ham-ve .ram-thang { fill: var(--ham-ram); fill-opacity: 0.5; stroke: #a15c1d; stroke-width: 1; stroke-dasharray: 4 3; }
 .ham-ve .cut-duong circle { fill: color-mix(in srgb, var(--vuot) 18%, transparent); stroke: var(--vuot); stroke-width: 1.5; }
@@ -93,3 +95,9 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, .08);
 }
 .ham-dang-rai .spin-o { margin-right: 0 !important; }
+
+/* lưới cột: nét mảnh chấm gạch, không tranh với hình */
+.ham-ve .luoi-truc { stroke: var(--muted); stroke-width: 0.8; stroke-dasharray: 8 3 1.5 3; opacity: 0.55; fill: none; }
+.ham-ve .luoi-bong { fill: var(--bg, #fff); stroke: var(--muted); stroke-width: 1; }
+.ham-ve .luoi-chu { fill: var(--text, currentColor); font-weight: 700; }
+.ham-ve .luoi-nhip { fill: var(--muted); }

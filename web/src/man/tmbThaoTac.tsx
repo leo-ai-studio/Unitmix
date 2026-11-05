@@ -3,6 +3,7 @@
  * quy_tac.json, thanh công cụ biểu tượng (lớp phủ `.noi-tren`, không bóp khung giữa) và hộp nhập toạ độ / góc / khoảng dời.
  * Mọi thay đổi đi qua `sua` của kho → hoàn tác được.
  */
+import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
 import type { ToaDat, TrangThaiPA } from '../tinh/kieu';
@@ -95,6 +96,8 @@ function NutMenuBt({ k, nhan, bat, ds }: { k: KhoaBieuTuong; nhan: string; bat: 
 }
 
 type ThanhProps = {
+  /** nút Đo kèm popover kiểu kích thước / bắt điểm (ve/DoKichThuoc); thiếu thì nút Đo đơn giản */
+  nutDo?: ComponentChildren;
   chiXem: boolean;
   soChon: number;
   coDiChuyen: boolean; // có tòa chọn không khoá
@@ -118,7 +121,7 @@ export function ThanhTMB(p: ThanhProps) {
     <div class="thanh-tmb" role="toolbar" aria-label={t('tmb.congCu')}>
       <div class="nhom-bt">
         <NutBieuTuong k="chonNhieu" ghiChu={t('tmb.gc.chonNhieu')} bat={tc.khung} onClick={() => datTuyChon({ khung: !tc.khung, do: false })} />
-        <NutBieuTuong k="do" ghiChu={t('tmb.gc.do')} bat={tc.do} onClick={() => datTuyChon({ do: !tc.do, khung: false })} />
+        {p.nutDo ?? <NutBieuTuong k="do" ghiChu={t('tmb.gc.do')} bat={tc.do} onClick={() => datTuyChon({ do: !tc.do, khung: false })} />}
         <NutMenuBt k="batDinh" nhan={t('bt.rangBuoc')} bat={tc.bat || tc.khoaCG} ds={[
           { nhan: t('bt.batDinh'), ghiChu: t('tmb.gc.batDinh'), bat: tc.bat, onClick: () => datTuyChon({ bat: !tc.bat }) },
           { nhan: t('bt.khoaCG'), ghiChu: t('tmb.gc.khoaCG'), bat: tc.khoaCG, onClick: () => datTuyChon({ khoaCG: !tc.khoaCG }) },

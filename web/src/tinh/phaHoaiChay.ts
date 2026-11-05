@@ -23,7 +23,7 @@ import { apMatBang, daGiacCacLoi, dauHanhLangNgoai, demLoaiThang, doDeKhe, matBa
 import { taoPAMoi } from './macDinh';
 import { boCucTang, canDangDung, congNangTai, hinhLogia, khungTaiO, viTriCan } from './matBang';
 import { chayPhep, phepTay, type PhepTay } from './tayNen';
-import { mauThem, type KetQuaTay } from './thaoTacTay';
+import { dsLoiToa, loiThayDuocToa, mauThem, type KetQuaTay } from './thaoTacTay';
 
 const { tv, dl, toaDs } = napThuVien();
 const c = { tv, dl };
@@ -165,7 +165,14 @@ export function phepNgauNhien(toa: ToaDat, r: () => number): { op: string; ph: P
     if (ds.length) return { op: `kéo hành lang ${i}:${dau} ${d}`, ph: phepTay('keoHanhLangTay', toa, i, dau, d) };
   }
   if (x < 0.95) return { op: 'dồn khít (tự chỉnh lại)', ph: 'donKhit' };
-  return { op: 'thang về tự động', ph: phepTay('thangTuDongLai', toa) };
+  if (x < 0.97) return { op: 'thang về tự động', ph: phepTay('thangTuDongLai', toa) };
+  // thay lõi thang máy cùng mẫu (QT-71): lõi đang thay thì một nửa số lần trả về lõi bản vẽ
+  const dangThay = Object.keys(toa.loiThay ?? {});
+  if (dangThay.length && r() < 0.5) { const k = chon(dangThay); return { op: `trả lõi ${k}`, ph: phepTay('huyThayLoiTay', toa, k) }; }
+  const co = dsLoiToa(toa, c).flatMap((l) => loiThayDuocToa(toa, c, l.khoa).map((b) => [l.khoa, b] as const));
+  if (!co.length) return { op: 'dồn khít (tự chỉnh lại)', ph: 'donKhit' };
+  const [k, b] = chon(co);
+  return { op: `thay lõi ${k} → ${b}`, ph: phepTay('thayLoiTay', toa, k, b) };
 }
 
 /** Một bước ngẫu nhiên: trả tên phép + kết quả (chạy đồng bộ `chayPhep` — bản chuẩn của đường nền). */

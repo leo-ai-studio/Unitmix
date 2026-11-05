@@ -5,7 +5,7 @@ import { t } from '../i18n/i18n';
 import type { DongChiTieu } from '../tinh/chiTieu';
 import { dienTich } from '../tinh/hinhHoc';
 import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiTieuQH, type ChucNang, type HeSoDTSan, type Lo, type TrangThaiPA } from '../tinh/kieu';
-import { loDangChonHoacDatO, taoLo } from '../tinh/macDinh';
+import { loTheoTinhDuAn, loDangChonHoacDatO, taoLo } from '../tinh/macDinh';
 import { laCaoTang } from '../tinh/loaiDat';
 import { sucChua } from '../tinh/sucChua';
 import { apPreset, chupPreset, type DuLieuPreset, type NhomPreset, type PhamViPreset } from '../kho/preset';
@@ -119,7 +119,7 @@ export function LoNhap({ pa, sua, chiXem, loId, chonLo }: Chung) {
   function themChuNhat() {
     const id = `lo-${Date.now().toString(36)}`;
     const x0 = Math.max(0, ...pa.lo.flatMap((l) => l.ranh.map((q) => q[0]))) + (pa.lo.length ? 20 : 0);
-    const moi = taoLo(id, `Lô ${pa.lo.length + 1}`, 'tm', [[x0, 0], [x0 + kt.rong, 0], [x0 + kt.rong, kt.dai], [x0, kt.dai]]);
+    const moi = loTheoTinhDuAn(pa, taoLo(id, `Lô ${pa.lo.length + 1}`, 'tm', [[x0, 0], [x0 + kt.rong, 0], [x0 + kt.rong, kt.dai], [x0, kt.dai]]));
     sua((p) => ({ ...p, lo: [...p.lo, moi] }));
     chonLo(id);
   }

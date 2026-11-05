@@ -32,6 +32,8 @@ export const O_THANG_MM = 3000;
 export const KHE_HUT_MM = 600;
 /** Chiều sâu bay chuẩn của thư viện căn (BAY). */
 export const BAY_MM = 8500;
+/** Dung sai "kề nhau" khi chọn các ô trượt theo (mm): tường chung giữa hai ô liền kề trong CAD chồng / hở tới ~40 mm (tm-t1 mặt 4: 11 mm). */
+const KE_MM = 60;
 /** XC-05 · QT-22b: chồng ≤ 200 mm giữa khung căn và nét bao lõi = tường chung (TUONG_CHUNG_MM). Hở ≤ 200 mm cũng coi là khít:
  * CAD gốc có căn hở 150–165 mm (tường căn dày 150 chạm nét bao) — phía hở là giá trị tạm, chờ chủ nhiệm chốt. */
 export const TUONG_CHUNG_MM = 200;
@@ -128,7 +130,7 @@ const trongDG = (p: Diem, P: Diem[]) => {
   return c;
 };
 /** Cắt đa giác theo nửa mặt phẳng f(p) ≥ 0 (Sutherland–Hodgman). */
-function catNua(P: Diem[], f: (p: Diem) => number): Diem[] {
+export function catNua(P: Diem[], f: (p: Diem) => number): Diem[] {
   const R: Diem[] = [];
   for (let i = 0; i < P.length; i++) {
     const A = P[i], B = P[(i + 1) % P.length], fa = f(A), fb = f(B);
@@ -137,10 +139,10 @@ function catNua(P: Diem[], f: (p: Diem) => number): Diem[] {
   }
   return R;
 }
-const laMatThat = (m: MatToa) => m.a_cuoi - m.a_dau > 1;
+export const laMatThat = (m: MatToa) => m.a_cuoi - m.a_dau > 1;
 
 // ---------- lõi: dải trên mặt (XC-05), sảnh (XC-06) ----------
-const daGiacLoi = (K: HinhLoiMB): Diem[] | null => {
+export const daGiacLoi = (K: HinhLoiMB): Diem[] | null => {
   if (K.bao_tm?.length) return K.bao_tm;
   const b = K.bao_tuong_mm;
   return b && b.length === 4 ? [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]] : null;
@@ -439,15 +441,25 @@ export function gonDaGiac(P: Diem[], tol = 2): Diem[] {
  */
 export function noiNetBao(P: Diem[], gocDeg: number, truc: number, aE: number, huong: 1 | -1, d: number, b0 = 0, b1 = BAY_MM): Diem[] | null {
   const B = coSo(gocDeg, truc), Q = P.map(B.ab);
-  for (let i = 0; i < Q.length; i++) {
-    const A = Q[i], C = Q[(i + 1) % Q.length];
-    if (Math.abs(A[0] - aE) > 5 || Math.abs(C[0] - aE) > 5) continue;
-    const lo = Math.min(A[1], C[1]), hi = Math.max(A[1], C[1]);
-    if (lo > b0 + 60 || hi < b1 - 60) continue;
-    const c0 = Math.abs(lo - b0) <= 60 ? lo : b0, c1 = Math.abs(hi - b1) <= 60 ? hi : b1, a2 = aE + huong * d;
-    const chen: Diem[] = A[1] > C[1] ? [[aE, c1], [a2, c1], [a2, c0], [aE, c0]] : [[aE, c0], [a2, c0], [a2, c1], [aE, c1]];
-    const R = [...Q.slice(0, i + 1), ...chen, ...Q.slice(i + 1)];
-    return gonDaGiac(R).map(([a, b]) => B.pt(a, b));
+  // cạnh biên đúng mép (±5 mm) trước; nét bao CAD lệch mép mặt vài chục mm (xh-z2 mặt 3: 30 mm) thì lấy cạnh gần nhất trong ±60 mm
+  for (const tol of [5, 60]) {
+    let tot = -1, dTot = Infinity;
+    for (let i = 0; i < Q.length; i++) {
+      const A = Q[i], C = Q[(i + 1) % Q.length];
+      if (Math.abs(A[0] - aE) > tol || Math.abs(C[0] - aE) > tol) continue;
+      const lo = Math.min(A[1], C[1]), hi = Math.max(A[1], C[1]);
+      if (lo > b0 + 60 || hi < b1 - 60) continue;
+      const dd = Math.abs(A[0] - aE) + Math.abs(C[0] - aE);
+      if (tol === 5) { tot = i; break; }
+      if (dd < dTot) { tot = i; dTot = dd; }
+    }
+    if (tot < 0) continue;
+    const A = Q[tot], C = Q[(tot + 1) % Q.length], lo = Math.min(A[1], C[1]), hi = Math.max(A[1], C[1]);
+    const ae = (A[0] + C[0]) / 2; // toạ độ thật của cạnh
+    const c0 = Math.abs(lo - b0) <= 60 ? lo : b0, c1 = Math.abs(hi - b1) <= 60 ? hi : b1, a2 = ae + huong * d;
+    const chen: Diem[] = A[1] > C[1] ? [[ae, c1], [a2, c1], [a2, c0], [ae, c0]] : [[ae, c0], [a2, c0], [a2, c1], [ae, c1]];
+    const R = [...Q.slice(0, tot + 1), ...chen, ...Q.slice(tot + 1)];
+    return gonDaGiac(R).map(([x, y]) => B.pt(x, y));
   }
   return null;
 }
@@ -557,16 +569,24 @@ export function hocLogia(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undef
   return kq;
 }
 
+/** Mẫu tòa đã thay lõi → mẫu gốc của bản vẽ (thayLoi.ts ghi; canThem.moRong chuyển tiếp). */
+const mauGocLoi = new WeakMap<object, ToaMB>();
+export const ghiMauGocLoi = (daThay: object, goc: ToaMB) => { mauGocLoi.set(daThay, goc); };
+export const layMauGocLoi = (mau: object): ToaMB | undefined => mauGocLoi.get(mau);
+
 /**
  * Nét bao bo theo ô (app cũ duongBao0 — tinh/netBao.ts): so ô đặc của mặt bằng `mb` với mặt bằng mặc định của mẫu, trừ phần
  * sàn mất (nở 700 mm, trừ lại ô còn + hành lang), cộng phần mọc thêm. Không đổi gì thì undefined (= nét bao mẫu).
  */
 function baoTheoO(mau: ToaMB, mb: MatBangSua, dl: DuLieuMB | null | undefined, tv: ThuVien, bc: BoCuc, dungLai = false): Diem[] | undefined | null {
-  const goc = matBangMacDinh(mau, dl), a = oDacMB(mau, goc, dl, tv), b = oDacMB(mau, mb, dl, tv, bc);
+  // lõi đã thay (QT-71: "lõi đã thay không còn là bố cục gốc"): nét bao dựng lại bằng phép boolean từ BẢN VẼ mẫu — ô + khung lõi cũ → mới
+  const m0 = mauGocLoi.get(mau) ?? mau;
+  if (m0 !== mau) dungLai = true;
+  const goc = matBangMacDinh(m0, dl), a = oDacMB(m0, goc, dl, tv), b = oDacMB(mau, mb, dl, tv, bc);
   // nét bao nối dần (noiNetBao ở đầu mặt — đúng tới mm khi dãy dài ra / ngắn lại) còn khớp ô thì giữ; hỏng (gai, viền thừa quanh
   // chỗ trống, ô lòi ra ngoài) mới dựng lại bằng phép boolean như app cũ
   const P1 = mb.duongBao ?? mau.duong_bao;
-  const P = !dungLai && !baoHong(P1, mau, a, b) ? P1 : netBaoTheoO(mau.duong_bao, a.o, b.o, b.hl, a.hl);
+  const P = !dungLai && !baoHong(P1, mau, a, b) ? P1 : netBaoTheoO(m0.duong_bao, a.o, b.o, b.hl, a.hl);
   if (!P) return null;
   // hốc logia đi theo căn (QT-59b): căn dời / đổi chỗ / lật thì hốc cũ lấp lại, hốc mới khoét theo căn
   const Q = suaHocLogia(P, hocLogia(mau, goc, dl, tv), hocLogia(mau, mb, dl, tv, bc), b.o, mau.duong_bao);
@@ -677,9 +697,9 @@ export function matBangMacDinh(mau: ToaMB, dl?: DuLieuMB | null): MatBangSua {
     const dn = doanTai(mau, mb, dai, t.matIdx, t.a0 + t.rong / 2);
     const vt = vatThe(mau, mb, t.matIdx).filter((v) => v.a0 >= dn.lo - 1 && v.a0 + v.w <= dn.hi + 1 && v.k !== t.khoa);
     if (dn.tuCuoi && gianMat(mau, mb, t.matIdx, true, thieu)) {
-      vt.filter((v) => v.a0 >= t.a0 + t.rong - 1).forEach((v) => dich(mb, v, thieu));
+      vt.filter((v) => v.a0 >= t.a0 + t.rong - KE_MM).forEach((v) => dich(mb, v, thieu));
     } else if (dn.tuDau && gianMat(mau, mb, t.matIdx, false, thieu)) {
-      vt.filter((v) => v.a0 + v.w <= t.a0 + 1).forEach((v) => dich(mb, v, -thieu));
+      vt.filter((v) => v.a0 + v.w <= t.a0 + KE_MM).forEach((v) => dich(mb, v, -thieu));
       t.a0 -= thieu;
     } else continue;
     t.rong = O_THANG_MM;
@@ -761,7 +781,7 @@ function themThang(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], mi: number, p: num
   const vt = vatThe(mau, mb, mi).filter((v) => v.a0 >= dn.lo - 1 && v.a0 + v.w <= dn.hi + 1);
   const ve = (cuoi: boolean) => {
     if (cuoi ? !(dn.tuCuoi && gianMat(mau, mb, mi, true, O_THANG_MM)) : !(dn.tuDau && gianMat(mau, mb, mi, false, O_THANG_MM))) return false;
-    vt.filter((v) => (cuoi ? v.a0 >= p - 1 : v.a0 + v.w <= p + 1)).forEach((v) => dich(mb, v, cuoi ? O_THANG_MM : -O_THANG_MM));
+    vt.filter((v) => (cuoi ? v.a0 >= p - KE_MM : v.a0 + v.w <= p + KE_MM)).forEach((v) => dich(mb, v, cuoi ? O_THANG_MM : -O_THANG_MM));
     mb.thangBo.push({ khoa, matIdx: mi, a0: cuoi ? p : p - O_THANG_MM, rong: O_THANG_MM, sx, dIns: dInsThang(sx), bIns: 0, block: THANG_KHOI, nguon: 'them' });
     return true;
   };
@@ -774,8 +794,8 @@ function boThang(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], khoa: string, veMocC
   const dn = doanTai(mau, mb, dai, t.matIdx, t.a0 + t.rong / 2);
   const vt = vatThe(mau, mb, t.matIdx).filter((v) => v.a0 >= dn.lo - 1 && v.a0 + v.w <= dn.hi + 1 && v.k !== khoa);
   // thang người dùng dời / bỏ (`veMocChan`): dồn khít về mốc chặn — đầu mốc chặn (thẳng hàng mép cánh kia) thử sau, đầu kia co lại trước
-  const thuCuoi = () => dn.tuCuoi && gianMat(mau, mb, t.matIdx, true, -t.rong) && (vt.filter((v) => v.a0 >= t.a0 + t.rong - 1).forEach((v) => dich(mb, v, -t.rong)), true);
-  const thuDau = () => dn.tuDau && gianMat(mau, mb, t.matIdx, false, -t.rong) && (vt.filter((v) => v.a0 + v.w <= t.a0 + 1).forEach((v) => dich(mb, v, t.rong)), true);
+  const thuCuoi = () => dn.tuCuoi && gianMat(mau, mb, t.matIdx, true, -t.rong) && (vt.filter((v) => v.a0 >= t.a0 + t.rong - KE_MM).forEach((v) => dich(mb, v, -t.rong)), true);
+  const thuDau = () => dn.tuDau && gianMat(mau, mb, t.matIdx, false, -t.rong) && (vt.filter((v) => v.a0 + v.w <= t.a0 + KE_MM).forEach((v) => dich(mb, v, t.rong)), true);
   const truocCuoi = cuoiTruoc(mau, t.matIdx, dn) && !(veMocChan && dn.tuCuoi && dn.tuDau && mocMepCanh(mau, t.matIdx, true) && !mocMepCanh(mau, t.matIdx, false));
   if (!(truocCuoi ? thuCuoi() || thuDau() : thuDau() || thuCuoi())) return false;
   mb.thangBo = mb.thangBo.filter((x) => x !== t);
@@ -876,7 +896,7 @@ export function boCanTren(mau: ToaMB, mb: MatBangSua, dai: DaiLoi[], khoa: strin
   if (!v) return false;
   const dn = doanTai(mau, mb, dai, mi, v.a0 + v.w / 2);
   const vt = ds.filter((x) => x.a0 >= dn.lo - 1 && x.a0 + x.w <= dn.hi + 1 && x.k !== khoa);
-  const sau = vt.filter((x) => x.a0 >= v.a0 + v.w - 1), truoc = vt.filter((x) => x.a0 + x.w <= v.a0 + 1);
+  const sau = vt.filter((x) => x.a0 >= v.a0 + v.w - KE_MM), truoc = vt.filter((x) => x.a0 + x.w <= v.a0 + KE_MM);
   // thang bộ không là mốc (QT-48 app cũ): thang giữa căn bỏ và đầu tự do trượt vào cùng các căn
   let okCuoi = dn.tuCuoi, okDau = dn.tuDau;
   // QT-49: đầu mốc chặn (sát lõi / góc cánh) không co khi đầu kia còn tự do — căn dồn về mốc, đầu tự do co lại
@@ -1202,10 +1222,10 @@ function doiThang(mau: ToaMB, mb: MatBangSua, khoa: string, p: number, sx: 1 | -
   if (!t) return false;
   const vt = vatThe(mau, mb, t.matIdx).filter((v) => v.k !== khoa);
   if (p > t.a0 + t.rong - 1) {
-    vt.filter((v) => v.a0 >= t.a0 + t.rong - 1 && v.a0 + v.w <= p + 1).forEach((v) => dich(mb, v, -t.rong));
+    vt.filter((v) => v.a0 >= t.a0 + t.rong - KE_MM && v.a0 + v.w <= p + KE_MM).forEach((v) => dich(mb, v, -t.rong));
     t.a0 = p - t.rong;
   } else if (p < t.a0 + 1) {
-    vt.filter((v) => v.a0 >= p - 1 && v.a0 + v.w <= t.a0 + 1).forEach((v) => dich(mb, v, t.rong));
+    vt.filter((v) => v.a0 >= p - KE_MM && v.a0 + v.w <= t.a0 + KE_MM).forEach((v) => dich(mb, v, t.rong));
     t.a0 = p;
   }
   if (t.sx !== sx || t.nguon === 'them' || Math.abs(t.rong - O_THANG_MM) > 20) { t.sx = sx; t.dIns = dInsThang(sx); }

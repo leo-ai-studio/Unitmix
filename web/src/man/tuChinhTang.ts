@@ -4,6 +4,7 @@ import { mauHieuDung, THANG_KHOI, THANG_N2, tuChinhSauSua, tuChinhToa, type Chan
 import { coMat } from '../tinh/matBang';
 import { idLoi, tai, taiCuaCan } from '../ve/hinhHocThuVien';
 import { mauToa } from '../tinh/canThem';
+import { khoiLoiThuVien } from '../tinh/thayLoi';
 
 /**
  * Dữ liệu cho tự chỉnh mặt bằng tầng (tinh/loiThang.ts): hình lõi (nét bao MDI-BAO-TM, tường để đo sảnh) của các khối lõi / thang
@@ -23,6 +24,7 @@ export function khoiCuaPA(pa: TrangThaiPA, tv: ThuVien): string[] {
   for (const t of pa.toa) {
     const m = tv.toa.get(t.mauId);
     if (m && coMat(m)) for (const f of m.mat) for (const q of f.phan_tu) if (q.loai !== 'can' && q.block) khoi.add(q.block);
+    for (const x of Object.values(t.loiThay ?? {})) khoi.add(x.block);
     if (t.matBang) for (const x of JSON.stringify(t.matBang).matchAll(/"block":"([^"]+)"/g)) khoi.add(x[1]);
   }
   return [...khoi].sort();
@@ -43,6 +45,43 @@ function napChoPA(khoi: string[], tv: ThuVien): void {
     choTai--;
     nghe.forEach((f) => f());
   });
+}
+
+// Hình các lõi KHÔNG có trong PA (chỉ để liệt kê / thử lõi thay được): kho riêng, không đụng `choTai` / `dl` — nạp thêm không làm
+// mặt bằng đang mở mất tự chỉnh, không chạy lại mọi memo theo `dl`, không chép lại thư viện sang worker.
+const loiThem = new Map<string, HinhLoiMB>();
+const ngheThem = new Set<() => void>();
+let daNapThem = false, banThem = 0;
+let du: { goc: DuLieuMB; ban: number; kq: DuLieuMB } | null = null;
+
+/** Nạp hình MỌI khối lõi của thư viện (khi người dùng mở khối Mẫu tòa), tải một lần. */
+export function napLoiThayDuoc(tv: ThuVien): void {
+  if (daNapThem) return;
+  daNapThem = true;
+  void Promise.all(khoiLoiThuVien(tv).filter((b) => !dl?.loi.has(b)).map((b) => tai<HinhLoiMB>(`/lib/loi/${idLoi(b)}.json`).then((j) => [b, j] as const))).then((ds) => {
+    for (const [b, j] of ds) if (j) loiThem.set(b, j);
+    banThem++;
+    ngheThem.forEach((f) => f());
+  });
+}
+
+/** Dữ liệu tự chỉnh + các lõi nạp thêm; chưa nạp thêm thì đúng `layDuLieuMB`. Giữ cùng đối tượng khi không đổi. */
+function layDuLieuDayDu(): DuLieuMB | null {
+  const d = layDuLieuMB();
+  if (!d || !loiThem.size) return d;
+  if (du?.goc !== d || du.ban !== banThem) du = { goc: d, ban: banThem, kq: { ...d, loi: new Map([...loiThem, ...d.loi]) } };
+  return du.kq;
+}
+
+/** Hook của `layDuLieuDayDu`: vẽ lại khi lõi nạp thêm xong. */
+export function useDuLieuDayDu(): DuLieuMB | null {
+  const [, ve] = useState(0);
+  useEffect(() => {
+    const f = () => ve((n) => n + 1);
+    ngheThem.add(f);
+    return () => void ngheThem.delete(f);
+  }, []);
+  return layDuLieuDayDu();
 }
 
 /** Chờ dữ liệu tự chỉnh đủ cho các khối PA `pa` dùng (trợ lý Leo AI gọi trước phép tay; giao diện dùng `useDuLieuMB`). */

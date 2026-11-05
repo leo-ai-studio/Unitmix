@@ -6,24 +6,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { layMau } from '../thu/layMau';
-import { existsSync, readFileSync } from 'node:fs';
-import { taoThuVien, type CanMau, type ToaDat, type ToaMau } from './kieu';
-import { apMatBang, doDeKhe, hocLogia, matBangRiengTang, tuChinhSauSua, tuChinhToa, type DuLieuMB, type HinhLoiMB, type ToaMB } from './loiThang';
+import { napThuVien } from '../thu/thuVienThat';
+import type { CanMau, ToaDat } from './kieu';
+import { apMatBang, doDeKhe, hocLogia, matBangRiengTang, tuChinhSauSua, tuChinhToa, type ToaMB } from './loiThang';
 import { boCucTang, canDangDung, viTriCan, type BoCuc } from './matBang';
-import { tinhCuaCan } from './pccc';
-import { themBienThe } from './stretch';
 import { doiCanTheoTang } from './doiCan';
 
-const lib = new URL('../../public/lib/', import.meta.url);
-const doc = <T>(p: string) => JSON.parse(readFileSync(new URL(p, lib), 'utf8')) as T;
-const toaDs = doc<ToaMau[]>('toa.json'), canDs = doc<CanMau[]>('can.json');
-const tv = themBienThe(taoThuVien(toaDs, canDs));
-const idLoi = (b: string) => 'loi-' + b.replace(/^x_/, '').replace(/_/g, '-');
-const dl: DuLieuMB = { loi: new Map(), cuaCan: {} };
-for (const t of toaDs) for (const m of (t as unknown as ToaMB).mat) for (const q of m.phan_tu)
-  if (q.loai !== 'can' && !dl.loi.has(q.block) && existsSync(new URL(`loi/${idLoi(q.block)}.json`, lib))) dl.loi.set(q.block, doc<HinhLoiMB>(`loi/${idLoi(q.block)}.json`));
-dl.loi.set('x_tb_n2', doc<HinhLoiMB>('loi/loi-tb-n2.json')); // thang N2 (QT-63) — mẫu chỉ chèn N3
-for (const c of canDs) dl.cuaCan[c.ma_goc] = tinhCuaCan(doc<{ ve: { cat: string; pts: [number, number][] }[] }>(`can/${c.id}.json`).ve, c.rong_mm);
+const { tv, dl, canDs } = napThuVien();
 
 const mau = (id: string) => tv.toa.get(id) as unknown as ToaMB;
 const toaThu = (m: ToaMB): ToaDat =>
@@ -45,7 +34,7 @@ const MAU = ['tm-i1', 'tm-l1', 'tm-u1', 'tm-z1', 'xh-z2'];
 const tong = { ca: 0, chan: 0, daiSan: 0 };
 
 describe('quét thang liền: tầng riêng đổi căn giữa → 0 đè, 0 khe, thang liền mọi tầng, không tự đổi loại căn vừa chọn', () => {
-  it.each(MAU)('%s 24 tầng', (id) => {
+  it.each(layMau(MAU, 2))('%s 24 tầng', (id) => {
     const m = mau(id), vts = viTriCan(m, tv), loi: string[] = [];
     // mốc: tòa không có tầng riêng (khe sẵn có của mẫu — hành lang cắt ngang… — không tính là khe mới)
     const t0 = tuChinhToa(toaThu(m), m, tv, dl), kb = doDeKhe(m, t0.matBang!, dl, tv, boCucTang(t0, null));

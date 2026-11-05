@@ -5,13 +5,17 @@
  * `spin-o`; có lượt mới thì lượt cũ bị huỷ (terminate worker, dựng worker mới cho lượt sau). Kết quả cuối y hệt bản đồng bộ (cùng
  * hàm thuần tinh/thaoTacTay.ts trên bản chép structuredClone). Không có Worker (vitest / node) thì chạy đồng bộ.
  */
+import { mauToa } from './canThem';
+import { kiemMauToa } from './kiemMauToa';
+import { kiemThuVien, kiemToaThuVien } from './kiemThuVien';
+import { thuMauToa } from './thuMauToa';
 import { goiYGiuCan, type GoiYGiuCan } from './baoThaoTac';
 import { doiChoO, doiCongNang, latO } from './doiCan';
-import type { DuLieuMB, LoaiThangBo } from './loiThang';
-import type { ThuVien, ToaDat } from './kieu';
+import { tuChinhToa, type DuLieuMB, type LoaiThangBo, type ToaMB } from './loiThang';
+import type { ThuVien, ToaDat, ToaMau } from './kieu';
 import type { ViTriCan } from './matBang';
 import { phanTichPCCCTang, type DauVaoPCCCTang } from './pcccTang';
-import { chuyenCanTay, doiChoTay, doiLoaiThangTay, doiThangTay, hanhLangTuDong, keoHanhLangTay, latTay, latThangTay, thangTuDongLai, themCanTay, themThangTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from './thaoTacTay';
+import { chuyenCanTay, doiChoTay, doiLoaiThangTay, doiThangTay, hanhLangTuDong, huyThayLoiTay, keoHanhLangTay, latTay, latThangTay, thangTuDongLai, themCanTay, themThangTay, stretchCanTay, thayLoiTay, themVaoO, xoaCanTay, xoaThangTay, type Ctx, type KetQuaTay } from './thaoTacTay';
 
 type Tangs = number[] | null;
 /** Bảng thao tác được chạy nền (tên → hàm thuần, ctx đứng đầu). Đối số phải chép được qua structuredClone. */
@@ -30,10 +34,20 @@ export const BANG_TAY = {
   doiThangTay: (c: Ctx, toa: ToaDat, khoa: string, mat: number, sau: string) => doiThangTay(toa, khoa, mat, sau, c),
   keoHanhLangTay: (c: Ctx, toa: ToaDat, i: number, dau: 0 | 1, d: number) => keoHanhLangTay(toa, i, dau, d, c),
   hanhLangTuDong: (c: Ctx, toa: ToaDat) => hanhLangTuDong(toa, c),
+  stretchCanTay: (c: Ctx, toa: ToaDat, khoa: string, d: number) => stretchCanTay(toa, khoa, d, c),
+  thayLoiTay: (c: Ctx, toa: ToaDat, khoa: string, block: string) => thayLoiTay(toa, khoa, block, c),
+  huyThayLoiTay: (c: Ctx, toa: ToaDat, khoa: string) => huyThayLoiTay(toa, khoa, c),
   /** Gợi ý giữ số căn (tinh/baoThaoTac.ts) — bọc trong object để null "không có gợi ý" khác null "bị huỷ". */
   goiYGiuCan: (c: Ctx, sau: ToaDat, goTN: string[], canTruoc: number, tang: number | null, hanMs: number) => ({ g: goiYGiuCan(sau, goTN, canTruoc, c, tang, hanMs) as GoiYGiuCan | null }),
   /** Phân tích PCCC một tầng (tinh/pcccTang.ts: hai lượt giải cửa hành lang + phủ tủ chính xác ≈ 100–300 ms) — tinh/pcccNen.ts. */
   phanTichPCCC: (c: Ctx, v: Omit<DauVaoPCCCTang, 'tv' | 'dl'>) => phanTichPCCCTang({ ...v, tv: c.tv, dl: c.dl ?? null }),
+  // kiểm / thử mẫu (Thư viện mẫu, khối Mẫu tòa): nhiều giây, không chạy trên luồng chính
+  kiemMauToa: (c: Ctx, toa: ToaDat) => kiemMauToa(toa, c),
+  kiemToaThuVien: (c: Ctx, m: ToaMau) => kiemToaThuVien(m, c),
+  kiemThuVien: (c: Ctx) => kiemThuVien(c),
+  thuMauToa: (c: Ctx, toa: ToaDat, opt: { hat?: number; buoc?: number; hanMs?: number }) => thuMauToa(toa, c, opt),
+  /** Thử phá mẫu thư viện: tự chỉnh mặc định trước rồi thử (toa = tòa thử chưa tự chỉnh). */
+  thuToaThuVien: (c: Ctx, toa: ToaDat, opt: { hat?: number; buoc?: number; hanMs?: number }) => thuMauToa(tuChinhToa(toa, mauToa(c.tv, toa) as ToaMB, c.tv, c.dl), c, opt),
   /** Khởi động sẵn worker (chỉ chuyển thư viện / dữ liệu lõi sang, không tính gì) — `DieuPhoiTay.khoiDong`. */
   ngam: () => null,
 } as const;
@@ -41,7 +55,7 @@ export type TenTay = keyof typeof BANG_TAY;
 export type DoiSoTay<T extends TenTay> = Parameters<(typeof BANG_TAY)[T]> extends [Ctx, ...infer R] ? R : never;
 export type KqTay<T extends TenTay> = ReturnType<(typeof BANG_TAY)[T]>;
 /** Phép tay trả KetQuaTay (mọi tên trừ gợi ý, phân tích PCCC). */
-export type TenPhep = Exclude<TenTay, 'goiYGiuCan' | 'phanTichPCCC' | 'ngam'>;
+export type TenPhep = Exclude<TenTay, 'goiYGiuCan' | 'phanTichPCCC' | 'ngam' | 'kiemMauToa' | 'kiemToaThuVien' | 'kiemThuVien' | 'thuMauToa' | 'thuToaThuVien'>;
 /** Một phép tay dạng dữ liệu (tên + đối số) — chép được sang worker, chạy đồng bộ được bằng `chayPhep`. */
 export type PhepTay = { [T in TenPhep]: { ten: T; args: DoiSoTay<T> } }[TenPhep];
 export const phepTay = <T extends TenPhep>(ten: T, ...args: DoiSoTay<T>): PhepTay => ({ ten, args } as unknown as PhepTay);

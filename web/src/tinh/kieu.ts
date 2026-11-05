@@ -1,4 +1,5 @@
 /** Kiểu dữ liệu phương án (PA) và thư viện. Toạ độ hình học tính bằng mét, trục y hướng lên như CAD. */
+import type { KichThuoc } from './kichThuoc';
 export type Diem = [number, number];
 export type LoaiCan = 'stu' | '1pn' | '2pn' | '2pnp' | '3pn';
 export const LOAI_CAN: LoaiCan[] = ['stu', '1pn', '2pn', '2pnp', '3pn'];
@@ -152,6 +153,11 @@ export type ToaDat = {
   latO?: Record<string, boolean>;
   /** Căn thêm tay (công cụ "Thêm căn" · QT-69): chèn ngay sau ô `sau` trên mặt `mat`, dãy dài ra ở đầu tự do. Mọi tầng. */
   canThem?: CanThem[];
+  /**
+   * Lõi thang máy thay trong CÙNG mẫu tòa (app cũ QT-71 · QT-72 · QT-74): khoá lõi của mẫu thư viện "mặt:chỉ số" -> lõi mới. Lõi mới
+   * đặt cùng điểm chèn dời `dx` mm dọc mặt; nét hành lang qua tim sảnh dời theo. Mọi chỗ lấy mẫu của MỘT tòa gọi `mauToa`.
+   */
+  loiThay?: Record<string, LoiThay>;
   /** Vị trí tủ họng nước chữa cháy đặt tay trên tầng điển hình (mm, hệ toạ độ mẫu tòa; QT-77e app cũ `S.tccTay`): [x, y] hoặc
    * [x, y, "don" | "gop"] (đã tách / gộp bằng kích đúp, QT-77f). Thiếu = tự đặt. */
   tuPCCCTay?: ([number, number] | [number, number, 'don' | 'gop'])[];
@@ -169,6 +175,12 @@ export type ThangTay = { them: ThangTayThem[]; bo: string[] };
  * — trên mặt `mat`. Có `sau` thì bỏ qua `truoc`.
  */
 export type CanThem = { mat: number; sau?: string; truoc?: string; id: string };
+/** Một lần thay lõi: khối lõi mới, độ dời điểm chèn dọc mặt (mm), các đoạn hành lang nối (chỉ số trong `hanh_lang` của mẫu) dời `dHl` mm. */
+export type LoiThay = {
+  block: string; dx: number; hl?: number[]; dHl?: number;
+  /** Dải lõi trên từng mặt (mm, hệ mặt) đổi từ [t0, t1] sang [t0 + d0, t1 + d1]: dãy căn kề dồn theo (đầu tự do co / giãn, nét bao theo). */
+  dich?: { mat: number; t0: number; t1: number; d0: number; d1: number }[];
+};
 
 /** Ô thang bộ trên một mặt tòa (mm, hệ mặt): ô [a0, a0 + rong], điểm chèn khối thang = (a0 + dIns, bIns), lật theo `sx`. */
 export type ThangBoMB = { khoa: string; matIdx: number; a0: number; rong: number; sx: 1 | -1; dIns: number; bIns: number; block: string; nguon: 'mau' | 'them' };
@@ -389,6 +401,10 @@ export type TrangThaiPA = {
   huongView?: CaiDatViewLuu;
   /** Vị trí dự án trên bản đồ (WGS84) + tham chiếu bản vẽ → bản đồ (tinh/viTri.ts). Thiếu = chưa đặt toạ độ (vĩ độ lấy `huongView.viDo`). */
   viTri?: ViTriLuu;
+  /** Tỉnh / thành chọn lúc tạo dự án (id ở `tinh/quyTacDanSo.ts`): lô cao tầng thêm mới tự khai cách tính dân số theo tỉnh này. */
+  tinhDuAn?: string;
+  /** Kích thước (DIM) người dùng đặt trên bản vẽ, theo phạm vi: 'tmb' · 'ham' · 'tang:<id tòa>' (tinh/kichThuoc.ts, toạ độ mét). */
+  kichThuoc?: Record<string, KichThuoc[]>;
 };
 
 /**

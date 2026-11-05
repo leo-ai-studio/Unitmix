@@ -4,7 +4,7 @@ import type { ToaDat, TrangThaiPA } from './kieu';
 export type PhamViSua = 'toa' | 'lo' | 'duAn';
 
 /** Các trường bố cục / mặt bằng tầng của tòa (mọi thứ người dùng sửa ở màn Tầng); mặt bằng chỉ có nghĩa giữa các tòa CÙNG mẫu. */
-const TRUONG_BO_CUC = ['canTheo', 'canViTri', 'congNang', 'latO', 'canThem', 'loi', 'matBang', 'tuChinhMB', 'giamCanTN', 'thangLien', 'tuDong',
+const TRUONG_BO_CUC = ['canTheo', 'canViTri', 'congNang', 'latO', 'canThem', 'loiThay', 'loi', 'matBang', 'tuChinhMB', 'giamCanTN', 'thangLien', 'tuDong',
   'thangTay', 'hanhLangTay', 'loaiThang', 'duongBao', 'dtxdM2', 'tuPCCCTay', 'cncTay'] as const;
 
 const bocBoCuc = (t: ToaDat): string => JSON.stringify([...TRUONG_BO_CUC.map((k) => t[k] ?? null), t.tangRieng ?? null]);
