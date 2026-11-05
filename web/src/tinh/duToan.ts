@@ -5,20 +5,17 @@
  * MỌI ĐƠN GIÁ / TỶ LỆ MẶC ĐỊNH LÀ SỐ TẠM, chờ chủ nhiệm / QS chốt. Hàm thuần.
  */
 import { coCauRong, congCoCau, demCan } from './coCau';
-import { raiHam, type KetQuaHam } from './ham';
+import { tinhHamSo, M2_MOI_CHO_OTO, M2_MOI_XE_MAY } from './ham';
 import { khoiDeLo } from './deLo';
 import { chanToa, dienTich } from './hinhHoc';
-import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiPhiPA, type Diem, type KhoaDongDuToan, type LoaiCan, type Lo, type NhomChiPhi, type ThuVien, type TrangThaiPA } from './kieu';
+import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiPhiPA, type Diem, type KhoaDongDuToan, type LoaiCan, type NhomChiPhi, type ThuVien, type TrangThaiPA } from './kieu';
 import { CHI_PHI_MAC_DINH, chuanHoaHam } from './macDinh';
 import { canCaToa } from './matBang';
 import { mauToa } from './canThem';
 
 /** QCVN 04:2021/BXD 2.4.2: tối thiểu 1 thang máy / 70 căn (dùng khi chưa đếm được thang từ lõi; QS / chủ nhiệm kiểm lại). */
 export const CAN_MOI_THANG = 70;
-/** m² sàn hầm đỗ xe cho mỗi chỗ ô tô gồm đường nội bộ — chỉ dùng khi chưa rải được hầm. SỐ TẠM. */
-export const M2_MOI_CHO_OTO = 30;
-/** m² mỗi chỗ xe máy gồm lối đi (để đổi DT khu xe máy ra số chỗ). SỐ TẠM. */
-export const M2_MOI_XE_MAY = 2.5;
+export { M2_MOI_CHO_OTO, M2_MOI_XE_MAY };
 
 export type KhoiLuongToa = {
   toaId: string;
@@ -84,12 +81,8 @@ export const soThangTheoCan = (soCan: number): number => (soCan > 0 ? Math.max(1
  * Khối lượng từng lô / tòa. `coRaiHam` = false thì bỏ rải hầm (nhanh), số chỗ đỗ ước theo DT hầm.
  * Diện tích là diện tích hình học thật (không nhân hệ số tính HSSDĐ).
  */
-/** `layHam`: nguồn kết quả rải hầm — mặc định rải đồng bộ (`raiHam`, có cache); giao diện truyền phiên `tinh/hamNen.ts`
- *  (Web Worker): undefined = đang rải, lô đó tạm ước theo DT như khi không rải được. */
-export function tinhKhoiLuong(
-  pa: TrangThaiPA, tv: ThuVien, coRaiHam = true,
-  layHam: (pa: TrangThaiPA, tv: ThuVien, lo: Lo) => KetQuaHam | null | undefined = raiHam,
-): KhoiLuong {
+/** Hầm chỉ tính số (tinh/ham.ts `tinhHamSo`): DT sàn × số tầng, số chỗ ô tô theo tỷ lệ đỗ xe; tham số thứ ba giữ cho nơi gọi cũ (bỏ qua). */
+export function tinhKhoiLuong(pa: TrangThaiPA, tv: ThuVien, _coRaiHam = false): KhoiLuong {
   const dem = demCan(pa, tv);
   const ph = pa.phanHam ?? PHAN_HAM_MAC_DINH;
   const ts = chuanHoaHam(pa.ham);
@@ -125,31 +118,22 @@ export function tinhKhoiLuong(
     const dtDe = toa.reduce((a, x) => a + x.dtDe, 0);
     const tongCanLo = toa.reduce((a, x) => a + x.tongCan, 0);
 
-    // Hầm: rải được thì lấy số đếm; không thì ước theo DT hầm như chiTieu.ts (chỉ lô có tòa).
-    let dtHam = 0, soChoOto = 0, dtXeMay = 0, soKho = 0, soXeMayRai: number | null = null;
+    // Hầm: chỉ tính số theo DT ranh hầm × số tầng (không bố trí mặt bằng) — chỉ lô có tòa.
+    let dtHam = 0, soChoOto = 0, dtXeMay = 0, soKho = 0;
     let nguonHam: KhoiLuongLo['nguonHam'] = 'khong';
     const soTangHam = toaLo.length ? (lo.temDat.chiTieu.tangHam ?? ts.soTang) : 0;
     if (soTangHam > 0) {
-      const r = coRaiHam ? layHam(pa, tv, lo) : null;
-      if (r) {
-        nguonHam = 'rai';
-        dtHam = r.tong.dtSan;
-        soChoOto = r.tong.soCho;
-        dtXeMay = r.tong.dtXeMay;
-        soKho = r.tong.soKho;
-        soXeMayRai = r.tong.soXeMay ?? null; // đợt 2: đếm ô xe máy đã rải
-      } else {
-        nguonHam = 'uoc';
-        dtHam = soTangHam * (ts.ranh && ts.ranh.length >= 3 ? dienTich(ts.ranh) : dtLo);
-        dtXeMay = 6 * tongCanLo; // QCVN 04:2021/BXD 2.2.17.1 b): ≥ 6 m² xe máy / căn
-        soChoOto = Math.max(0, Math.floor((dtHam * ph.doXe - dtXeMay) / M2_MOI_CHO_OTO));
-        soKho = Math.round(ts.khoMoiTang) * soTangHam;
-      }
+      nguonHam = 'uoc';
+      const hs = tinhHamSo({ ...pa, ham: { ...pa.ham, soTang: soTangHam } }, tv, lo);
+      dtHam = hs ? hs.dtXdHam : soTangHam * dtLo;
+      dtXeMay = ts.dtXeMay ?? 6 * tongCanLo; // QCVN 04:2021/BXD 2.2.17.1 b): ≥ 6 m² xe máy / căn
+      soChoOto = Math.max(0, Math.floor((dtHam * ph.doXe - dtXeMay) / M2_MOI_CHO_OTO));
+      soKho = Math.round(ts.khoMoiTang) * soTangHam;
     }
     ds.push({
       loId: lo.id, kyHieu: lo.temDat.kyHieu, dtLo, dtChiemDat, dtSan: Math.max(0, dtLo - dtChiemDat),
       dtDe, chuViDe, dtMatNgoaiDe: chuViDe * caoDe,
-      dtHam, soChoOto, dtXeMay, soXeMay: soXeMayRai ?? Math.floor(dtXeMay / M2_MOI_XE_MAY), soKho, nguonHam, toa,
+      dtHam, soChoOto, dtXeMay, soXeMay: Math.floor(dtXeMay / M2_MOI_XE_MAY), soKho, nguonHam, toa,
     });
   }
 

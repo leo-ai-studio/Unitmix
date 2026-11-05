@@ -5,13 +5,10 @@
  * Mesh / nét của tòa và lô gắn `userData.chon` để bấm chọn trong 3D; tô nhấn tòa / lô đang chọn do Khung3D làm (không dựng lại).
  */
 import type * as THREE from 'three';
-import { khoiHam, ranhHam } from '../tinh/ham';
-import { dieuPhoiHam } from '../tinh/hamNen';
 import { khoiDeLo } from '../tinh/deLo';
 import { chanToa, trongTam } from '../tinh/hinhHoc';
 import type { Diem, ThuVien, TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang, loaiDat, MAU_DAT, type LoaiDat } from '../tinh/loaiDat';
-import { chuanHoaHam } from '../tinh/macDinh';
 import { hinhDaiCua, type KieuVe3D, type T3, type VatLieu3D } from './dungCan';
 import { cayDocDuong, daiDuong, dungCay, dungTrucThang, gopHinh, hinhDun, hinhTam } from './lop3d';
 import { THONG_SO_CAP, type CapDo3D } from './khungVe';
@@ -151,7 +148,6 @@ export function* dungDuAnTung(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuV
     goc.add(me);
   }
 
-  if (!tc.tach) yield* dungHamDuAn(T, goc, kieu, pa, tv);
 
   // --- tòa: khối đế theo lô + thân tháp, vạch sàn (tô nhấn tòa chọn / rê chuột: Khung3D đổi vật liệu theo userData.chon) ---
   let caoMax = 0;
@@ -233,69 +229,6 @@ export function* dungDuAnTung(T: T3, goc: THREE.Group, M: VatLieu3D, kieu: KieuV
   };
 }
 
-/**
- * Hầm: khối bán trong suốt dưới cốt 0 (ranh hầm × số tầng × cao tầng), ram, lõi, thang thoát nạn, hộp gió (phần ngầm: lớp Hầm;
- * miệng louver trên mặt đất: lớp "gio"). Rải hầm trong Web Worker: chưa xong thì vẽ khối theo ranh mặc định, xong thì dựng lại phần này.
- */
-export function* dungHamDuAn(T: T3, goc: THREE.Object3D, kieu: KieuVe3D, pa: TrangThaiPA, tv: ThuVien): Tung<void> {
-  const trang = kieu === 'trang';
-  const { khoi, duong } = cuaGoc(T, goc);
-  const rai = dieuPhoiHam.phien('3d'); // rải hầm trong Web Worker: chưa xong thì vẽ khối theo ranh mặc định, xong thì MoHinh3D dựng lại
-  {
-    const h = chuanHoaHam(pa.ham);
-    const nhom = new T.Group(); // lớp Hầm: mọi khối dưới cốt 0 (bật / tắt ở menu Lớp)
-    nhom.userData.lop = 'ham';
-    const khoiH = (pts: Diem[] | Diem[][], cao: number, m: THREE.Material, z0: number, vien?: THREE.LineBasicMaterial) => {
-      const me = khoi(pts, cao, m, z0, vien);
-      goc.remove(me); nhom.add(me);
-      const v = me.userData.vien as THREE.Object3D | undefined;
-      if (v) { goc.remove(v); nhom.add(v); }
-      return me;
-    };
-    const duongH = (pts: Diem[], y: number, m: THREE.LineBasicMaterial, kin = false) => { const l = duong(pts, y, m, kin); goc.remove(l); nhom.add(l); return l; };
-    const vlHam = new T.MeshStandardMaterial({ color: trang ? 0xdfe6e3 : 0x2f7d79, roughness: 0.9, transparent: true, opacity: 0.3, depthWrite: false });
-    const vlRam = new T.MeshStandardMaterial({ color: 0xe0933a, roughness: 0.9, transparent: true, opacity: 0.6, depthWrite: false });
-    const vlLoi = new T.MeshStandardMaterial({ color: trang ? 0xb9bdba : 0x5c6662, roughness: 0.9 });
-    const vlThang = new T.MeshStandardMaterial({ color: 0xd9776b, roughness: 0.9 });
-    const vlGio = new T.MeshStandardMaterial({ color: 0x6f9bd1, roughness: 0.8 });
-    const vienHam = new T.LineBasicMaterial({ color: 0x174f52 }), sanHam = new T.LineBasicMaterial({ color: 0x174f52, transparent: true, opacity: 0.45 });
-    const gLoi: THREE.BufferGeometry[] = [], gThang: THREE.BufferGeometry[] = [], gGioNgam: THREE.BufferGeometry[] = [], gGioTren: THREE.BufferGeometry[] = [];
-    const gom = (ds: THREE.BufferGeometry[], pts: Diem[], y0: number, cao: number) => { ds.push(hinhDun(T, pts, y0, cao)); };
-    for (const l of pa.lo) {
-      if (!laCaoTang(l) || !pa.toa.some((x) => x.loId === l.id)) continue;
-      // ranh cố định trong PA chỉ áp cho lô chứa nó; các lô còn lại lấy ranh mặc định
-      const dung = !h.ranh || trong(trongTam(h.ranh), l.ranh);
-      const kq = dung ? rai.lay(pa, tv, l) ?? null : null;
-      const kh = khoiHam(kq?.ranh ?? ranhHam(l, { ranh: null, lui: h.lui }), h.soTang, h.caoTang);
-      if (!kh) continue;
-      const me = khoiH(kh.ranh, -kh.yDuoi, vlHam, kh.yDuoi, vienHam);
-      me.castShadow = false; me.receiveShadow = false;
-      for (const y of kh.yTang.slice(1, -1)) duongH(kh.ranh, y, sanHam, true);
-      for (const p of kq?.loi ?? []) if (p.length >= 3) gom(gLoi, p, kh.yDuoi, -kh.yDuoi);
-      if (kq?.ram && kq.ram.poly.length >= 3) { const r = khoiH(kq.ram.poly, h.caoTang, vlRam, -h.caoTang); r.castShadow = false; }
-      // Đợt 2: thang thoát nạn hầm đặt thêm (lên tới tầng 1 thành chòi thang cao 3 m), hộp gió + miệng louver nhô 1,2 m trên cốt 0.
-      for (const x of kq?.thang ?? []) if (x.nguon === 'them' && x.poly.length >= 3) gom(gThang, x.poly, kh.yDuoi, -kh.yDuoi + 3);
-      yield;
-      // mương / hộp gió: phần ngầm theo lớp Hầm, miệng louver nhô 1,2 m trên mặt đất là lớp riêng "Lỗ mở mương gió"
-      for (const g of kq?.ongGio ?? []) if (g.poly.length >= 3) { gom(gGioNgam, g.poly, kh.yDuoi, -kh.yDuoi); gom(gGioTren, g.poly, 0, 1.2); yield; }
-    }
-    // gộp: lõi / thang / hộp gió cả dự án thành 1 mesh mỗi loại (trước: mỗi hộp gió 1 mesh + 1 nét → +150 draw call)
-    const dat = (ds: THREE.BufferGeometry[], m: THREE.Material, vao: THREE.Object3D, lop?: string, vien = false) => {
-      const g = gopHinh(T, ds);
-      if (!g) return;
-      const me = new T.Mesh(g, m); me.castShadow = !lop; me.receiveShadow = true;
-      if (lop) me.userData.lop = lop;
-      vao.add(me);
-      if (vien) { const l = new T.LineSegments(new T.EdgesGeometry(g, 30), vienHam); if (lop) l.userData.lop = lop; vao.add(l); }
-    };
-    dat(gLoi, vlLoi, nhom); dat(gThang, vlThang, nhom); yield;
-    dat(gGioNgam, vlGio, nhom); yield;
-    dat(gGioTren, vlGio, goc, 'gio', true);
-    goc.add(nhom);
-  }
-
-  rai.xong();
-}
 
 const SAN_TUM = 0.13;
 /** Tầng tum mọi tòa (buồng thang / lõi nhô lên mái, cao 3 m + sàn mái tum) như 3D Công trình — gộp cả dự án; trục thang / lõi xuyên tòa. */
