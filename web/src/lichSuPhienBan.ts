@@ -6,6 +6,15 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.7.8', ngay: '2026-11-05',
+    vi: [
+      'Màn Hầm chỉ tính số: DTXD hầm, số chỗ ô tô / xe máy theo hệ số và theo QCVN 04 — mặt bằng hầm (ô đỗ, ram, khoang cháy) chưa hoàn thiện nên tạm gỡ; 3D bỏ hầm',
+    ],
+    en: [
+      'Basement screen now only computes numbers: built area and car / motorbike spaces by coefficient and by QCVN 04 — the basement layout (stalls, ramp, fire compartments) is unfinished and removed for now; 3D drops the basement.',
+    ],
+  },
+  {
     v: '0.7.7', ngay: '2026-11-04',
     vi: [
       'Màn Tầng: xoá căn thì dãy dồn khít về mốc chặn (sát lõi / góc cánh), đầu tự do co lại — không còn chừa chỗ hở cạnh lõi',
