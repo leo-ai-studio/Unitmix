@@ -6,6 +6,11 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.8.2', ngay: '2026-11-06',
+    vi: ['Bản vẽ: bấm chuột trái chọn được căn và tòa trở lại; kéo dời bản vẽ giữ nguyên, kéo ra ngoài khung rồi thả không bị kẹt'],
+    en: ['Drawing: left-click selects units and towers again; panning is unchanged, and dragging outside the frame no longer sticks'],
+  },
+  {
     v: '0.8.1', ngay: '2026-11-06',
     vi: [
       'Xếp tòa: Bảng so sánh phương án cả màn; Xếp hàng loạt chạy cùng bộ xếp với từng lô (22 lô trong khoảng 25 giây), chọn nhanh Tất cả hoặc theo loại nhà ở',

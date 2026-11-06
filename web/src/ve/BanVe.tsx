@@ -302,10 +302,10 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
           }}
           onPointerDown={(e) => {
             if (diem.current.size !== 1 || khongDiBanVe.has(e)) return; // ngón kéo ô căn (✥) không dời bản vẽ
-            try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch { /* bỏ qua */ }
             const p0 = viTri(e);
             batDauNen.current = { x: p0.x, y: p0.y, xa: 0 };
             if (chonKhung && (chonKhung.bat || e.shiftKey) && e.button === 0) {
+              try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch { /* bỏ qua */ }
               cuChi.current = { loai: 'khung', x: p0.x, y: p0.y, them: e.shiftKey || e.ctrlKey || e.metaKey };
               setHcn([p0.x, p0.y, p0.x, p0.y]);
               return;
@@ -328,6 +328,10 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
               const [a, b] = [...diem.current.values()];
               datTay(nhinKhiChum(g.g, a, b, r, c));
             } else if (g.loai === 'keo' && diem.current.size === 1) {
+              // chỉ bắt con trỏ khi đã thật sự kéo: bắt ngay lúc nhấn thì trình duyệt đổi đích click sang <svg>, bấm căn / tòa không ăn
+              if (bn && bn.xa > nguongRun(e.pointerType) && !e.currentTarget.hasPointerCapture(e.pointerId)) {
+                try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* bỏ qua */ }
+              }
               const p = diem.current.get(e.pointerId)!;
               mau.current = [...mau.current.slice(-3), { x: p.x, y: p.y, t: e.timeStamp }];
               datTay(nhinKhiKeo(g.v0, p.x - g.x, p.y - g.y, r));

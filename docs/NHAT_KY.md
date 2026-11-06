@@ -1195,3 +1195,9 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Chọn lô:** nút Tất cả và từng loại nhà ở (`loaiNhaCuaLo`), bấm lại là bỏ. Thử trên bản sao Long Biên: 22 / 0 / 5 lô.
 - **Số tòa** (`soToaTheoChiTieu`, tinh/soSanhMau.ts): So sánh mẫu thêm cột Số tòa / lô, Căn / lô và dòng ở thẻ. Chỉ theo chỉ tiêu, chưa xét hình lô.
 - **Đo:** hàng loạt 22 lô 24,1 s, 120 phương án, không treo. TĐC-1.1 và TĐC-10.2 không ra phương án đạt; NOXH-7.4 chỉ 1 phương án; NOTM-6.2 có 10 phương án gần giống nhau.
+
+## 2026-11-06 · Sửa bấm chọn căn bằng chuột, quay lại phim demo · Claude Code (Opus 5.5)
+
+- **Lỗi:** bản vẽ bắt con trỏ ngay lúc nhấn, Chromium đổi đích click sang `<svg>`, nên bấm trái vào căn ở màn Tầng không chọn được. Sửa ở `ve/BanVe.tsx`: chỉ bắt con trỏ khi đã kéo quá `nguongRun`.
+- **Đã thử bằng chuột thật qua CDP:** bấm chọn căn, kéo dời bản vẽ, kéo ra ngoài khung rồi thả không kẹt. Phim quay trên bản build tại chỗ, phát hành ở v0.8.2.
+- **Leo AI trên M7 (dự án giả, không ghi thật):** có thể còn lỗi cần xem: sau khi giảm tầng, LO-02 báo khoảng cách hai tòa L3 từ 18,13 m xuống 13,43 m (HH-1) và 18,36 m xuống 13,66 m (HH-2) dù vị trí tòa không đổi; Leo AI không giải thích được.
