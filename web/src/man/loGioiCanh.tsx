@@ -9,6 +9,7 @@ import type { Diem, Lo, TrangThaiPA } from '../tinh/kieu';
 import { boCanhDuong, caoToa, datCanhDuong } from '../tinh/thaoTacToa';
 import { coCanhDuong, luiBang27, RONG_DUONG_MAC_DINH, rongCanh, type LuatXep } from '../tinh/xepToa';
 import { fmtSo } from '../ui/so';
+import { NhapChot } from '../ui/NhapChot';
 
 // ---- cạnh đang khai (cấp module) ----
 let canhChon: { loId: string; i: number } | null = null;
@@ -82,7 +83,7 @@ export function HopCanhLo({ pa, sua, chiXem, luat }: { pa: TrangThaiPA; sua: (fn
       </label>
       <label class="lg-dong" title={t('gt.lg.rong')}>
         <span>{t('lg.rong')}</span>
-        <input type="number" aria-label={t('lg.rong')} min={1} step={0.5} value={r ?? ''} disabled={chiXem || r === null}
+        <NhapChot type="number" aria-label={t('lg.rong')} min={1} step={0.5} value={r ?? ''} disabled={chiXem || r === null}
           onKeyDown={(e) => e.stopPropagation()}
           onChange={(e) => { const v = Number(e.currentTarget.value.replace(',', '.')); if (Number.isFinite(v) && v > 0) datR(v); }} />
         <small>m</small>

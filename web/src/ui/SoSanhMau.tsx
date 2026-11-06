@@ -19,6 +19,7 @@ import { BieuTuong } from './NutBieuTuong';
 import { fmtSo } from './so';
 import { useDongHop } from './useDongHop';
 import '../styles/so-sanh-mau.css';
+import { NhapChot } from './NhapChot';
 
 type CotSap = 'hang' | 'diem' | 'soCan' | 'lech' | 'hieuSuat' | 'dtxd' | 'dtsd' | 'soThangBo' | 'soThangMay' | 'vuot' | 'danTang' | 'dai' | 'tyLeLoi' | 'diemView';
 type TrangThai = {
@@ -241,7 +242,7 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props) {
           <div class="ssm-hang">
             <label class="o-tg" title={t('gt.ssm.toiUu')}><input type="checkbox" checked={s.toiUu} onChange={(e) => datTT({ toiUu: e.currentTarget.checked })} /><span>{t('ssm.toiUu')}</span></label>
             <label class="o-so ssm-so-tang" title={t('gt.ssm.soTang')}><span>{t('ssm.soTang')}</span>
-              <span class="o-so-nhap"><input type="number" min="1" max="80" step="1" value={soTang}
+              <span class="o-so-nhap"><NhapChot type="number" min="1" max="80" step="1" value={soTang}
                 onChange={(e) => { const v = Math.round(Number(e.currentTarget.value)); if (v >= 1 && v <= 80) datTT({ soTang: v }); }} /></span>
             </label>
             <span class="muted ssm-muc" title={t('gt.ssm.mucTieu')}>{t('ssm.mucTieu')}: {LOAI_CAN.filter((l) => muc[l] > 0).map((l) => `${t(`loai.${l}`)} ${fmtSo(muc[l], { thapPhan: 0 })}%`).join(' · ')}</span>
@@ -258,11 +259,11 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props) {
             <div class="ssm-ts-luoi">
               {TIEU_CHI.map((tc) => (
                 <label key={tc} class="o-so" title={t(`gt.gh.tc.${tc}`)}><span>{t(`gh.tc.${tc}`)}</span>
-                  <span class="o-so-nhap"><input type="number" min="0" max="5" step="1" value={s.yc.trongSo[tc]} onChange={(e) => datTrongSo(tc, Math.round(Number(e.currentTarget.value) || 0))} /></span>
+                  <span class="o-so-nhap"><NhapChot type="number" min="0" max="5" step="1" value={s.yc.trongSo[tc]} onChange={(e) => datTrongSo(tc, Math.round(Number(e.currentTarget.value) || 0))} /></span>
                 </label>
               ))}
               <label class="o-so" title={t('gt.ssm.hsMin')}><span>{t('ssm.hsMin')}</span>
-                <span class="o-so-nhap"><input type="number" min="50" max="95" step="0.5" value={Math.round(s.yc.hsMin * 1000) / 10}
+                <span class="o-so-nhap"><NhapChot type="number" min="50" max="95" step="0.5" value={Math.round(s.yc.hsMin * 1000) / 10}
                   onChange={(e) => { const v = Number(e.currentTarget.value); if (v >= 50 && v <= 95) datTT({ yc: { ...s.yc, hsMin: v / 100 } }); }} /><small>%</small></span>
               </label>
             </div>

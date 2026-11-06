@@ -6,6 +6,17 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.8.3', ngay: '2026-11-06',
+    vi: [
+      'Ô số: chỉ tính lại khi rời ô, Enter hoặc Ctrl+S, Esc huỷ; gõ một số là một bước hoàn tác',
+      'Số tầng: tầng điển hình tối đa 80, tầng đế tối đa 20; xoá trống ô không còn thành 0',
+    ],
+    en: [
+      'Number fields apply on leaving the field, Enter or Ctrl+S, Esc cancels; one typed number is one undo step',
+      'Floors: up to 80 typical and 20 podium floors; clearing a field no longer sets it to 0',
+    ],
+  },
+  {
     v: '0.8.2', ngay: '2026-11-06',
     vi: ['Bản vẽ: bấm chuột trái chọn được căn và tòa trở lại; kéo dời bản vẽ giữ nguyên, kéo ra ngoài khung rồi thả không bị kẹt'],
     en: ['Drawing: left-click selects units and towers again; panning is unchanged, and dragging outside the frame no longer sticks'],

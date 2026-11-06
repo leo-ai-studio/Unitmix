@@ -4,6 +4,7 @@ import { CAU_TAO_MAC_DINH, type ThuVien, type ToaDat, type ToaMau, type TrangTha
 import { kiemQCVN04, type IdKiem, type TrangThaiTuanThu } from '../tinh/qcvn04';
 import { taiQuyTac, traLuat } from '../tinh/quyTac';
 import { fmtSo } from './so';
+import { NhapChot } from './NhapChot';
 
 type Props = {
   pa: TrangThaiPA;
@@ -70,7 +71,7 @@ export function BangTuanThu({ pa, sua, chiXem, toa, mau, tv }: Props) {
       <label class="o-so" title={t('tt.daySanTranGhi')}>
         <span>{t('tt.daySanTran')}</span>
         <span class="o-so-nhap">
-          <input type="number" value={day} step={0.05} min={0} disabled={chiXem}
+          <NhapChot type="number" value={day} step={0.05} min={0} disabled={chiXem}
             onChange={(e) => { const v = soHoacBo(e.currentTarget.value); if (v !== null) sua((q) => ({ ...q, cauTao: { daySanTranM: v } })); }} />
         </span>
       </label>
@@ -86,14 +87,14 @@ export function BangTuanThu({ pa, sua, chiXem, toa, mau, tv }: Props) {
       <label class="o-so">
         <span>{t('tt.nhanVien')}</span>
         <span class="o-so-nhap">
-          <input type="number" value={nv?.so ?? ''} placeholder="—" step={1} min={0} disabled={chiXem}
+          <NhapChot type="number" value={nv?.so ?? ''} placeholder="—" step={1} min={0} disabled={chiXem}
             onChange={(e) => { const v = soHoacBo(e.currentTarget.value); sTa((x) => ({ ...x, nhanVien: v === null ? undefined : { so: v, dtM2: x.nhanVien?.dtM2 ?? 0 } })); }} />
         </span>
       </label>
       <label class="o-so">
         <span>{t('tt.dtNhanVien')}</span>
         <span class="o-so-nhap">
-          <input type="number" value={nv?.dtM2 ?? ''} placeholder="—" step={1} min={0} disabled={chiXem || !nv}
+          <NhapChot type="number" value={nv?.dtM2 ?? ''} placeholder="—" step={1} min={0} disabled={chiXem || !nv}
             onChange={(e) => { const v = soHoacBo(e.currentTarget.value); if (v !== null) sTa((x) => ({ ...x, nhanVien: { so: x.nhanVien?.so ?? 0, dtM2: v } })); }} />
         </span>
       </label>

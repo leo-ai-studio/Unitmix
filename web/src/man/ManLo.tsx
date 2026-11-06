@@ -18,6 +18,7 @@ import { NhapChiTieu } from './NhapChiTieu';
 import { NhapDeBai } from './NhapDeBai';
 import { loaiNhaCuaLo, temTheoLoai, type LoaiNhaO } from '../tinh/loaiNha';
 import { KhaiDanSo } from '../ui/KhaiDanSo';
+import { NhapChot } from '../ui/NhapChot';
 
 type Chung = { pa: TrangThaiPA; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; loId: string | null; chonLo: (id: string) => void };
 
@@ -30,10 +31,10 @@ function O({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; tip?:
     <label class="o-so" title={tip}>
       <span>{nhan}</span>
       <span class="o-so-nhap">
-        <input type="number" value={gt} step={buoc} min={0} disabled={tat}
+        <NhapChot type="number" value={gt} step={buoc} min={0} disabled={tat}
           onChange={(e) => {
-            const v = Number(e.currentTarget.value);
-            if (Number.isFinite(v) && v >= 0) onDoi(v);
+            const s = e.currentTarget.value, v = Number(s);
+            if (s.trim() !== '' && Number.isFinite(v) && v >= 0) onDoi(v);
           }} />
         {donVi && <small>{donVi}</small>}
       </span>
@@ -47,7 +48,7 @@ function ON({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1 }: { nhan: string; tip?
     <label class="o-so" title={tip}>
       <span>{nhan}</span>
       <span class="o-so-nhap">
-        <input type="number" value={gt ?? ''} placeholder="—" step={buoc} min={0} disabled={tat}
+        <NhapChot type="number" value={gt ?? ''} placeholder="—" step={buoc} min={0} disabled={tat}
           onChange={(e) => {
             const s = e.currentTarget.value.trim();
             const v = Number(s);
@@ -212,7 +213,7 @@ export function LoChiTieu({ pa, sua, chiXem, lo }: Pick<Chung, 'pa' | 'sua' | 'c
           <MucGap tieuDe={`${t('muc.chiTieuQH')} · ${lo.temDat.kyHieu}`} giaiThich={t('gt.muc.chiTieuQH')}>
             <DongPreset nhom="chiTieu" chiXem={chiXem} chup={() => chupPreset('chiTieu', pa, lo)} ap={apPresetNhom('chiTieu')} />
             <label class="o-chon" title={t('gt.lo.kyHieu')}><span>{t('lo.kyHieu')}</span>
-              <input value={lo.temDat.kyHieu} disabled={chiXem} onChange={(e) => { const v = e.currentTarget.value.trim(); if (v) sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, kyHieu: v } }))); }} />
+              <NhapChot value={lo.temDat.kyHieu} disabled={chiXem} onChange={(e) => { const v = e.currentTarget.value.trim(); if (v) sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, kyHieu: v } }))); }} />
             </label>
             <label class="o-chon" title={t('gt.lo.chucNang')}><span>{t('lo.chucNang')}</span>
               <select value={loaiNhaCuaLo(lo) ?? 'khac'} disabled={chiXem} onChange={(e) => { const v = temTheoLoai(e.currentTarget.value as LoaiNhaO | 'khac'); sua((p) => doiLo(p, lo.id, (l) => ({ ...l, temDat: { ...l.temDat, ...v } }))); }}>

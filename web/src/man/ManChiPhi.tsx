@@ -10,6 +10,7 @@ import { MucGap } from '../ui/MucGap';
 import { DongPreset } from '../ui/Preset';
 import { fmtSo } from '../ui/so';
 import { SoDong } from '../ui/SoDong';
+import { NhapChot } from '../ui/NhapChot';
 
 type Props = { pa: TrangThaiPA; tv: ThuVien | null; kq: KetQuaChiTieu | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean };
 type KetQuaCP = { cp: ChiPhiPA; kl: KhoiLuong; dt: DuToan; tc: TaiChinh; lech: number | null; dangRai: boolean };
@@ -31,10 +32,10 @@ export function ketQua(pa: TrangThaiPA, tv: ThuVien, kqCT: KetQuaChiTieu | null)
 const trieu = (v: number | null | undefined) => (v === null || v === undefined ? v : v / 1e6);
 const ty = (v: number | null | undefined) => (v === null || v === undefined ? v : v / 1e9);
 
-/** Ô nhập số tạm: đổi khi rời ô / Enter; giá trị hỏng thì bỏ qua. Tooltip luôn ghi "số tạm, chờ chốt". */
+/** Ô nhập số tạm: đổi khi rời ô / Enter (NhapChot); giá trị hỏng thì bỏ qua. Tooltip luôn ghi "số tạm, chờ chốt". */
 function ONhapSo({ gt, onDoi, tat, buoc = 1, min, max, nhan }: { gt: number; onDoi: (v: number) => void; tat: boolean; buoc?: number; min?: number; max?: number; nhan: string }) {
   return (
-    <input class="cp-o" type="number" value={gt} step={buoc} min={min} max={max} disabled={tat} aria-label={nhan} title={`${nhan} — ${t('chiPhi.soTam')}`}
+    <NhapChot class="cp-o" type="number" value={gt} step={buoc} min={min} max={max} disabled={tat} aria-label={nhan} title={`${nhan} — ${t('chiPhi.soTam')}`}
       onChange={(e) => {
         const v = Number(e.currentTarget.value);
         if (e.currentTarget.value.trim() !== '' && Number.isFinite(v)) onDoi(min !== undefined || max !== undefined ? Math.min(max ?? v, Math.max(min ?? v, v)) : v);

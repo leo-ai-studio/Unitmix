@@ -4,6 +4,7 @@ import type { GiaiDoan, KhaiDanSo as Khai, KhuVuc, LoaiHinh, Lo, TrangThaiPA } f
 import { laCaoTang } from '../tinh/loaiDat';
 import { dsTinhChon, LOAI_HINH } from '../tinh/quyTacDanSo';
 import { fmtSo } from './so';
+import { NhapChot } from './NhapChot';
 
 /** Tỉnh trọng điểm (HN, TP.HCM, An Giang, Hưng Yên) đứng đầu danh sách. */
 const dsTinh = dsTinhChon();
@@ -82,7 +83,7 @@ export function KhaiDanSo({ lo, sua, chiXem }: Props) {
             <label class="o-so" title={t('gt.ds.khai.dungSai')}>
               <span>{t('ds.khai.dungSai')}</span>
               <span class="o-so-nhap">
-                <input type="number" min="0" max="5" step="0.1" value={lt.dungSai} disabled={chiXem}
+                <NhapChot type="number" min="0" max="5" step="0.1" value={lt.dungSai} disabled={chiXem}
                   onChange={(e) => { const v = Number(e.currentTarget.value); if (Number.isFinite(v) && v >= 0 && v <= 5) dat({ ...k, lamTron: { ...lt, dungSai: Math.round(v * 100) / 100 } }); }} />
                 <small>m²</small>
               </span>

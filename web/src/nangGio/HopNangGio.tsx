@@ -27,6 +27,7 @@ import { TEN_LOP_GIO } from './hienThi';
 import { timDiaDiem, type DiaDiem } from './timDiaDiem';
 import { apDungTuBanVe, coToaDoThat } from './viTriTuDong';
 import { taiKml } from '../xuat/xuatKml';
+import { NhapChot } from '../ui/NhapChot';
 
 type Props = { pa: TrangThaiPA; tv: ThuVien | null; sua: (fn: (p: TrangThaiPA) => TrangThaiPA) => void; chiXem: boolean; /** đang ở 3D (ẩn chọn điểm trên bản vẽ) */ la3D?: boolean; /** tên / địa điểm dự án: đoán tỉnh để đặt vị trí từ toạ độ bản vẽ */ diaDiem?: string };
 
@@ -176,12 +177,12 @@ function TabViTri({ pa, tv, sua, chiXem, la3D, diaDiem }: { pa: TrangThaiPA; tv:
       {vt.coToaDo && (
         <>
       <div class="hng-luoi2">
-        <label><span>{t('ng.vt.viDo')}</span><input type="number" step="0.000001" disabled={tat} value={vt.coToaDo ? so(vt.lat) : ''} onChange={(e) => { const v = +e.currentTarget.value; if (Math.abs(v) <= 90) datToaDo({ lat: v, lng: vt.coToaDo ? vt.lng : 105.85 }, 'tay'); }} /></label>
-        <label><span>{t('ng.vt.kinhDo')}</span><input type="number" step="0.000001" disabled={tat} value={vt.coToaDo ? so(vt.lng) : ''} onChange={(e) => { const v = +e.currentTarget.value; if (Math.abs(v) <= 180) datToaDo({ lat: vt.lat, lng: v }, 'tay'); }} /></label>
+        <label><span>{t('ng.vt.viDo')}</span><NhapChot type="number" step="0.000001" disabled={tat} value={vt.coToaDo ? so(vt.lat) : ''} onChange={(e) => { const v = +e.currentTarget.value; if (Math.abs(v) <= 90) datToaDo({ lat: v, lng: vt.coToaDo ? vt.lng : 105.85 }, 'tay'); }} /></label>
+        <label><span>{t('ng.vt.kinhDo')}</span><NhapChot type="number" step="0.000001" disabled={tat} value={vt.coToaDo ? so(vt.lng) : ''} onChange={(e) => { const v = +e.currentTarget.value; if (Math.abs(v) <= 180) datToaDo({ lat: vt.lat, lng: v }, 'tay'); }} /></label>
       </div>
       <div class="hng-hang hng-chinh">
         <span>{t('ng.vt.gocBac')}</span>
-        <input type="number" step="0.1" disabled={tat} value={fmtSo(vt.gocBac, { thapPhan: 2 }).replace(',', '.')} onChange={(e) => { const v = +e.currentTarget.value; if (Number.isFinite(v)) sua((p) => ganViTri(p, p.viTri ?? null, v)); }} />
+        <NhapChot type="number" step="0.1" disabled={tat} value={fmtSo(vt.gocBac, { thapPhan: 2 }).replace(',', '.')} onChange={(e) => { const v = +e.currentTarget.value; if (Number.isFinite(v)) sua((p) => ganViTri(p, p.viTri ?? null, v)); }} />
         {[-1, -0.1, 0.1, 1].map((d) => <button key={d} type="button" class="nut-phu" disabled={tat} onClick={() => xoay(d)}>{d > 0 ? '+' : '−'}{Math.abs(d)}°</button>)}
       </div>
       {vt.coToaDo && (

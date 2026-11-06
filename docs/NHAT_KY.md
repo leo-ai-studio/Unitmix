@@ -1201,3 +1201,18 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Lỗi:** bản vẽ bắt con trỏ ngay lúc nhấn, Chromium đổi đích click sang `<svg>`, nên bấm trái vào căn ở màn Tầng không chọn được. Sửa ở `ve/BanVe.tsx`: chỉ bắt con trỏ khi đã kéo quá `nguongRun`.
 - **Đã thử bằng chuột thật qua CDP:** bấm chọn căn, kéo dời bản vẽ, kéo ra ngoài khung rồi thả không kẹt. Phim quay trên bản build tại chỗ, phát hành ở v0.8.2.
 - **Leo AI trên M7 (dự án giả, không ghi thật):** có thể còn lỗi cần xem: sau khi giảm tầng, LO-02 báo khoảng cách hai tòa L3 từ 18,13 m xuống 13,43 m (HH-1) và 18,36 m xuống 13,66 m (HH-2) dù vị trí tòa không đổi; Leo AI không giải thích được.
+
+## 2026-11-06 · Bấm hết nút bằng chuột trên bản mạng v0.8.2 · Claude Code (Opus 5.5)
+
+- **Cách thử:** sự kiện chuột thật qua CDP trên bản mạng, sơ đồ M7 đọc từ link xem, chặn mọi lệnh ghi, chặn tải tệp. 2.855 lượt bấm, 866 nút và ô khác nhau, 0 lỗi JS, 0 lỗi mạng ngoài cầu Leo AI chưa nối, 0 treo thật.
+- **Lỗi 1:** ô số đổi theo từng chữ số. preact/compat biến `onChange` của `<input>` thành `oninput` (đã ghi ở `ui/ngheChange.ts`), nên `ONhapSo` ở `man/ManChiPhi.tsx` không đợi rời ô như chú thích. Gõ 7000000 thành 7 bước hoàn tác, bấm ↶ ra 700000. `O`, `ON` ở `man/ManLo.tsx` cùng mẫu, chưa thử riêng.
+- **Lỗi 2:** số tầng của tòa không có trần: gõ 999 ra 1000T, 19.980 căn, chỉ báo Vượt.
+- **Nhẹ:** chế độ EN còn tên mẫu căn, tên phòng, ghi chú QCVN tiếng Việt; Đặt vào lô để hộp Thư viện che TMB.
+- **LO-02:** số giảm sau khi hạ tầng nhiều khả năng là ngưỡng `max(H/2, 7)`, không phải khoảng cách đo; chưa dựng lại đúng lượt đó để xác nhận.
+- **Chưa thử:** màn Dự án của tôi sau đăng nhập, Quản trị, Leo AI gửi thật, nạp tệp thật, nội dung tệp xuất, cảm ứng điện thoại.
+
+## 2026-11-06 · Sửa ô số chốt khi rời ô, giới hạn số tầng, v0.8.3 · Claude Code (Opus 5.5)
+
+- **Ô số:** thêm `ui/NhapChot.tsx`, nghe `change` thuần qua `useNgheChange`, giữ chữ đang gõ trong state riêng. Chốt khi rời ô, Enter, mũi tên hoặc Ctrl+S; Esc huỷ; giá trị bị từ chối tự về số đang lưu. Thay ở mọi ô số dùng `onChange` và ô Ký hiệu lô (`ManChiPhi`, `ManLo`, `ManHam`, `ManTang`, `ManXepToa`, `lopView`, `loGioiCanh`, `tmbThaoTac`, `HopNangGio`, `BangTuanThu`, `KhaiDanSo`, `SoSanhMau`, `Khung3D`). Ô bị để trống ở `ManLo`, `ManXepToa`, `lopView` không còn thành 0 (trước đó xoá Tâm X dời tòa về 0).
+- **Số tầng:** `SO_TANG_DH_MAX` 80, `SO_TANG_DE_MAX` 20, `kepSoTangDH`, `kepSoTangDe` ở `tinh/macDinh.ts`, dùng cho ô ở panel trái và công cụ Leo AI `update_tower` (trước cho 200 tầng).
+- **Đã thử bằng chuột + phím thật trên bản build, sơ đồ M7, chặn ghi:** 16/16 đạt. Gõ 7000000 chỉ tính lại khi rời ô, một lần ↶ về 6310000; 999 tầng về 80; 0 và ô trống giữ 11.

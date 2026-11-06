@@ -19,6 +19,7 @@ import { chayDan, laTung, type Tung } from './chiaNho';
 import type { NutHienThi } from '../ui/ThanhHienThi';
 import { DS_KIEU_3D, nhomMoi, taoVatLieu, THAM_SO_MAC, type KieuVe3D, type NhomHien, type T3, type ThamSo3D, type VatLieu3D } from './dungCan';
 import type { HinhView3D, OView } from './lopView3d';
+import { NhapChot } from '../ui/NhapChot';
 
 type V3 = [number, number, number];
 /** Góc nhìn đề xuất của cảnh (m, toạ độ three). */
@@ -890,7 +891,7 @@ export function Khung3D({ khoa, khoaNhe, dung, phan, gocBac = 0, viDo = 21.03, c
           <div class="tham-so-dau"><b>{t('m3d.thamSo')}</b><button type="button" class="nut-dong-view" aria-label={t('view.dong')} onClick={() => setMoTs(false)}>×</button></div>
           <div class="luoi-tham-so">
             {NHAN_TS.map(([k, n]) => (
-              <label class="o-so" key={k}><span>{t(n)}</span><input type="number" min="50" max="9000" step="10" value={ts[k] as number} onChange={(e) => { const v = +e.currentTarget.value; if (v >= 50 && v <= 9000) setTs({ ...ts, [k]: v }); }} /></label>
+              <label class="o-so" key={k}><span>{t(n)}</span><NhapChot type="number" min="50" max="9000" step="10" value={ts[k] as number} onChange={(e) => { const v = +e.currentTarget.value; if (v >= 50 && v <= 9000) setTs({ ...ts, [k]: v }); }} /></label>
             ))}
             <label class="o-chon"><span>{t('m3d.kieuLanCan')}</span>
               <select value={ts.kieuLC} onChange={(e) => setTs({ ...ts, kieuLC: e.currentTarget.value as ThamSo3D['kieuLC'] })}>

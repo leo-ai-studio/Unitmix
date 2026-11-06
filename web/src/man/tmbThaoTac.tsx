@@ -13,6 +13,7 @@ import { NutBieuTuong, BieuTuong } from '../ui/NutBieuTuong';
 import type { KhoaBieuTuong } from '../ui/bieuTuong';
 import { fmtSo } from '../ui/so';
 import { batTatHangLoat, useHangLoat } from './xepHangLoat';
+import { NhapChot } from '../ui/NhapChot';
 
 // ---- lựa chọn nhiều tòa ----
 let chonDs: string[] = [];
@@ -184,10 +185,10 @@ export function HopToaDo({ ds, tat, datTuyetDoi, doi }: {
   const o = (nhan: string, tip: string, gt: number | string, onDoi: (v: string) => void, enter?: () => void) => (
     <label title={tip}>
       <span>{nhan}</span>
-      <input type="number" step="0.1" value={gt} disabled={tat}
-        onInput={enter ? (e) => onDoi(e.currentTarget.value) : undefined}
-        onChange={enter ? undefined : (e) => onDoi(e.currentTarget.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter' && enter) { e.preventDefault(); enter(); } e.stopPropagation(); }} />
+      {enter
+        ? <input type="number" step="0.1" value={gt} disabled={tat} onInput={(e) => onDoi(e.currentTarget.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); enter(); } e.stopPropagation(); }} />
+        : <NhapChot type="number" step="0.1" value={gt} disabled={tat} onChange={(e) => onDoi(e.currentTarget.value)} onKeyDown={(e) => e.stopPropagation()} />}
     </label>
   );
   return (

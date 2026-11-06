@@ -6,6 +6,7 @@ import { demCan, diemLechCoCau, dtTbTheoLoai } from '../tinh/coCau';
 import { khoiDeLo } from '../tinh/deLo';
 import { chanToa, dienTich } from '../tinh/hinhHoc';
 import { hopLo, taoToaTrenLo, vungDat } from '../tinh/hopLo';
+import { kepSoTangDe, kepSoTangDH, SO_TANG_DE_MAX, SO_TANG_DH_MAX } from '../tinh/macDinh';
 import { LOAI_CAN, type Diem, type Lo, type LoaiCan, type ThuVien, type ToaDat, type ToaMau, type TrangThaiPA } from '../tinh/kieu';
 import { BanVe, khungBao, s, sPoly, type DieuKhienVe } from '../ve/BanVe';
 import { nguongRun } from '../ve/camUng';
@@ -37,6 +38,7 @@ import { nguonBatDaGiac } from '../tinh/kichThuoc';
 import { ChuGiaiView, KpiView, LopViewTmb, TheViewToa, gocBacPA, nutLopView, useLopView } from './lopView';
 import { nhanToa } from '../ui/nhanToa';
 import { HopNangGioCho, LopNangGio2D, useNutNangGio } from '../nangGio'; // ảnh vệ tinh nền + nắng / gió (gói riêng, lớp phủ)
+import { NhapChot } from '../ui/NhapChot';
 
 type Chung = {
   pa: TrangThaiPA;
@@ -63,15 +65,15 @@ const doiToa = (p: TrangThaiPA, id: string, fn: (x: ToaDat) => ToaDat): TrangTha
 const idMoi = () => `toa-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 const tenNgan = (m: ToaMau | undefined) => m?.ten_vi.split(' · ')[0] ?? '?';
 
-function O({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1, am = false }: { nhan: string; tip?: string; gt: number; donVi?: string; onDoi: (v: number) => void; tat: boolean; buoc?: number; am?: boolean }) {
+function O({ nhan, tip, gt, donVi, onDoi, tat, buoc = 1, am = false, max }: { nhan: string; tip?: string; gt: number; donVi?: string; onDoi: (v: number) => void; tat: boolean; buoc?: number; am?: boolean; max?: number }) {
   return (
     <label class="o-so" title={tip}>
       <span>{nhan}</span>
       <span class="o-so-nhap">
-        <input type="number" value={gt} step={buoc} min={am ? undefined : 0} disabled={tat}
+        <NhapChot type="number" value={gt} step={buoc} min={am ? undefined : 0} max={max} disabled={tat}
           onChange={(e) => {
-            const v = Number(e.currentTarget.value);
-            if (Number.isFinite(v) && (am || v >= 0)) onDoi(v);
+            const s = e.currentTarget.value, v = Number(s);
+            if (s.trim() !== '' && Number.isFinite(v) && (am || v >= 0)) onDoi(v);
           }} />
         {donVi && <small>{donVi}</small>}
       </span>
@@ -145,8 +147,8 @@ export function XepTrai({ pa, sua, chiXem, loId, tv, toaId, chonToa, moTang }: C
       {toa && (
         <MucGap tieuDe={`${t('xep.thongSo')} · ${nhanToa(pa, tv, toa.id)}`} giaiThich={t('gt.xep.thongSo')} mo>
           <div class="luoi-o">
-          <O nhan={t('xep.soTangDH')} tip={t('gt.xep.soTangDH')} gt={toa.soTangDH} tat={tat} onDoi={(v) => v >= 1 && datTs('soTangDH')(Math.round(v))} />
-          <O nhan={t('xep.soTangDe')} tip={t('gt.xep.soTangDe')} gt={toa.soTangDe} tat={tat} onDoi={(v) => datTs('soTangDe')(Math.round(v))} />
+          <O nhan={t('xep.soTangDH')} tip={t('gt.xep.soTangDH')} gt={toa.soTangDH} max={SO_TANG_DH_MAX} tat={tat} onDoi={(v) => v >= 1 && datTs('soTangDH')(kepSoTangDH(v))} />
+          <O nhan={t('xep.soTangDe')} tip={t('gt.xep.soTangDe')} gt={toa.soTangDe} max={SO_TANG_DE_MAX} tat={tat} onDoi={(v) => datTs('soTangDe')(kepSoTangDe(v))} />
           <O nhan={t('xep.goc')} tip={t('gt.xep.goc')} gt={toa.gocDo} donVi="°" buoc={5} am tat={tat} onDoi={(v) => datTs('gocDo')(((v % 360) + 360) % 360)} />
           <O nhan={t('xep.deOffset')} tip={t('gt.xep.deOffset')} gt={toa.deOffset} donVi="m" buoc={0.5} tat={tat} onDoi={datTs('deOffset')} />
           <O nhan={t('xep.x')} tip={t('gt.xep.x')} gt={toa.x} donVi="m" buoc={0.5} am tat={tat} onDoi={datTs('x')} />

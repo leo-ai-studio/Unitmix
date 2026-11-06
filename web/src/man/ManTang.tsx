@@ -43,6 +43,7 @@ import { KhoiPCCC } from '../ui/KpiPCCC';
 import { ChuGiaiViewTang, LopViewTang } from '../ve/LopViewTang';
 import { gocBacPA, nutLopView } from './lopView';
 import { nhanToa } from '../ui/nhanToa';
+import { NhapChot } from '../ui/NhapChot';
 
 export type ChungTang = {
   pa: TrangThaiPA;
@@ -221,7 +222,7 @@ export function TangTrai(p: ChungTang) {
         {LOAI_CAN.map((k) => (
           <div class="dong" key={k}><span><i class="o-mau" style={{ background: `var(--u-${k})` }} /> {t(`loai.${k}`)}</span>
             {ccRieng && !chiXem
-              ? <input class="o-so-nho" type="number" min="0" max="100" step="1" value={muc[k]} aria-label={t(`loai.${k}`)} onChange={(e) => datMucRieng(k, Number(e.currentTarget.value) || 0)} />
+              ? <NhapChot class="o-so-nho" type="number" min="0" max="100" step="1" value={muc[k]} aria-label={t(`loai.${k}`)} onChange={(e) => datMucRieng(k, Number(e.currentTarget.value) || 0)} />
               : <b>{fmtSo(muc[k], { thapPhan: 1, donVi: '%' })}</b>}
           </div>
         ))}

@@ -7,7 +7,7 @@ import { tinhChiTieu } from '../../tinh/chiTieu';
 import { taoToaTrenLo } from '../../tinh/hopLo';
 import { LOAI_CAN, PHAN_HAM_MAC_DINH, type ChiTieuQH, type KhaiDanSo, type Lo, type ToaDat, type TrangThaiPA } from '../../tinh/kieu';
 import { laCaoTang } from '../../tinh/loaiDat';
-import { loTheoTinhDuAn, taoLo } from '../../tinh/macDinh';
+import { kepSoTangDe, kepSoTangDH, loTheoTinhDuAn, SO_TANG_DE_MAX, SO_TANG_DH_MAX, taoLo } from '../../tinh/macDinh';
 import { timQuyTac } from '../../tinh/quyTacDanSo';
 import { boCanhDuong, datCanhDuong, dichNhom, hinhToa, kiemViPham, latNhom, tamNhom, viTriNhanBan, xoayNhom } from '../../tinh/thaoTacToa';
 import { apHangLoat, loXepDuoc, thuTuLo, xepHangLoatNen, type KetQuaLo } from '../../tinh/xepHangLoat';
@@ -156,7 +156,7 @@ export const CONG_CU_TMB: CongCu[] = [
     ten: 'update_tower', nhom: 'tmb', sua: true,
     moTa: 'Sửa thông số một tòa như các ô ở panel trái TMB: x, y (m, tâm), angle (độ), floors (số tầng điển hình ≥ 1), podium_floors (tầng đế ≥ 0), podium_offset (m ≥ 0), template_id (đổi mẫu tòa — bỏ mọi sửa mặt bằng tầng của tòa). Tòa đang khoá thì không sửa được (mở khoá bằng lock_towers).',
     schema: S.doiTuong({
-      tower_id: S.chu(), x: S.so(), y: S.so(), angle: S.so(), floors: S.nguyen(undefined, 1, 200), podium_floors: S.nguyen(undefined, 0, 20), podium_offset: S.so(undefined, 0), template_id: S.chu(),
+      tower_id: S.chu(), x: S.so(), y: S.so(), angle: S.so(), floors: S.nguyen(undefined, 1, SO_TANG_DH_MAX), podium_floors: S.nguyen(undefined, 0, SO_TANG_DE_MAX), podium_offset: S.so(undefined, 0), template_id: S.chu(),
     }, ['tower_id']),
     chay: async (v, ng) => {
       const pa = ng.kho.lay(), tv = canTV(ng);
@@ -168,8 +168,8 @@ export const CONG_CU_TMB: CongCu[] = [
         if (v.x !== undefined) y.x = v.x as number;
         if (v.y !== undefined) y.y = v.y as number;
         if (v.angle !== undefined) y.gocDo = (((v.angle as number) % 360) + 360) % 360;
-        if (v.floors !== undefined) y.soTangDH = Math.round(v.floors as number);
-        if (v.podium_floors !== undefined) y.soTangDe = Math.round(v.podium_floors as number);
+        if (v.floors !== undefined) y.soTangDH = kepSoTangDH(v.floors as number);
+        if (v.podium_floors !== undefined) y.soTangDe = kepSoTangDe(v.podium_floors as number);
         if (v.podium_offset !== undefined) y.deOffset = v.podium_offset as number;
         if (v.template_id !== undefined && v.template_id !== x.mauId) {
           // Đổi mẫu: giữ vị trí / tầng / khoá / lật; mặt bằng tầng theo mẫu mới (không có thao tác này trên giao diện TMB).

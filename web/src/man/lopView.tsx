@@ -23,6 +23,7 @@ import { fmtSo } from '../ui/so';
 import type { NutHienThi } from '../ui/ThanhHienThi';
 import { useLuatTMB } from './tmbThaoTac';
 import { nhanToa } from '../ui/nhanToa';
+import { NhapChot } from '../ui/NhapChot';
 
 // ---- trạng thái lớp (cấp module, không lưu vào PA): bật, lọc khoảng điểm, tia view ----
 type TrangThaiLop = { bat: boolean; loc: [number, number] | null; tia: boolean };
@@ -365,8 +366,8 @@ function OSo({ nhan, tip, gt, onDoi, tat, buoc = 1, min, max, donVi }: { nhan: s
     <label class="o-so" title={tip}>
       <span>{nhan}</span>
       <span class="o-so-nhap">
-        <input type="number" value={gt} step={buoc} min={min} max={max} disabled={tat}
-          onChange={(e) => { const v = Number(e.currentTarget.value); if (Number.isFinite(v)) onDoi(v); }} />
+        <NhapChot type="number" value={gt} step={buoc} min={min} max={max} disabled={tat}
+          onChange={(e) => { const s = e.currentTarget.value, v = Number(s); if (s.trim() !== '' && Number.isFinite(v)) onDoi(v); }} />
         {donVi && <small>{donVi}</small>}
       </span>
     </label>

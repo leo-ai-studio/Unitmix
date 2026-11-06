@@ -7,6 +7,7 @@ import { fmtSo } from '../ui/so';
 import { ChonLoCaoTang } from './ManLo';
 import { loDangXep } from './ManXepToa';
 import type { HamDayDu } from '../tinh/ham';
+import { NhapChot } from '../ui/NhapChot';
 
 export type ChungHam = {
   pa: TrangThaiPA;
@@ -35,7 +36,7 @@ function ONhap({ nhan, gt, donVi, onDoi, tat, buoc = 0.1, min = 0, max, goiY, ch
     <label class="o-so" title={goiY}>
       <span>{nhan}</span>
       <span class="o-so-nhap">
-        <input type="number" value={gt ?? ''} step={buoc} min={min} max={max} disabled={tat} placeholder={choTrong ? t('ham.tu') : undefined}
+        <NhapChot type="number" value={gt ?? ''} step={buoc} min={min} max={max} disabled={tat} placeholder={choTrong ? t('ham.tu') : undefined}
           onChange={(e) => {
             const raw = e.currentTarget.value;
             if (raw === '' && choTrong) return onDoi(null);

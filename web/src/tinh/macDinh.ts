@@ -77,6 +77,12 @@ export const CHI_PHI_MAC_DINH: ChiPhiPA = {
   },
 };
 /** Khoảng "% điều chỉnh giá" mỗi nhóm (học từ Architechtures). */
+/** Trần số tầng khi nhập tay: cùng mức ô Tầng điển hình ở So sánh mẫu và công cụ Leo AI. */
+export const SO_TANG_DH_MAX = 80;
+export const SO_TANG_DE_MAX = 20;
+export const kepSoTangDH = (v: number): number => Math.max(1, Math.min(SO_TANG_DH_MAX, Math.round(v)));
+export const kepSoTangDe = (v: number): number => Math.max(0, Math.min(SO_TANG_DE_MAX, Math.round(v)));
+
 export const DIEU_CHINH_MIN = -75;
 export const DIEU_CHINH_MAX = 200;
 
