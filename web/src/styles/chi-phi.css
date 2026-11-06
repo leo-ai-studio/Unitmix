@@ -33,3 +33,6 @@
 
 /* Ô tích QLDA theo TT 38/2026 đứng trước ô %; không đổi bề rộng cột. */
 .cp-tt38 { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; font-size: 11px; color: var(--muted, #667); white-space: nowrap; }
+
+/* Panel trái tab Chi phí */
+.cp-tong-pa { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 6px; font-weight: 600; }

@@ -2783,5 +2783,16 @@
   "ssm.chan.san": "FAR",
   "ssm.chan.can": "unit cap",
   "ssm.chan.dan": "population",
-  "xep.sapLaiRong": "The lot cannot hold all {n} towers under the layout rules, setbacks and tower spacing. Remove a tower or try Auto mix."
+  "xep.sapLaiRong": "The lot cannot hold all {n} towers under the layout rules, setbacks and tower spacing. Remove a tower or try Auto mix.",
+  "chiPhi.diToi": "Jump to",
+  "chiPhi.diToiGt": "Click to scroll to that section in the center view.",
+  "chiPhi.phamVi": "Scope",
+  "chiPhi.phamViGt": "Lots and towers counted in this option's estimate.",
+  "chiPhi.phamViDong": "{toa} towers · {can} units",
+  "chiPhi.caPA": "Whole option",
+  "panel.thuTrai": "Collapse left panel",
+  "panel.moTrai": "Open left panel",
+  "panel.thuPhai": "Collapse right panel",
+  "panel.moPhai": "Open right panel",
+  "bt.baCham": "More actions"
 }

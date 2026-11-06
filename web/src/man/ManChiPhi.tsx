@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'preact/hooks';
 import { t, useLang } from '../i18n/i18n';
 import { apPreset, chupPreset } from '../kho/preset';
 import type { KetQuaChiTieu } from '../tinh/chiTieu';
@@ -74,7 +75,7 @@ export function ChiPhiGiua({ pa, tv, kq, sua, chiXem }: Props) {
         <DongPreset nhom="chiPhi" chiXem={chiXem} chup={() => chupPreset('chiPhi', pa, null)} ap={(du) => sua((p) => apPreset('chiPhi', p, du, 'pa', null))} />
       </header>
 
-      <section>
+      <section id="cp-du-toan">
         <h3>{t('chiPhi.mucDuToan')}</h3>
         <div class="cp-bao">
           <table class="cp-bang">
@@ -145,7 +146,7 @@ export function ChiPhiGiua({ pa, tv, kq, sua, chiXem }: Props) {
         </div>
       </section>
 
-      <section>
+      <section id="cp-tai-chinh">
         <h3>{t('chiPhi.mucTaiChinh')}</h3>
         <div class="cp-bao">
           <table class="cp-bang">
@@ -195,7 +196,7 @@ export function ChiPhiGiua({ pa, tv, kq, sua, chiXem }: Props) {
         {kl.tong.tongCan === 0 && <p class="muted">{t('chiPhi.chuaCoCan')}</p>}
       </section>
 
-      <section>
+      <section id="cp-khoi-luong">
         <h3>{t('chiPhi.mucKhoiLuong')}</h3>
         <div class="cp-bao">
           <table class="cp-bang cp-kl">
@@ -227,6 +228,61 @@ export function ChiPhiGiua({ pa, tv, kq, sua, chiXem }: Props) {
         <p class="muted cp-ghi">{kl.lo.filter((l) => l.toa.length).map((l) => `${l.kyHieu}: ${t(`chiPhi.nguonHam.${l.nguonHam}`)}`).join(' · ')}</p>
       </section>
     </div>
+  );
+}
+
+const MUC_CHI_PHI = [['cp-du-toan', 'chiPhi.mucDuToan'], ['cp-tai-chinh', 'chiPhi.mucTaiChinh'], ['cp-khoi-luong', 'chiPhi.mucKhoiLuong']] as const;
+const NGUONG_DOC = 48; // px: đỉnh mục cách mép trên khung cuộn trong khoảng này thì coi là đang đọc mục đó
+
+/** Mục đang đọc theo đỉnh từng mục (so với mép trên khung cuộn): mục cuối đã chạm mép trên; cuộn hết trang thì là mục cuối. */
+export function mucDangDoc(dinh: number[], hetTrang: boolean): number {
+  if (hetTrang) return dinh.length - 1;
+  let dang = 0;
+  dinh.forEach((y, i) => { if (y <= NGUONG_DOC) dang = i; });
+  return dang;
+}
+
+/** Panel trái khi đang ở tab Chi phí: đi nhanh tới từng phần và phạm vi lô, tòa được tính. Sửa tòa, tầng không có việc ở tab này. */
+export function ChiPhiTrai({ pa, tv, kq }: Pick<Props, 'pa' | 'tv' | 'kq'>) {
+  useLang();
+  const [dang, setDang] = useState(0);
+  useEffect(() => {
+    const capNhat = () => {
+      const khung = document.querySelector('.chi-phi');
+      if (!khung) return;
+      const goc = khung.getBoundingClientRect().top;
+      const dinh = MUC_CHI_PHI.map(([id]) => (document.getElementById(id)?.getBoundingClientRect().top ?? Infinity) - goc);
+      setDang(mucDangDoc(dinh, khung.scrollTop + khung.clientHeight >= khung.scrollHeight - 2));
+    };
+    document.addEventListener('scroll', capNhat, true); // capture: sự kiện cuộn không nổi bọt lên document
+    return () => document.removeEventListener('scroll', capNhat, true);
+  }, []);
+  if (!tv) return <p class="muted" style={{ padding: '12px' }}>{t('chiPhi.dangTai')}</p>;
+  const diToi = (id: string) => {
+    const khung = document.querySelector('.chi-phi'), muc = document.getElementById(id);
+    if (!khung || !muc) return;
+    // Cuộn đúng khung Chi phí; scrollIntoView có thể kéo theo cả khung ngoài.
+    const top = khung.scrollTop + muc.getBoundingClientRect().top - khung.getBoundingClientRect().top - 8;
+    const giam = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    khung.scrollTo({ top, behavior: giam ? 'auto' : 'smooth' });
+  };
+  const lo = ketQua(pa, tv, kq).kl.lo.filter((l) => l.toa.length);
+  const dongPV = (soToa: number, soCan: number) => t('chiPhi.phamViDong').replace('{toa}', fmtSo(soToa, { thapPhan: 0 })).replace('{can}', fmtSo(soCan, { thapPhan: 0 }));
+  const canLo = (l: (typeof lo)[number]) => l.toa.reduce((a, x) => a + x.tongCan, 0);
+  return (
+    <>
+      <MucGap tieuDe={t('chiPhi.diToi')} giaiThich={t('chiPhi.diToiGt')} mo>
+        {MUC_CHI_PHI.map(([id, nhan], i) => (
+          <button type="button" key={id} data-dong-ngan class={`muc-lo${i === dang ? ' chon' : ''}`} aria-current={i === dang ? 'true' : undefined} onClick={() => diToi(id)}>
+            <b>{t(nhan)}</b>
+          </button>
+        ))}
+      </MucGap>
+      <MucGap tieuDe={t('chiPhi.phamVi')} giaiThich={t('chiPhi.phamViGt')} mo>
+        {lo.map((l) => <div class="dong" key={l.loId}><span>{l.kyHieu}</span><b>{dongPV(l.toa.length, canLo(l))}</b></div>)}
+        <div class="dong cp-tong-pa"><span>{t('chiPhi.caPA')}</span><b>{dongPV(lo.reduce((a, l) => a + l.toa.length, 0), lo.reduce((a, l) => a + canLo(l), 0))}</b></div>
+      </MucGap>
+    </>
   );
 }
 

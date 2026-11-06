@@ -29,6 +29,7 @@ export const BIEU_TUONG = {
   troGiup: '?', // hướng dẫn thao tác
   // màn Tầng
   sapXep: '✥', // kéo đổi chỗ căn (QT-8 · QT-30)
+  baCham: '⁝', // menu việc ít dùng (trang Dự án)
   them: '＋', // menu gộp Thêm căn / Thêm thang bộ (app cũ tAddMenu)
   themCan: '⊞',
   themTruoc: '⇤', // thêm căn TRƯỚC ô chọn (đầu dãy)

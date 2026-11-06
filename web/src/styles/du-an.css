@@ -19,7 +19,7 @@
 .tac-gia-boc .lich-su-ban { left: auto; right: 0; }
 
 /* ---- nội dung ---- */
-.trang-du-an { max-width: 1240px; padding: 20px 24px 40px; gap: 12px; letter-spacing: -.003em; }
+.trang-du-an { max-width: 1600px; padding: 20px 24px 40px; gap: 12px; letter-spacing: -.003em; }
 .trang-du-an .dau-trang { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
 .trang-du-an .dau-chu { min-width: 0; }
 .trang-du-an h1 { display: flex; align-items: baseline; gap: 10px; margin: 0; text-align: left; font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -.01em; color: var(--ink); }
@@ -77,6 +77,9 @@
 .muc-link b { font-size: 13px; font-weight: 600; }
 .muc-link small { font-size: 11.5px; color: var(--muted-text); }
 .muc-link.sua b { color: var(--warn); }
+.muc-link.nguy-hiem { margin-top: 2px; border-top: 1px solid var(--line); border-radius: 0 0 6px 6px; }
+.muc-link.nguy-hiem b { color: var(--vuot); }
+.trang-du-an .nut-mo-da { padding: 5px 14px; font-size: 13px; }
 
 /* ---- bảng phương án: một lưới chung cho hàng tiêu đề + các hàng ---- */
 .bang-pa { border-top: 1px solid var(--line); }
@@ -112,6 +115,7 @@
 
 /* điện thoại / máy tính bảng dọc: thẻ xếp dọc, hàng PA thành khối (tên + ngày · số kèm nhãn · nút), không cuộn ngang */
 @media (max-width: 760px) {
+  .trang-du-an .nut-mo-da { min-height: 40px; }
   .tren-du-an { padding: 6px calc(10px + env(safe-area-inset-right, 0px)) 6px calc(10px + env(safe-area-inset-left, 0px)); gap: 6px; min-height: 56px; }
   .tren-du-an .thuong-hieu { gap: 7px; }
   .tren-du-an .thuong-hieu .mark, .tren-du-an .thuong-hieu .mark img:not(.brand-o) { height: 34px; }

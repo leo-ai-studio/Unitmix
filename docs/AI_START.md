@@ -32,7 +32,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 
 ## Quy tắc bất di bất dịch
 
-1. **Khung làm việc giữa (TMB, MB tầng, 3D) không bị bóp, không xô lệch.** Bản vẽ / 3D phủ kín `.panel-giua`; thanh nút, chú giải, thông báo, menu là lớp phủ (`.noi-tren`, `.noi-duoi`, `.lop-thong-bao`, `position: fixed`). Đo lại sau mọi thay đổi giao diện (xem `docs/hieu_ung_ui.md`).
+1. **Khung làm việc giữa (TMB, MB tầng, 3D) không bị bóp, không xô lệch.** Bản vẽ / 3D phủ kín `.panel-giua`; thanh nút, chú giải, thông báo, menu là lớp phủ (`.noi-tren`, `.noi-duoi`, `.lop-thong-bao`, `position: fixed`). Đo lại sau mọi thay đổi giao diện (xem `docs/hieu_ung_ui.md`). Ngoại lệ duy nhất: người dùng tự bấm nút mũi tên thu panel (`NutThuPanel` ở `ui/KhungSoan.tsx`), khung giữa giãn ra, bản vẽ giữ px/m và tâm nhìn.
 2. **QCVN tra từ kho** `E:\OneDrive\_QCVN-TCVN\` (chỉ có PDF; trích chữ bằng PyMuPDF rồi grep). Không bịa số hiệu / điều khoản / trị số. Ghi điều khoản kèm mỗi luật / tooltip.
 3. **Số chưa có căn cứ là "giá trị tạm, chờ chủ nhiệm chốt"** — ghi rõ trên giao diện và trong mã.
 4. **Hiệu ứng**: không thư viện; CSS + `requestAnimationFrame`; đang kéo / chụm bám tay 1:1; tôn trọng `prefers-reduced-motion`; tải dùng vòng O `img.spin-o` (kit LEO), không spinner tròn.

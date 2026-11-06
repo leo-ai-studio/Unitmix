@@ -42,6 +42,7 @@ const HamPhai = luoi(() => napHam().then((m) => m.HamPhai));
 const napChiPhi = () => import('./ManChiPhi');
 const ChiPhiGiua = luoi(() => napChiPhi().then((m) => m.ChiPhiGiua), 'giua');
 const ChiPhiPhai = luoi(() => napChiPhi().then((m) => m.ChiPhiPhai));
+const ChiPhiTrai = luoi(() => napChiPhi().then((m) => m.ChiPhiTrai));
 const HopXuatCad = luoi(() => import('./HopXuatCad').then((m) => m.HopXuatCad), 'hop');
 const HopXuatTaiLieu = luoi(() => import('./HopXuatTaiLieu').then((m) => m.HopXuatTaiLieu), 'hop');
 // Trợ lý Leo AI (troLy/): chunk riêng, tải khi mở khung lần đầu.
@@ -259,6 +260,7 @@ function TrinhSoan({ ma, da, paId, tenPA, ban, maSua, duocSua }: DaTai & { ma: s
       moHinh={<TangMoHinh {...chungTang} tenDuAn={da.ten} chon3d={chon3d} />}
       chiPhi={<ChiPhiGiua pa={kho.pa} tv={tv} kq={kq} sua={kho.sua} chiXem={chiXem} />}
       chiPhiPhai={<ChiPhiPhai pa={kho.pa} tv={tv} kq={kq} />}
+      chiPhiTrai={<ChiPhiTrai pa={kho.pa} tv={tv} kq={kq} />}
       buoc={{ ds: [['tmb', t('buoc.tmb')], ['tang', t('buoc.tang')], ['ham', t('buoc.ham')]], chon: buoc, onChon: (k) => setBuoc(k as 'tmb' | 'tang' | 'ham') }}
       trai={buoc === 'tmb' ? <TmbTrai {...chungXep} /> : buoc === 'ham' ? <HamTrai {...chungHam} /> : <TangTrai {...chungTang} />}
       giua={buoc === 'tmb' ? <XepGiua {...chungXep} /> : buoc === 'ham' ? <HamGiua {...chungHam} /> : <TangGiua {...chungTang} />}

@@ -28,6 +28,7 @@ export const SVG_BT: Record<string, string> = {
   troGiup: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2M12 17v.5"/>',
   // màn Tầng
   sapXep: '<path d="M12 3v18M3 12h18"/><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',
+  baCham: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   themCan: '<rect x="3" y="6" width="12" height="12" rx="1.5"/><path d="M19 9v6M16 12h6"/>',
   themTruoc: '<rect x="9" y="6" width="12" height="12" rx="1.5"/><path d="M5 9v6M2 12h6"/>',
   themCho: '<rect x="3" y="6" width="18" height="12" rx="1.5" stroke-dasharray="3 2.5"/><path d="M12 9v6M9 12h6"/>',

@@ -12,9 +12,10 @@ type Props = {
   giua: ComponentChildren;
   /** Nội dung tab MÔ HÌNH (3D); không có thì dùng bản vẽ giữa. */
   moHinh?: ComponentChildren;
-  /** Nội dung tab CHI PHÍ (dự toán + tài chính) và panel phải tóm tắt khi đang ở tab đó. */
+  /** Nội dung tab CHI PHÍ (dự toán + tài chính), panel phải tóm tắt và panel trái mục lục khi đang ở tab đó. */
   chiPhi?: ComponentChildren;
   chiPhiPhai?: ComponentChildren;
+  chiPhiTrai?: ComponentChildren;
   phai: ComponentChildren;
   cheDo?: CheDo;
   onCheDo?: (x: CheDo) => void;
@@ -38,6 +39,29 @@ type Props = {
 };
 
 type Ngan = '' | 'trai' | 'phai';
+type Ben = 'trai' | 'phai';
+const KHOA_THU = 'unitmix.thuPanel';
+
+/** Panel nào đang thu gọn: nhớ theo máy, giữ qua các lần mở dự án. */
+function docThu(): Record<Ben, boolean> {
+  try {
+    const x = JSON.parse(localStorage.getItem(KHOA_THU) ?? '{}');
+    return { trai: x.trai === true, phai: x.phai === true };
+  } catch { return { trai: false, phai: false }; }
+}
+
+/** Nút mũi tên ở mép khung giữa: thu panel về sát mép, bấm lại để mở. Mũi tên chỉ hướng panel sẽ đi. */
+function NutThuPanel({ ben, thu, onClick }: { ben: Ben; thu: boolean; onClick: () => void }) {
+  const nhan = t(`panel.${thu ? 'mo' : 'thu'}${ben === 'trai' ? 'Trai' : 'Phai'}`);
+  const sangTrai = (ben === 'trai') !== thu;
+  return (
+    <button type="button" class={`nut-thu-panel ${ben}`} aria-expanded={!thu} aria-label={nhan} title={nhan} onClick={onClick}>
+      <svg viewBox="0 0 8 14" width="8" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d={sangTrai ? 'M6 2 2 7l4 5' : 'M2 2l4 5-4 5'} />
+      </svg>
+    </button>
+  );
+}
 
 /**
  * Bố cục soạn thảo: thanh trên, Nhập (trái), Bản vẽ (giữa), Số liệu (phải).
@@ -53,6 +77,14 @@ export function KhungSoan(p: Props) {
   const mo = hep ? ngan : '';
   const bat = (k: Ngan) => setNgan((n) => (n === k ? '' : k));
   const chiXem = p.cheDo === 'chi_xem';
+  const traiChiPhi = xem === 'chi_phi' && p.chiPhiTrai ? p.chiPhiTrai : null;
+  // Màn hẹp đã là ngăn kéo nên không thu gọn; panel ẩn hẳn, khung giữa nhận phần rộng dôi ra.
+  const [thu, setThu] = useState(docThu);
+  const doiThu = (ben: Ben) => setThu((x) => {
+    const moi = { ...x, [ben]: !x[ben] };
+    try { localStorage.setItem(KHOA_THU, JSON.stringify(moi)); } catch { /* chế độ riêng tư: chỉ nhớ trong phiên */ }
+    return moi;
+  });
 
   // Esc đóng ngăn; iOS Safari bỏ qua touch-action khi chụm cả trang → chặn cử chỉ phóng trang ở màn soạn (bản vẽ tự phóng).
   useEffect(() => {
@@ -73,16 +105,22 @@ export function KhungSoan(p: Props) {
   );
 
   return (
-    <div class={`khung khung-soan${hep ? ' hep' : ''}${mo ? ' co-ngan' : ''}`}>
+    <div class={`khung khung-soan${hep ? ' hep' : ''}${mo ? ' co-ngan' : ''}${!hep && thu.trai ? ' thu-trai' : ''}${!hep && thu.phai ? ' thu-phai' : ''}`}>
       <ThanhTren capDo={p.capDo} cheDoXem={xem} onCheDoXem={setXem} cheDo={p.cheDo} onCheDo={p.onCheDo}
         trangThaiLuu={p.trangThaiLuu} dangXuLy={p.dangXuLy} duocSua={p.duocSua}
         onHoanTac={p.onHoanTac} onLamLai={p.onLamLai} onXuatCad={p.onXuatCad} onXuatPdf={p.onXuatPdf} onXuat3d={p.onXuat3d} onXuatXls={p.onXuatXls} buoc={p.buoc} leoAi={p.leoAi} />
       <div class="khung-than">
-        {panel('trai', t('panel.nhap'), p.trai)}
+        {/* Panel soạn chỉ ẩn, không gỡ: quay lại từ Chi phí vẫn giữ lựa chọn đang dở (tòa chép bố cục, ghi chú…). */}
+        {panel('trai', t('panel.nhap'), <>
+          <div hidden={!!traiChiPhi}>{p.trai}</div>
+          {traiChiPhi && <div onClick={(e) => { if ((e.target as Element).closest('[data-dong-ngan]')) setNgan(''); }}>{traiChiPhi}</div>}
+        </>)}
         <main class="panel-giua" aria-label={t('panel.banVe')}>
           {xem === 'chi_phi' ? p.chiPhi ?? <p style={{ padding: '24px' }}>{t('chiPhi.dangLam')}</p> : xem === 'mo_hinh' && p.moHinh ? p.moHinh : p.giua}
           {/* Thông báo nổi trên bản vẽ, không đẩy khung làm việc. */}
           {p.thongBao && <div class="lop-thong-bao">{p.thongBao}</div>}
+          {!hep && <NutThuPanel ben="trai" thu={thu.trai} onClick={() => doiThu('trai')} />}
+          {!hep && <NutThuPanel ben="phai" thu={thu.phai} onClick={() => doiThu('phai')} />}
         </main>
         {panel('phai', t('panel.soLieu'), xem === 'chi_phi' && p.chiPhiPhai ? p.chiPhiPhai : p.phai)}
       </div>

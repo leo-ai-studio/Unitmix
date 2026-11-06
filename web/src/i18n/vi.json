@@ -2783,5 +2783,16 @@
   "ssm.chan.san": "HSSDĐ",
   "ssm.chan.can": "số căn",
   "ssm.chan.dan": "dân số",
-  "xep.sapLaiRong": "Lô không chứa đủ {n} tòa theo quy tắc xếp, khoảng lùi và khoảng cách giữa tòa. Giảm số tòa hoặc thử Tự tổ hợp."
+  "xep.sapLaiRong": "Lô không chứa đủ {n} tòa theo quy tắc xếp, khoảng lùi và khoảng cách giữa tòa. Giảm số tòa hoặc thử Tự tổ hợp.",
+  "chiPhi.diToi": "Đi tới mục",
+  "chiPhi.diToiGt": "Bấm để cuộn tới phần đó ở khung giữa.",
+  "chiPhi.phamVi": "Phạm vi tính",
+  "chiPhi.phamViGt": "Các lô và tòa đang được tính vào dự toán của phương án này.",
+  "chiPhi.phamViDong": "{toa} tòa · {can} căn",
+  "chiPhi.caPA": "Cả phương án",
+  "panel.thuTrai": "Thu gọn panel trái",
+  "panel.moTrai": "Mở panel trái",
+  "panel.thuPhai": "Thu gọn panel phải",
+  "panel.moPhai": "Mở panel phải",
+  "bt.baCham": "Thao tác khác"
 }

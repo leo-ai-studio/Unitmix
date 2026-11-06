@@ -101,7 +101,12 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
   useEffect(() => {
     const el = hop.current;
     if (!el) return;
-    const doKichThuoc = () => setKt({ r: el.clientWidth, c: el.clientHeight });
+    const doKichThuoc = () => {
+      const r = el.clientWidth, cu = ktRef.current.r;
+      // Thu gọn panel, đổi cỡ cửa sổ: giữ px/m và tâm nhìn, phần rộng dôi ra là vùng nhìn thêm
+      if (cu > 0 && r > 0 && r !== cu) { const o = vRef.current; ganV({ ...o, w: (o.w * r) / cu }); }
+      setKt({ r, c: el.clientHeight });
+    };
     doKichThuoc();
     if (typeof ResizeObserver === 'undefined') return;
     const ob = new ResizeObserver(doKichThuoc);

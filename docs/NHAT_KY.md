@@ -1216,3 +1216,19 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Ô số:** thêm `ui/NhapChot.tsx`, nghe `change` thuần qua `useNgheChange`, giữ chữ đang gõ trong state riêng. Chốt khi rời ô, Enter, mũi tên hoặc Ctrl+S; Esc huỷ; giá trị bị từ chối tự về số đang lưu. Thay ở mọi ô số dùng `onChange` và ô Ký hiệu lô (`ManChiPhi`, `ManLo`, `ManHam`, `ManTang`, `ManXepToa`, `lopView`, `loGioiCanh`, `tmbThaoTac`, `HopNangGio`, `BangTuanThu`, `KhaiDanSo`, `SoSanhMau`, `Khung3D`). Ô bị để trống ở `ManLo`, `ManXepToa`, `lopView` không còn thành 0 (trước đó xoá Tâm X dời tòa về 0).
 - **Số tầng:** `SO_TANG_DH_MAX` 80, `SO_TANG_DE_MAX` 20, `kepSoTangDH`, `kepSoTangDe` ở `tinh/macDinh.ts`, dùng cho ô ở panel trái và công cụ Leo AI `update_tower` (trước cho 200 tầng).
 - **Đã thử bằng chuột + phím thật trên bản build, sơ đồ M7, chặn ghi:** 16/16 đạt. Gõ 7000000 chỉ tính lại khi rời ô, một lần ↶ về 6310000; 999 tầng về 80; 0 và ô trống giữ 11.
+
+## 2026-11-06 · Học app Synaps · Claude Code (Opus 5.5)
+
+- **Tệp:** `docs/hoc_synaps_2026-11-06.md`: tính năng, kỹ thuật suy từ gói JS công khai, đối chiếu Unitmix, 7 đề xuất, các thông tin mâu thuẫn.
+- **Giới hạn:** chưa dùng app thật vì phải có tài khoản. Không sửa mã app.
+- **Bổ sung:** vào được trang chủ tài khoản Free của người dùng, mở bản vẽ bị 402, phải dùng thử có thẻ. Chưa xem được trình vẽ.
+- **Xem thật (07/11):** vào trình vẽ Corner Building qua Chrome, ảnh ở `docs/anh/synaps/`, ghi ở mục 7 bản học. Thử thêm tầng thì bị hộp dùng thử chặn, bản vẽ sau đó trả 402.
+- **Chấm UI/UX (07/11):** Synaps 7,25, Unitmix 7,4 (Synaps là ước lượng). Bảng điểm và 5 việc sửa ở mục 8 bản học, ảnh ở `docs/anh/synaps/so_sanh/`.
+
+## 2026-11-07 · Panel theo màn, thu gọn hai bên, gọn trang Dự án · Claude Code (Opus 5.5)
+
+- **Panel trái Chi phí:** `ChiPhiTrai` trong `man/ManChiPhi.tsx` thay danh sách tòa bằng Đi tới mục và Phạm vi tính. Panel soạn chỉ ẩn, không gỡ, nên giữ lựa chọn đang dở. Test `man/mucChiPhi.test.ts`.
+- **Thu gọn panel:** nút mũi tên ở mép khung giữa (`NutThuPanel` trong `ui/KhungSoan.tsx`), nhớ ở `unitmix.thuPanel`, chỉ có trên màn rộng. `ve/BanVe.tsx` giữ px/m và tâm nhìn khi đổi bề ngang, áp dụng cả khi đổi cỡ cửa sổ.
+- **Trang Dự án:** mỗi dòng còn So sánh, Chép link, menu ⁝, nút Mở; Xoá nằm cuối menu, màu đỏ. Trang rộng tới 1600 px.
+- **Đã thử trên bản sao M7 cục bộ, Chrome:** khung giữa 964 → 1234 → 1534 px, tỉ lệ giữ 1,3134 px/m, tâm không đổi; tải lại vẫn nhớ; 3D giãn đúng; bấm mục cuộn đúng, mục đang đọc đổi theo. `kiem:nhanh` ĐẠT.
+- **Chưa thử:** màn hẹp và điện thoại; bấm thật Xoá trong menu. Trang chủ cục bộ bị màn đăng nhập che, phải ẩn lớp đó trên tab thử.

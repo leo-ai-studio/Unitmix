@@ -133,6 +133,32 @@ function NutChepLink({ ma, coMa, chep }: { ma: string; coMa: boolean; chep: (loa
   );
 }
 
+/** Việc ít dùng của một dự án gom vào menu ⋯, Xoá nằm cuối để khó bấm nhầm. */
+function MenuThaoTac({ muc }: { muc: { nhan: string; onClick: () => void; nguyHiem?: boolean }[] }) {
+  const [mo, setMo] = useState(false);
+  const boc = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!mo) return;
+    const dong = (e: Event) => { if (!boc.current?.contains(e.target as Node)) setMo(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMo(false); };
+    addEventListener('pointerdown', dong); addEventListener('keydown', esc);
+    boc.current?.querySelector<HTMLElement>('[role=menuitem]')?.focus();
+    return () => { removeEventListener('pointerdown', dong); removeEventListener('keydown', esc); };
+  }, [mo]);
+  return (
+    <div class="menu-link-boc" ref={boc}>
+      <NutBieuTuong k="baCham" moRong={mo} onClick={() => setMo((m) => !m)} />
+      {mo && (
+        <div class="menu-link" role="menu" aria-label={t('bt.baCham')}>
+          {muc.map((m) => (
+            <button type="button" role="menuitem" key={m.nhan} class={`muc-link${m.nguyHiem ? ' nguy-hiem' : ''}`} onClick={() => { setMo(false); m.onClick(); }}><b>{m.nhan}</b></button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Màn 0 · Dự án của tôi: các dự án đã mở trên máy này, mỗi dự án một thẻ kèm bảng phương án gọn. */
 export function DuAn() {
   const [lang] = useLang();
@@ -388,12 +414,14 @@ export function DuAn() {
                 )}
                 <div class="the-nut">
                   {da && da.phuong_an.length >= 2 && <NutBieuTuong k="soSanh" onClick={() => setSoSanh(ma)} />}
-                  {coMa && da && <NutBieuTuong k="doiTen" nhan={t('duAn.doiTenDA')} onClick={() => { setSuaPA(null); setSuaDa({ ma, ten: da.ten, diaDiem: da.dia_diem }); }} />}
-                  <NutBieuTuong k="nhanBan" nhan={t('duAn.nhanBanDA')} onClick={() => nhanBanDA(ma, ten)} />
                   <NutChepLink ma={ma} coMa={coMa} chep={(l) => chep(ma, l)} />
-                  <NutBieuTuong k="boDs" onClick={() => boDs(ma, ten)} />
-                  {coMa && <NutBieuTuong k="xoa" nhan={t('duAn.xoaDA')} onClick={() => xoaDuAn(ma, ten)} />}
-                  <NutBieuTuong k="moDuAn" nhan={t('duAn.moDuAn')} onClick={() => route(`/du-an/${ma}`)} />
+                  <MenuThaoTac muc={[
+                    ...(coMa && da ? [{ nhan: t('duAn.doiTenDA'), onClick: () => { setSuaPA(null); setSuaDa({ ma, ten: da.ten, diaDiem: da.dia_diem }); } }] : []),
+                    { nhan: t('duAn.nhanBanDA'), onClick: () => nhanBanDA(ma, ten) },
+                    { nhan: t('bt.boDs'), onClick: () => boDs(ma, ten) },
+                    ...(coMa ? [{ nhan: t('duAn.xoaDA'), onClick: () => xoaDuAn(ma, ten), nguyHiem: true }] : []),
+                  ]} />
+                  <button type="button" class="nut-phu nut-mo-da" title={t('duAn.moDuAn')} onClick={() => route(`/du-an/${ma}`)}>{t('bt.moDuAn')}</button>
                 </div>
               </div>
               {loi && <div class="the-loi vuot">{t('duAn.khongTai')}</div>}

@@ -6,6 +6,19 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.8.4', ngay: '2026-11-07',
+    vi: [
+      'Nút mũi tên ở mép khung giữa thu gọn panel trái, phải; bản vẽ giữ nguyên tỉ lệ, app nhớ trạng thái',
+      'Màn Chi phí có panel trái riêng: đi nhanh tới Dự toán, Tài chính, Khối lượng và phạm vi lô, tòa được tính',
+      'Trang Dự án gọn hơn: Mở, So sánh, Chép link ở ngoài, việc khác vào menu, Xoá nằm cuối',
+    ],
+    en: [
+      'Arrow tabs at the center view edges collapse the left and right panels; the drawing keeps its scale and the app remembers',
+      'The Cost screen has its own left panel: jump to Estimate, Finance, Quantities and see which lots and towers are counted',
+      'Tidier Projects page: Open, Compare and Copy link stay visible, the rest moves to a menu with Delete last',
+    ],
+  },
+  {
     v: '0.8.3', ngay: '2026-11-06',
     vi: [
       'Ô số: chỉ tính lại khi rời ô, Enter hoặc Ctrl+S, Esc huỷ; gõ một số là một bước hoàn tác',
