@@ -653,7 +653,7 @@ export function XepGiua({ pa, sua, chiXem, loId, chonLo, tv, toaId, chonToa, moT
         <ChuGiaiView pa={pa} tv={tv} />
         <HopNangGioCho pa={pa} tv={tv} sua={sua} chiXem={chiXem} />
       </div>
-      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung() } : null}
+      <GocBanVe zoom={dk ? { phong: () => dk.phong(), thu: () => dk.thu(), vua: () => dk.vuaKhung(), vuaLo: lo ? () => { const k = khungBao([lo.ranh]); if (k) dk.vuaVung(k); } : undefined } : null}
         lop={[{ khoa: 'nhanToa', nhan: t('tmb.lop.nhanToa'), bat: tc.nhanToa, onClick: () => datTuyChon({ nhanToa: !tc.nhanToa }) }, { khoa: 'nhanVP', nhan: t('tmb.lop.nhanVP'), bat: tc.nhanVP, onClick: () => datTuyChon({ nhanVP: !tc.nhanVP }) }, nutLopView(), ...nutNG]} chuGiai={<ChuGiaiDat />} troGiup={t(chiXem ? 'tmb.phimChiXem' : 'tmb.phim')} />
       {menuToa && (() => {
         const dong = () => setMenuToa(null);

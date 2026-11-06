@@ -31,3 +31,8 @@
 .lg-dong { display: flex; align-items: center; gap: 6px; }
 .lg-dong input[type='number'] { width: 76px; min-width: 0; padding: 3px 6px; }
 .hl-bang select { min-width: 0; padding: 2px 4px; }
+.tmb-hang-loat .goi-y-kieu { padding: 0; }
+.hl-hinh td { text-align: left; padding: 2px 4px 6px; white-space: normal; }
+.hl-hinh button { padding: 1px; margin-right: 3px; background: none; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; line-height: 0; }
+.hl-hinh button[aria-pressed="true"] { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
+.hl-hinh .goi-y-hinh { width: 44px; height: 38px; }

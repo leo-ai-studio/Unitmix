@@ -44,3 +44,21 @@ Năm tiêu chí 0–100 (`DiemBoCuc`), chọn Ưu tiên thì tiêu chí đó n�
 | Sân | Mảnh sân liền cách tòa ≥ 12 m, cách ranh ≥ 3 m + vòng tròn trống lớn nhất | Chưa trừ đường nội bộ, chỗ đỗ, khối đế |
 
 Tài liệu tham khảo: nghiên cứu Vũ Hán (khí hậu nóng ẩm, ENVI-met) cho thấy dãy song song tạo hành lang gió, tăng tốc gió khoảng 0,3 m/s, và dãy so le theo hướng gió chủ đạo tăng thêm: [MDPI Sustainability 12(3) 1046](https://www.mdpi.com/2071-1050/12/3/1046/html). Tìm kiếm chưa ra số liệu chính thức cho hướng gió Hà Nội; dùng kinh nghiệm miền Bắc, cần đối chiếu QCVN 02 hoặc hoa gió dự án trước khi coi là căn cứ.
+
+## Cập nhật 2026-11-06
+
+- **Xếp hàng loạt** chạy đúng bộ `sinhBoCuc` của panel, từng lô trong worker, dùng chung chế độ và ưu tiên. Bộ cũ `sinhGoiY` chỉ còn cho trợ lý.
+- **Gió:** ba hướng mạnh nhất cả năm tại vị trí dự án (Open-Meteo, `huongGioDuAn`), chưa tách mùa. Chưa đặt vị trí thì Đông Nam quy ước, panel có ghi.
+- **Nắng:** trừ phần bị tòa khác che 8–16 h ngày Đông chí (`cheNangPct`, tính ở nhóm chung kết).
+- **Sân:** thêm độ mở về cây xanh, mặt nước trong 120 m; vòng tròn trống đổi thang 45 → 60 m vì lô lớn bị bão hoà ở 100.
+- **§2.6.1 trong lô:** hai tòa dưới mức cạnh dài vẫn đặt được nếu đủ mức đầu hồi và chỉ nhìn nhau bằng đầu (`doiDauHoi`: phần sát nhau chồng dưới 24 m). Mốc 24 m là quy ước của app, chờ chủ nhiệm chốt.
+- **Trục tòa:** lấy hướng có tổng chiều dài cạnh lớn nhất; thành phần chính ra đường chéo với tòa L, V.
+- **Ngân sách:** đếm theo số phép thử, không theo đồng hồ, để cùng đầu vào ra cùng kết quả.
+
+Đối chiếu bố cục đã duyệt M7 (dự án `hi97j5wp`, đích: tâm lệch TB ≤ 5 m, góc lệch ≤ 3°):
+
+| Lô | Kết quả | Tình trạng |
+|---|---|---|
+| HH-1, HH-2 (2 L3) | lệch 2,2 m và 1,9 m, góc 0° | Đạt, hạng 1 |
+| CT-2 (4 Z4) | lệch TB chừng 30–65 m | Chưa đạt |
+| CT-1 (6 Z4) | từng đạt 14,2 m nhưng cần 10–28 giây; giữ tốc độ dưới 2 giây thì chưa đạt | Chưa đạt |

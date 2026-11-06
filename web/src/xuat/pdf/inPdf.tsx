@@ -11,6 +11,10 @@ import { chuanBiIn, type DuLieuIn } from './duLieuIn';
 import { CSS_PHONG_IN } from './phongIn';
 import { BaoCaoIn } from './TrangIn';
 import { HdmbIn, SalekitIn } from './TrangBanHang';
+import { TC_MAC_DINH, type TuyChonBC } from './tuyChonIn';
+import { taiPhanBoGio } from '../../nangGio/taiGio';
+import { viTriPA } from '../../tinh/viTri';
+import { t } from '../../i18n/i18n';
 
 export type LoaiPdf = 'bao-cao' | 'salekit' | 'hdmb';
 
@@ -23,21 +27,30 @@ const CSS = `
 @media print {
   html, body { background: #fff !important; height: auto !important; overflow: visible !important; margin: 0 !important; }
   body > *:not(#in-pdf) { display: none !important; }
-  #in-pdf { display: block !important; position: static !important; }
+  #in-pdf { display: block !important; position: static !important; padding: 0 !important; overflow: visible !important; background: none !important; }
+  #in-pdf .trang-in { zoom: 1 !important; margin: 0 !important; box-shadow: none !important; }
   #in-pdf .trang-in { break-after: page; page-break-after: always; }
   #in-pdf .trang-in:last-child { break-after: auto; page-break-after: auto; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 #in-pdf, #in-pdf * { box-sizing: border-box; }
-#in-pdf { font-family: 'Be Vietnam Pro', 'Segoe UI', Arial, sans-serif; color: #292d2d; }
+#in-pdf { font-family: 'Be Vietnam Pro', 'Segoe UI', Arial, sans-serif; color: #292d2d; --in-c: #174f52; --in-n: #e4ecE8; --in-vien: #b8c4bf; --in-vang: #f6e7c4; --in-vang-chu: #8a5300; }
+#in-pdf.tb-xanh { --in-c: #1a3f6c; --in-n: #cfe0ef; --in-vien: #9db2c4; --in-vang: #ffe94d; --in-vang-chu: #b01212; }
+#in-pdf.tb-den_trang { --in-c: #222; --in-n: #e9e9e9; --in-vien: #999; --in-vang: #dcdcdc; --in-vang-chu: #000; }
+#in-pdf-thanh { position: fixed; z-index: 100001; inset: 0 0 auto 0; height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: #174f52; color: #fff; font: 13px 'Be Vietnam Pro', 'Segoe UI', sans-serif; }
+#in-pdf-thanh span { flex: 1; }
+#in-pdf-thanh button { border: 1px solid #fff; background: transparent; color: #fff; padding: 5px 14px; cursor: pointer; font: inherit; }
+#in-pdf-thanh button:first-of-type { background: #fff; color: #174f52; font-weight: 700; }
+#in-pdf.xem-truoc { display: block; position: fixed; z-index: 100000; inset: 44px 0 0 0; overflow: auto; background: #4d5855; padding: 16px; }
+#in-pdf.xem-truoc .trang-in { zoom: .62; margin: 0 auto 24px; box-shadow: 0 2px 10px rgba(0, 0, 0, .4); }
 #in-pdf .trang-in { position: relative; display: flex; flex-direction: column; overflow: hidden; background: #fff; padding: 11mm 13mm 9mm; }
 #in-pdf .a3n { width: 420mm; height: 297mm; page: a3n; }
 #in-pdf .a3d { width: 297mm; height: 420mm; page: a3d; }
 #in-pdf .a4n { width: 297mm; height: 210mm; page: a4n; padding: 9mm 11mm 7mm; }
 #in-pdf .a4d { width: 210mm; height: 297mm; page: a4d; padding: 9mm 11mm 7mm; }
-#in-pdf .in-dau { display: flex; align-items: center; gap: 4mm; padding-bottom: 3mm; border-bottom: 0.6mm solid #174f52; margin-bottom: 4mm; flex: none; }
-#in-pdf .in-dau img { height: 11mm; }
-#in-pdf .in-dau h1 { margin: 0; font-size: 6mm; color: #174f52; line-height: 1.15; font-weight: 700; }
+#in-pdf .in-dau { display: flex; align-items: center; gap: 3.5mm; padding-bottom: 2mm; border-bottom: 0.5mm solid var(--in-c); margin-bottom: 3mm; flex: none; }
+#in-pdf .in-dau img { height: 9mm; }
+#in-pdf .in-dau h1 { margin: 0; font-size: 5.4mm; color: var(--in-c); line-height: 1.15; font-weight: 700; }
 #in-pdf .in-dau p { margin: 0.6mm 0 0; font-size: 3.2mm; color: #6b7373; }
 #in-pdf .in-dau .in-so { margin-left: auto; font-size: 3.4mm; color: #6b7373; }
 #in-pdf .a4n .in-dau h1, #in-pdf .a4d .in-dau h1 { font-size: 4.6mm; }
@@ -46,41 +59,51 @@ const CSS = `
 #in-pdf .in-chan { flex: none; display: flex; justify-content: space-between; margin-top: 3mm; padding-top: 1.5mm; border-top: 0.2mm solid #d9dcda; font-size: 2.8mm; color: #8a9494; }
 #in-pdf .in-hai-cot { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 132mm; gap: 7mm; }
 #in-pdf .in-hai-cot > aside { min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: 3mm; }
-#in-pdf .in-hai-cot.mb { grid-template-columns: minmax(0, 1fr) 156mm; }
+#in-pdf .in-hai-cot.mb { grid-template-columns: minmax(0, 1fr) 150mm; } #in-pdf .in-um { font-size: calc(3mm * var(--in-co, 1)); } #in-pdf .in-um th, #in-pdf .in-um td { padding: .9mm 1.2mm; } #in-pdf .in-hai-cot.tmb { grid-template-columns: minmax(0, 1fr) 104mm; }
 #in-pdf .in-bang td.ch { min-width: 34mm; }
 #in-pdf .in-hai-cot.can { grid-template-columns: minmax(0, 1fr) 100mm; }
-#in-pdf .in-khung-ve { min-width: 0; min-height: 0; border: 0.2mm solid #e5e8e6; display: flex; align-items: center; justify-content: center; padding: 2mm; }
+#in-pdf .in-khung-ve { position: relative; min-width: 0; min-height: 0; border: 0.2mm solid #e5e8e6; display: flex; align-items: center; justify-content: center; padding: 2mm; }
 #in-pdf .in-mb, #in-pdf .in-tmb { width: 100%; height: 100%; display: block; }
-#in-pdf .in-key { height: 62mm; flex: none; border: 0.2mm solid #e5e8e6; padding: 1mm; }
-#in-pdf h2 { margin: 0; font-size: 4mm; color: #174f52; font-weight: 700; }
-#in-pdf h3 { margin: 0 0 1.5mm; font-size: 4mm; color: #174f52; } #in-pdf h3 small { font-size: 3mm; font-weight: 400; color: #6b7373; margin-left: 2mm; }
-#in-pdf .in-bang { width: 100%; border-collapse: collapse; font-size: 3.1mm; }
-#in-pdf .in-bang th { text-align: left; background: #eef2f0; color: #174f52; font-weight: 600; padding: 1.2mm 1.8mm; border-bottom: 0.3mm solid #174f52; }
+#in-pdf .in-goc-trang { margin-top: auto; flex: none; display: flex; gap: 3mm; height: 62mm; align-items: stretch; }
+#in-pdf .in-key { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1mm; border: 0.2mm solid var(--in-vien); padding: 1.5mm; font-size: 2.8mm; color: var(--in-c); }
+#in-pdf .in-key .in-tmb { flex: 1; min-height: 0; height: auto; }
+#in-pdf .in-goc-ve { position: absolute; right: 2mm; top: 2mm; width: 50mm; background: rgba(255, 255, 255, .92); border: 0.2mm solid var(--in-vien); padding: 1.5mm; }
+#in-pdf .in-gio { width: 50mm; flex: none; display: flex; flex-direction: column; align-items: center; border: 0.2mm solid var(--in-vien); padding: 1.5mm; font-size: 2.6mm; color: #5a6464; }
+#in-pdf .in-goc-ve .in-gio { border: 0; padding: 0; width: 100%; }
+#in-pdf .in-gio figure { margin: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1mm; min-height: 0; }
+#in-pdf .in-gio svg { width: 40mm; height: 40mm; max-height: 100%; transform: rotate(var(--goc, 0deg)); }
+#in-pdf .in-gio figcaption { display: flex; flex-wrap: wrap; justify-content: center; gap: .6mm 1.4mm; font-size: 2.2mm; }
+#in-pdf .in-gio figcaption i { display: inline-block; width: 2.2mm; height: 2.2mm; margin-right: .5mm; vertical-align: -.3mm; }
+#in-pdf .in-gio p { margin: .6mm 0 0; }
+#in-pdf h2 { margin: 0; font-size: 4mm; color: var(--in-c); font-weight: 700; }
+#in-pdf h3 { margin: 0 0 1.5mm; font-size: 4mm; color: var(--in-c); } #in-pdf h3 small { font-size: 3mm; font-weight: 400; color: #6b7373; margin-left: 2mm; }
+#in-pdf .in-bang { width: 100%; border-collapse: collapse; font-size: calc(3.3mm * var(--in-co, 1)); }
+#in-pdf .in-bang th { text-align: left; background: var(--in-n); color: var(--in-c); font-weight: 600; padding: 1.2mm 1.8mm; border-bottom: 0.3mm solid var(--in-c); }
 #in-pdf .in-bang td { padding: 1mm 1.8mm; border-bottom: 0.15mm solid #dfe3e1; vertical-align: top; }
 #in-pdf .in-bang .so { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-#in-pdf .in-bang tfoot td { border-top: 0.3mm solid #174f52; font-weight: 600; }
+#in-pdf .in-bang tfoot td { border-top: 0.3mm solid var(--in-c); font-weight: 600; }
 #in-pdf .in-bang .ch { font-size: 2.7mm; color: #4b5555; }
 #in-pdf .in-bang.nho { font-size: 2.7mm; } #in-pdf .in-bang.nho td { padding: 0.5mm 1.4mm; } #in-pdf .in-bang.nho th { padding: 0.8mm 1.4mm; }
 #in-pdf .in-bang .muc-vuot td { background: #fdecea; color: #8a1f17; } #in-pdf .in-bang .muc-canh_bao td { background: #fff6e0; }
 #in-pdf .in-bang .lech { color: #8a1f17; font-weight: 600; }
-#in-pdf .in-bang caption { caption-side: top; text-align: center; font-weight: 700; font-size: 4.2mm; color: #174f52; padding-bottom: 1.5mm; }
-#in-pdf .in-um th, #in-pdf .in-tong-hop th { background: #bcd7ec; color: #0f2a3a; border: 0.15mm solid #5e7a8a; text-align: center; }
-#in-pdf .in-um td, #in-pdf .in-tong-hop td { border: 0.15mm solid #9aa8ae; }
+#in-pdf .in-bang caption { caption-side: top; text-align: center; font-weight: 700; font-size: 4.2mm; color: var(--in-c); padding-bottom: 1.5mm; }
+#in-pdf .in-um th, #in-pdf .in-tong-hop th { background: var(--in-n); color: var(--in-c); border: 0.15mm solid var(--in-vien); text-align: center; }
+#in-pdf .in-um td, #in-pdf .in-tong-hop td { border: 0.15mm solid var(--in-vien); }
 #in-pdf .in-um td small { color: #33404a; font-size: 2.6mm; }
 #in-pdf .in-um tfoot .noi td { font-weight: 700; } #in-pdf .in-um .thang td { font-size: 2.8mm; font-style: italic; }
-#in-pdf .in-bang .do { color: #d21f1f; font-weight: 700; } #in-pdf .in-bang .vang { background: #ffe94d; font-weight: 700; color: #b01212; }
-#in-pdf .in-tong-hop { font-size: 3.6mm; } #in-pdf .in-tong-hop th.giua.tong { background: #ffe9a8; } #in-pdf .in-tong-hop .pa { font-weight: 700; color: #1a3f9c; }
+#in-pdf .in-bang .do { color: var(--in-vang-chu); font-weight: 700; } #in-pdf .in-bang .vang { background: var(--in-vang); font-weight: 700; color: var(--in-vang-chu); }
+#in-pdf .in-tong-hop { font-size: calc(3.8mm * var(--in-co, 1)); } #in-pdf .in-tong-hop th.giua.tong { background: var(--in-c); color: #fff; } #in-pdf .in-tong-hop .pa { font-weight: 700; color: var(--in-c); }
 #in-pdf .in-ghi { margin: 0; font-size: 3mm; color: #5a6464; }
 #in-pdf .sw.ranh { border: none; border-top: 0.6mm dashed #d21f1f; height: 0; vertical-align: 0.8mm; }
 #in-pdf .sw { display: inline-block; width: 3.4mm; height: 3.4mm; border: 0.2mm solid #7a8585; margin-right: 1.6mm; vertical-align: -0.6mm; }
 #in-pdf .sw.lon { width: 6mm; height: 6mm; } #in-pdf .sw.net { border: none; border-top: 0.4mm dashed #2b52c4; height: 0; vertical-align: 0.8mm; }
-#in-pdf .in-so-lieu { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; }
-#in-pdf .in-so-lieu div { border: 0.2mm solid #dfe3e1; border-left: 1mm solid #174f52; padding: 1.5mm 2.5mm; }
-#in-pdf .in-so-lieu dt { font-size: 2.8mm; color: #6b7373; } #in-pdf .in-so-lieu dd { margin: 0; font-size: 5mm; font-weight: 700; color: #022b1e; }
-#in-pdf .in-chu-giai { margin: 0; padding: 0; list-style: none; font-size: 3.1mm; display: grid; gap: 1.2mm; }
+#in-pdf .in-so-lieu { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; } #in-pdf .in-so-lieu.ba { grid-template-columns: 1fr 1fr 1fr; } #in-pdf .in-so-lieu .rong { grid-column: span 2; }
+#in-pdf .in-so-lieu div { border: 0.2mm solid #dfe3e1; border-left: 1mm solid var(--in-c); padding: 1.5mm 2.5mm; }
+#in-pdf .in-so-lieu dt { font-size: 2.8mm; color: #6b7373; } #in-pdf .in-so-lieu dd { margin: 0; font-size: calc(5.4mm * var(--in-co, 1)); font-weight: 700; color: #022b1e; }
+#in-pdf .in-chu-giai.ngang { display: flex; flex-wrap: wrap; gap: 1mm 3mm; font-size: 2.8mm; margin-top: auto; } #in-pdf .in-chu-giai { margin: 0; padding: 0; list-style: none; font-size: 3.1mm; display: grid; gap: 1.2mm; }
 #in-pdf .in-chu-giai.lon li { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 2mm; } #in-pdf .in-chu-giai.lon span:last-child { color: #4b5555; font-size: 2.8mm; }
 #in-pdf .in-luoi-lo { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(118mm, 1fr)); gap: 5mm; align-content: start; }
-#in-pdf .in-hang-lo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5mm; } #in-pdf .in-hai-the { display: grid; grid-template-columns: 1fr 1.45fr; gap: 5mm; align-items: start; }
+#in-pdf .in-hang-lo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4mm; } #in-pdf .in-hai-the { display: grid; grid-template-columns: 1fr 1.45fr; gap: 5mm; align-items: start; }
 #in-pdf .in-luoi-lo.rong { grid-template-columns: repeat(auto-fill, minmax(176mm, 1fr)); }
 #in-pdf .in-bang td:first-child { white-space: nowrap; }
 #in-pdf .in-the { border: 0.2mm solid #dfe3e1; padding: 2.5mm 3mm; break-inside: avoid; }
@@ -148,7 +171,7 @@ async function choTaiNguyen(goc: HTMLElement): Promise<void> {
   await new Promise<void>((x) => requestAnimationFrame(() => requestAnimationFrame(() => x())));
 }
 
-export type TuyChonIn = { tenDuAn: string; tenPA: string; kieu?: KieuMb; khongIn?: boolean };
+export type TuyChonIn = { tenDuAn: string; tenPA: string; kieu?: KieuMb; khongIn?: boolean; baoCao?: TuyChonBC };
 
 /** Kiểu tô mặt bằng cho tài liệu bán hàng: đang chọn kiểu salekit thì giữ, kiểu LEO thì dùng Galia. */
 const kieuSalekit = (k?: KieuMb): KieuMb => { const c = k ?? docKieuMb(); return c === 'leo' ? 'sk_galia' : c; };
@@ -158,10 +181,19 @@ const tenAn = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(
 
 /** Dựng tài liệu vào `#in-pdf`. Trả hàm gỡ + số trang + tên tệp gợi ý (hộp in dùng tiêu đề trang làm tên tệp PDF). */
 export async function dungTaiLieuIn(loai: LoaiPdf, pa: TrangThaiPA, tv: ThuVien, o: TuyChonIn): Promise<{ goi: () => void; soTrang: number; ten: string; goc: HTMLElement; d: DuLieuIn }> {
-  const noiThat = loai !== 'bao-cao';
+  const tc = o.baoCao ?? TC_MAC_DINH, noiThat = loai !== 'bao-cao' || tc.lop.noiThat;
   const d = await chuanBiIn(pa, tv, { tenDuAn: o.tenDuAn, tenPA: o.tenPA, noiThat });
+  d.tc = tc;
+  const vt = viTriPA(pa);
+  if (loai === 'bao-cao' && tc.lop.hoaGio && vt.coToaDo) {
+    const hoan = new AbortController(), hen = setTimeout(() => hoan.abort(), 5000);
+    d.gio = await taiPhanBoGio(vt.lat, vt.lng, hoan.signal).catch(() => null);
+    clearTimeout(hen);
+  }
   const goc = document.createElement('div');
   goc.id = 'in-pdf';
+  goc.className = `tb-${tc.trinhBay}`;
+  goc.style.setProperty('--in-co', String(tc.coChu));
   const css = document.createElement('style');
   css.id = 'in-pdf-css';
   css.textContent = CSS_PHONG_IN + CSS;
@@ -189,5 +221,26 @@ export async function xuatPdf(loai: LoaiPdf, pa: TrangThaiPA, tv: ThuVien, o: Tu
     // trình duyệt không bắn afterprint (một số bản nhúng): dọn sau 5 phút để khỏi treo nút in
     setTimeout(ket, 300000);
   });
+  return k.soTrang;
+}
+
+/** Xem trước trên màn hình rồi mới in: phủ toàn cửa sổ, có nút In / Đóng. Trả số trang. */
+export async function xemTruocPdf(loai: LoaiPdf, pa: TrangThaiPA, tv: ThuVien, o: TuyChonIn): Promise<number> {
+  const k = await dungTaiLieuIn(loai, pa, tv, o);
+  k.goc.classList.add('xem-truoc');
+  const thanh = document.createElement('div');
+  thanh.id = 'in-pdf-thanh';
+  const ghi = document.createElement('span'), nutIn = document.createElement('button'), nutDong = document.createElement('button');
+  ghi.textContent = t('xt.xemTrang').replace('{n}', String(k.soTrang));
+  nutIn.textContent = t('xt.xuat');
+  nutDong.textContent = t('xt.dong');
+  nutIn.type = nutDong.type = 'button';
+  thanh.append(ghi, nutIn, nutDong);
+  document.body.appendChild(thanh);
+  const dong = () => { window.removeEventListener('keydown', phim); thanh.remove(); k.goi(); };
+  const phim = (e: KeyboardEvent) => { if (e.key === 'Escape') dong(); };
+  window.addEventListener('keydown', phim);
+  nutIn.onclick = () => window.print();
+  nutDong.onclick = dong;
   return k.soTrang;
 }

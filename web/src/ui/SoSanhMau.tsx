@@ -13,7 +13,7 @@ import { taoToaTrenLo } from '../tinh/hopLo';
 import { LOAI_CAN, type Diem, type LoaiCan, type Lo, type ThuVien, type ToaDat, type TrangThaiPA } from '../tinh/kieu';
 import { laCaoTang } from '../tinh/loaiDat';
 import { tuChinhToa, type ToaMB } from '../tinh/loiThang';
-import { dsHinh, hoMau, soSanhMauNen, soTangMacDinh, toaAo, type KetQuaMau } from '../tinh/soSanhMau';
+import { dsHinh, hoMau, soSanhMauNen, soTangMacDinh, soToaTheoChiTieu, toaAo, type KetQuaMau } from '../tinh/soSanhMau';
 import { LopNoi } from './LopNoi';
 import { BieuTuong } from './NutBieuTuong';
 import { fmtSo } from './so';
@@ -161,6 +161,11 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props) {
     return (s.sap.giam ? -d : d) || a.hang - b.hang;
   });
   const top = hang.slice(0, 3);
+  const soToa = (r: KetQuaMau) => (lo ? soToaTheoChiTieu(r, lo, soTang) : null);
+  const ghiSoToa = (r: KetQuaMau) => {
+    const x = soToa(r);
+    return x ? t('ssm.soToaLo').replace('{n}', String(x.n)).replace('{lo}', lo!.temDat.kyHieu).replace('{c}', fmtSo(x.soCan)).replace('{chan}', t(`ssm.chan.${x.chan}`)) : null;
+  };
   const coView = hang.some((r) => typeof r.diemView === 'number');
   const cu = !!s.ds && s.khoaDs !== khoaVao;
   const hinhs = tv ? dsHinh(tv, s.nhom) : [];
@@ -288,6 +293,7 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props) {
                       </div>
                     </div>
                   </div>
+                  {ghiSoToa(r) && <p class="ssm-so-toa" title={t('gt.ssm.soToa')}>{ghiSoToa(r)}</p>}
                   <ul class="ssm-uu">{g.uu.map((x, i) => <li key={i}>{dichNhan(x)}</li>)}</ul>
                   <ul class="ssm-nhuoc">{g.nhuoc.map((x, i) => <li key={i}>{dichNhan(x)}</li>)}</ul>
                   <button type="button" class="nut-phu" disabled={chiXem || !loDs.length} title={t('gt.ssm.datVaoLo')} onClick={() => datTT({ dat: r.khoa, loDat: lo?.id ?? null })}>{t('ssm.datVaoLo')}</button>
@@ -302,7 +308,7 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props) {
             <table class="ssm-bang">
               <thead><tr>
                 <Th c="hang" nhan="#" /><th class="ssm-ten">{t('ssm.cot.mau')}</th><Th c="diem" nhan={t('ssm.cot.diem')} tip={t('gt.ssm.diem')} />
-                <Th c="soCan" nhan={t('ssm.cot.can')} /><Th c="lech" nhan={t('ssm.cot.coCau')} tip={t('xep.diemLech')} />
+                <Th c="soCan" nhan={t('ssm.cot.can')} /><th title={t('gt.ssm.soToa')}>{t('ssm.cot.soToa')}</th><th title={t('gt.ssm.soToa')}>{t('ssm.cot.canLo')}</th><Th c="lech" nhan={t('ssm.cot.coCau')} tip={t('xep.diemLech')} />
                 <Th c="hieuSuat" nhan={t('ssm.cot.hs')} tip={t('kpi.gt.hieuSuat').replace('{n}', fmtSo(s.yc.hsMin * 100))} />
                 <Th c="dtxd" nhan={t('ssm.cot.dtxd')} tip={t('kpi.gt.dtxdTang')} /><Th c="dtsd" nhan={t('ssm.cot.dtsd')} tip={t('kpi.gt.dtsdTang')} />
                 <Th c="soThangBo" nhan={t('ssm.cot.thangBo')} tip={t('gt.ssm.thangBo')} /><Th c="soThangMay" nhan={t('ssm.cot.thangMay')} tip={t('gt.ssm.thangMay')} />
@@ -318,6 +324,8 @@ function NoiDung({ pa, tv, sua, chiXem, loId, daDat }: Props) {
                     <td class="ssm-ten"><HinhMau h={r.hinhThu} co={40} nhan={tenDayDu(tv, r.mauId)} /><span><b title={tenDayDu(tv, r.mauId)}>{tenMau(tv, r.mauId)}</b><small class="muted">{tenBien(r)}{r.soDoi ? ` · ${t('ssm.soDoi').replace('{n}', String(r.soDoi))}` : ''}</small></span></td>
                     <td><b>{fmtSo(r.diem.tong, { thapPhan: 1 })}</b></td>
                     <td>{fmtSo(r.soCan)}</td>
+                    <td title={soToa(r) ? t(`ssm.chan.${soToa(r)!.chan}`) : undefined}>{soToa(r)?.n ?? '—'}</td>
+                    <td>{soToa(r) ? fmtSo(soToa(r)!.soCan) : '—'}</td>
                     <td>
                       <span class="ssm-thanh" title={LOAI_CAN.map((l) => `${t(`loai.${l}`)} ${fmtSo(r.coCauPct[l], { thapPhan: 0 })}% (${t('ssm.mucTieu')} ${fmtSo(muc[l], { thapPhan: 0 })}%)`).join('\n')}>
                         {LOAI_CAN.map((l) => <i key={l} style={{ flexGrow: r.coCauPct[l], background: `var(--u-${l})` }} />)}

@@ -16,6 +16,8 @@ import { mauCuaToa, choDuLieuMB } from '../../man/tuChinhTang';
 import { idLoi, tai, taiVeCan, type HinhHocTai, type HinhLoi } from '../../ve/hinhHocThuVien';
 import { soLieuTang, type ToaVe } from '../../ve/MatBangTang';
 import type { Diem } from '../../tinh/kieu';
+import type { PhanBoGio } from '../../tinh/nangGio/gio';
+import { TC_MAC_DINH, type TuyChonBC } from './tuyChonIn';
 
 /** Một nhóm tòa cùng mẫu + cùng bố cục tầng: in một mặt bằng cho cả nhóm, ghi ký hiệu lô / số tòa. */
 export type NhomToaIn = {
@@ -45,6 +47,10 @@ export type DuLieuIn = {
   nhom: NhomToaIn[];
   hinh: HinhHocTai;
   dl: DuLieuMB;
+  /** Tuỳ chọn báo cáo. */
+  tc: TuyChonBC;
+  /** Hoa gió tại vị trí dự án; null khi chưa đặt vị trí hoặc không tải được. */
+  gio: PhanBoGio | null;
 };
 
 const tenNgan = (s: string) => s.split(' · ')[0];
@@ -80,7 +86,7 @@ export async function chuanBiIn(pa: TrangThaiPA, tv: ThuVien, o: { tenDuAn: stri
   ]);
   return {
     pa, tv, tenDuAn: o.tenDuAn, tenPA: o.tenPA, ngay: new Date().toLocaleDateString('vi-VN'),
-    kq: tinhChiTieu(pa, tv), nhom, hinh: { can: new Map(a), loi: new Map(b), dangTai: false }, dl,
+    kq: tinhChiTieu(pa, tv), nhom, hinh: { can: new Map(a), loi: new Map(b), dangTai: false }, dl, tc: TC_MAC_DINH, gio: null,
   };
 }
 

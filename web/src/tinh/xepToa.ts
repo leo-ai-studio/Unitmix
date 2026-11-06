@@ -165,18 +165,26 @@ export type DauVaoXep = {
   cheDoBoCuc?: CheDoBoCuc;
   /** Tiêu chí ưu tiên khi xếp hạng bố cục. */
   uuTien?: UuTienXep;
+  /** Hướng gió chủ đạo của dự án (phương vị gió thổi từ, trọng số); thiếu thì dùng Đông Nam quy ước (`PHUONG_VI_GIO_HE`). */
+  huongGio?: { pv: number; ts: number }[];
 };
 export type CheDoBoCuc = 'sap_lai' | 'to_hop';
 export type UuTienXep = 'can_bang' | 'nang' | 'gio' | 'view' | 'mat_pho' | 'san';
 export const DS_UU_TIEN: UuTienXep[] = ['can_bang', 'nang', 'gio', 'view', 'mat_pho', 'san'];
 /** Điểm bố cục 0–100 từng tiêu chí (tinh/boCucLo.ts). */
-export type DiemBoCuc = { nang: number; gio: number; view: number; mat: number; san: number; tong: number; sanM2: number; banKinhSan: number; gioPct: number };
+export type DiemBoCuc = {
+  nang: number; gio: number; view: number; mat: number; san: number; tong: number; sanM2: number; banKinhSan: number; gioPct: number;
+  /** % điểm mặt ngoài bị tòa khác che nắng ngày Đông chí. */
+  cheNangPct: number;
+  /** % bề ngang lô mở về phía cây xanh / mặt nước gần lô; null = quanh lô không có. */
+  moXanhPct: number | null;
+};
 /**
  * Kiểu bố cục: `tu_do` tham lam từ neo; `hai_day` hai dãy bám hai cạnh đối diện, sân giữa (M34 vị trí 8, 10); `so_le` như hai dãy, dãy sau lệch
  * nửa bước; `ket_hop` mỗi dãy một mẫu (M34 PA1: T + I); `mot_day` một dãy giữa lô, cho lô dẹt (M34 vị trí 9, lô dài Long Biên);
  * `vien` tòa bám mọi cạnh, mở sân giữa (M7 4 tòa L, MH3 PA3).
  */
-export type KieuBoCuc = 'tu_do' | 'hai_day' | 'ba_day' | 'so_le' | 'ket_hop' | 'mot_day' | 'vien';
+export type KieuBoCuc = 'tu_do' | 'hai_day' | 'ba_day' | 'so_le' | 'ket_hop' | 'mot_day' | 'vien' | 'om_goc';
 export const DS_KIEU_BO_CUC: KieuBoCuc[] = ['hai_day', 'so_le', 'ket_hop', 'mot_day', 'vien', 'tu_do'];
 /** Cạnh chính của vùng đặt: gộp các đoạn gần thẳng hàng (vát góc lô), dài trước; `u` chạy dọc cạnh, `n` hướng vào trong lô. */
 export type CanhChinh = { a: Diem; b: Diem; dai: number; goc: number; u: Diem; n: Diem };
@@ -234,6 +242,10 @@ export type GoiYXep = {
   theoMucTieu?: { duKien: [string, number][]; thieuToa: number; dtxdPct: number; thieuDtxd: number };
   /** Có khi chạy bộ xếp bố cục. */
   boCuc?: DiemBoCuc;
+  /** Sắp lại tòa đang có: áp dụng giữ id tòa và tòa khoá. */
+  sapLai?: boolean;
+  /** Điểm các tòa đang đặt trên lô, để so với phương án mới. */
+  hienTrang?: DiemBoCuc;
 };
 
 // ---------- MT-06: % căn hướng tốt (app cũ `huongThat` + nhóm mặc định TỐT = Đ · ĐN · N) ----------

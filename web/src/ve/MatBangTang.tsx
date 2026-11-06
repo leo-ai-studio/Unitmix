@@ -18,6 +18,8 @@ type Props = {
   tv: ThuVien;
   hinh: HinhHocTai;
   kieu: KieuMb;
+  /** In PDF: hệ số độ dày nét và màu tường riêng. */
+  net?: { day?: number; tuong?: string | null };
   /** Kiểu của TEM căn nếu khác kiểu tô (HĐMB: tô màu loại nhạt, tem như HH1). */
   kieuTem?: KieuMb;
   noiThat: boolean;
@@ -76,10 +78,10 @@ export function soLieuTang(mau: ToaVe, toa: BoCuc, tv: ThuVien) {
 }
 
 /** Mặt bằng tầng điển hình vẽ trong BanVe (toạ độ mm, lật trục y bằng phép biến đổi nhóm). */
-export function MatBangTang({ truTCC, mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTem, canKhoa, onChonO, dsChon = [], onMenu, loiTT, loiKhoa, nhanCongNang, deBai, nguongDt,
+export function MatBangTang({ net, truTCC, mau, toa, tv, hinh, kieu, kieuTem, noiThat, hienTem, canKhoa, onChonO, dsChon = [], onMenu, loiTT, loiKhoa, nhanCongNang, deBai, nguongDt,
   thangKhoa, onChonThang, oDich, dichLoi, oKeo, hienHanhLang = true, choSang, canVuot, loiDaGiac }: Props) {
   const mauDich = dichLoi ? 'var(--warn)' : 'var(--green)';
-  const K = KIEU_MB[kieu];
+  const K0 = KIEU_MB[kieu], K = net?.tuong ? { ...K0, tuong: net.tuong } : K0, hsNet = net?.day ?? 1;
   const { can, loai } = useMemo(() => soLieuTang(mau, toa, tv), [mau, toa.canTheo, toa.canViTri, toa.congNang, toa.latO, tv]);
   const thang = useMemo(() => mau.mat.flatMap((m, mi) => m.phan_tu.filter((q) => q.loai === 'thang_bo').map((q, i) => ({
     khoa: q.khoa ?? `${mi}:t${i}`, o: d(oThang(m, q.a0, q.a1, q.sau_mm ?? 8500)) + 'Z',
@@ -151,7 +153,7 @@ export function MatBangTang({ truTCC, mau, toa, tv, hinh, kieu, kieuTem, noiThat
       .map(([cat, dd]) => {
         const n = NET[cat];
         return (
-          <path key={`${khoa}${cat}`} d={dd} fill="none" stroke={K[n.mau]} stroke-width={n.w} stroke-opacity={n.o} stroke-dasharray={n.d}
+          <path key={`${khoa}${cat}`} d={dd} fill="none" stroke={K[n.mau]} stroke-width={n.w * hsNet} stroke-opacity={n.o} stroke-dasharray={n.d}
             stroke-linejoin="round" stroke-linecap={n.d ? 'butt' : 'round'} vector-effect="non-scaling-stroke" pointer-events="none" />
         );
       });
@@ -202,7 +204,7 @@ export function MatBangTang({ truTCC, mau, toa, tv, hinh, kieu, kieuTem, noiThat
       {/* nét bao DTXD như app cũ: kiểu màn hình = nét đỏ đứt dày 300 mm theo mét thật (phủ kín mép tường khi phóng); kiểu salekit = nét liền mảnh màu tường */}
       <path d={d(mau.duong_bao) + 'Z'} fill="none" pointer-events="none" stroke-linejoin="miter"
         {...(K.sanTrang
-          ? { stroke: K.tuong, 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }
+          ? { stroke: K.tuong, 'stroke-width': hsNet, 'vector-effect': 'non-scaling-stroke' }
           : { stroke: '#E0201B', 'stroke-width': 300, 'stroke-dasharray': '2000 1000' })} />
       {/* ô thang bộ bấm được (công cụ tay: chọn / kéo dời / xoá thang) */}
       {onChonThang && thang.map((th) => (

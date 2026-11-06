@@ -19,6 +19,7 @@ export const SVG_BT: Record<string, string> = {
   toaDo: '<circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.2"/>',
   xoay: '<circle cx="12" cy="12" r="8" stroke-dasharray="38 12.3"/><path d="M17 3.5l2.5 3-3.5 1"/><circle cx="12" cy="12" r="1.6"/>',
   vuaKhung: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
+  vuaLo: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><path d="M9 15l1-6 5 1-1 5z"/>',
   xem3d: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
   phong: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6"/>',
   thu: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M7.5 10.5h6"/>',

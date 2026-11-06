@@ -42,6 +42,6 @@ export default defineConfig({
   },
   // Chạy thử trên máy: API do `wrangler dev` (cổng 8787) phục vụ; agent chạy API riêng thì đặt UNITMIX_API (vd. http://127.0.0.1:8797).
   server: { port: 5180, proxy: { '/api': process.env.UNITMIX_API ?? 'http://127.0.0.1:8787' } },
-  // Vài test quét tệp XREF / thư viện trên đĩa, chậm khi máy bận: nới giới hạn mặc định 5 s.
-  test: { environment: 'node', testTimeout: 30_000 },
+  // Vài test quét tệp XREF / thư viện trên đĩa, chậm khi máy bận: nới giới hạn mặc định 5 s; chạy song song cả bộ có ca quét tới 40 s.
+  test: { environment: 'node', testTimeout: 90_000 },
 });

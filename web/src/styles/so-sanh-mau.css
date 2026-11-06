@@ -77,3 +77,4 @@
   .ss-mau > .chan-hop { position: sticky; bottom: -22px; z-index: 3; margin: 0 -22px -22px; padding: 10px 22px; background: var(--panel); border-top: 1px solid var(--line); border-radius: 0 0 10px 10px; }
   .ss-mau .ssm-bang thead th { z-index: 2; }
 }
+.ssm-so-toa { margin: 4px 0; font-size: 12px; font-weight: 600; color: var(--green); }

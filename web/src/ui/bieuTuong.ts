@@ -20,6 +20,7 @@ export const BIEU_TUONG = {
   toaDo: '⌗', // nhập toạ độ / góc chính xác
   xoay: '⟳',
   vuaKhung: '⛶', // vừa khung
+  vuaLo: '◱', // vừa lô đang chọn
   xem3d: '⬡',
   phong: '⊕', // phóng to
   thu: '⊖', // thu nhỏ

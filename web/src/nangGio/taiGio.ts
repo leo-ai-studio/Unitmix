@@ -4,7 +4,7 @@
  * Gom ngay thành phân bố hướng × tốc độ (nhỏ) rồi nhớ ở localStorage theo ô 0,1° (lưới mô hình ~ 10 km) — mỗi vị trí tải một lần.
  * Mất mạng / lỗi: trả lỗi để giao diện báo, không chặn gì khác.
  */
-import { phanBo, type PhanBoGio } from '../tinh/nangGio/gio';
+import { huongChuDao, phanBo, type PhanBoGio } from '../tinh/nangGio/gio';
 
 const KHOA = 'unitmix.gio.v1.';
 export async function taiPhanBoGio(lat: number, lng: number, signal?: AbortSignal): Promise<PhanBoGio> {
@@ -23,4 +23,14 @@ export async function taiPhanBoGio(lat: number, lng: number, signal?: AbortSigna
   const gon = { ...p, f: p.f.map((r2) => r2.map((x) => +x.toFixed(6))) };
   try { localStorage.setItem(k, JSON.stringify(gon)); } catch { /* đầy: bỏ */ }
   return gon;
+}
+
+/** Ba hướng gió mạnh nhất của dự án để chấm bố cục; chưa đặt vị trí, mất mạng hoặc quá `choMs` thì null (bộ xếp dùng hướng quy ước). */
+export async function huongGioDuAn(vt: { lat: number; lng: number; coToaDo: boolean }, choMs = 4000): Promise<{ ds: { pv: number; ts: number }[]; nguon: string } | null> {
+  if (!vt.coToaDo) return null;
+  const hoan = new AbortController(), hen = setTimeout(() => hoan.abort(), choMs);
+  try {
+    const p = await taiPhanBoGio(vt.lat, vt.lng, hoan.signal);
+    return { ds: huongChuDao(p).slice(0, 3).map((h) => ({ pv: h.i * 22.5, ts: h.trongSo })), nguon: p.nguon ?? '' };
+  } catch { return null; } finally { clearTimeout(hen); }
 }

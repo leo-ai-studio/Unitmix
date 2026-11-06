@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { napThuVien } from '../thu/thuVienThat';
 import { dienTich } from './hinhHoc';
 import { boDau, chamDiem, docSo, hopCoCau, phanTichYeuCau, TRONG_SO_MAC_DINH, uuNhuoc, xepHang, yeuCauMacDinh } from './goiYHinhToa';
-import type { LoaiCan, ToaMau } from './kieu';
-import { doMotMau, dsHinh, hoMau, soSanhMau, type KetQuaMau } from './soSanhMau';
+import type { Lo, LoaiCan, ToaMau } from './kieu';
+import { doMotMau, dsHinh, hoMau, soSanhMau, soToaTheoChiTieu, type KetQuaMau } from './soSanhMau';
 
 const { tv, dl } = napThuVien();
 const MUC: Record<LoaiCan, number> = { stu: 10, '1pn': 20, '2pn': 45, '2pnp': 10, '3pn': 15 };
@@ -182,5 +182,21 @@ describe('xếp hạng họ L thật (tm-l1 · tm-l2 · tm-l3)', () => {
       expect(g.uu.length + g.nhuoc.length).toBeGreaterThan(0);
     }
     for (let i = 1; i < h.length; i++) expect(h[i - 1].diem.tong).toBeGreaterThanOrEqual(h[i].diem.tong - 1e-9);
+  });
+});
+
+describe('số tòa theo chỉ tiêu lô', () => {
+  const lo = { id: 'A', ranh: [[0, 0], [100, 0], [100, 100], [0, 100]], chiGioi: null, xungQuanh: [], temDat: { kyHieu: 'A', chucNang: 'tm', coCauMucTieu: {}, chiTieu: { matDoMax: 40, matDoThapMax: 20, hssddMax: 10, tangCaoMax: 30, tangDe: 1, tangCanHo: 29, tangHam: null, danSoMax: 10000, soCanMax: 10000, nguoiMoiCan: 3, choDoOtoMoiCan: 1, choXeMayMoiCan: 2, cayXanhMin: 20 } } } as unknown as Lo;
+  it('mật độ tháp chặn trước', () => {
+    const r = soToaTheoChiTieu({ dtxd: 900, soCan: 20, danTang: 60 }, lo, 29)!;
+    expect(r).toMatchObject({ n: 2, chan: 'dtxd', soCan: 1160 });
+    expect(r.matDo).toBeCloseTo(18, 5);
+  });
+  it('số căn chặn khi mẫu nhiều căn', () => {
+    const lo2 = { ...lo, temDat: { ...lo.temDat, chiTieu: { ...lo.temDat.chiTieu, soCanMax: 700 } } };
+    expect(soToaTheoChiTieu({ dtxd: 900, soCan: 20, danTang: 60 }, lo2, 29)).toMatchObject({ n: 1, chan: 'can', soCan: 580 });
+  });
+  it('mẫu rỗng không tính', () => {
+    expect(soToaTheoChiTieu({ dtxd: 0, soCan: 20, danTang: 60 }, lo, 29)).toBeNull();
   });
 });

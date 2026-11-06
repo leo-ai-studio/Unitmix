@@ -18,7 +18,7 @@ export function khungBao(polys: Diem[][]): Khung | null {
   return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 }
 
-export type DieuKhienVe = { phong: () => void; thu: () => void; vuaKhung: () => void; tyLeM: number };
+export type DieuKhienVe = { phong: () => void; thu: () => void; vuaKhung: () => void; vuaVung: (k: Khung) => void; tyLeM: number };
 
 type Props = {
   khung: Khung | null;
@@ -172,6 +172,11 @@ export function BanVe({ khung, children, nhan, onDieuKhien, gocBac = 0, onBamNen
       phong: () => zoomNut(1 / 1.25),
       thu: () => zoomNut(1.25),
       vuaKhung: () => bayToi(vuaKhung()),
+      vuaVung: (k) => {
+        const { r, c } = ktRef.current.r ? ktRef.current : { r: 800, c: 500 };
+        const bw = Math.max(k[2] - k[0], 10) * 1.35, bh = Math.max(k[3] - k[1], 10) * 1.35;
+        bayToi({ cx: (k[0] + k[2]) / 2, cy: -(k[1] + k[3]) / 2, w: kep(Math.max(bw, (bh * r) / c)) });
+      },
       tyLeM,
     });
   }, [tyLeM, khoa]);

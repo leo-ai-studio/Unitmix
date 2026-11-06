@@ -6,6 +6,19 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.8.1', ngay: '2026-11-06',
+    vi: [
+      'Xếp tòa: Bảng so sánh phương án cả màn; Xếp hàng loạt chạy cùng bộ xếp với từng lô (22 lô trong khoảng 25 giây), chọn nhanh Tất cả hoặc theo loại nhà ở',
+      'So sánh mẫu: thêm cột Số tòa / lô và Căn / lô theo chỉ tiêu; hoa gió thật của dự án, bóng đổ giữa các tòa, tòa chữ L ôm góc, nút vừa lô',
+      'Xuất PDF: hộp tuỳ chọn kiểu trình bày, lớp, màu và độ dày nét; TMB lớn, keyplan và hoa gió ở góc trang',
+    ],
+    en: [
+      'Tower layout: full-screen option board; batch layout uses the same engine per lot (22 lots in about 25 s), quick select All or by housing type',
+      'Template comparison: towers / lot and units / lot columns from the limits; real project wind rose, shading between towers, corner L towers, fit-lot button',
+      'PDF export: options for style, layers, line colour and weight; large site plan, key plan and wind rose in the page corner',
+    ],
+  },
+  {
     v: '0.8.0', ngay: '2026-11-06',
     vi: [
       'Xếp tòa trong lô: Xếp tòa đang có (giữ nguyên tòa) hoặc Tự tổ hợp (sát DTXD, cơ cấu), mỗi chế độ 10 phương án trong vài giây',

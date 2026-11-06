@@ -6,7 +6,7 @@ import type { NutHienThi } from './ThanhHienThi';
 
 type Props = {
   /** Phóng / thu / vừa khung của bản vẽ (BanVe `dk`); không có thì ẩn cụm zoom (vd 3D tự có chuột). */
-  zoom?: { phong: () => void; thu: () => void; vua: () => void } | null;
+  zoom?: { phong: () => void; thu: () => void; vua: () => void; vuaLo?: () => void } | null;
   /** Nút bật / tắt lớp hiển thị — gom vào một nút "Lớp" mở danh sách. */
   lop?: NutHienThi[];
   /** Nội dung chú giải — gom vào nút "Chú giải", gập mặc định. */
@@ -62,6 +62,7 @@ export function GocBanVe({ zoom, lop, chuGiai, troGiup }: Props) {
             {lop && lop.length > 0 && <NutBieuTuong k="lop" bat={mo === 'lop'} onClick={() => bat('lop')} />}
             {zoom && <NutBieuTuong k="phong" lop="chi-cam-ung" onClick={zoom.phong} />}
             {zoom && <NutBieuTuong k="thu" lop="chi-cam-ung" onClick={zoom.thu} />}
+            {zoom?.vuaLo && <NutBieuTuong k="vuaLo" onClick={zoom.vuaLo} />}
             {zoom && <NutBieuTuong k="vuaKhung" onClick={zoom.vua} />}
           </div>
         </div>

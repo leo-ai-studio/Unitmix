@@ -21,6 +21,7 @@ import { dtxdTang } from './kpi';
 import { BAY_MM, daGiacCacLoi, dsLoi, mauHieuDung, tuChinhToa, type DuLieuMB, type ToaMB } from './loiThang';
 import { boCucTang, canCuaToa, coMat, viTriCan, type ToaCoMat } from './matBang';
 import { chieuCaoPCCC, thoatNan, type ToaPCCC } from './pccc';
+import { sucChua } from './sucChua';
 import { toiUuCoCau } from './toiUu';
 
 /** Biến thể so sánh: mẫu gốc của thư viện, hoặc mẫu sau "Tối ưu cơ cấu" có đổi bề ngang + STRETCH (như nút ở màn Tầng). */
@@ -97,6 +98,23 @@ export function toaAo(mauId: string, loId: string, soTangDH: number, soTangDe: n
 }
 
 /** Số tầng điển hình mặc định: tầng căn hộ QH, không có thì tầng cao tối đa − tầng đế; thiếu lô thì 24 (như test quét mẫu). */
+/** Số tòa một mẫu tối đa trên một lô theo chỉ tiêu: `chan` là chỉ tiêu chặn trước tiên. Chưa xét hình lô, khoảng lùi, khoảng cách tòa. */
+export type SoToaLo = { n: number; chan: 'dtxd' | 'san' | 'can' | 'dan'; soCan: number; matDo: number | null };
+export function soToaTheoChiTieu(r: Pick<KetQuaMau, 'dtxd' | 'soCan' | 'danTang'>, lo: Lo, soTangDH: number): SoToaLo | null {
+  const sc = sucChua(lo), ct = lo.temDat.chiTieu, soTangDe = ct.tangDe ?? 1;
+  if (r.dtxd <= 0 || soTangDH <= 0) return null;
+  const dt = sc.dtxdThapMax ?? sc.dtxdMax, tran: [SoToaLo['chan'], number | null][] = [
+    ['dtxd', dt === null ? null : dt / r.dtxd],
+    ['san', sc.dtSanMax === null ? null : sc.dtSanMax / (r.dtxd * (soTangDH + soTangDe))],
+    ['can', sc.soCanUoc && r.soCan ? sc.soCanUoc / (r.soCan * soTangDH) : null],
+    ['dan', ct.danSoMax > 0 && r.danTang > 0 ? ct.danSoMax / (r.danTang * soTangDH) : null],
+  ];
+  const co = tran.filter((x): x is [SoToaLo['chan'], number] => x[1] !== null);
+  if (!co.length) return null;
+  const [chan, v] = co.reduce((a, b) => (b[1] < a[1] ? b : a)), n = Math.max(0, Math.floor(v + 1e-9));
+  return { n, chan, soCan: n * r.soCan * soTangDH, matDo: sc.dtLo ? (n * r.dtxd * 100) / sc.dtLo : null };
+}
+
 export const soTangMacDinh = (lo: Lo | null | undefined): number => {
   const ct = lo?.temDat.chiTieu;
   if (!ct) return 24;

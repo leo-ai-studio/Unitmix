@@ -1180,3 +1180,18 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Test:** `tinh/boCucLo.test.ts` 12 ca. Full web lúc máy tải 3 ca đỏ (`dauHanhLangQT` hết giờ, `temCan`, `tuChinhMoRong` ngưỡng thời gian), chạy riêng xanh. Thử tay trên bản sao cục bộ: chạy 2 chế độ, rê xem trước, áp dụng, Ctrl+Z.
 - **Pytest:** sửa `test_huy_viec_tu_tram_giet_tien_trinh` đỏ lâu nay: test đọc tệp UTF-8 bằng cp1252 và gọi `pgrep`, không có trên Windows. Dò tiến trình giả bằng PowerShell, bật lại `test_dung_giua_chung_giet_tien_trinh`.
 - **Chưa làm:** hoa gió thật của dự án; bóng đổ giữa các tòa trong tiêu chí nắng; so hiện trạng đủ 5 tiêu chí trên panel; tòa L ôm góc lô.
+
+## 2026-11-06 (khuya) · Gộp xếp hàng loạt, 5 đề xuất xếp tòa, tuỳ chọn báo cáo PDF · Claude Code (Opus 5.5)
+
+- **Xếp hàng loạt:** dùng `sinhBoCuc` trong worker, chung chế độ và ưu tiên với panel; panel có nút Nhiều lô.
+- **Xếp tòa:** hoa gió thật, bóng đổ giữa tòa, dòng Hiện trạng, nút Vừa lô, kiểu Ôm góc, độ mở về cây xanh, §2.6.1 đầu hồi, trục tòa theo cạnh. Xem `docs/hoc_xep_lo.md`.
+- **PDF:** `xuat/pdf/tuyChonIn.ts` (kiểu, bảng màu, trang, lớp, màu và độ dày nét, cỡ chữ, khung TMB, nhớ theo máy), Xem trước `xemTruocPdf`, TMB phóng theo lô có tòa, keyplan + hoa gió góc trang, bảng tổng hợp gộp với chỉ tiêu lô.
+- **Sự cố:** một phiên khác cùng thư mục ghi đè `tuyChonIn.ts` lúc 00:59, đã khôi phục. Hai phiên cùng sửa một thư mục làm mã hỏng biên dịch tạm thời.
+- **Chưa đạt:** khớp M7 ở CT-1, CT-2 (bảng trong hoc_xep_lo.md). Chưa in ra tệp PDF thật qua hộp in, mới xem trước trên màn hình.
+
+## 2026-11-06 · Bảng so sánh phương án, chọn lô theo loại nhà ở, số tòa theo chỉ tiêu · Claude Code (Opus 5.5)
+
+- **Bảng so sánh** (`ui/BangPhuongAn.tsx`): lớp phủ cả màn, nút ở panel lô (đủ cả Xếp tòa đang có và Tự tổ hợp, chế độ kia chạy nền) và ở Xếp hàng loạt (theo từng lô, chọn được phương án). Hàng loạt thêm dải hình nhỏ dưới mỗi lô.
+- **Chọn lô:** nút Tất cả và từng loại nhà ở (`loaiNhaCuaLo`), bấm lại là bỏ. Thử trên bản sao Long Biên: 22 / 0 / 5 lô.
+- **Số tòa** (`soToaTheoChiTieu`, tinh/soSanhMau.ts): So sánh mẫu thêm cột Số tòa / lô, Căn / lô và dòng ở thẻ. Chỉ theo chỉ tiêu, chưa xét hình lô.
+- **Đo:** hàng loạt 22 lô 24,1 s, 120 phương án, không treo. TĐC-1.1 và TĐC-10.2 không ra phương án đạt; NOXH-7.4 chỉ 1 phương án; NOTM-6.2 có 10 phương án gần giống nhau.

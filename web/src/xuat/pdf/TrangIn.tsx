@@ -14,6 +14,8 @@ import { MatBangTang } from '../../ve/MatBangTang';
 import { KIEU_MB, NHAN_LOAI, type KieuMb } from '../../ve/kieuMb';
 import { canNhoLo, DT_CAN_NHO, thongKeLo, tongHopChiTieu, unitmixToa, type CotTongHop, type DuLieuIn, type NhomToaIn } from './duLieuIn';
 import { CAN_MOI_THANG, DAN_MOI_THANG } from '../../tinh/thangMay';
+import { HoaGio } from '../../nangGio/HoaGio';
+import { viTriPA } from '../../tinh/viTri';
 
 const m2 = (v: number | null | undefined, n = 1) => (v === null || v === undefined ? '—' : fmtSo(v, { thapPhan: n }));
 
@@ -45,7 +47,7 @@ function hopMb(n: NhomToaIn, d: DuLieuIn, tem: boolean, le: number): [number, nu
 }
 
 /** Mặt bằng tầng điển hình của một nhóm tòa; `chiO` = chỉ vẽ ô đó (trang riêng mỗi mẫu căn), `chon` = ô tô nhấn (key plan). */
-export function MbTang({ n, d, kieu, kieuTem, tem, noiThat, chiO, chon, le = 3, sach, doDay }: { doDay?: boolean; n: NhomToaIn; d: DuLieuIn; kieu: KieuMb; kieuTem?: KieuMb; tem: boolean; noiThat: boolean; chiO?: Diem[]; chon?: string[]; le?: number; sach?: boolean }) {
+export function MbTang({ n, d, kieu, kieuTem, tem, noiThat, chiO, chon, le = 3, sach, doDay, net }: { net?: { day?: number; tuong?: string | null }; doDay?: boolean; n: NhomToaIn; d: DuLieuIn; kieu: KieuMb; kieuTem?: KieuMb; tem: boolean; noiThat: boolean; chiO?: Diem[]; chon?: string[]; le?: number; sach?: boolean }) {
   const lo = d.pa.lo.find((l) => l.id === n.dai.loId);
   let k = hopMb(n, d, tem && !chiO, chiO ? 0 : le);
   if (chiO) { const xs = chiO.map((p) => p[0] / 1000), ys = chiO.map((p) => p[1] / 1000); k = [Math.min(...xs) - 0.6, Math.min(...ys) - 0.6, Math.max(...xs) + 0.6, Math.max(...ys) + 0.6]; }
@@ -54,7 +56,7 @@ export function MbTang({ n, d, kieu, kieuTem, tem, noiThat, chiO, chon, le = 3, 
     <svg class="in-mb" viewBox={`${k[0]} ${-k[3]} ${k[2] - k[0]} ${k[3] - k[1]}`} preserveAspectRatio="xMidYMid meet" role="img">
       {chiO && <defs><clipPath id={idCp}><polygon points={chiO.map((p) => `${p[0] / 1000},${-p[1] / 1000}`).join(' ')} /></clipPath></defs>}
       <g clip-path={chiO ? `url(#${idCp})` : undefined}>
-        <MatBangTang mau={n.mau} toa={n.bc} tv={d.tv} hinh={d.hinh} kieu={kieu} kieuTem={kieuTem} noiThat={noiThat} hienTem={tem && !chiO} canKhoa={null} onChonO={() => {}}
+        <MatBangTang net={net} mau={n.mau} toa={n.bc} tv={d.tv} hinh={d.hinh} kieu={kieu} kieuTem={kieuTem} noiThat={noiThat} hienTem={tem && !chiO} canKhoa={null} onChonO={() => {}}
           dsChon={chon} nguongDt={d.pa.nguong.dtCanM2} deBai={sach ? undefined : lo?.temDat.deBai?.dtCan} loiDaGiac={n.loiDG} hienHanhLang={false} />
       </g>
       {doDay && <DoDay n={n} />}
@@ -92,22 +94,29 @@ function DoDay({ n }: { n: NhomToaIn }) {
 
 const MAU_CN: Record<string, string> = { tm: '#e4eee9', xh: '#e5ecf4', khac: '#efede7' };
 
-/** Tổng mặt bằng quy hoạch: lô (tô theo chức năng), chỉ giới, đường xung quanh, chân tòa, nhãn lô / tòa, thước tỷ lệ. */
-function Tmb({ d }: { d: DuLieuIn }) {
-  const los = d.pa.lo;
-  const pts = los.flatMap((l) => l.ranh);
+/** Khung vẽ TMB / keyplan (m): các lô có tòa để hình lớn, hoặc cả dự án theo tuỳ chọn. */
+function khungVe(d: DuLieuIn): { x0: number; x1: number; y0: number; y1: number; co: number } | null {
+  const pts = (d.tc.khungTmb === 'lo_co_toa' ? loCoToa(d) : d.pa.lo).flatMap((l) => l.ranh);
   if (!pts.length) return null;
   const x0 = Math.min(...pts.map((p) => p[0])), x1 = Math.max(...pts.map((p) => p[0])), y0 = Math.min(...pts.map((p) => p[1])), y1 = Math.max(...pts.map((p) => p[1]));
-  const co = Math.max(x1 - x0, y1 - y0), le = co * 0.06, fs = co / 70;
+  return { x0, x1, y0, y1, co: Math.max(x1 - x0, y1 - y0) };
+}
+
+/** Tổng mặt bằng quy hoạch: lô (tô theo chức năng), chỉ giới, đường xung quanh, chân tòa, nhãn lô / tòa, thước tỷ lệ; lớp bật / tắt theo tuỳ chọn. */
+function Tmb({ d }: { d: DuLieuIn }) {
+  const k = khungVe(d);
+  if (!k) return null;
+  const { x0, x1, y0, y1, co } = k, le = co * 0.04, fs = co / 62, { lop, net } = d.tc;
   const P = (ps: Diem[]) => ps.map((p) => `${p[0]},${-p[1]}`).join(' ');
   const tb = Math.pow(10, Math.floor(Math.log10(co / 4))), thuoc = tb * (co / 4 / tb >= 5 ? 5 : co / 4 / tb >= 2 ? 2 : 1);
+  const coToa = new Set(d.pa.toa.map((x) => x.loId));
   return (
     <svg class="in-tmb" viewBox={`${x0 - le} ${-(y1 + le)} ${x1 - x0 + 2 * le} ${y1 - y0 + 2 * le}`} preserveAspectRatio="xMidYMid meet" role="img">
-      {los.flatMap((l) => l.xungQuanh).map((dg, i) => <polyline key={`x${i}`} points={P(dg)} fill="none" stroke="#b9b6ae" stroke-width={co / 900} />)}
-      {los.map((l) => (
+      {lop.duongQH && d.pa.lo.flatMap((l) => l.xungQuanh).map((dg, i) => <polyline key={`x${i}`} points={P(dg)} fill="none" stroke="#b9b6ae" stroke-width={(co / 900) * net.day} />)}
+      {d.pa.lo.map((l) => (
         <g key={l.id}>
-          <polygon points={P(l.ranh)} fill={MAU_CN[l.temDat.chucNang] ?? MAU_CN.khac} stroke="#d21f1f" stroke-width={co / 420} stroke-dasharray={`${co / 70} ${co / 140}`} />
-          {l.chiGioi && <polygon points={P(l.chiGioi)} fill="none" stroke="#2b52c4" stroke-width={co / 900} stroke-dasharray={`${co / 150} ${co / 300}`} />}
+          <polygon points={P(l.ranh)} fill={lop.toLo ? MAU_CN[l.temDat.chucNang] ?? MAU_CN.khac : 'none'} stroke={lop.ranhLo ? net.mauRanh ?? 'var(--in-c)' : 'none'} stroke-width={(co / 520) * net.day} />
+          {lop.chiGioi && l.chiGioi && <polygon points={P(l.chiGioi)} fill="none" stroke={net.mauChiGioi ?? 'var(--in-c)'} stroke-width={(co / 900) * net.day} stroke-dasharray={`${co / 150} ${co / 300}`} />}
         </g>
       ))}
       {d.pa.toa.map((x) => {
@@ -117,21 +126,38 @@ function Tmb({ d }: { d: DuLieuIn }) {
         const tam = ch0.reduce<Diem>((s, p) => [s[0] + p[0] / ch0.length, s[1] + p[1] / ch0.length], [0, 0]);
         return (
           <g key={x.id}>
-            <polygon points={P(ch0)} fill="#8fb3ad" stroke="#174f52" stroke-width={co / 800} />
-            <text x={tam[0]} y={-tam[1]} font-size={fs * 0.8} text-anchor="middle" dominant-baseline="central" fill="#022b1e" font-weight="600">{m0.ten_vi.split(' · ')[0]}</text>
+            <polygon points={P(ch0)} fill={net.mauToa ?? '#8fb3ad'} stroke="var(--in-c)" stroke-width={(co / 800) * net.day} />
+            {lop.nhanToa && <text x={tam[0]} y={-tam[1]} font-size={fs * 0.72} text-anchor="middle" dominant-baseline="central" fill="#022b1e" font-weight="600">{m0.ten_vi.split(' · ')[0]}</text>}
           </g>
         );
       })}
-      {los.map((l) => {
+      {lop.nhanLo && d.pa.lo.map((l) => {
+        if (!coToa.has(l.id) && d.tc.khungTmb === 'du_an') return null; // cả dự án nhiều lô: chỉ ghi lô có tòa cho khỏi chồng chữ
         const a = l.ranh.reduce<Diem>((s, p) => [s[0] + p[0] / l.ranh.length, s[1] + p[1] / l.ranh.length], [0, 0]);
-        return <text key={`n${l.id}`} x={a[0]} y={-a[1] - (l.ranh.length ? fs * 1.6 : 0)} font-size={fs * 1.15} text-anchor="middle" fill="#292d2d" font-weight="700" opacity="0.8">{l.temDat.kyHieu}</text>;
+        const ngoaiKhung = a[0] < x0 - le || a[0] > x1 + le || a[1] < y0 - le || a[1] > y1 + le;
+        return ngoaiKhung ? null : <text key={`n${l.id}`} x={a[0]} y={-a[1] - fs * 1.6} font-size={fs * (coToa.has(l.id) ? 1.1 : 0.75)} text-anchor="middle" fill="var(--in-c)" font-weight="700" opacity={coToa.has(l.id) ? 0.9 : 0.55}>{l.temDat.kyHieu}</text>;
       })}
-      <g transform={`translate(${x0 - le * 0.6} ${-(y0 - le * 0.5)})`}>
-        <line x1="0" y1="0" x2={thuoc} y2="0" stroke="#292d2d" stroke-width={co / 500} />
-        <line x1="0" y1={-fs * 0.4} x2="0" y2={fs * 0.4} stroke="#292d2d" stroke-width={co / 500} /><line x1={thuoc} y1={-fs * 0.4} x2={thuoc} y2={fs * 0.4} stroke="#292d2d" stroke-width={co / 500} />
-        <text x={thuoc / 2} y={-fs * 0.7} font-size={fs * 0.9} text-anchor="middle" fill="#292d2d">{fmtSo(thuoc)} m</text>
-      </g>
+      {lop.thuocTyLe && (
+        <g transform={`translate(${x0 - le * 0.6} ${-(y0 - le * 0.5)})`}>
+          <line x1="0" y1="0" x2={thuoc} y2="0" stroke="#292d2d" stroke-width={co / 500} />
+          <line x1="0" y1={-fs * 0.4} x2="0" y2={fs * 0.4} stroke="#292d2d" stroke-width={co / 500} /><line x1={thuoc} y1={-fs * 0.4} x2={thuoc} y2={fs * 0.4} stroke="#292d2d" stroke-width={co / 500} />
+          <text x={thuoc / 2} y={-fs * 0.7} font-size={fs * 0.8} text-anchor="middle" fill="#292d2d">{fmtSo(thuoc)} m</text>
+        </g>
+      )}
     </svg>
+  );
+}
+
+/** Hoa gió thật của dự án; chưa đặt vị trí thì chỉ la bàn. Xoay theo góc Bắc của bản vẽ. */
+function GioIn({ d }: { d: DuLieuIn }) {
+  const g = viTriPA(d.pa).gocBac;
+  return (
+    <div class="in-gio" style={{ '--goc': `${-g}deg` }}>
+      {d.gio ? <HoaGio p={d.gio} /> : (
+        <svg viewBox="-50 -50 100 100" role="img"><circle r="44" fill="none" stroke="var(--in-c)" stroke-width="1" /><path d="M0-40 L10 22 L0 12 L-10 22Z" fill="var(--in-c)" /><text y="-44" text-anchor="middle" font-size="12" font-weight="700" fill="var(--in-c)" dy="-1">B</text></svg>
+      )}
+      <p>{d.gio ? t('pdf.hoaGio') : t('pdf.laBan')}</p>
+    </div>
   );
 }
 
@@ -139,9 +165,9 @@ function Tmb({ d }: { d: DuLieuIn }) {
 
 /** Keyplan: mọi lô, chân tòa xám, tòa của nhóm đang in tô đỏ. */
 function KeyPlan({ d, n }: { d: DuLieuIn; n: NhomToaIn }) {
-  const pts = d.pa.lo.flatMap((l) => l.ranh);
-  if (!pts.length) return null;
-  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), le = Math.max(x1 - x0, y1 - y0) * 0.04;
+  const k = khungVe(d);
+  if (!k) return null;
+  const { x0, x1, y0, y1, co } = k, le = co * 0.04;
   const P = (ps: Diem[]) => ps.map((p) => `${p[0]},${-p[1]}`).join(' ');
   return (
     <svg class="in-tmb" viewBox={`${x0 - le} ${-(y1 + le)} ${x1 - x0 + 2 * le} ${y1 - y0 + 2 * le}`} preserveAspectRatio="xMidYMid meet" role="img">
@@ -151,12 +177,9 @@ function KeyPlan({ d, n }: { d: DuLieuIn; n: NhomToaIn }) {
   );
 }
 
-/** Bảng màu báo cáo: mỗi loại căn một màu dễ phân biệt, như bản vẽ trình duyệt. */
-const KIEU_BC: KieuMb = 'sk_rivea';
-
 /** Bảng unit mix một tòa, theo mẫu trình duyệt: DTSD · DTXD · hiệu suất · thang máy theo TK so với 70 căn và 200 dân mỗi thang. */
 function BangUnitmix({ n, d }: { n: NhomToaIn; d: DuLieuIn }) {
-  const u = unitmixToa(d, n), K = KIEU_MB[KIEU_BC], tt = u.thang;
+  const u = unitmixToa(d, n), K = KIEU_MB[d.tc.bangMau], tt = u.thang;
   return (
     <table class="in-bang in-um">
       <caption>{n.ten} · {fmtSo(u.soTang)} {t('pdf.tangCH')}</caption>
@@ -182,7 +205,8 @@ function BangUnitmix({ n, d }: { n: NhomToaIn; d: DuLieuIn }) {
 }
 
 const tenNhom = (n: NhomToaIn, d: DuLieuIn) => {
-  const los = [...new Set(n.toas.map((x) => d.pa.lo.find((l) => l.id === x.loId)?.temDat.kyHieu).filter(Boolean))].join(', ');
+  const ds = [...new Set(n.toas.map((x) => d.pa.lo.find((l) => l.id === x.loId)?.temDat.kyHieu).filter(Boolean))];
+  const los = ds.length > 3 ? `${ds.slice(0, 3).join(', ')} +${ds.length - 3}` : ds.join(', '); // tiêu đề một dòng
   return `${n.ten}${n.toas.length > 1 ? ` × ${n.toas.length}` : ''}${los ? ` · ${los}` : ''}`;
 };
 const dsTang = (n: NhomToaIn) => `${n.dai.soTangDe ? n.dai.soTangDe + ' + ' : ''}${n.dai.soTangDH} ${t('pdf.tang')}`;
@@ -190,33 +214,34 @@ const dsTang = (n: NhomToaIn) => `${n.dai.soTangDe ? n.dai.soTangDe + ' + ' : ''
 // ---------- BÁO CÁO ----------
 
 function TrangTmb({ d, so }: { d: DuLieuIn; so: string }) {
-  const k = d.kq.tong, tong = k.soCan;
+  const k = d.kq.tong, tong = k.soCan, K = KIEU_MB[d.tc.bangMau], lop = d.tc.lop;
   return (
     <Trang d={d} kho="a3n" tieuDe={t('pdf.bc.tmb')} so={so}>
       <div class="in-hai-cot tmb">
-        <div class="in-khung-ve"><Tmb d={d} /></div>
+        <div class="in-khung-ve">
+          <Tmb d={d} />
+          {lop.hoaGio && <div class="in-goc-ve"><GioIn d={d} /></div>}
+        </div>
         <aside>
-          <h2>{t('pdf.bc.tomTat')}</h2>
-          <dl class="in-so-lieu">
-            <div><dt>{t('pdf.soLo')}</dt><dd>{d.pa.lo.length}</dd></div>
+          <dl class="in-so-lieu ba">
+            <div><dt>{t('pdf.soLo')}</dt><dd>{loCoToa(d).length}</dd></div>
             <div><dt>{t('pdf.soToa')}</dt><dd>{d.pa.toa.length}</dd></div>
             <div><dt>{t('xls.tongCan')}</dt><dd>{fmtSo(tong)}</dd></div>
             <div><dt>{t('dong.danSo')}</dt><dd>{fmtSo(k.danSo)}</dd></div>
-            <div><dt>{t('dong.dtSan')} (m²)</dt><dd>{fmtSo(k.dtSanTinhHSSDD)}</dd></div>
+            <div class="rong"><dt>{t('dong.dtSan')} (m²)</dt><dd>{fmtSo(k.dtSanTinhHSSDD)}</dd></div>
           </dl>
-          <h2>{t('pdf.bangLo')}</h2>
-          <table class="in-bang">
-            <thead><tr><th>{t('pdf.viTri')}</th><th class="so">{t('pdf.soToa')}</th><th class="so">{t('pdf.tongSoCan')}</th><th class="so">{t('pdf.canNho').replace('{n}', String(DT_CAN_NHO))}</th><th class="so">{t('pdf.tyLeCanNho').replace('{n}', String(DT_CAN_NHO))}</th></tr></thead>
-            <tbody>{loCoToa(d).map((l) => { const c = canNhoLo(d, l.id); return <tr key={l.id}><td>{l.temDat.kyHieu}</td><td class="so">{d.pa.toa.filter((x) => x.loId === l.id).length}</td><td class="so">{fmtSo(c.tong)}</td><td class="so">{fmtSo(c.nho)}</td><td class="so do">{c.tong ? m2((c.nho / c.tong) * 100) : '—'}%</td></tr>; })}</tbody>
-          </table>
           <h2>{t('pdf.coCauChung')}</h2>
           <table class="in-bang">
             <thead><tr><th>{t('pdf.loaiCan')}</th><th class="so">{t('pdf.soCan')}</th><th class="so">%</th></tr></thead>
-            <tbody>{LOAI_CAN.map((l) => <tr key={l}><td><span class="sw" style={{ background: `var(--u-${l})` }} />{NHAN_LOAI[l]}</td><td class="so">{fmtSo(k.coCau[l])}</td><td class="so">{m2(k.coCauPct[l])}</td></tr>)}</tbody>
+            <tbody>{LOAI_CAN.map((l) => <tr key={l}><td><span class="sw" style={{ background: K.u[l] }} />{NHAN_LOAI[l]}</td><td class="so">{fmtSo(k.coCau[l])}</td><td class="so">{m2(k.coCauPct[l])}</td></tr>)}</tbody>
           </table>
-          <h2>{t('pdf.chuGiai')}</h2>
-          <ul class="in-chu-giai">{Object.entries({ tm: t('cn.tm'), xh: t('cn.xh'), khac: t('cn.khac') }).map(([k2, v]) => <li key={k2}><span class="sw" style={{ background: MAU_CN[k2] }} />{v}</li>)}
-            <li><span class="sw to" style={{ background: '#8fb3ad' }} />{t('pdf.chanToa')}</li><li><span class="sw net" />{t('pdf.chiGioi')}</li><li><span class="sw ranh" />{t('pdf.ranhLo')}</li></ul>
+          <h2>{t('pdf.bangLo')}</h2>
+          <table class={`in-bang ${loCoToa(d).length > 14 ? 'nho' : ''}`}>
+            <thead><tr><th>{t('pdf.viTri')}</th><th class="so">{t('pdf.soToa')}</th><th class="so">{t('pdf.tongSoCan')}</th><th class="so">{t('pdf.tyLeCanNho').replace('{n}', String(DT_CAN_NHO))}</th></tr></thead>
+            <tbody>{loCoToa(d).map((l) => { const c = canNhoLo(d, l.id); return <tr key={l.id}><td>{l.temDat.kyHieu}</td><td class="so">{d.pa.toa.filter((x) => x.loId === l.id).length}</td><td class="so">{fmtSo(c.tong)}</td><td class="so">{c.tong ? m2((c.nho / c.tong) * 100) : '—'}%</td></tr>; })}</tbody>
+          </table>
+          <ul class="in-chu-giai ngang">{Object.entries({ tm: t('cn.tm'), xh: t('cn.xh'), khac: t('cn.khac') }).map(([k2, v]) => <li key={k2}><span class="sw" style={{ background: MAU_CN[k2] }} />{v}</li>)}
+            <li><span class="sw to" style={{ background: d.tc.net.mauToa ?? '#8fb3ad' }} />{t('pdf.chanToa')}</li>{lop.chiGioi && <li><span class="sw net" />{t('pdf.chiGioi')}</li>}</ul>
         </aside>
       </div>
     </Trang>
@@ -259,7 +284,7 @@ function BangKd({ d, lo }: { d: DuLieuIn; lo: Lo }) {
           const mtL = ((mt[l] ?? 0) / tongMt) * 100, lech = s.pct[l] - mtL;
           return (
             <tr key={l}>
-              <td><span class="sw" style={{ background: `var(--u-${l})` }} />{NHAN_LOAI[l]}</td>
+              <td><span class="sw" style={{ background: KIEU_MB[d.tc.bangMau].u[l] }} />{NHAN_LOAI[l]}</td>
               <td class="so">{m2(mtL)}</td><td class="so">{m2(s.pct[l])}</td><td class={`so ${Math.abs(lech) > 5 ? 'lech' : ''}`}>{lech > 0 ? '+' : ''}{m2(lech)}</td>
               <td class="so">{fmtSo(s.soCan[l])}</td><td class="so">{db?.soCan[l] === undefined ? '—' : fmtSo(db.soCan[l])}</td>
               <td class="so">{m2(s.dtBq[l])}</td><td class="so">{db?.dtCan[l] === undefined ? '—' : m2(db.dtCan[l])}</td>
@@ -271,9 +296,13 @@ function BangKd({ d, lo }: { d: DuLieuIn; lo: Lo }) {
   );
 }
 
-/** Bảng chỉ tiêu phương án: mỗi lô một hàng — trái so với quy hoạch, phải so với đề bài kinh doanh (cơ cấu căn, DT). 3 lô một trang A3. */
-const LO_MOI_TRANG = 3;
-const chiaTrang = (d: DuLieuIn): Lo[][] => { const ds = loCoToa(d), kq: Lo[][] = []; for (let i = 0; i < ds.length; i += LO_MOI_TRANG) kq.push(ds.slice(i, i + LO_MOI_TRANG)); return kq; };
+/** Bảng chỉ tiêu: trang đầu gồm bảng tổng hợp + 2 lô (khỏi một tờ nửa trống), các trang sau 3 lô; mỗi lô trái so QH, phải so đề bài KD. */
+const LO_MOI_TRANG = 3, LO_TRANG_DAU = 2;
+const chiaTrang = (d: DuLieuIn): Lo[][] => {
+  const ds = loCoToa(d), kq: Lo[][] = [ds.slice(0, LO_TRANG_DAU)];
+  for (let i = LO_TRANG_DAU; i < ds.length; i += LO_MOI_TRANG) kq.push(ds.slice(i, i + LO_MOI_TRANG));
+  return kq;
+};
 
 /** Bảng tổng hợp so sánh chỉ tiêu toàn phương án: theo QH · theo phương án · chênh, cho từng loại nhà ở và cả dự án. */
 function BangTongHop({ d }: { d: DuLieuIn }) {
@@ -314,18 +343,11 @@ function BangTongHop({ d }: { d: DuLieuIn }) {
   );
 }
 
-function TrangTongHop({ d, so }: { d: DuLieuIn; so: string }) {
-  return (
-    <Trang d={d} kho="a3n" tieuDe={t('pdf.th.trang')} so={so}>
-      <div class="in-hang-lo"><BangTongHop d={d} /><p class="in-ghi">{t('pdf.th.ghi')}</p></div>
-    </Trang>
-  );
-}
-
-function TrangChiTieu({ d, ds, so }: { d: DuLieuIn; ds: Lo[]; so: string }) {
+function TrangChiTieu({ d, ds, so, dau }: { d: DuLieuIn; ds: Lo[]; so: string; dau: boolean }) {
   return (
     <Trang d={d} kho="a3n" tieuDe={t('pdf.bc.chiTieu')} so={so}>
       <div class="in-hang-lo">
+        {dau && <><BangTongHop d={d} /><p class="in-ghi">{t('pdf.th.ghi')}</p></>}
         {ds.map((l) => <div class="in-hai-the" key={l.id}><TheQh d={d} l={l} /><BangKd d={d} lo={l} /></div>)}
       </div>
     </Trang>
@@ -333,18 +355,23 @@ function TrangChiTieu({ d, ds, so }: { d: DuLieuIn; ds: Lo[]; so: string }) {
 }
 
 function TrangMbToa({ d, n, so }: { d: DuLieuIn; n: NhomToaIn; so: string }) {
+  const { lop, net, bangMau } = d.tc;
   return (
     <Trang d={d} kho="a3n" tieuDe={`${t('pdf.bc.mbTang')} · ${tenNhom(n, d)}`} so={so}>
       <div class="in-hai-cot mb">
-        <div class="in-khung-ve"><MbTang n={n} d={d} kieu={KIEU_BC} tem noiThat={false} le={4} sach doDay /></div>
+        <div class="in-khung-ve"><MbTang n={n} d={d} kieu={bangMau} tem={lop.temCan} noiThat={lop.noiThat} le={lop.kichThuoc ? 4 : 2} sach doDay={lop.kichThuoc} net={{ day: net.day, tuong: net.mauTuong }} /></div>
         <aside>
           <dl class="in-so-lieu">
             <div><dt>{t('pdf.cauTrucTang')}</dt><dd>{dsTang(n)}</dd></div>
             <div><dt>{t('pdf.soToa')}</dt><dd>{n.toas.length}</dd></div>
           </dl>
           <BangUnitmix n={n} d={d} />
-          <h2>{t('pdf.keyplan')}</h2>
-          <div class="in-key"><KeyPlan d={d} n={n} /></div>
+          {(lop.keyplan || lop.hoaGio) && (
+            <div class="in-goc-trang">
+              {lop.keyplan && <div class="in-key"><b>{t('pdf.keyplan')}</b><KeyPlan d={d} n={n} /></div>}
+              {lop.hoaGio && <GioIn d={d} />}
+            </div>
+          )}
         </aside>
       </div>
     </Trang>
@@ -352,13 +379,13 @@ function TrangMbToa({ d, n, so }: { d: DuLieuIn; n: NhomToaIn; so: string }) {
 }
 
 export function BaoCaoIn({ d }: { d: DuLieuIn }) {
-  const trang = chiaTrang(d), tong = 2 + trang.length + d.nhom.length, so = (i: number) => `${i}/${tong}`;
+  const { trang: bat } = d.tc, trang = bat.chiTieu ? chiaTrang(d) : [], tmb = bat.tmb ? 1 : 0, nhom = bat.matBang ? d.nhom : [];
+  const tong = tmb + trang.length + nhom.length, so = (i: number) => `${i}/${tong}`;
   return (
     <>
-      <TrangTmb d={d} so={so(1)} />
-      <TrangTongHop d={d} so={so(2)} />
-      {trang.map((ds, i) => <TrangChiTieu key={i} d={d} ds={ds} so={so(3 + i)} />)}
-      {d.nhom.map((n, i) => <TrangMbToa key={n.khoa} d={d} n={n} so={so(3 + trang.length + i)} />)}
+      {bat.tmb && <TrangTmb d={d} so={so(1)} />}
+      {trang.map((ds, i) => <TrangChiTieu key={i} d={d} ds={ds} so={so(tmb + 1 + i)} dau={i === 0} />)}
+      {nhom.map((n, i) => <TrangMbToa key={n.khoa} d={d} n={n} so={so(tmb + trang.length + 1 + i)} />)}
     </>
   );
 }

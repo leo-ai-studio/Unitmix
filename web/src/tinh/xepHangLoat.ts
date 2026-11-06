@@ -1,13 +1,14 @@
 /**
- * Xếp hàng loạt nhiều lô (app cũ "▦ Xếp hàng loạt" `tm_hl` · `xepHangLoat`, QT-86 / QT-92): chạy gợi ý xếp tòa MT-05
- * (`sinhGoiY`, tinh/xepToa.ts) LẦN LƯỢT từng lô đã chọn, lô lớn trước. Tòa của phương án đang chọn ở các lô đã chạy là "tòa lô
+ * Xếp hàng loạt nhiều lô (app cũ "▦ Xếp hàng loạt" `tm_hl` · `xepHangLoat`, QT-86 / QT-92): chạy đúng bộ xếp bố cục của panel
+ * (`sinhBoCuc`, tinh/boCucLo.ts) LẦN LƯỢT từng lô đã chọn, lô lớn trước. Tòa của phương án đang chọn ở các lô đã chạy là "tòa lô
  * bên cạnh" cho lô sau → lô sau giữ khoảng cách §2.6.1 (LO-02) tới chúng. Mỗi lô giữ danh sách phương án; người dùng chọn phương án
  * nào thì áp phương án đó; áp cả lượt là một phép `sua` (một bước hoàn tác). Hàm thuần.
  */
 import { dienTich } from './hinhHoc';
 import type { Lo, ThuVien, ToaDat, TrangThaiPA } from './kieu';
 import { hinhToa, kiemViPham } from './thaoTacToa';
-import { sinhGoiY, type GoiYXep, type LuatXep } from './xepToa';
+import { sinhBoCuc } from './boCucLo';
+import { goiYXepToaNen, type CheDoBoCuc, type GoiYXep, type LuatXep, type UuTienXep } from './xepToa';
 
 /** Lô gợi ý được: không phải đất "khác", có ranh, có MĐXD + HSSDĐ (như nút Gợi ý xếp tòa). */
 export const loXepDuoc = (lo: Lo): boolean =>
@@ -34,7 +35,7 @@ export function paVoiChon(pa: TrangThaiPA, kq: KetQuaLo[], idMoi?: () => string)
     const g = r.chon === null ? null : r.ds[r.chon];
     if (!g) continue;
     const moi: ToaDat[] = g.toa.map((x) => ({ ...x, id: idMoi ? idMoi() : `${r.loId}~${x.id}` }));
-    toa = [...toa.filter((x) => x.loId !== r.loId), ...moi];
+    toa = [...toa.filter((x) => x.loId !== r.loId || (g.sapLai && x.khoa)), ...moi];
   }
   return { ...pa, toa };
 }
@@ -52,6 +53,16 @@ export type DauVaoHangLoat = {
   /** Chỉ chạy tới lô thứ `den` (không gồm) — chạy nền từng lô một. */
   den?: number;
   soGoiY?: number;
+  /** `sap_lai`: lô đã có tòa giữ tòa, chỉ đổi vị trí (lô trống vẫn tự tổ hợp). Mặc định `to_hop`. */
+  cheDo?: CheDoBoCuc;
+  uuTien?: UuTienXep;
+  huongGio?: { pv: number; ts: number }[];
+};
+/** Chế độ thực của một lô: sắp lại chỉ có nghĩa khi lô đang có tòa. */
+const dauVaoLo = (v: DauVaoHangLoat, lo: Lo, kq: KetQuaLo[]) => {
+  const paLo = paVoiChon(v.pa, kq), coToa = paLo.toa.some((x) => x.loId === lo.id);
+  const cheDoBoCuc: CheDoBoCuc = v.cheDo === 'sap_lai' && coToa ? 'sap_lai' : 'to_hop';
+  return { pa: cheDoBoCuc === 'sap_lai' ? paLo : { ...paLo, toa: paLo.toa.filter((x) => x.loId !== lo.id) }, lo, tv: v.tv, luat: v.luat, cuaCan: v.cuaCan?.(lo), soGoiY: v.soGoiY, cheDoBoCuc, uuTien: v.uuTien, huongGio: v.huongGio };
 };
 export type TienDoHangLoat = { lo: number; tongLo: number; loId: string; phan: number };
 
@@ -65,9 +76,8 @@ export function* sinhHangLoat(v: DauVaoHangLoat): Generator<TienDoHangLoat, KetQ
   for (let i = kq.length; i < Math.min(tongLo, v.den ?? tongLo); i++) {
     const lo = v.lo[i];
     const t0 = Date.now();
-    // tòa lô này bỏ ra (sẽ thay), tòa phương án đang chọn ở các lô trước thành tòa lô bên cạnh
-    const paLo = paVoiChon(v.pa, kq);
-    const g = sinhGoiY({ pa: { ...paLo, toa: paLo.toa.filter((x) => x.loId !== lo.id) }, lo, tv: v.tv, luat: v.luat, cuaCan: v.cuaCan?.(lo), soGoiY: v.soGoiY });
+    // tòa phương án đang chọn ở các lô trước thành tòa lô bên cạnh
+    const g = sinhBoCuc(dauVaoLo(v, lo, kq));
     let ds: GoiYXep[];
     for (;;) {
       const r = g.next();
@@ -86,20 +96,18 @@ export function xepHangLoat(v: DauVaoHangLoat): KetQuaLo[] {
 }
 
 /**
- * Chạy trên trình duyệt: nhả luồng sau mỗi bước; `huy()` true thì dừng và trả các lô ĐÃ XONG (như app cũ "đã dừng"),
- * kèm `dung: true`.
+ * Chạy trên trình duyệt, từng lô trong worker gợi ý nên giao diện không đứng; `huy()` true thì dừng và trả các lô ĐÃ XONG
+ * (như app cũ "đã dừng"), kèm `dung: true`.
  */
 export async function xepHangLoatNen(v: DauVaoHangLoat, tienDo?: (t: TienDoHangLoat) => void, huy?: () => boolean): Promise<{ kq: KetQuaLo[]; dung: boolean }> {
   const kq: KetQuaLo[] = [...(v.truoc ?? [])];
   for (let i = kq.length; i < v.lo.length; i++) {
-    const g = sinhHangLoat({ ...v, den: i + 1, truoc: kq });
-    for (;;) {
-      const r = g.next();
-      if (r.done) { kq.splice(0, kq.length, ...r.value); break; }
-      tienDo?.(r.value);
-      await new Promise((ok) => setTimeout(ok, 0));
-      if (huy?.()) return { kq, dung: true };
-    }
+    const lo = v.lo[i], t0 = Date.now();
+    tienDo?.({ lo: i, tongLo: v.lo.length, loId: lo.id, phan: 0 });
+    const ds = await goiYXepToaNen(dauVaoLo(v, lo, kq), (x, n) => tienDo?.({ lo: i, tongLo: v.lo.length, loId: lo.id, phan: x / n }), huy, sinhBoCuc);
+    if (!ds) return { kq, dung: true };
+    kq.push({ loId: lo.id, ds, chon: ds.length ? 0 : null, ms: Date.now() - t0 });
+    if (huy?.()) return { kq, dung: true };
   }
   return { kq, dung: false };
 }
