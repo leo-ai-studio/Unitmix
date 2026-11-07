@@ -5,18 +5,18 @@
 .ds-vong-chu { font-size: 3.6px; fill: var(--muted); }
 .ds-so-lon { flex: 1; min-width: 0; display: grid; gap: 6px; }
 .ds-o { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 6px; }
-.ds-o small { color: var(--muted-text); font-size: 11px; }
+.ds-o small { color: var(--muted-text); font-size: 12px; }
 .ds-o b { font-size: 16px; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--green); }
 .ds-o b.ds-vuot { color: var(--warn); }
-.ds-o > .muted { grid-column: 1 / -1; font-size: 10px; font-variant-numeric: tabular-nums; }
+.ds-o > .muted { grid-column: 1 / -1; font-size: 12px; font-variant-numeric: tabular-nums; }
 .ds-thanh { grid-column: 1 / -1; display: block; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .ds-thanh i { display: block; height: 100%; background: var(--green); border-radius: 3px; transition: width .3s ease; }
 .ds-thanh.vuot i { background: var(--warn); }
 @media (prefers-reduced-motion: reduce) { .ds-thanh i { transition: none; } }
-.ds-ghi { margin: 2px 0; font-size: 11px; line-height: 1.4; }
-.ds-lh { margin: 2px 0; padding: 0; list-style: none; font-size: 11px; line-height: 1.4; }
+.ds-ghi { margin: 2px 0; font-size: 12px; line-height: 1.4; }
+.ds-lh { margin: 2px 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.4; }
 .ds-lh li { margin: 1px 0; overflow-wrap: anywhere; }
-.ds-bang { display: grid; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.ds-bang { display: grid; font-size: 12px; font-variant-numeric: tabular-nums; margin-top: 4px; }
 .ds-hang { display: grid; grid-template-columns: 1.4fr .7fr 1.2fr .8fr .6fr; gap: 4px; padding: 2px 0; border-bottom: 1px solid var(--line); align-items: center; }
 .ds-hang > :not(:first-child) { text-align: right; }
 .ds-hang.dau { color: var(--muted-text); font-weight: 600; }
@@ -26,10 +26,10 @@
 .ds-hang span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ds-chi-tiet { margin-top: 6px; }
 .ds-chi-tiet summary { cursor: pointer; font-size: 12px; color: var(--green); }
-.ds-toa { margin-top: 4px; font-size: 11px; }
+.ds-toa { margin-top: 4px; font-size: 12px; }
 .ds-du-an { margin-top: 4px; font-size: 12px; }
 .khai-dan-so { display: grid; gap: 4px; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--line); }
-.ds-khai-ghi { margin: 0; font-size: 11px; }
+.ds-khai-ghi { margin: 0; font-size: 12px; }
 /* Làm tròn DT khi tính dân + căn sát mốc dải (KhaiDanSo, DashDanSo `SatMocDS`) */
 .ds-lam-tron { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .ds-lam-tron .o-so { flex: 0 1 auto; flex-direction: row; align-items: center; gap: 6px; }

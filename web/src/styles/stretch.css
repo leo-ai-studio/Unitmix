@@ -15,17 +15,17 @@
 /* Căn đang chọn (trong KpiTang, ngay sau bảng unit mix): đầu thẻ, 1 hàng 3 ô số liệu, 1 hàng STRETCH, nút hành động nhỏ gọn */
 .can-chon-dau { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; padding: 0 10px; }
 .can-chon-ten { font-size: 13px; font-weight: 700; color: var(--green); }
-.can-chon-phu { font-size: 11px; color: var(--muted-text); white-space: nowrap; }
+.can-chon-phu { font-size: 12px; color: var(--muted-text); white-space: nowrap; }
 .can-chon-so { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 2px 10px; }
 .can-chon-so > div { display: flex; flex-direction: column; gap: 1px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); min-width: 0; }
 .can-chon-so > div:empty { display: none; }
-.can-chon-so small { font-size: 10px; color: var(--muted-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.can-chon-so small { font-size: 12px; color: var(--muted-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .can-chon-so b { font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .can-chon-khoi.khoi-st { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 6px; margin: 0 10px; padding: 2px 0; }
-.st-nhan { font-size: 11px; font-weight: 700; color: var(--muted-text); white-space: nowrap; }
+.st-nhan { font-size: 12px; font-weight: 700; color: var(--muted-text); white-space: nowrap; }
 .st-hang { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex: 1; }
 .st-hang .st-muc { min-width: 56px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
-.st-hang .st-muc small { font-size: 10px; font-weight: 400; color: var(--muted-text); }
-.st-hang .nut-st { min-width: 38px; min-height: 24px; padding: 2px 6px; font-size: 11px; font-weight: 700; }
+.st-hang .st-muc small { font-size: 12px; font-weight: 400; color: var(--muted-text); }
+.st-hang .nut-st { min-width: 38px; min-height: 24px; padding: 2px 6px; font-size: 12px; font-weight: 700; }
 .can-chon-nut { padding: 2px 10px 4px; gap: 6px; }
 .can-chon-nut button { padding: 3px 8px; font-size: 12px; }

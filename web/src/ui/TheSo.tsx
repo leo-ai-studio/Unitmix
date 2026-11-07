@@ -1,51 +1,41 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n/i18n';
-import { HIEU_SUAT_MIN, type OKpi, type TrangThaiKpi } from '../tinh/kpi';
+import { HIEU_SUAT_MIN, type OKpi } from '../tinh/kpi';
 import { nguongSo, taiQuyTac, traLuat } from '../tinh/quyTac';
 import { fmtSo } from './so';
 import './kpi.css';
 
 /**
- * Ô số lớn kiểu dashboard cho lãnh đạo: nhãn nhỏ · SỐ TO + đơn vị nhỏ · dòng so với chỉ tiêu (chip đạt / vượt / chưa đạt, thanh
- * tiến độ tuỳ chọn). `tip` = công thức + căn cứ (bong bóng khi rê chuột). Màu chỉ lấy biến :root (LEO + `--warn`).
+ * Ô số cho lãnh đạo: nhãn đậm · SỐ TO + đơn vị nhỏ · dòng giới hạn theo chỉ tiêu QH. Trạng thái (đạt / sát / vượt) thể hiện bằng màu cả thẻ,
+ * không chip, không thanh; chữ trạng thái vào aria-label và bong bóng. `tip` = công thức + căn cứ (rê chuột). Màu chỉ lấy biến CSS.
  */
-export function TheSo({ nhan, gt, donVi, thapPhan = 0, phu, o, tip, thanh, id }: {
+export function TheSo({ nhan, gt, donVi, thapPhan = 0, phu, o, tip, id }: {
   nhan: string;
   gt: number | null;
   donVi?: string;
   thapPhan?: number;
-  /** Dòng phụ dưới số (so với chỉ tiêu, phép tính ngắn). */
+  /** Dòng giới hạn dưới số (≤ ngưỡng quy hoạch). */
   phu?: ComponentChildren;
-  /** Kết quả so với ngưỡng: tô màu + chip trạng thái. */
+  /** Kết quả so với ngưỡng: tô màu cả thẻ. */
   o?: OKpi | null;
   tip: string;
-  /** Hiện thanh tỉ lệ gt / ngưỡng. */
-  thanh?: boolean;
   id?: string;
 }) {
   const tt = o?.tt ?? null;
+  const chuTT = tt ? t(`kpi.tt.${tt}`) : '';
   return (
-    <div class={`the-so${tt ? ` tt-${tt}` : ''}`} title={tip} id={id} role="group" aria-label={nhan}>
-      {/* chip Đạt / Vượt ở hàng số (không chen hàng nhãn → nhãn dài như "Tổng DT sàn xây dựng" không bẻ hai dòng) */}
+    <div class={`the-so${tt ? ` tt-${tt}` : ''}`} title={chuTT ? `${tip}
+${chuTT}` : tip} id={id} role="group" aria-label={chuTT ? `${nhan}: ${chuTT}` : nhan}>
       <div class="the-so-nhan"><span>{nhan}</span></div>
-      <div class="the-so-gt"><b>{fmtSo(gt, { thapPhan })}</b>{donVi && gt !== null && <small>{donVi}</small>}{tt && <ChipTT tt={tt} />}</div>
-      {thanh && o?.tyLe != null && (
-        <span class="the-so-thanh" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(o.tyLe * 100)} aria-label={nhan}>
-          <i style={{ width: `${Math.min(100, o.tyLe * 100)}%` }} />
-        </span>
-      )}
+      <div class="the-so-gt"><b>{fmtSo(gt, { thapPhan })}</b>{donVi && gt !== null && <small>{donVi}</small>}</div>
       {phu && <div class="the-so-phu">{phu}</div>}
     </div>
   );
 }
 
-export function ChipTT({ tt }: { tt: Exclude<TrangThaiKpi, null> }) {
-  return <span class={`chip-tt chip-${tt}`}>{t(`kpi.tt.${tt}`)}</span>;
-}
-
-/** Lưới ô số (2 cột ở panel 300 px, tự xuống 1 cột khi hẹp). */
-export const LuoiSo = ({ children }: { children: ComponentChildren }) => <div class="luoi-so">{children}</div>;
+/** Lưới ô số (2 cột ở panel 300 px, tự xuống 1 cột khi hẹp; `cot3` = 3 cột × 2 hàng như Chỉ tiêu chính). */
+export const LuoiSo = ({ children, cot3 }: { children: ComponentChildren; cot3?: boolean }) => <div class={`luoi-so${cot3 ? ' cot3' : ''}`}>{children}</div>;
 
 /** Vòng donut tỉ lệ (tổng 100) với chữ giữa vòng. */
 export function VongKpi({ phan, so, chu, nhan }: { phan: { mau: string; v: number; ten: string }[]; so: string; chu: string; nhan: string }) {

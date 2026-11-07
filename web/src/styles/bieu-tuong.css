@@ -38,5 +38,5 @@
 /* Bảng trái gọn: mỗi tòa / lô một dòng (tên trái, số liệu phải); thước tỷ lệ nhường chỗ cho nút góc trái. */
 .muc-lo { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 12px; }
 .muc-lo > b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.muc-lo > span { flex: none; font-size: 11px; white-space: nowrap; }
+.muc-lo > span { flex: none; font-size: 12px; white-space: nowrap; }
 .thuoc-ty-le { left: 96px; bottom: 14px; }

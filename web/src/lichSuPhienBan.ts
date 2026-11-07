@@ -6,6 +6,19 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.8.6', ngay: '2026-11-07',
+    vi: [
+      'Thẻ chỉ tiêu ở Tổng mặt bằng và Tầng gọn lại: 3 cột × 2 hàng, nhãn viết tắt (GFA, DTSD, DTXD), giới hạn quy hoạch hiện sẵn',
+      'Trạng thái đạt, sát, vượt thể hiện bằng màu cả thẻ, bỏ chip chữ và thanh; Hiệu suất không chấm trạng thái',
+      'Chữ trong panel tối thiểu 12 px, nút bấm tối thiểu 24 px',
+    ],
+    en: [
+      'KPI cards on Site plan and Floor are tighter: 3 columns × 2 rows, short labels (GFA, NUA, footprint), planning limits always visible',
+      'Met, near and over limit show as the card colour; text chips and bars are gone; Efficiency has no status colour',
+      'Panel text is at least 12 px and buttons at least 24 px',
+    ],
+  },
+  {
     v: '0.8.5', ngay: '2026-11-07',
     vi: [
       'Xuất 3D: tổng thể SketchUp bản nhẹ, toạ độ dời về gần gốc, sửa sai số 6–25 cm ở toạ độ VN2000',

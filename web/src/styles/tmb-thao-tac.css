@@ -1,7 +1,7 @@
 /* Công cụ tay màn Tổng mặt bằng (man/tmbThaoTac.tsx): mọi thứ là lớp phủ trong .noi-tren — không đổi kích thước khung giữa. */
 .thanh-tmb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 8px 0; max-width: calc(100% - 80px); }
 .thanh-tmb .tmb-ghi { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--panel) 88%, transparent); color: var(--green); font-weight: 600; }
-.tmb-dem { min-width: 14px; padding: 0 3px; border-radius: 7px; background: var(--muted); color: var(--panel); font-size: 10px; line-height: 14px; }
+.tmb-dem { min-width: 14px; padding: 0 3px; border-radius: 7px; background: var(--muted); color: var(--panel); font-size: 12px; line-height: 14px; }
 .tmb-dem.loi { background: var(--warn); }
 .tmb-toa-do, .tmb-ds-cb, .tmb-goi-y {
   margin: 6px 8px 0; align-self: flex-start; max-width: calc(100% - 96px);
@@ -30,7 +30,7 @@
 /* ===== Rà soát nút (0.4.9): menu gộp trên thanh công cụ TMB, "Nhập liệu ▾" panel trái, "?" gộp, zoom ± chỉ cảm ứng ===== */
 .menu-bt { position: relative; display: inline-flex; }
 .menu-bt > .nut-bt { gap: 1px; }
-.menu-bt-mui { font-size: 9px; font-style: normal; line-height: 1; opacity: .7; }
+.menu-bt-mui { font-size: 12px; font-style: normal; line-height: 1; opacity: .7; }
 .menu-bt-bang { position: absolute; top: calc(100% + 6px); left: 0; z-index: 40; min-width: 200px; display: flex; flex-direction: column; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 8px 22px rgb(0 0 0 / .14); }
 .menu-bt-bang button { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .menu-bt-bang button:hover:not(:disabled) { background: var(--hover); }

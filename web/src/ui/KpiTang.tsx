@@ -13,7 +13,6 @@ import { NutBieuTuong } from './NutBieuTuong';
 import { moSoSanhMau } from './SoSanhMau';
 import { nhanToa } from './nhanToa';
 
-const m2 = 'm²';
 const so1 = { thapPhan: 1 };
 /** DT thông thủy của một loại: một mẫu → số đó; nhiều mẫu → min–max. */
 const khoangDt = (a: number | null, b: number | null) => (a === null || b === null ? '—' : Math.abs(a - b) < 0.05 ? fmtSo(a, so1) : `${fmtSo(a, so1)}–${fmtSo(b, so1)}`);
@@ -46,18 +45,21 @@ export function KpiTang({ pa, tv, toa, mau, bc, lo, tang, can, mucTieu, nguongLe
         <NutBieuTuong k="soSanhMau" ghiChu={t('gt.ssm.moNut')}
           onClick={() => { const m = tv.toa.get(toa.mauId); if (m) moSoSanhMau({ tv, nhom: m.nhom, hinh: m.hinh }); }} />
       </div>
-      <LuoiSo>
-        <TheSo id="kpi-can-tang" nhan={t('kpi.canTang')} gt={k.soCanTang} donVi={t('sc.can')} tip={t('kpi.gt.canTang')}
-          phu={<>× {fmtSo(k.soTang)} {t('kpi.tang')}</>} />
-        <TheSo id="kpi-can-toa" nhan={t('kpi.canToa')} gt={k.soCanToa} donVi={t('sc.can')} tip={t('kpi.gt.canToa')}
-          phu={k.soCanToa !== k.soCanTang * k.soTang ? t('kpi.coTangRieng') : null} />
-        <TheSo id="kpi-dan-toa" nhan={t('kpi.danToa')} gt={k.danToa} donVi={t('ds.nguoi')} tip={t('kpi.gt.danToa')}
-          phu={k.soCanToa ? <>{fmtSo(k.danToa / k.soCanToa, { thapPhan: 2 })} {t('kpi.nguoiCan')}</> : null} />
-        <TheSo id="kpi-hs-tang" nhan={t('kpi.hieuSuatTang')} gt={k.hieuSuat.gt === null ? null : k.hieuSuat.gt * 100} thapPhan={1} donVi="%" o={k.hieuSuat}
-          tip={t('kpi.gt.hieuSuat').replace('{n}', fmtSo(hsMin * 100))} phu={<>≥ {fmtSo(hsMin * 100)} % · {t('kpi.caToa')} {pct1(k.hieuSuatToa)}</>} />
-        <TheSo id="kpi-dtxd-san" nhan={t('kpi.dtxd1San')} gt={k.dtxd} thapPhan={1} donVi={m2} tip={t('kpi.gt.dtxdTang')} />
-        <TheSo id="kpi-dtsd-san" nhan={t('kpi.dtsd1San')} gt={k.dtsd} thapPhan={1} donVi={m2} tip={t('kpi.gt.dtsdTang')}
-          phu={truDt ? t('tang.truTcc').replace('{m}', fmtSo(truDt, { thapPhan: 2 })) : null} />
+      <LuoiSo cot3>
+        <TheSo id="kpi-can-tang" nhan={t('kpi.n.canTang')} gt={k.soCanTang} tip={`${t('kpi.gt.canTang')}
+× ${fmtSo(k.soTang)} ${t('kpi.tang')}`} />
+        <TheSo id="kpi-can-toa" nhan={t('kpi.n.canToa')} gt={k.soCanToa} tip={k.soCanToa !== k.soCanTang * k.soTang ? `${t('kpi.gt.canToa')}
+${t('kpi.coTangRieng')}` : t('kpi.gt.canToa')} />
+        <TheSo id="kpi-dan-toa" nhan={t('kpi.danSo')} gt={k.danToa}
+          tip={k.soCanToa ? `${t('kpi.gt.danToa')}
+${fmtSo(k.danToa / k.soCanToa, { thapPhan: 2 })} ${t('kpi.nguoiCan')}` : t('kpi.gt.danToa')} />
+        <TheSo id="kpi-hs-tang" nhan={t('kpi.hieuSuat')} gt={k.hieuSuat.gt === null ? null : k.hieuSuat.gt * 100} thapPhan={1} donVi="%"
+          tip={`${t('kpi.gt.hieuSuat').replace('{n}', fmtSo(hsMin * 100))}
+${t('kpi.caToa')} ${pct1(k.hieuSuatToa)}`} />
+        <TheSo id="kpi-dtxd-san" nhan={t('kpi.n.dtxd')} gt={k.dtxd} thapPhan={1} tip={t('kpi.gt.dtxdTang')} />
+        <TheSo id="kpi-dtsd-san" nhan={t('kpi.n.dtsd')} gt={k.dtsd} thapPhan={1}
+          tip={truDt ? `${t('kpi.gt.dtsdTang')}
+${t('tang.truTcc').replace('{m}', fmtSo(truDt, { thapPhan: 2 }))}` : t('kpi.gt.dtsdTang')} />
       </LuoiSo>
 
       <div class="kpi-mix">

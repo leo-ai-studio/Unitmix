@@ -1273,3 +1273,9 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Đã thử trên bản sao M7 cục bộ, Chrome:** khung giữa 964 → 1234 → 1534 px, tỉ lệ giữ 1,3134 px/m, tâm không đổi; tải lại vẫn nhớ; 3D giãn đúng; bấm mục cuộn đúng, mục đang đọc đổi theo. `kiem:nhanh` ĐẠT.
 - **Chưa thử:** màn hẹp và điện thoại; bấm thật Xoá trong menu. Trang chủ cục bộ bị màn đăng nhập che, phải ẩn lớp đó trên tab thử.
 - **Màn điện thoại (07/11, bản mạng v0.8.4, 375 và 390 px, M7 chỉ xem):** không tràn ngang, không có nút mũi tên thu panel; ngăn Nhập ở Chi phí hiện Đi tới mục + Phạm vi tính, mục cao 44 px, bấm mục thì ngăn đóng và cuộn đúng (đỉnh mục 8 px); trang Dự án nút 40 px, menu ⁝ nằm trong màn. Ảnh `docs/anh/ui-panel/5–7`. Chưa thử: màn ngang 844x390, iPhone thật.
+
+## 2026-11-07 · KPI gọn, chữ 12 px, vùng bấm 24 px (v0.8.6)
+- **Thẻ KPI** (`ui/TheSo.tsx`, `ui/KpiTmb.tsx`, `ui/KpiTang.tsx`, `ui/kpi.css`): 3 cột × 2 hàng, nhãn viết tắt (GFA, DTSD, DTXD, Hiệu suất), bỏ chip chữ và thanh, giới hạn QH hiện sẵn (≤ 3.025, ≤ 1.525, ≤ 138.988, MĐXD ≤40%). Trạng thái = màu cả thẻ: xanh `--green` đạt, vàng nhạt `--gold` sát, đất nung `#b5604a` vượt. Hiệu suất không chấm trạng thái. DTSD không phải NSA (code kpi.ts ghi rõ), GFA đúng là DT sàn tính HSSDĐ.
+- **Chữ ≥ 12 px:** 135 khai báo cỡ dưới 12 px trong 22 file CSS lên 12 px (bỏ qua `ham.css` vì layout hầm ở nhánh khác, `bieu-tuong.css` trừ `.muc-lo`, CSS in PDF). Nút ≥ 24 px (`gon.css`), mũi tên gập panel rộng 24 px. Sửa theo: cột Lệch, Ng/căn, chú giải Tốt/Khá/Kém không bị cắt.
+- **Đo trên app thật (1440×900, M7 chỉ xem):** chữ dưới 12 px ở TMB 373 → 4, Tầng 323 → 0, Chi phí 15 → 0; nút dưới 24 px không còn. Điện thoại 390 px: không tràn ngang.
+- **Chưa làm:** `ham.css` và nhãn `.nut-bt` 11 px (thanh công cụ). Ảnh trong `docs/anh/kpi-gon/`.

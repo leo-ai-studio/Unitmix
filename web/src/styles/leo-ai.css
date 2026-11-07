@@ -36,13 +36,13 @@
 
 .leo-ten { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
 .leo-ten strong { color: var(--logo-ink); font-size: 15px; letter-spacing: .02em; }
-.leo-ten small { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.leo-ten small { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .leo-nut-nho { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 34px; height: 34px; padding: 0 6px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); }
 .leo-nut-nho:hover { background: var(--hover); }
 .leo-nut-nho[aria-pressed="true"] { background: var(--selected); color: var(--green); }
 .leo-nut-nho .bt-svg { width: 18px; height: 18px; }
-.leo-nut-nho span { font-size: 11px; }
+.leo-nut-nho span { font-size: 12px; }
 .leo-nut-chu { border: 0; background: transparent; color: var(--green); font-weight: 600; font-size: 12px; padding: 4px 6px; border-radius: 6px; }
 .leo-nut-chu:hover { background: var(--soft); }
 
@@ -78,7 +78,7 @@
 .leo-bang th, .leo-bang td { border: 1px solid var(--line); padding: 3px 8px; text-align: left; }
 .leo-bang th { background: var(--band); }
 .leo-ma { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 8px; overflow: hidden; }
-.leo-ma-dau { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 0 10px; background: var(--band); font-size: 11px; color: var(--muted); }
+.leo-ma-dau { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 0 10px; background: var(--band); font-size: 12px; color: var(--muted); }
 .leo-ma pre { margin: 0; padding: 8px 10px; overflow-x: auto; font-size: 12px; background: #fbfbf7; }
 
 .leo-nghi { margin: 0 0 6px; font-size: 12.5px; color: var(--muted); }
@@ -93,7 +93,7 @@
 .leo-buoc-tom { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .leo-buoc.loi { border-color: #e2c9a3; background: #fbf6ee; }
 .leo-buoc.loi summary b { color: var(--warn); }
-.leo-json { margin: 0; padding: 6px 8px; border-top: 1px solid var(--line); max-height: 220px; overflow: auto; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.leo-json { margin: 0; padding: 6px 8px; border-top: 1px solid var(--line); max-height: 220px; overflow: auto; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .leo-dang-nghi { display: flex; align-items: center; gap: 8px; margin: 0; }
 .leo-dang-nghi .spin-o { width: 18px; height: 18px; }
 
@@ -121,7 +121,7 @@
 .leo-soan textarea:focus { outline: 2px solid var(--green); outline-offset: -1px; }
 .leo-soan-duoi, .leo-soan-duoi.chan-hop { display: flex; align-items: center; gap: 4px; margin-top: 6px; justify-content: flex-start; flex-wrap: nowrap; } /* chan-hop: scripts/kiem_man_hep.mjs đo nút gửi / mic khi có bàn phím ảo */
 .leo-chon-mh { max-width: 150px; height: 32px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); padding: 0 8px; font-size: 12px; color: var(--ink); }
-.leo-the { font-size: 11px; color: var(--green); border: 1px solid var(--green); border-radius: 10px; padding: 1px 6px; }
+.leo-the { font-size: 12px; color: var(--green); border: 1px solid var(--green); border-radius: 10px; padding: 1px 6px; }
 .leo-mic, .leo-gui { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; background: var(--panel); color: var(--green); }
 .leo-mic.dang { background: var(--green); color: #fff; animation: leo-breathe 1.4s ease-in-out infinite; }
 .leo-gui { background: var(--green); color: #fff; border-color: var(--green); }
@@ -131,11 +131,11 @@
 .leo-goi-y-mh { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: 6px; padding: 5px 8px; border-radius: 8px; background: var(--band); font-size: 12px; color: var(--ink); }
 .leo-goi-y-mh small { color: var(--muted); }
 .leo-kem { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
-.leo-kem-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 8px; padding: 2px 6px; font-size: 11.5px; background: var(--panel); max-width: 100%; }
+.leo-kem-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 8px; padding: 2px 6px; font-size: 12px; background: var(--panel); max-width: 100%; }
 .leo-kem-chip img { width: 28px; height: 28px; object-fit: cover; border-radius: 4px; }
 .leo-kem-chip button { border: 0; background: transparent; font-size: 15px; line-height: 1; padding: 0 2px; color: var(--muted); }
 .leo-bong .leo-kem-chip { margin: 0 4px 4px 0; }
-.leo-chan { margin: 4px 0 0; font-size: 10.5px; color: var(--muted); text-align: center; }
+.leo-chan { margin: 4px 0 0; font-size: 12px; color: var(--muted); text-align: center; }
 
 .leo-trang { flex: 1; overflow-y: auto; padding: 12px 14px; }
 .leo-trang h3 { margin: 0 0 10px; font-size: 15px; }
@@ -145,14 +145,14 @@
 .leo-chon { display: flex; flex-direction: row; gap: 8px; align-items: flex-start; padding: 6px 0; cursor: pointer; margin: 0; font-size: 13px; color: var(--ink); }
 .leo-chon > input { flex: none; width: auto; min-width: 0; margin: 3px 0 0; accent-color: var(--green); }
 .leo-chon span { display: flex; flex-direction: column; }
-.leo-chon small { color: var(--muted); font-size: 11.5px; }
+.leo-chon small { color: var(--muted); font-size: 12px; }
 .leo-ds-cuoc { list-style: none; margin: 0; padding: 0; }
 .leo-ds-cuoc li { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
 .leo-ds-cuoc li.chon { background: var(--selected); }
 .leo-cuoc { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; padding: 7px 8px; display: flex; flex-direction: column; border-radius: 8px; }
 .leo-cuoc:hover { background: var(--hover); }
 .leo-cuoc b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.leo-cuoc small { color: var(--muted); font-size: 11px; }
+.leo-cuoc small { color: var(--muted); font-size: 12px; }
 .leo-o-ten { flex: 1; min-width: 0; }
 
 /* Màn hẹp (≤ 1024 px, cùng mốc ui/manHep.ts): tấm từ đáy, cao theo phần màn hình nhìn thấy (bàn phím ảo — --vv-h). */

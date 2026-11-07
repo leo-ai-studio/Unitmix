@@ -8,8 +8,6 @@ import { fmtSo } from './so';
 import { LuoiSo, TheSo, pct1, useHieuSuatMin } from './TheSo';
 import { nhanToa } from './nhanToa';
 
-const m2 = 'm²';
-
 /**
  * Bảng KPI Tổng mặt bằng (panel phải, trên cùng): 6 ô số lớn — dân số · số căn · tổng DT sàn XD · tổng DT sàn sử dụng · DTXD một sàn ·
  * hiệu suất; theo lô đang chọn hoặc cả dự án (công tắc). Chi tiết theo tòa trong mục gập (mặc định đóng). Tính: `tinh/kpi.ts`.
@@ -32,19 +30,18 @@ export function KpiTmb({ pa, tv, lo, kq }: { pa: TrangThaiPA; tv: ThuVien | null
             title={t('kpi.duAnGt').replace('{n}', String(dsLo.length))}>{t('kpi.duAn')} · {dsLo.length}</button>
         </div>
       </div>
-      <LuoiSo>
-        <TheSo id="kpi-dan-so" nhan={t('kpi.danSo')} gt={k.danSo.gt} donVi={t('ds.nguoi')} o={k.danSo} thanh tip={t('kpi.gt.danSo')}
-          phu={k.danSo.nguong ? <>{pct1(k.danSo.tyLe)} · ≤ {fmtSo(k.danSo.nguong)}</> : t('kpi.chuaCoNguong')} />
-        <TheSo id="kpi-so-can" nhan={t('kpi.soCan')} gt={k.soCan.gt} donVi={t('sc.can')} o={k.soCan} tip={t('kpi.gt.soCan')}
-          phu={k.soCan.nguong ? <>≤ {fmtSo(k.soCan.nguong)}</> : t('kpi.trongToa').replace('{n}', String(soToa))} />
-        <TheSo id="kpi-dt-san" nhan={t('kpi.dtSan')} gt={k.dtSan.gt} donVi={m2} o={k.dtSan} thanh tip={t('kpi.gt.dtSan')}
-          phu={k.dtSan.nguong ? <>{pct1(k.dtSan.tyLe)} · ≤ {fmtSo(k.dtSan.nguong)}</> : null} />
-        <TheSo id="kpi-dtsd" nhan={t('kpi.dtsd')} gt={k.toa.length ? k.dtsd : null} donVi={m2} tip={t('kpi.gt.dtsd')}
-          phu={k.dtSan.gt ? <>{pct1(k.dtsd / k.dtSan.gt)} {t('kpi.cuaDtSan')}</> : null} />
-        <TheSo id="kpi-dtxd" nhan={t('kpi.dtxd1San')} gt={k.toa.length ? k.dtxd1San : null} donVi={m2} o={k.matDo} tip={t('kpi.gt.dtxd1San')}
-          phu={k.matDo.gt !== null ? <>{t('kpi.mdxd')} {fmtSo(k.matDo.gt, { thapPhan: 1 })} % · ≤ {fmtSo(k.matDo.nguong, { thapPhan: 0 })} %</> : null} />
-        <TheSo id="kpi-hieu-suat" nhan={t('kpi.hieuSuat')} gt={k.hieuSuat.gt === null ? null : k.hieuSuat.gt * 100} thapPhan={1} donVi="%" o={k.hieuSuat}
-          tip={t('kpi.gt.hieuSuat').replace('{n}', fmtSo(hsMin * 100))} phu={<>{t('kpi.mucTieu')} ≥ {fmtSo(hsMin * 100)} %</>} />
+      <LuoiSo cot3>
+        <TheSo id="kpi-dan-so" nhan={t('kpi.danSo')} gt={k.danSo.gt} o={k.danSo} tip={t('kpi.gt.danSo')}
+          phu={k.danSo.nguong ? <>≤ {fmtSo(k.danSo.nguong)}</> : null} />
+        <TheSo id="kpi-so-can" nhan={t('kpi.n.soCan')} gt={k.soCan.gt} o={k.soCan} tip={t('kpi.gt.soCan')}
+          phu={k.soCan.nguong ? <>≤ {fmtSo(k.soCan.nguong)}</> : null} />
+        <TheSo id="kpi-dt-san" nhan={t('kpi.n.gfa')} gt={k.dtSan.gt} o={k.dtSan} tip={t('kpi.gt.dtSan')}
+          phu={k.dtSan.nguong ? <>≤ {fmtSo(k.dtSan.nguong)}</> : null} />
+        <TheSo id="kpi-dtsd" nhan={t('kpi.n.dtsd')} gt={k.toa.length ? k.dtsd : null} tip={t('kpi.gt.dtsd')} />
+        <TheSo id="kpi-dtxd" nhan={t('kpi.n.dtxd')} gt={k.toa.length ? k.dtxd1San : null} o={k.matDo} tip={t('kpi.gt.dtxd1San')}
+          phu={k.matDo.nguong !== null ? <>{t('kpi.mdxd')} ≤{fmtSo(k.matDo.nguong, { thapPhan: 0 })}%</> : null} />
+        <TheSo id="kpi-hieu-suat" nhan={t('kpi.hieuSuat')} gt={k.hieuSuat.gt === null ? null : k.hieuSuat.gt * 100} thapPhan={1} donVi="%"
+          tip={t('kpi.gt.hieuSuat').replace('{n}', fmtSo(hsMin * 100))} />
       </LuoiSo>
       <MucGap tieuDe={t('kpi.chiTietToa')} giaiThich={t('kpi.gt.chiTietToa')}>
         {soToa === 0 ? <p class="dong muted">{t('kpi.chuaCoToa')}</p> : (
