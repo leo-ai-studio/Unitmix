@@ -5,6 +5,7 @@ import { LopNoi } from '../ui/LopNoi';
 import { fmtSo } from '../ui/so';
 import { useDongHop } from '../ui/useDongHop';
 import { taiVeTep } from '../xuat/taiTep';
+import type { LoaiXuat3d } from '../xuat/xuat3d';
 import { BANG_MAU_IN, DS_TRINH_BAY, TC_MAC_DINH, docTuyChon, luuTuyChon, type TuyChonBC } from '../xuat/pdf/tuyChonIn';
 import { KIEU_MB } from '../ve/kieuMb';
 import { LOAI_CAN } from '../tinh/kieu';
@@ -56,7 +57,7 @@ function TuyChonBaoCao({ tc, doi }: { tc: TuyChonBC; doi: (v: TuyChonBC) => void
 }
 
 /**
- * Hộp "Xuất PDF" / "Xuất 3D · BIM": PDF mở hộp in của trình duyệt (chọn Lưu thành PDF); 3D tải tệp .dae (SketchUp) hoặc .ifc (Revit).
+ * Hộp "Xuất PDF" / "Xuất 3D · BIM": PDF mở hộp in của trình duyệt (chọn Lưu thành PDF); 3D tải .dae tổng thể (SketchUp) hoặc mỗi mẫu tòa một tệp .dae / .ifc (gói .zip).
  * Bộ dựng nặng (three, mặt bằng in) tải lười khi bấm — không vào gói chính.
  */
 export function HopXuatTaiLieu({ nhom, pa, tv, tenDuAn, tenPA, toaDangXem, dong }: Props) {
@@ -84,11 +85,14 @@ export function HopXuatTaiLieu({ nhom, pa, tv, tenDuAn, tenPA, toaDangXem, dong 
     const n = await xemTruocPdf('bao-cao', pa, tv, { tenDuAn, tenPA, baoCao: tc });
     return t('xt.xongXem').replace('{n}', String(n));
   });
-  const mo3d = (loai: 'dae-du-an' | 'dae-cong-trinh' | 'ifc') => chay(loai, async () => {
+  const mo3d = (loai: LoaiXuat3d) => chay(loai, async () => {
     const { xuat3d } = await import('../xuat/xuat3d');
     const r = await xuat3d(loai, { pa, tv, tenDuAn, chiToa: chiToa && toaDangXem ? [toaDangXem] : undefined });
-    taiVeTep(r.noiDung, r.tenTep, r.mime);
-    return t('xt.xong').replace('{ten}', r.tenTep).replace('{n}', String(r.soToa)).replace('{tg}', fmtSo(Math.round(r.soTamGiac / 1000)));
+    taiVeTep(typeof r.noiDung === 'string' ? r.noiDung : new Blob([r.noiDung as BlobPart], { type: r.mime }), r.tenTep, r.mime);
+    const tg = fmtSo(Math.round(r.soTamGiac / 1000));
+    if (loai === 'bim-mau') return t('xt.xongBim').replace('{ten}', r.tenTep).replace('{m}', String(r.soTep)).replace('{n}', String(r.soToa));
+    if (r.goc) return t('xt.xong').replace('{ten}', r.tenTep).replace('{n}', String(r.soToa)).replace('{tg}', tg).replace('{x}', String(r.goc[0])).replace('{y}', String(r.goc[1]));
+    return t('xt.xongMau').replace('{ten}', r.tenTep).replace('{m}', String(r.soTep)).replace('{n}', String(r.soToa)).replace('{tg}', tg);
   });
 
   const khoi = (khoa: string, ten: string, moTa: string, bam: () => void) => (
@@ -131,8 +135,9 @@ export function HopXuatTaiLieu({ nhom, pa, tv, tenDuAn, tenPA, toaDangXem, dong 
                 </label>
               )}
               {khoi('dae-du-an', t('xt.3d.tmb'), t('xt.3d.tmbMoTa'), () => void mo3d('dae-du-an'))}
-              {khoi('dae-cong-trinh', t('xt.3d.ct'), t('xt.3d.ctMoTa'), () => void mo3d('dae-cong-trinh'))}
-              {khoi('ifc', t('xt.3d.ifc'), t('xt.3d.ifcMoTa'), () => void mo3d('ifc'))}
+              {khoi('dae-mau', t('xt.3d.ct'), t('xt.3d.ctMoTa'), () => void mo3d('dae-mau'))}
+              {khoi('ifc-mau', t('xt.3d.ifc'), t('xt.3d.ifcMoTa'), () => void mo3d('ifc-mau'))}
+              {khoi('bim-mau', t('xt.3d.bim'), t('xt.3d.bimMoTa'), () => void mo3d('bim-mau'))}
             </>
           )}
           {tin && <p class={tin.loai === 'loi' ? 'canh-bao' : 'muted'} role="status">{tin.chu}</p>}

@@ -1217,12 +1217,52 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Số tầng:** `SO_TANG_DH_MAX` 80, `SO_TANG_DE_MAX` 20, `kepSoTangDH`, `kepSoTangDe` ở `tinh/macDinh.ts`, dùng cho ô ở panel trái và công cụ Leo AI `update_tower` (trước cho 200 tầng).
 - **Đã thử bằng chuột + phím thật trên bản build, sơ đồ M7, chặn ghi:** 16/16 đạt. Gõ 7000000 chỉ tính lại khi rời ô, một lần ↶ về 6310000; 999 tầng về 80; 0 và ô trống giữ 11.
 
+## 2026-11-06 · Teaser điện thoại 24 giây · Claude Code (Opus 5.5)
+
+- **Tệp:** `E:\Unitmix\_xuat\unitmix-teaser-dienthoai-24s-v3.mp4`, nguồn `LEOAI-Unitmix-clip/capture/dt_teaser.mjs` và `remotion/Teaser.tsx`.
+- **Hình:** 6 giây mở đầu tạo bằng Gemini (có nhãn Cảnh minh họa), còn lại quay chạm thật trên v0.8.3, dữ liệu M7, chặn ghi. Cắt theo phách nhạc 86,13 bpm.
+- **Khi quay:** bản mạng trên khung điện thoại, chụm hai ngón ở màn Tầng không phóng được qua sự kiện CDP, phải bấm nút phóng; bấm chọn căn trên ĐT không hiện nút Stretch ngay, phải mở Số liệu. Chưa thử trên máy thật.
+- **Bộ logo động:** `E:\Unitmix\_xuat\logo-hoat-anh\` gồm 4 tỉ lệ (9:16, 16:9, 1:1, 4:5), MP4 nền kem, MP4 có nhạc, MOV và WebM trong suốt, GIF, WebP, PNG khung cuối. Xuất lại bằng `capture/xuat_logo.sh` ở dự án clip.
+
 ## 2026-11-06 · Học app Synaps · Claude Code (Opus 5.5)
 
 - **Tệp:** `docs/hoc_synaps_2026-11-06.md`: tính năng, kỹ thuật suy từ gói JS công khai, đối chiếu Unitmix, 7 đề xuất, các thông tin mâu thuẫn.
 - **Giới hạn:** chưa dùng app thật vì phải có tài khoản. Không sửa mã app.
 - **Bổ sung:** vào được trang chủ tài khoản Free của người dùng, mở bản vẽ bị 402, phải dùng thử có thẻ. Chưa xem được trình vẽ.
 - **Xem thật (07/11):** vào trình vẽ Corner Building qua Chrome, ảnh ở `docs/anh/synaps/`, ghi ở mục 7 bản học. Thử thêm tầng thì bị hộp dùng thử chặn, bản vẽ sau đó trả 402.
+
+## 2026-11-07 · Xuất 3D: tổng thể nhẹ, chi tiết mỗi mẫu tòa một tệp, v0.8.5 · Claude Code (Opus 5.5)
+
+- **Vì sao tệp cũ nặng:** `Long_Bien_3D-cong-trinh.dae` 45,5 MB ghi 1,48 triệu tam giác nhưng `instance_geometry` lặp lại 15.648 lần, SketchUp trải ra khoảng 85 triệu tam giác. Toạ độ VN2000 cách gốc hàng nghìn km.
+- **Đổi xuất:** ba nút: tổng thể `.dae`, chi tiết mỗi mẫu `.dae` gói zip, chi tiết mỗi mẫu `.ifc` gói zip. Tầng và tòa ghi trong `library_nodes`, đặt bằng `instance_node`, SketchUp đọc thành component dùng chung. Mẫu nhiều bố cục: mỗi bố cục một tòa cao nhất, đặt cạnh nhau. Tòa lật gộp với tòa thường.
+- **Lỗi sửa kèm:** hình three là Float32, tệp TMB cũ làm tròn 6 cm theo X, 25 cm theo Y. Nay `dichPA` dời về gần gốc trước khi dựng, gốc ghi ở `<comments>` và dòng báo xong.
+- **Đo trên Long Biên (80 tòa, 7 mẫu):** tổng thể 7,9 MB, 135.352 tam giác, SketchUp 2021 nhập 15,7 s. Mẫu chi tiết 1–7 MB, nhập 3,6–25,1 s, `.skp` 1,4–8,1 MB. Hình chi tiết mẫu Z5: tầng điển hình dùng lại 29 lần.
+- **Revit 2027:** Link IFC ra đủ DirectShape và level (i2 178 cấu kiện, Z5 750). Open IFC và `app.OpenIFCDocument` với IFC4 ra cấu kiện rỗng, đó là giới hạn Revit báo trong hộp cảnh báo; không dùng đường này. Link sinh tệp `.ifc.RVT` cạnh IFC, dùng được như `.rvt`, nền template ~38 MB.
+- **Giới hạn:** SketchUp bỏ qua tên của `instance_node` nên component tên Component1…; IFC vào Revit là DirectShape, không phải tường / sàn sửa được. Tổng thể 7,9 MB chủ yếu do dải cửa `Kinh-dai` (100.304 / 135.352 tam giác).
+- **Tệp thử:** `xuat/Long_Bien_3D/` (`.skp`, `.rvt`, `.dae`, zip), dựng từ bản sao cục bộ `thulb01`.
+
+## 2026-11-07 · BIM gốc trong Revit từ PA, hồ sơ bản vẽ, v0.8.5 · Claude Code (Opus 5.5)
+
+- **Quy tắc chủ nhiệm:** "xuất ra cad ntn thì làm ra Revit đúng như vậy". Tờ mặt bằng điển hình là chính tệp `taoDxf` đưa vào view (`dat_dxf`), cấu kiện model ẩn trong view đó. Lần đầu dựng nét từ `khoi3d` bị chủ nhiệm trả lại vì nát.
+- **Luồng:** nút BIM gốc + hồ sơ bản vẽ (`bim-mau`, `xuat/xuatBim.ts`): mỗi bố cục một `.bim.json` + `.dxf`, kèm `web/public/lib/revit/unitmix_dung_bim.py`. Script dựng level, tường theo bề dày, sàn, cửa đi, cửa sổ, phòng, cột tầng đế; nhóm Model Group tầng điển hình rồi đặt lên các tầng; sinh mặt bằng, 4 mặt đứng, mặt cắt, bảng phòng, danh mục, xuất PDF.
+- **Tách tường:** tường thư viện là đa giác đã cắt tại cửa. `trucVong` ghép cặp cạnh song song ra tim + bề dày, `gopTuong` nối qua ô cửa để cửa có tường chủ.
+- **Bẫy Revit:** `PlaceGroup` nhận cao độ tuyệt đối. `NewFamilyInstance` có tường chủ cũng cần z tuyệt đối, sai thì cửa rơi về cốt 0 và không nhân theo nhóm. `IFailuresPreprocessor` phải trả `ProceedWithCommit` sau khi `ResolveFailure`. Tệp nhập vào bị ghim, cần `Pinned = False` mới dời được. Model Group không chứa Room nên phòng chỉ có ở tầng điển hình đầu.
+- **Đo mẫu i2 (21 tầng điển hình):** cả quy trình 114 s, 7.756 tường, 65 cửa đi + 17 cửa sổ mỗi tầng, 62/62 phòng khép kín. CH-01: tổng phòng 91,6 m², TT của app 94,5 m². So tờ KT-02 với hình vẽ từ DXF: trùng từng căn.
+- **Đề xuất khác:** tổng thể bỏ dải cửa còn 0,93 MB, 35.048 tam giác, SketchUp nhập 2,2 s. `Chỉ tòa đang xem` xuất đúng vị trí, góc, lật theo gốc tệp tổng thể. `web/public/lib/sketchup/unitmix_dat_ten.rb` đặt tên component + tag theo tầng, thử trên 7 tệp `.skp`.
+- **Chạy hàng loạt Long Biên:** đủ 14 bố cục, 140 tờ, mỗi bố cục 85 đến 437 s, tệp `.rvt` 19 đến 50 MB. Revit văng 1 lần ở bố cục thứ 8 (`0xc0000005` trên luồng nền ngay sau `SaveAs`); chạy lại đúng bố cục đó thì qua, nên chưa rõ nguyên nhân, chưa thấy liên quan dữ liệu.
+- **Sửa sau khi soi tờ Y2:** mặt đứng bị `Far Clip` cắt mất phần nhà phía sau (`VIEWER_BOUND_FAR_CLIPPING = 0`). Trục dừng ở chân nhà (`Grid.SetVerticalExtents`). Tầng đế rộng hơn tầng điển hình bị cắt khung (`khung_ngoai`). Đầu cao độ nằm giữa nhà, đưa ra hai bên. Level mặc định ngắn hơn nhà thì mặt cắt không thấy level: kẻ rộng `DatumExtentType.Model` ở mặt đứng trước. Thử lại toàn trình trên i2: 117 s, đạt.
+- **Bẫy hậu xử lý:** ngoại lệ khi `Transaction` đang mở làm tài liệu không đóng được, phải `RollBack` trong `except`, nếu không chỉ còn cách thoát Revit.
+- **Thang và lỗ trục:** gói BIM thêm `lo` (giếng từ `vi_tri_gieng`, dò tường 4 phía; buồng thang) và `thang` (2 vế dò từ nét bậc của khối `loi-tb-n2/n3`). Revit: `NewOpening` khoét suốt từ tầng 1 đến mái, cắt được cả sàn trong Model Group. Thang bộ thật bằng `StairsEditScope`, tầng điển hình nối bằng `MultistoryStairs`. Thang máy chưa có family, chỉ có giếng thật.
+- **Bẫy thang:** đường vế `CreateStraightRun` dùng cao độ tuyệt đối. `ConnectLevels` chỉ nhận tầng trên tầng đỉnh của thang gốc, lọc qua `CanConnectLevel`. Lỗi giữa `StairsEditScope` phải `RollBack` + `Cancel`, nếu không kẹt tài liệu.
+- **Lưới trục tòa xiên:** `huong_canh` nhận tòa nhiều hướng, mỗi hướng một họ trục theo tường dài, đầu trục xếp thẳng hàng ngoài nhà.
+- **Dựng lại 14 bố cục:** mỗi tệp có 2 đến 3 thang bộ nối đủ tầng, 6 đến 11 lỗ thông tầng (đếm lại qua API). Revit văng 2 lần cùng địa chỉ, cùng lúc: ngay sau `SaveAs` tài liệu rỗng khi vừa đóng tệp trước. Chuyển `SaveAs` xuống cuối mỗi bố cục thì 12 bố cục còn lại không văng lần nào.
+- **Hồ sơ đợt cuối:** 14 bố cục, 168 tờ (12 tờ mỗi bố cục, thêm KT-10 thống kê cửa + tường, KT-11 ghi chú chung). Revit tự tạo lan can khi dựng thang, không gọi `Railing.Create` nữa. Cabin thang máy là `DirectShape` minh họa. Soi tờ gộp mặt bằng, mặt đứng, mặt cắt, tầng 1 của cả 14 bố cục. 4 nút xuất trên app bấm thử ở `thulb01` đều ra tệp (BIM 19 s, 4,3 MB).
+- **Đầu trục tòa xiên:** đầu trục lọt vào cánh khác thì ẩn ký hiệu ở đầu đó (`HideBubbleInView`), giữ trục. Bỏ hẳn những trục có dấu hai đầu trong nhà. Xóa theo một đầu làm mất các trục dọc cánh, đã bỏ cách đó.
+- **Lỗi nặng phát hiện khi soi V2:** gốc Model Group là tâm khung bao lúc tạo, không phải gốc toạ độ. `PlaceGroup(XYZ(0, 0, z))` làm các tầng điển hình từ tầng thứ hai lệch khỏi tầng đế và mái theo tâm khung bao (khoảng 6 m ở V2), i2 gần đối xứng nên không lộ. Sửa: đặt theo `gr.Location.Point`. Các bản hồ sơ trước đó sai mặt đứng, mặt cắt ở tòa không đối xứng.
+- **Mảng xanh trên PDF:** gọi `get_BoundingBox` trên nhóm ngay sau khi đặt làm một tầng hiện màu xanh khi xuất PDF, mở lại tệp thì hết. Đã bỏ phép đo đó khỏi script, đo sau khi dựng.
+- **Thêm dầm, louver, lan can ban công vào gói BIM:** `damBien`, `DamBim`, `LouverBim` trong `xuatBim.ts`; script dựng dầm biên và nan louver thành khối DirectShape đúng kích thước (template không có family dầm, louver), lan can ban công là Railing thật, lan can mái giữ tường cao 1,4 m. Bản dựng 14 bố cục trong `xuat/` chưa có ba phần này.
+- **Revit đứng hàng đợi:** hộp nhắc "Project Not Saved Recently" là TaskDialog chặn luồng UI nên connector kẹt `queue_depth` 1, Esc gửi vào cửa sổ chính không tới được. Tắt bằng `TDM_CLICK_BUTTON` (0x466) vào chính hộp thoại. Revit vẫn kẹt thì buộc thoát, tệp trên đĩa không đổi.
+- **Còn thiếu để ra hồ sơ thật:** chưa có family thang máy thật, mặt đứng dùng cửa mẫu `M_Fixed` nên giản lược so với 3D app, tầng 1 chưa có công năng vì phương án chưa thiết kế tầng đế, chưa có chi tiết + vật liệu (dữ liệu phương án không có), khung tên rút từ template Autodesk.
 - **Chấm UI/UX (07/11):** Synaps 7,25, Unitmix 7,4 (Synaps là ước lượng). Bảng điểm và 5 việc sửa ở mục 8 bản học, ảnh ở `docs/anh/synaps/so_sanh/`.
 
 ## 2026-11-07 · Panel theo màn, thu gọn hai bên, gọn trang Dự án · Claude Code (Opus 5.5)
@@ -1232,3 +1272,4 @@ Người dùng: căn góc chữ Y, V chỉ đặt đúng chỗ cạnh lõi thang
 - **Trang Dự án:** mỗi dòng còn So sánh, Chép link, menu ⁝, nút Mở; Xoá nằm cuối menu, màu đỏ. Trang rộng tới 1600 px.
 - **Đã thử trên bản sao M7 cục bộ, Chrome:** khung giữa 964 → 1234 → 1534 px, tỉ lệ giữ 1,3134 px/m, tâm không đổi; tải lại vẫn nhớ; 3D giãn đúng; bấm mục cuộn đúng, mục đang đọc đổi theo. `kiem:nhanh` ĐẠT.
 - **Chưa thử:** màn hẹp và điện thoại; bấm thật Xoá trong menu. Trang chủ cục bộ bị màn đăng nhập che, phải ẩn lớp đó trên tab thử.
+- **Màn điện thoại (07/11, bản mạng v0.8.4, 375 và 390 px, M7 chỉ xem):** không tràn ngang, không có nút mũi tên thu panel; ngăn Nhập ở Chi phí hiện Đi tới mục + Phạm vi tính, mục cao 44 px, bấm mục thì ngăn đóng và cuộn đúng (đỉnh mục 8 px); trang Dự án nút 40 px, menu ⁝ nằm trong màn. Ảnh `docs/anh/ui-panel/5–7`. Chưa thử: màn ngang 844x390, iPhone thật.

@@ -77,7 +77,7 @@ Chạy thử: dev server cổng 5180 (`.claude/launch.json` tên `web`), API `wr
 | **Gọn giao diện**: hàng nhãn-ô `.o-so` / `.o-chon` một dòng, thanh 3D một hàng biểu tượng (bảng chọn nổi `ui/MenuNut.tsx`; Khung3D `nutPhanTich` + `moRong` cắm nút phân tích), tên tòa trùng mẫu "V4 · 1" (`ui/nhanToa.ts` — dùng cho mọi bảng / danh sách tòa); kiểm ô tích lệch dòng + thanh xuống dòng ở `kiem_man_hep.mjs`; ảnh `docs/anh/gon/` | `styles/gon.css` (nạp sau cùng) |
 | Khung soạn, thanh trên | `ui/KhungSoan.tsx`, `ui/ThanhTren.tsx`, `man/SoanThao.tsx` |
 | Preset, lưu | `kho/preset.ts`, `kho/kho.ts`, `kho/luu.ts` |
-| Xuất | `xuat/xuatCad.ts`, `xuat/xuatXls.ts`, `man/HopXuatCad.tsx` |
+| Xuất (3D: mỗi mẫu một tệp, `instance_node`; IFC dùng Link IFC, không Open IFC; BIM Revit: mặt bằng là đúng `taoDxf`, model từ `xuatBim.ts`, script `web/public/lib/revit/unitmix_dung_bim.py`) | `xuat/xuatCad.ts`, `xuat/xuatXls.ts`, `xuat/xuat3d.ts`, `xuat/xuatDae.ts`, `xuat/xuatIfc.ts`, `man/HopXuatCad.tsx`, `man/HopXuatTaiLieu.tsx` |
 | So sánh PA | `man/SoSanhPA.tsx`, `tinh/diemPA.ts` |
 | Thao tác tay TMB (chọn nhiều, bắt dính, xoay, đo, cảnh báo LO-01/02/05) | `tinh/thaoTacToa.ts`, `man/tmbThaoTac.tsx`, `man/ManXepToa.tsx` `XepGiua` |
 | Xếp hàng loạt nhiều lô (MT-05 lần lượt, §2.6.1 lô bên cạnh) | `tinh/xepHangLoat.ts`, `man/xepHangLoat.tsx` |

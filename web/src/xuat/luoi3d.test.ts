@@ -22,7 +22,9 @@ describe('tách tầng + gộp tầng giống nhau', () => {
     expect(new Set(ids).size).toBe(1);
     const dae = taoDae([{ ten: 'Toa', x: 10, y: 20, goc: 30, tang: t }], 'Thử');
     expect((dae.match(/<geometry /g) ?? []).length).toBe(1);
-    expect((dae.match(/<instance_geometry /g) ?? []).length).toBe(3);
+    expect((dae.match(/<instance_geometry /g) ?? []).length).toBe(1); // một định nghĩa tầng trong library_nodes
+    expect((dae.match(/<instance_node url="#tang/g) ?? []).length).toBe(3); // ba tầng đặt lại component đó
+    expect((dae.match(/<instance_node url="#toa/g) ?? []).length).toBe(1);
     expect(dae).toContain('<rotate>0 0 1 30</rotate>');
     const ifc = taoIfc([{ ten: 'Toa', x: 10, y: 20, goc: 30, tang: t }], 'Thử');
     expect((ifc.match(/=IFCREPRESENTATIONMAP\(/g) ?? []).length).toBe(1);

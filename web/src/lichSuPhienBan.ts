@@ -6,6 +6,19 @@ export type MucPhienBan = { v: string; ngay: string; vi: string[]; en: string[] 
 
 export const LICH_SU_PHIEN_BAN: MucPhienBan[] = [
   {
+    v: '0.8.5', ngay: '2026-11-07',
+    vi: [
+      'Xuất 3D: tổng thể SketchUp bản nhẹ, toạ độ dời về gần gốc, sửa sai số 6–25 cm ở toạ độ VN2000',
+      'Chi tiết mỗi mẫu tòa một tệp (.dae cho SketchUp, .ifc cho Revit), gói .zip; tầng giống nhau là component dùng chung nên mở nhanh',
+      'Xuất BIM gốc cho Revit: tường, sàn, cửa, phòng, thang bộ, lỗ thông tầng, lưới trục theo cánh tòa, 12 tờ hồ sơ mỗi bố cục; mặt bằng điển hình đúng bản xuất CAD',
+    ],
+    en: [
+      '3D export: light whole-project SketchUp file, moved near the origin, fixes a 6–25 cm error at VN2000 coordinates',
+      'Detail per tower type, one file each (.dae for SketchUp, .ifc for Revit) in a .zip; identical floors share components so files open fast',
+      'Native BIM export for Revit: walls, floors, doors, rooms, stairs, shaft openings, grids along tower wings, 12 sheets per layout; the typical plan is exactly the CAD export',
+    ],
+  },
+  {
     v: '0.8.4', ngay: '2026-11-07',
     vi: [
       'Nút mũi tên ở mép khung giữa thu gọn panel trái, phải; bản vẽ giữ nguyên tỉ lệ, app nhớ trạng thái',

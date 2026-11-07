@@ -25,6 +25,7 @@ export const DAM_DE_MM = 700;
 export const NHIP_DO_DUNG_MM = 1200;
 export const CAO_DO_NGANG_MM = 2400;
 const DAM_NHO_MM = 15, DO_RONG_DAM_MM = 300, DO_RONG_DO_MM = 60, DO_SAU_DO_MM = 120, COT_DE_MM = 600, NHIP_COT_TOI_DA_MM = 8400;
+export { COT_DE_MM };
 
 /**
  * Cột khối đế suy từ MẶT BẰNG CĂN HỘ của tầng điển hình: vách ngăn giữa hai căn kề nhau và các vách ngang hành lang gặp nhau ở góc các căn,
