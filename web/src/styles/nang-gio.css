@@ -41,7 +41,7 @@
 .hng-chay { min-width: 34px; }
 .hoa-gio-ng { margin: 0 auto; width: 210px; }
 .hoa-gio-ng svg { width: 210px; height: 210px; display: block; }
-.hoa-gio-ng figcaption { display: flex; flex-wrap: wrap; gap: 4px 8px; justify-content: center; font-size: 10px; color: var(--muted); }
+.hoa-gio-ng figcaption { display: flex; flex-wrap: wrap; gap: 4px 8px; justify-content: center; font-size: 12px; color: var(--muted); }
 .hoa-gio-ng figcaption i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
 
 /* ô đất tô đặc nằm trên ảnh nền / lớp phân tích: làm trong bớt (chỉ khi có lớp) */
@@ -49,7 +49,7 @@
 .ban-ve-svg.co-phan-tich g:not(.tmb-toa):not(.ng-bong) > polygon { fill-opacity: 0.1; }
 .ng-ghi-nguon {
   position: absolute; right: 64px; bottom: 4px; z-index: 3; max-width: min(520px, 60%); padding: 1px 6px; border-radius: 4px;
-  font-size: 10px; line-height: 1.4; color: #222; background: rgb(255 255 255 / 0.75); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 12px; line-height: 1.4; color: #222; background: rgb(255 255 255 / 0.75); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .ng-ghi-nguon.ng-3d { right: 10px; bottom: 56px; }
 .ng-doc-so {
@@ -64,7 +64,7 @@
 .thang-mau-cot { display: flex; align-items: flex-end; gap: 1px; height: 34px; }
 .thang-mau-cot i { flex: 1; background: color-mix(in srgb, var(--ink) 55%, transparent); border-radius: 2px 2px 0 0; min-width: 2px; }
 .thang-mau-dai { height: 10px; border-radius: 5px; margin-top: 2px; }
-.thang-mau-moc { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; font-size: 10px; color: var(--muted); }
+.thang-mau-moc { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; font-size: 12px; color: var(--muted); }
 .thang-mau-moc span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 .thang-mau-moc span:first-child { transform: none; }
 .thang-mau-moc span:last-child { transform: translateX(-100%); }
@@ -76,7 +76,7 @@
 .thang-mau-dong .so { text-align: right; font-variant-numeric: tabular-nums; }
 .thang-mau-so { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); }
 .thang-mau-so b { color: var(--ink); font-variant-numeric: tabular-nums; }
-.thang-mau-ghi { margin: 0; font-size: 10.5px; color: var(--muted); line-height: 1.4; }
+.thang-mau-ghi { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
 
 /* màn hẹp: tấm đáy nằm trên dock, cao ≤ 55 % màn, nút ≥ 40 px, ô nhập 16 px (iOS không tự phóng) */
 @media (max-width: 1024px) {

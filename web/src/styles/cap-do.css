@@ -17,7 +17,7 @@
 .thanh-tren .cap-do .cap-toa { flex-shrink: 3; }
 .thanh-tren .cap-do :is(.cap-cot, .cap-tang, .cap-can) { flex-shrink: 0; }
 .thanh-tren .cap-do .cap-chu { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.thanh-tren .cap-do .cap-mui { flex: none; font-size: 10px; color: var(--muted-text); }
+.thanh-tren .cap-do .cap-mui { flex: none; font-size: 12px; color: var(--muted-text); }
 .thanh-tren .cap-do .nut-cap.dang-o { background: var(--selected); font-weight: 700; color: var(--green); }
 .thanh-tren .cap-do .nut-cap[aria-expanded="true"] { background: var(--hover); }
 .thanh-tren .cap-do .nut-cap.dang-o[aria-expanded="true"] { background: var(--selected); }
@@ -54,8 +54,8 @@
 .bang-cap > button[aria-checked="true"] { background: var(--selected); color: var(--green); font-weight: 700; }
 .bang-cap > button:disabled { opacity: .45; cursor: default; }
 .bang-cap-chu { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.bang-cap small { flex: none; font-size: 11px; font-weight: 400; color: var(--muted-text); }
+.bang-cap small { flex: none; font-size: 12px; font-weight: 400; color: var(--muted-text); }
 .bang-cap-dau { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
-.bang-cap-nhom { padding: 6px 10px 2px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-text); }
+.bang-cap-nhom { padding: 6px 10px 2px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-text); }
 .bang-cap-nhom:not(:first-child) { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
 .bang-cap-trong { padding: 6px 10px; font-size: 12px; color: var(--muted-text); }

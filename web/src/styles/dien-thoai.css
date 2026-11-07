@@ -124,7 +124,7 @@
   .tmb-toa-do, .tmb-ds-cb, .tmb-goi-y { max-width: calc(100% - 72px); }
   .tmb-toa-do input { font-size: 16px; }
   /* màn Tầng: nhãn tầng một dòng bên trái, thanh công cụ tay xuống hàng dưới (cùng mép phải) — không đè nhau, không đè hoa gió */
-  .the-tang { top: 8px; left: 8px; max-width: calc(100% - 76px); box-sizing: border-box; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; }
+  .the-tang { top: 8px; left: 8px; max-width: calc(100% - 76px); box-sizing: border-box; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
   .thanh-cc-tang { top: 68px; right: 8px; left: auto; max-width: calc(100% - 16px); flex-wrap: wrap; justify-content: flex-end; }
   .thanh-cc-tang .cc-mau select { font-size: 16px; }
   .thanh-o-chon { top: auto; bottom: 64px; max-width: calc(100% - 120px); overflow-x: auto; scrollbar-width: none; }
@@ -219,7 +219,7 @@
   .dock-duoi .nhom-bt .nut-bt { border-right: 0; border-bottom: 1px solid var(--line); }
   .dock-duoi .nhom-bt .nut-bt:last-child { border-bottom: 0; }
   .dock-duoi .nut-bt { flex-direction: column; padding: 0 4px; height: 52px; gap: 1px; }
-  .dock-duoi .nut-bt > span:not([aria-hidden]) { font-size: 10px; }
+  .dock-duoi .nut-bt > span:not([aria-hidden]) { font-size: 12px; }
   .khung-soan .ngan-keo { bottom: 0; right: calc(var(--dock-rong) + var(--an-r)); width: min(460px, calc(100vw - var(--dock-rong) - var(--an-l) - var(--an-r))); max-height: calc(100dvh - var(--tren-cao) - var(--an-t) - 8px); }
   .khung-soan .panel-phai.ngan-keo { left: auto; }
 }

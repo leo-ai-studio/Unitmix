@@ -25,7 +25,7 @@
 .thanh-cc-tang .cc-cho-trong li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px; border-radius: 4px; }
 .thanh-cc-tang .cc-cho-trong li:hover { background: var(--selected); }
 .thanh-cc-tang .cc-cho-ten { flex: 1 0 100%; font-weight: 600; }
-.thanh-cc-tang .cc-cho-trong .nut-phu { font-size: 11px; padding: 2px 6px; }
+.thanh-cc-tang .cc-cho-trong .nut-phu { font-size: 12px; padding: 2px 6px; }
 .bong-keo.loi { border-color: var(--warn); }
 .bong-keo.loi small { color: var(--warn); }
 /* bóng kéo: bám con trỏ 1:1 (transform qua rAF), không bắt chuột để dò ô đích bên dưới */
@@ -37,7 +37,7 @@
   color: var(--ink); font-size: 12px; font-weight: 600; text-align: center;
   box-shadow: 0 8px 22px rgb(0 0 0 / .16); will-change: transform;
 }
-.bong-keo small { font-weight: 500; color: var(--muted); font-size: 11px; }
+.bong-keo small { font-weight: 500; color: var(--muted); font-size: 12px; }
 .lop-st-bao.loi { border-color: var(--warn); }
 @media (prefers-reduced-motion: reduce) { .bong-keo { transition: none !important; } }
 /* loại thang đang chọn N3 | N2 (QT-63) — nút chữ cùng cỡ nút biểu tượng */

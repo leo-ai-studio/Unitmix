@@ -5,9 +5,9 @@
 .chi-phi h3 { margin: 0 0 8px; font-size: 14px; color: var(--green); }
 .chi-phi h4 { margin: 12px 0 6px; font-size: 13px; }
 .chi-phi .cp-dau { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; }
-.chi-phi .cp-ghi { margin: 0; font-size: 11.5px; }
+.chi-phi .cp-ghi { margin: 0; font-size: 12px; }
 .cp-canh-bao { margin: 0; padding: 6px 10px; border-radius: 6px; background: #fdf0d9; color: var(--canh-bao); font-weight: 600; font-size: 12px; }
-.cp-canh-bao.nho { margin: 4px 12px 6px; font-size: 11px; font-weight: 500; }
+.cp-canh-bao.nho { margin: 4px 12px 6px; font-size: 12px; font-weight: 500; }
 
 .cp-bao { overflow-x: auto; }
 .cp-bang { border-collapse: collapse; width: 100%; font-size: 12.5px; }
@@ -15,7 +15,7 @@
 .cp-bang thead th { position: sticky; top: 0; background: color-mix(in srgb, var(--green) 8%, var(--panel)); font-weight: 600; z-index: 1; }
 .cp-bang thead th:nth-child(n+3) { text-align: right; }
 .cp-bang .so { text-align: right; font-variant-numeric: tabular-nums; }
-.cp-bang th small { color: var(--muted-text); font-size: 11px; }
+.cp-bang th small { color: var(--muted-text); font-size: 12px; }
 .cp-bang .cp-nhom th, .cp-bang .cp-nhom td { background: var(--soft); font-weight: 700; }
 .cp-bang .cp-cong th, .cp-bang .cp-cong td { font-weight: 600; border-top: 1px solid var(--muted); }
 .cp-bang .cp-tong th, .cp-bang .cp-tong td { font-weight: 700; color: var(--green); border-top: 2px solid var(--green); }
@@ -32,7 +32,7 @@
 .chi-phi .cp-luoi .cp-o { width: 130px; }
 
 /* Ô tích QLDA theo TT 38/2026 đứng trước ô %; không đổi bề rộng cột. */
-.cp-tt38 { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; font-size: 11px; color: var(--muted, #667); white-space: nowrap; }
+.cp-tt38 { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; font-size: 12px; color: var(--muted, #667); white-space: nowrap; }
 
 /* Panel trái tab Chi phí */
 .cp-tong-pa { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 6px; font-weight: 600; }

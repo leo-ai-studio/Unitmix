@@ -14,7 +14,7 @@
 .o-so input, .o-so-nho, .o-chon input, .o-chon select { min-width: 0; }
 .o-so input { width: 72px; padding: 3px 6px; font-variant-numeric: tabular-nums; }
 .o-so-nhap { flex: none; }
-.o-so-nhap small { min-width: 16px; font-size: 11px; }
+.o-so-nhap small { min-width: 16px; font-size: 12px; }
 .o-chon select, .o-chon input { flex: 0 1 auto; max-width: 60%; padding: 3px 6px; }
 /* Lưới hai cột .luoi-o: trước đây nhãn trên / ô dưới (nhãn bị cắt "MĐXD khối tháp tố…", ô tràn). Nay mỗi ô một hàng nhãn-trái;
    panel 270–300 px ra một cột, hộp thoại rộng tự ra hai cột. */
@@ -41,7 +41,7 @@
 .tham-so-3d .luoi-tham-so > .nut-phu { justify-self: start; margin: 4px 8px; }
 
 /* nút biểu tượng mở menu: mũi ▾ nhỏ, chữ phụ (nếu có) */
-.nut-bt .mui-menu { font-size: 8px; color: var(--muted-text); margin-left: 1px; }
+.nut-bt .mui-menu { font-size: 12px; color: var(--muted-text); margin-left: 1px; }
 .nut-bt .nut-bt-chu { font-size: 12px; font-weight: 600; color: var(--ink); }
 /* bảng nổi của MenuNut */
 .menu-nut-bang { position: fixed; z-index: 60; min-width: 168px; max-width: min(320px, calc(100vw - 8px)); overflow: auto; display: flex; flex-direction: column;
@@ -52,7 +52,7 @@
 .menu-nut-bang > button[role=menuitemradio] { padding-left: 26px; position: relative; }
 .menu-nut-bang > button[aria-checked=true] { color: var(--green); font-weight: 700; }
 .menu-nut-bang > button[aria-checked=true]::before { content: '✓'; position: absolute; left: 9px; }
-.menu-nut-nhom { padding: 6px 10px 2px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted-text); }
+.menu-nut-nhom { padding: 6px 10px 2px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted-text); }
 .menu-nut-nhom:empty { padding: 0; margin: 4px 6px; border-top: 1px solid var(--line); }
 .menu-nut-dong { display: flex; align-items: stretch; }
 .menu-nut-dong > button:first-child { flex: 1; }
@@ -101,7 +101,7 @@ label.nut-nho { display: inline-flex; flex-direction: row; align-items: center; 
 /* thẻ mẫu tòa: tên một dòng, "n căn/tầng · m² · ✓ Hợp lô" một dòng (3 dòng → 2 dòng, thư viện 25 mẫu ngắn đi ~500 px) */
 .the-mau > div { flex-direction: row; flex-wrap: wrap; column-gap: 6px; row-gap: 1px; align-items: baseline; }
 .the-mau > div > b { flex: 1 0 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.the-mau > div > span { font-size: 11px; white-space: nowrap; }
+.the-mau > div > span { font-size: 12px; white-space: nowrap; }
 .the-mau .nut-phu { padding: 4px 8px; }
 /* thư viện: nhóm Thương mại / Nhà ở xã hội + nút so sánh (biểu tượng) một hàng */
 .nhom-nut button { white-space: nowrap; }
@@ -111,10 +111,6 @@ label.nut-nho { display: inline-flex; flex-direction: row; align-items: center; 
 .preset select { flex: 1 1 70px; max-width: none; }
 .preset .nut-nho, .preset .nut-nho:last-child { flex: 0 0 auto; padding: 3px 6px; min-width: 24px; }
 /* ---------- Panel phải: thẻ số, bảng ---------- */
-/* thẻ KPI: chip Đạt / Vượt đã sang hàng số (ui/TheSo.tsx) → nhãn một dòng, không chừa sẵn 2 dòng */
-.the-so-nhan { min-height: 0; }
-.the-so-nhan > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
-.the-so-gt .chip-tt { margin-left: auto; align-self: center; }
 /* bảng chỉ tiêu (Chỉ tiêu / Đạt / Mục tiêu…): cột chữ co giãn, cột số không bẻ dòng, số thẳng cột */
 .bang-ct { grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 10px; font-variant-numeric: tabular-nums; }
 .bang-ct > :nth-child(n+2) { white-space: nowrap; text-align: right; }
@@ -149,15 +145,17 @@ label.nut-nho { display: inline-flex; flex-direction: row; align-items: center; 
 
 /* ô số: chừa cột đơn vị để mọi ô thẳng hàng (có / không có "%", "m²") */
 .o-so-nhap { min-width: 96px; justify-content: flex-start; }
-/* chip trạng thái không đè lên số: hết chỗ thì xuống dòng, số không bị cắt */
-.the-so-gt { flex-wrap: wrap; row-gap: 2px; }
 .ham-chi-loi { display: flex; align-items: center; gap: 6px; margin: 2px 0 6px; font-size: 12px; color: var(--muted-text); cursor: pointer; }
 
 /* Thu gọn hai panel: panel ẩn hẳn, nút mũi tên nổi ở mép khung giữa */
 .khung-soan .panel-giua { position: relative; }
 .khung-soan.thu-trai .panel-trai, .khung-soan.thu-phai .panel-phai { display: none; }
-.nut-thu-panel { position: absolute; top: 50%; z-index: 25; display: flex; align-items: center; justify-content: center; width: 16px; height: 56px; padding: 0; margin: 0;
+.nut-thu-panel { position: absolute; top: 50%; z-index: 25; display: flex; align-items: center; justify-content: center; width: 24px; height: 56px; padding: 0; margin: 0;
   transform: translateY(-50%); border: 1px solid var(--line); background: var(--panel); color: var(--green); cursor: pointer; }
 .nut-thu-panel.trai { left: 0; border-left: 0; border-radius: 0 8px 8px 0; }
 .nut-thu-panel.phai { right: 0; border-right: 0; border-radius: 8px 0 0 8px; }
 .nut-thu-panel:hover { background: var(--hover); filter: none; }
+
+/* Vùng bấm tối thiểu 24 × 24 px (WCAG 2.2 AA 2.5.8): nút chữ, nút nhỏ, nút gập panel */
+button, [role='button'] { min-height: 24px; }
+.nut-nho, .nut-them { min-width: 24px; }

@@ -26,7 +26,7 @@
 .ss-mau .ssm-yc-o .bt-svg { width: 18px; height: 18px; }
 .ss-mau .ssm-yc-o textarea { font: inherit; font-size: 13px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); }
 .ss-mau .ssm-nhan { display: flex; flex-wrap: wrap; gap: 5px; }
-.ss-mau .ssm-nhan-o { font-size: 11.5px; padding: 2px 8px; border-radius: 10px; background: color-mix(in srgb, var(--green) 10%, var(--panel)); color: var(--green); }
+.ss-mau .ssm-nhan-o { font-size: 12px; padding: 2px 8px; border-radius: 10px; background: color-mix(in srgb, var(--green) 10%, var(--panel)); color: var(--green); }
 .ss-mau .ssm-ts summary { cursor: pointer; font-size: 12px; color: var(--green); }
 .ss-mau .ssm-ts-luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 12px; margin: 8px 0; }
 .ss-mau .ssm-ts-luoi .o-so { justify-content: space-between; }
@@ -36,7 +36,7 @@
 .ss-mau .ssm-the.nhat { border-color: var(--green); box-shadow: inset 0 3px 0 var(--green); }
 .ss-mau .ssm-the-dau { display: flex; gap: 10px; align-items: center; }
 .ss-mau .ssm-diem { font-size: 22px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; line-height: 1.1; }
-.ss-mau .ssm-diem small { font-size: 11px; font-weight: 400; color: var(--muted-text); margin-left: 2px; }
+.ss-mau .ssm-diem small { font-size: 12px; font-weight: 400; color: var(--muted-text); margin-left: 2px; }
 .ss-mau .ssm-uu, .ss-mau .ssm-nhuoc { margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.45; }
 .ss-mau .ssm-uu li::before { content: '✓ '; color: var(--green); font-weight: 700; }
 .ss-mau .ssm-nhuoc li::before { content: '✕ '; color: var(--warn); font-weight: 700; }

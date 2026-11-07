@@ -36,7 +36,7 @@ label:has(> input[type='checkbox']), label:has(> input[type='radio']) {
 .thuong-hieu strong { font-size: 15px; font-weight: 600; letter-spacing: .08em; }
 /* Phiên bản mảnh dưới tên app (rê logo xem đủ mã commit · ngày build). */
 .thuong-hieu .ten-ban { display: flex; flex-direction: column; line-height: 1.05; }
-.thuong-hieu .ban { font-size: 9px; font-weight: 300; letter-spacing: .06em; color: var(--muted); }
+.thuong-hieu .ban { font-size: 12px; font-weight: 300; letter-spacing: .06em; color: var(--muted); }
 .thuong-hieu { position: relative; }
 .thuong-hieu .ban { cursor: pointer; border-radius: 3px; }
 .thuong-hieu .ban:hover { color: var(--green); }
@@ -45,7 +45,7 @@ label:has(> input[type='checkbox']), label:has(> input[type='radio']) {
 .lich-su-ban > b { font-size: 12px; color: var(--green); }
 .ls-dau { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; list-style: none; padding: 3px 0; } .ls-dau::-webkit-details-marker { display: none; } .ls-dau > span::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border: solid var(--muted); border-width: 0 1.5px 1.5px 0; transform: rotate(-45deg); transition: transform .15s; } .ls-muc[open] > .ls-dau > span::before { transform: rotate(45deg); } .ls-dau small { color: var(--muted); font-weight: 400; }
 .ls-muc ul { margin: 2px 0 0; padding-left: 16px; } .ls-muc li { line-height: 1.45; }
-.ls-chan { color: var(--muted); font-size: 10px; }
+.ls-chan { color: var(--muted); font-size: 12px; }
 .gian { flex: 1; }
 .tab-xem { display: flex; }
 .tab-xem button { border: 1px solid var(--line); background: var(--band); padding: 10px 16px; margin-right: -1px; font-size: 12px; color: var(--ink); }
@@ -58,11 +58,11 @@ label:has(> input[type='checkbox']), label:has(> input[type='radio']) {
 .trang-thai-luu { font-size: 12px; color: var(--muted-text); }
 .trang-thai-luu.loi { color: var(--vuot); font-weight: 600; }
 .chon-lang { display: inline-flex; border: 1px solid var(--secondary); border-radius: 4px; overflow: hidden; }
-.chon-lang button { border: 0; background: var(--panel); padding: 5px 8px; font-size: 11px; font-weight: 600; color: var(--ink); }
+.chon-lang button { border: 0; background: var(--panel); padding: 5px 8px; font-size: 12px; font-weight: 600; color: var(--ink); }
 .chon-lang button[aria-pressed="true"] { background: var(--green); color: #fff; }
 
 /* Mục gập/mở trong panel */
-.muc-dau { width: 100%; display: flex; gap: 8px; align-items: center; padding: 11px 12px; border: 0; border-bottom: 1px solid var(--line); background: var(--panel); font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; text-align: left; color: var(--ink); }
+.muc-dau { width: 100%; display: flex; gap: 8px; align-items: center; padding: 11px 12px; border: 0; border-bottom: 1px solid var(--line); background: var(--panel); font-size: 12px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; text-align: left; color: var(--ink); }
 .muc-than { padding: 4px 0 10px; }
 .dong { display: flex; justify-content: space-between; gap: 8px; padding: 3px 12px; font-size: 12px; }
 .ok { color: var(--ok); } .canh-bao { color: var(--canh-bao); } .vuot { color: var(--vuot); } .thua { color: var(--thua); }
@@ -124,7 +124,7 @@ button:disabled { cursor: not-allowed; }
 .the-mau .nut-phu { padding: 5px 9px; white-space: nowrap; }
 .o-mau { display: inline-block; width: 10px; height: 10px; border: 1px solid var(--line); vertical-align: -1px; }
 .bang-co-cau { overflow-x: auto; }
-.bang-cc { display: grid; gap: 4px; font-size: 11px; width: 100%; border: 0; background: none; color: var(--ink); text-align: left; }
+.bang-cc { display: grid; gap: 4px; font-size: 12px; width: 100%; border: 0; background: none; color: var(--ink); text-align: left; }
 .bang-cc span:nth-child(n+2), .bang-cc b { text-align: right; }
 .bang-cc.dau { font-weight: 700; color: var(--muted-text); }
 .bang-cc.tong { font-weight: 700; border-top: 1px solid var(--line); }
@@ -151,11 +151,11 @@ button:disabled { cursor: not-allowed; }
 .the-tang { position: absolute; top: 10px; left: 12px; z-index: 2; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-size: 12px; }
 .o-tg { display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 4px 12px; font-size: 12px; color: var(--ink); }
 .o-tg input { min-width: 0; width: auto; padding: 0; margin: 0; flex: none; accent-color: var(--green); }
-.hang-lc { display: grid; grid-template-columns: 1.7fr .6fr 1fr .9fr .9fr; gap: 6px; padding: 4px 12px; font-size: 11.5px; align-items: center; }
+.hang-lc { display: grid; grid-template-columns: 1.7fr .6fr 1fr .9fr .9fr; gap: 6px; padding: 4px 12px; font-size: 12px; align-items: center; }
 .hang-lc > span:nth-child(n+2) { text-align: right; }
 .hang-lc.dau { font-weight: 700; color: var(--muted-text); }
 .hang-lc.chon { background: var(--selected); }
-.hang-lc small { font-size: 10.5px; }
+.hang-lc small { font-size: 12px; }
 
 .panel-giua { position: relative; }
 
@@ -179,7 +179,7 @@ button:disabled { cursor: not-allowed; }
 .ban-ve-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
 .ban-ve-phu { position: absolute; inset: 0; pointer-events: none; }
 .thuoc-ty-le { position: absolute; left: 14px; bottom: 12px; height: 8px; border: 1.5px solid var(--ink); border-top: 0; min-width: 4px; }
-.thuoc-ty-le span { position: absolute; left: 0; bottom: 10px; font-size: 11px; font-weight: 600; color: var(--ink); background: var(--panel); padding: 0 3px; border-radius: 3px; white-space: nowrap; }
+.thuoc-ty-le span { position: absolute; left: 0; bottom: 10px; font-size: 12px; font-weight: 600; color: var(--ink); background: var(--panel); padding: 0 3px; border-radius: 3px; white-space: nowrap; }
 .hoa-gio { position: absolute; right: 14px; top: 12px; }
 
 /* ===== 3D (tab Mô hình, xem 3D căn) ===== */
@@ -225,14 +225,14 @@ button:disabled { cursor: not-allowed; }
 .khoi-dxf > .muted { padding: 0 12px; }
 .chon-lo-gon { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
 .chon-lo-gon select { width: 100%; font-weight: 700; color: var(--green); padding: 5px 6px; border: 1px solid var(--green); border-radius: 6px; background: var(--panel); }
-.chon-lo-gon .muted { font-size: 11px; }
+.chon-lo-gon .muted { font-size: 12px; }
 .luoi-o { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
 .luoi-o .o-so { flex-direction: column; align-items: stretch; gap: 1px; padding: 3px 10px; }
 .luoi-o .o-so input { width: 100%; }
 .panel-trai .the-mau { padding: 6px 12px; }
 
 /* ===== Chú giải loại đất trên TMB ===== */
-.chu-giai-dat { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: center; padding: 4px 12px; font-size: 11px; color: var(--muted-text); }
+.chu-giai-dat { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: center; padding: 4px 12px; font-size: 12px; color: var(--muted-text); }
 .chu-giai-dat i { display: inline-block; width: 11px; height: 11px; border: 1px solid; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 
 /* Thanh trên một dòng: dải cấp co lại, cắt bằng dấu … (styles/cap-do.css) */
